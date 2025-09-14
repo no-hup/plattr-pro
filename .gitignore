@@ -3,8 +3,7 @@
 *.log
 .env*
 
-# Secrets (IMPORTANT)
-**/secure_stuff/
+
 
 # IDE & Editor Files
 .idea/
