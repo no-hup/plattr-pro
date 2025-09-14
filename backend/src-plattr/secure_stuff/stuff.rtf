@@ -1,0 +1,82 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2709
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 Menlo-Regular;\f2\fmodern\fcharset0 Courier;
+\f3\fmodern\fcharset0 Courier-Bold;\f4\froman\fcharset0 Times-Roman;}
+{\colortbl;\red255\green255\blue255;\red62\green69\blue5;\red255\green255\blue255;\red9\green60\blue148;
+\red144\green1\blue18;\red255\green255\blue51;\red41\green0\blue130;\red251\green2\blue255;}
+{\*\expandedcolortbl;;\cssrgb\c30924\c33489\c1233;\cssrgb\c100000\c100000\c100000;\cssrgb\c1569\c31765\c64706;
+\cssrgb\c63922\c8235\c8235;\cssrgb\c99946\c98636\c25320;\cssrgb\c21681\c10251\c58230;\cssrgb\c100000\c25279\c100000;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs36 \cf0 steps to start firestore emulator:\
+
+\fs24 \
+
+\fs28 \cf2 make sure to run google credential command before starting emulator\
+
+\fs24 \cf0 termianl 1 :  firebase emulators:start --only firestore,functions --debug\
+terminal 2 :   cd functions/mock    then ->     node importMockData.js\
+done.\
+\
+for firestore + functions in emulator:  firebase emulators:start --only firestore,functions --import=./firestore-data --debug\
+\
+if facing google auth issues, its due to service-key.json file probably\
+i\'92ve added this in package,json\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf0 \cb3 \expnd0\expndtw0\kerning0
+\{\cb1 \
+\cb3   \cf4 "scripts"\cf0 : \{\cb1 \
+\cb3     \cf4 "import-mock"\cf0 : \cf5 "cross-env NODE_ENV=development FUNCTIONS_EMULATOR=true FIRESTORE_EMULATOR_HOST=localhost:8080 node functions/mock/importMockData.js"\cf0 \cb1 \
+\cb3   \}\cb1 \
+\cb3 \}\
+\
+export GOOGLE_APPLICATION_CREDENTIALS="/Users/shauryajaiswal/Desktop/theDev/plattr/src-plattr/secure_stuff/service-account.json"\cb1 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 \
+so run 
+\f1 \cf6 \cb7 \expnd0\expndtw0\kerning0
+npm run import-mock\cb8 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \cb1 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0 \cf0 \kerning1\expnd0\expndtw0 directly\
+
+\fs36 steps to restart emulator(port kill)\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f2\fs26 \cf0 \expnd0\expndtw0\kerning0
+lsof -t -i:8080 -i:9000 -i:9099 -i:9199 -i:9090 -i:5001 | xargs kill -9\
+\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f3\b\fs28 \cf0 run functions from postman once emulator is initialised\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f4\b0\fs24 \cf0 http://localhost:5001/rms-app-dd875/us-central1/fetchMenu\
+\pard\pardeftab720\partightenfactor0
+
+\f2\fs26 \cf0 \
+\
+\
+\
+fetch menue, add item, remove item, fetch cart\
+checkout\
+\
+\
+\
+\
+\
+gemini api key\
+AIzaSyDof-ULqXYgbRPs_-bVn2rwLQw1RybZZN4
+\f0\fs24 \kerning1\expnd0\expndtw0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+\
+}
