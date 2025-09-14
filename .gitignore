@@ -3,22 +3,34 @@
 *.log
 .env*
 
-# VS Code
+# Secrets (IMPORTANT)
+**/secure_stuff/
+
+# IDE & Editor Files
+.idea/
+*.iml
+*.code-workspace
+# Keep workspace settings, but ignore user-specific launch/task configs
 .vscode/launch.json
 .vscode/tasks.json
 
-# Node.js
-backend/src-plattr/node_modules
-backend/src-plattr/npm-debug.log
-
-# Flutter/Dart
-**/build/
-**/.dart_tool/
-**/.flutter-plugins
-**/.flutter-plugins-dependencies
-**/*.iml
+# Dependencies
+**/node_modules/
 **/ios/Pods/
 **/ios/.symlinks/
+
+# Build Artifacts
+**/build/
+**/dist/
+**/.dart_tool/
+**/.gradle/
+local.properties
+
+# Flutter/Dart specific
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# iOS specific generated files
 **/ios/Flutter/App.framework
 **/ios/Flutter/engine
 **/ios/Flutter/flutter_assets
