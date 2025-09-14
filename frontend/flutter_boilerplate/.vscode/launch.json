@@ -1,0 +1,31 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "flutter_boilerplate",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "args": [
+        "--web-renderer", "html",
+        "--verbose",
+        "--disable-web-debug-symbols"
+      ],
+      "dart.debugSdkLibraries": false,
+      "dart.debugExternalLibraries": false,
+      "dart.debugInternalLibraries": true
+    },
+    {
+      "name": "flutter_boilerplate (profile mode)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile"
+    },
+    {
+      "name": "flutter_boilerplate (release mode)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release"
+    }
+  ]
+}

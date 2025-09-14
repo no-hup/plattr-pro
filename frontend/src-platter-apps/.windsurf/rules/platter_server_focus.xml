@@ -1,0 +1,20 @@
+<context-rules>
+  <prompting>
+    <default-context>
+      <include path="./platter_server/lib/**/*.dart"/>
+      <reference path="./plattr_be/**/*.js"/>
+    </default-context>
+    
+    <cross-app-access>
+      <condition>prompt contains 'compare-with-admin'</condition>
+      <action>include ../platter_admin/lib</action>
+      
+      <condition>prompt contains 'compare-with-kitchen'</condition>
+      <action>include ../platter_kitchen/lib</action>
+    </cross-app-access>
+  </prompting>
+
+  <git-rules>
+    <protect path="plattr_be/**" unless="edit-be"/>
+  </git-rules>
+</context-rules>

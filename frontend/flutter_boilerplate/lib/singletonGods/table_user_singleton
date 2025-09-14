@@ -1,0 +1,123 @@
+// lib/services/local_storage_service.dart
+import 'dart:convert';
+import 'dart:html' as html;
+
+class TableStatus {
+  final String tableId;
+  final String restaurantId;
+  final bool isActive;
+  final DateTime expiresAt;
+
+  TableStatus({
+    required this.tableId,
+    required this.restaurantId,
+    required this.isActive,
+    required this.expiresAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'tableId': tableId,
+    'restaurantId': restaurantId,
+    'isActive': isActive,
+    'expiresAt': expiresAt.toIso8601String(),
+  };
+
+  factory TableStatus.fromJson(Map<String, dynamic> json) => TableStatus(
+    tableId: json['tableId'],
+    restaurantId: json['restaurantId'],
+    isActive: json['isActive'],
+    expiresAt: DateTime.parse(json['expiresAt']),
+  );
+}
+
+class UserInfo {
+  final String name;
+  final String phone;
+  final DateTime expiresAt;
+
+  UserInfo({
+    required this.name,
+    required this.phone,
+    required this.expiresAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'phone': phone,
+    'expiresAt': expiresAt.toIso8601String(),
+  };
+
+  factory UserInfo.fromJson(Map<String, dynamic> json) => UserInfo(
+    name: json['name'],
+    phone: json['phone'],
+    expiresAt: DateTime.parse(json['expiresAt']),
+  );
+}
+
+class LocalStorageService {
+  static const _tableStatusPrefix = 'table_status_';
+  static const _userInfoPrefix = 'user_info_';
+  static const _defaultTTL = Duration(hours: 5);
+
+  // Table Status Methods
+  Future<TableStatus?> getTableStatus(String tableId, String restaurantId) async {
+    final key = '${_tableStatusPrefix}${restaurantId}_$tableId';
+    final data = html.window.localStorage[key];
+    
+    if (data != null) {
+      final json = jsonDecode(data);
+      final status = TableStatus.fromJson(json);
+      
+      // Check if expired
+      if (DateTime.now().isBefore(status.expiresAt)) {
+        return status;
+      }
+      
+      // Remove if expired
+      html.window.localStorage.remove(key);
+    }
+    return null;
+  }
+
+  Future<void> saveTableStatus(TableStatus status) async {
+    final key = '${_tableStatusPrefix}${status.restaurantId}_${status.tableId}';
+    final json = jsonEncode(status.toJson());
+    html.window.localStorage[key] = json;
+  }
+
+  // User Info Methods
+  Future<UserInfo?> getUserInfo(String tableId, String restaurantId) async {
+    final key = '${_userInfoPrefix}${restaurantId}_$tableId';
+    final data = html.window.localStorage[key];
+    
+    if (data != null) {
+      final json = jsonDecode(data);
+      final userInfo = UserInfo.fromJson(json);
+      
+      // Check if expired
+      if (DateTime.now().isBefore(userInfo.expiresAt)) {
+        return userInfo;
+      }
+      
+      // Remove if expired
+      html.window.localStorage.remove(key);
+    }
+    return null;
+  }
+
+  Future<void> saveUserInfo(
+    String tableId, 
+    String restaurantId,
+    String name,
+    String phone,
+  ) async {
+    final key = '${_userInfoPrefix}${restaurantId}_$tableId';
+    final userInfo = UserInfo(
+      name: name,
+      phone: phone,
+      expiresAt: DateTime.now().add(_defaultTTL),
+    );
+    final json = jsonEncode(userInfo.toJson());
+    html.window.localStorage[key] = json;
+  }
+}

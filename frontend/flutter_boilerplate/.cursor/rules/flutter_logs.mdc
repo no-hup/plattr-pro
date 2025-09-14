@@ -1,0 +1,25 @@
+---
+description: Flutter Logging Guidelines
+globs: 
+---
+{
+  "description": "Guidelines for working with Flutter logs in this project",
+  "file_patterns": ["**/*.dart"],
+  "guidelines": [
+    "Log files are stored in the /logs directory at the project root",
+    "The primary log file is logs/flutter_run.log, configured in VS Code/Cursor settings",
+    Use the run_with_logs.sh script to run the app with logging: ./run_with_logs.sh",
+    "You can pass additional Flutter run arguments to the script: ./run_with_logs.sh --flavor dev",
+    "Filter logs for cart pricing issues using: tail -f logs/flutter_run.log | grep -E \"CART|💰|⚠️|price|Price\"",
+    "Filter by component: grep 'CART_TILE' logs/flutter_run.log",
+    "Filter price calculation logs: grep -E '💰|price|CART_DEBUG' logs/flutter_run.log",
+    "Filter warnings and errors: grep -E '⚠️|❌' logs/flutter_run.log",
+    "Filter specific item data: grep -E 'Item.*menuItemId' logs/flutter_run.log",
+    "Extract only log messages with prices: grep -o '.*priceInfo.*' logs/flutter_run.log",
+    "Count occurrences of specific log patterns: grep -c 'CART_SUMMARY' logs/flutter_run.log",
+    "Search for specific time periods: grep '5:49AM' logs/flutter_run.log",
+    "Extract specific log sections: sed -n '/Processing cart/,/processing complete/p' logs/flutter_run.log",
+    "Follow logs in real-time with highlighting: tail -f logs/flutter_run.log | grep --color=always -E 'CART|ERROR|WARNING'",
+    "Write debug logs using specific prefixes for better filtering: 💰 (price calculations), 🛒 (cart operations), ⚠️ (warnings), ❌ (errors)"
+  ]
+} 

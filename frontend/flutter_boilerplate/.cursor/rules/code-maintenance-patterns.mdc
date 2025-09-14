@@ -1,0 +1,18 @@
+---
+description: 
+globs: 
+---
+# Your rule content
+
+{
+  "description": "Code maintenance patterns and principles for maintaining consistency across the codebase.",
+  "file_patterns": ["lib/**/*.dart"],
+  "principles": [
+    "API Consistency: Follow existing API patterns for parameters, error handling, and return types. Reuse utility methods rather than duplicating functionality.",
+    "Navigation Discipline: Adhere to the app's established navigation architecture and maintain consistent parameter passing between screens.",
+    "Component Economy: Search for existing components before creating new ones. Extend or adapt existing code instead of duplicating.",
+    "Type Integrity: Maintain type consistency across related operations and integrate new types carefully with existing data models.",
+    "Pattern Recognition: Identify and follow established code patterns and apply consistent architecture principles throughout.",
+    "Systemic Analysis: Understand the broader context before implementing changes and map dependencies and relationships before modifying behavior."
+  ]
+}

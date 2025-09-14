@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "440349438432",
+    "project_id": "rms-app-dd875",
+    "storage_bucket": "rms-app-dd875.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:440349438432:android:57f5384c259b5fe1b6bb85",
+        "android_client_info": {
+          "package_name": "com.platter.platter_admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGK0zCqyLnuIHed0IWacsxKdC9QpQQxOY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:440349438432:android:5ec2d70488c1ce66b6bb85",
+        "android_client_info": {
+          "package_name": "com.platter.platter_kitchen"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGK0zCqyLnuIHed0IWacsxKdC9QpQQxOY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:440349438432:android:f48cb28c168d7e4fb6bb85",
+        "android_client_info": {
+          "package_name": "dev.danvickmiller.flutterboilerplate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGK0zCqyLnuIHed0IWacsxKdC9QpQQxOY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

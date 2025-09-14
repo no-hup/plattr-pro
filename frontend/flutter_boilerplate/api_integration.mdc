@@ -1,0 +1,66 @@
+ {
+  "description": "Guide for integrating new APIs using the standardized architecture",
+  "file_patterns": ["lib/**/*.dart"],
+  "guidelines": {
+    "response_handling": [
+      "Use ApiResponseFreezed<T> for all new API integrations (not ApiResponse)",
+      "Always wrap API responses in ApiResponseFreezed<T> for consistent error handling",
+      "Use pattern matching with .when() for handling success/error states elegantly",
+      "Never directly use raw API responses without proper error handling"
+    ],
+    "repository_pattern": [
+      "Create a repository class per API domain (e.g., AuthRepository, ProductRepository)",
+      "Implement the repository as a singleton with factory constructor pattern",
+      "Use safeApiCall helper method with proper type parameters",
+      "Include logging at repository level with descriptive prefixes"
+    ],
+    "api_response_parsing": [
+      "Use ApiResponseParser.parse<T>() to standardize parsing",
+      "Implement proper fromJson methods in model classes with robust null handling",
+      "Handle Firebase callable functions and standard backend responses consistently",
+      "Add proper error logging for failed parsing attempts"
+    ],
+    "implementation_example": [
+      "```dart",
+      "class ProductRepository extends BaseRepository {",
+      "  ProductRepository._internal() : super(DioClient().dio);",
+      "  static final ProductRepository _instance = ProductRepository._internal();",
+      "  factory ProductRepository() => _instance;",
+      "",
+      "  Future<ApiResponseFreezed<ProductList>> getProducts() async {",
+      "    AppLogger.log('🔄 ProductRepo: Fetching products');",
+      "    ",
+      "    return safeApiCall<ProductList>(",
+      "      apiCall: () => _dio.get(ApiConfig.productsEndpoint),",
+      "      fromJson: (json) => ProductList.fromJson(json),",
+      "    );",
+      "  }",
+      "}",
+      "```"
+    ],
+    "ui_integration": [
+      "```dart",
+      "// In UI or BLoC/Provider",
+      "final response = await repository.getProducts();",
+      "",
+      "// Pattern matching with when",
+      "return response.when(",
+      "  success: (data) => ProductListView(products: data.products),",
+      "  error: (message, code, details) {",
+      "    final userMessage = ApiResponseParser.getUserFriendlyMessage(",
+      "      code,",
+      "      message,",
+      "    );",
+      "    return ErrorWidget(message: userMessage);",
+      "  },",
+      ");",
+      "```"
+    ],
+    "error_handling": [
+      "Handle network errors using Dio interceptors when appropriate",
+      "Map backend error codes to user-friendly messages consistently",
+      "Log all API errors with appropriate context information",
+      "Add fallback values for all required fields in model parsing"
+    ]
+  }
+}

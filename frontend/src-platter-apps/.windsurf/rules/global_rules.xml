@@ -1,0 +1,20 @@
+<config>
+  <flutter>
+    <exclusions>
+      <!-- Android exclusion for all Flutter apps -->
+      <path pattern="**/android/**" action="ignore"/>
+      <path pattern="**/build/**" action="ignore"/>
+    </exclusions>
+    
+    <focus>
+      <app name="platter_server" priority="90">
+        <include path="lib/**/*.dart"/>
+        <exclude path="**/test/** unless 'test' in prompt"/>
+      </app>
+      <other-apps name="platter_admin,platter_kitchen" priority="10">
+        <require-keyword>use-admin</require-keyword>
+        <require-keyword>use-kitchen</require-keyword>
+      </other-apps>
+    </focus>
+  </flutter>
+</config>

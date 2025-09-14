@@ -1,0 +1,5 @@
+23rd Jan
+made backend changes for cart response. improved cart calculation logic
+minor FE improvements
+TODO next FE - Unify FE cart object and BE cart object. instead of cartItems list better to observe cart response so that we can mimic FE cart object when api success
+next BE - checkout and order flow

@@ -1,0 +1,134 @@
+---
+description: general coding guidelines fot this flutter project
+globs: lib/**/*.dart
+---
+
+# Your rule content
+
+{
+  "description": "Defines coding conventions and clean code principles for Flutter development.",
+  "file_patterns": ["lib/**/*.dart"],
+  "guidelines": {
+    "core_principles": [
+      "Use null safety in all code.",
+      "Ensure robust error handling using Either type where applicable.",
+      "Follow consistent naming conventions.",
+      "Use modular widget composition and avoid large, monolithic widgets.",
+      "Manage state effectively using ChangeNotifier.",
+      "Use dependency injection with GetIt where applicable.",
+      "Ensure that assets are properly organized and used efficiently."
+    ],
+    "development_practices": [
+      "Always prefer simple solutions.",
+      "Avoid code duplication by checking for similar code and functionality in the codebase.",
+      "Check if any existing functionality can be reused.",
+      "Do not write test cases until specifically asked.",
+      "Only make requested changes or changes that are well understood and related to the request.",
+      "When fixing a bug, do not introduce new patterns or technologies without exhausting options for the existing implementation.",
+      "Keep the codebase clean and organized.",
+      "Organize code logically."
+    ],
+    "refactoring_guidelines": [
+      "When making bigger changes ask if you should create backup files(.bak) before significant code modifications.",
+      "Use these backups as references during code recreation.",
+      "When refactoring, ensure that the original functionality is preserved.",
+      "Compare the new code against the backup file to verify correctness."
+    ],
+    "code_quality_and_formatting": [
+      "Format code using Prettier to maintain a uniform and readable codebase.",
+      "Remove unnecessary console logging and debugging statements from production code.",
+      "Utilize code health tools to assess code complexity and identify areas for improvement."
+    ]
+  }
+}
+
+## Freezed Model Migration Guidelines
+
+When migrating existing model classes to use Freezed for immutability:
+
+1. **Immutability Pattern**: Replace direct property assignments with `copyWith()` method
+   ```dart
+   // Before: model.property = newValue;
+   // After: model = model.copyWith(property: newValue);
+   ```
+
+2. **Required File Setup**:
+   - Add `part 'filename.freezed.dart';` and `part 'filename.g.dart';` directives
+   - Run `dart run build_runner build --delete-conflicting-outputs` after changes
+
+3. **Custom Methods**: Use a private constructor (`const MyClass._();`) to add custom methods
+
+4. **Default Values**: Replace field initialization with `@Default(value)` annotation
+
+5. **Repository Compatibility**: Update repository methods to handle immutable objects
+
+6. **Incremental Approach**: Migrate one class at a time to minimize breaking changes
+
+7. **Testing**: Thoroughly test after migration as equality comparison behavior changes
+
+8. **Serialization**: Ensure `fromJson`/`toJson` methods are properly implemented if needed
+
+## API Response Parsing Guidelines
+
+When handling API responses, especially with Freezed models, follow these guidelines to avoid common issues:
+
+1. **Custom FromJson Methods**: Always implement custom `fromJson` methods for Freezed models to handle null values and type mismatches:
+   ```dart
+   factory MyModel.fromJson(Map<String, dynamic> json) {
+     try {
+       // Sanitize inputs before using generated parser
+       final sanitizedJson = <String, dynamic>{
+         'requiredString': json['requiredString'] as String? ?? '',
+         'requiredInt': json['requiredInt'] is int ? json['requiredInt'] : 0,
+         // Add other fields with appropriate null/type handling
+       };
+       return _$MyModelFromJson(sanitizedJson);
+     } catch (e) {
+       // Log and handle errors
+       return MyModel(...default values...);  // Fallback
+     }
+   }
+   ```
+
+2. **Nested API Structure Handling**: When your API returns nested structures (e.g., `result -> data -> cart`), extract the correct layer before deserialization:
+   ```dart
+   if (json.containsKey('result') && json['result'] is Map<String, dynamic>) {
+     return MyResponse.fromJson(json['result'] as Map<String, dynamic>);
+   }
+   ```
+
+3. **Lessons from Cart Parsing Issues**: 
+   - Required non-nullable fields in Freezed models will cause runtime exceptions if API returns null
+   - Type mismatches (String vs null, int vs null) must be handled explicitly
+   - Always provide fallback values for required fields
+   - Implement robust error handling with try/catch and fallback object creation
+   - Use detailed logging to trace deserialization issues
+
+4. **Null Safety Considerations**:
+   - Prefer nullable parameters in Freezed models (`String?`) for API-bound fields
+   - Use `@Default('')` annotations for required non-nullable fields to ensure safe construction
+   - Implement consistent null checking in UI code with null-aware operators (`?.`, `??`, etc.)
+   - Use conditional property access to prevent null reference exceptions (`response.data?.cart?.items`)
+   - Implement null-aware collection management (e.g., `list?.isEmpty ?? true`)
+   - Choose robust failure paths in business logic that handle `null` gracefully
+   - Use null assertions (`!`) only when you are absolutely certain a value cannot be null
+   - Consider creating utility extension methods for common null-safe operations:
+     ```dart
+     extension NullSafetyExtensions<T> on List<T>? {
+       List<T> get orEmpty => this ?? [];
+       int get safeLength => this?.length ?? 0;
+     }
+     ```
+
+5. **Approach for Robust Parsing**:
+   - Sanitize input JSON before passing to Freezed-generated methods
+   - Provide default values for all required fields
+   - Implement type checking for all fields (e.g., `json['field'] is Type`)
+   - Create fallback objects when errors occur
+   - Log detailed information about parsing failures
+
+6. **Logging Best Practices**: When debugging API parsing issues, use consistent log prefixes:
+   ```dart
+   AppLogger.log('🔄 MODEL_NAME: Starting deserialization');
+   AppLogger.log('❌ MODEL_NAME: Error in parsing: $error');
+   ```

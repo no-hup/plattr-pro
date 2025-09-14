@@ -1,0 +1,19 @@
+workflows:
+  - name: Setup Local Firebase Mock Environment
+    description: |
+      Kills all ports, sets credentials, starts emulators, and loads mock data for local backend development/testing.
+    steps:
+      - name: Kill all ports
+        run: |
+          killall node || true
+          killall dart || true
+          killall python || true
+          lsof -ti:5002 | xargs kill -9 || true
+      - name: Set Google Credentials
+        run: export GOOGLE_APPLICATION_CREDENTIALS="/Users/shauryajaiswal/Desktop/theDev/plattr/src-plattr/secure_stuff/service-account.json"
+      - name: Start Firebase Emulators
+        run: firebase emulators:start --only firestore,functions --debug
+        cwd: /Users/shauryajaiswal/Desktop/theDev/plattr/src-plattr
+      - name: Import Mock Data
+        run: node importMockData.js
+        cwd: /Users/shauryajaiswal/Desktop/theDev/plattr/src-plattr/functions/mock

@@ -1,0 +1,787 @@
+{
+  "customers": {
+    "1234567890": {
+      "phoneNumber": "1234567890",
+      "name": "John Customer",
+      "email": "john@example.com",
+      "createdAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "currentVisit": {
+        "restaurantId": "rest001",
+        "tableId": "table001",
+        "startTime": {
+          "_seconds": 1678901234,
+          "_nanoseconds": 0
+        }
+      },
+      "visits": [
+        {
+          "restaurantId": "rest001",
+          "tableId": "table001",
+          "startTime": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        }
+      ],
+      "preferences": {
+        "favoriteItems": [],
+        "dietaryRestrictions": []
+      }
+    },
+    "9876543210": {
+      "phoneNumber": "9876543210",
+      "name": "Jane Customer",
+      "email": "jane@example.com",
+      "createdAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "visits": [],
+      "preferences": {
+        "favoriteItems": [],
+        "dietaryRestrictions": []
+      }
+    }
+  },
+  "restaurants": {
+    "rest001": {
+      "info": {
+        "name": "The Gourmet Grove",
+        "address": "123 Culinary Lane, Foodville, FV 12345",
+        "phone": "5551234567",
+        "email": "info@gourmetgrove.com",
+        "location": {
+          "_latitude": 40.7128,
+          "_longitude": -74.006
+        }
+      },
+      "menuItems": {
+        "item001": {
+          "menuItemId": "item001",
+          "categoryId": "cat_1_food",
+          "meta": {
+            "name": "Classic Cheeseburger",
+            "description": "Juicy beef patty with melted cheddar cheese",
+            "categoryName": "Burgers",
+            "image": "https://example.com/images/classic-cheeseburger.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 100,
+            "discount": 10,
+            "finalPrice": 90
+          },
+          "variants": [
+            {
+              "id": "variant_burger_size",
+              "name": "Size"
+            }
+          ],
+          "addons": ["addon_burger_fries", "addon_burger_potato_chips"],
+          "nutritionalInfo": {
+            "calories": 650,
+            "protein": 35,
+            "carbs": 40,
+            "fat": 38
+          },
+          "allergenTags": ["dairy", "gluten"],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item002": {
+          "menuItemId": "item002",
+          "categoryId": "cat_2_beverages",
+          "meta": {
+            "name": "Gourmet Coffee",
+            "description": "Rich, aromatic coffee made from freshly ground beans",
+            "categoryName": "Beverages",
+            "image": "https://example.com/images/gourmet-coffee.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 50,
+            "discount": 5,
+            "finalPrice": 45
+          },
+          "variants": [
+            {
+              "id": "variant_temperature_beverage",
+              "name": "Temperature"
+            },
+            {
+              "id": "variant_beverage_size",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_beverage_hazelnut_syrup",
+            "addon_beverage_vanilla_syrup"
+          ],
+          "nutritionalInfo": {
+            "calories": 5,
+            "protein": 0,
+            "carbs": 0,
+            "fat": 0
+          },
+          "allergenTags": [],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item003": {
+          "menuItemId": "item003",
+          "categoryId": "cat_1_food",
+          "meta": {
+            "name": "Veggie Burger",
+            "description": "A delicious plant-based burger",
+            "categoryName": "Burgers",
+            "image": "https://example.com/images/veggie-burger.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 80,
+            "discount": 0,
+            "finalPrice": 80
+          },
+          "variants": [
+            {
+              "id": "variant_burger_size",
+              "name": "Size"
+            }
+          ],
+          "addons": ["addon_burger_fries"],
+          "nutritionalInfo": {
+            "calories": 500,
+            "protein": 20,
+            "carbs": 45,
+            "fat": 15
+          },
+          "allergenTags": ["gluten"],
+          "isInStock": true,
+          "isCustomizable": true
+        }
+      },
+      "categories": {
+        "cat_1_food": {
+          "name": "Burgers",
+          "description": "Delicious handcrafted burgers",
+          "image": "https://example.com/images/burger-category.jpg",
+          "order": 1
+        },
+        "cat_2_beverages": {
+          "name": "Beverages",
+          "description": "Refreshing drinks and hot beverages",
+          "image": "https://example.com/images/beverages-category.jpg",
+          "order": 2
+        }
+      },
+      "variants": {
+        "variant_burger_size": {
+          "id": "variant_burger_size",
+          "meta": {
+            "name": "Burger Size",
+            "description": "Choose your preferred burger size",
+            "categoryAssociatedWith": ["cat_1_food"]
+          },
+          "options": [
+            {
+              "id": "burger_size_regular",
+              "name": "Regular",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "burger_size_large",
+              "name": "Large",
+              "priceInfo": {
+                "basePrice": 20,
+                "finalPrice": 20,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": ["item001", "item003"]
+        },
+        "variant_temperature_beverage": {
+          "id": "variant_temperature_beverage",
+          "meta": {
+            "name": "Temperature",
+            "description": "Choose between hot or cold coffee",
+            "categoryAssociatedWith": ["cat_2_beverages"]
+          },
+          "options": [
+            {
+              "id": "beverage_temp_hot",
+              "name": "Hot",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "beverage_temp_cold",
+              "name": "Cold",
+              "priceInfo": {
+                "basePrice": 5,
+                "finalPrice": 5,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": ["item002"]
+        },
+        "variant_beverage_size": {
+          "id": "variant_beverage_size",
+          "meta": {
+            "name": "Beverage Size",
+            "description": "Choose your preferred coffee size",
+            "categoryAssociatedWith": ["cat_2_beverages"]
+          },
+          "options": [
+            {
+              "id": "beverage_size_regular",
+              "name": "Regular",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "beverage_size_large",
+              "name": "Large",
+              "priceInfo": {
+                "basePrice": 10,
+                "finalPrice": 10,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": ["item002"]
+        }
+      },
+      "tables": {
+        "table001": {
+          "number": "T1",
+          "capacity": 4,
+          "status": "active",
+          "currentOTP": {
+            "code": "123456",
+            "createdAt": {
+              "_seconds": 1678901234,
+              "_nanoseconds": 0
+            },
+            "expiresAt": {
+              "_seconds": 1678901534,
+              "_nanoseconds": 0
+            }
+          },
+          "session": "session001",
+          "occupiedBy": ["1234567890"],
+          "primaryCustomer": {
+            "phoneNumber": "1234567890",
+            "name": "John Customer"
+          },
+          "assignedServerId": "server001",
+          "lastActivity": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "table002": {
+          "number": "T2",
+          "capacity": 6,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "",
+            "createdAt": null,
+            "expiresAt": null
+          },
+          "session": null,
+          "occupiedBy": [],
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          },
+          "assignedServerId": "server002",
+          "lastActivity": null
+        }
+      },
+      "servers": {
+        "server001": {
+          "name": "John Doe",
+          "email": "john.doe@gourmetgrove.com",
+          "phoneNumber": "9876543210",
+          "role": "waiter",
+          "status": "active",
+          "assignedTables": ["table001"],
+          "fcmToken": "",
+          "password": "1234"
+        },
+        "server002": {
+          "name": "Jane Smith",
+          "email": "jane.smith@gourmetgrove.com",
+          "phoneNumber": "9123456780",
+          "role": "waiter",
+          "status": "active",
+          "assignedTables": ["table002"],
+          "fcmToken": "",
+          "password": "2345"
+        },
+        "server003": {
+          "name": "Bob Brown",
+          "email": "bob.brown@gourmetgrove.com",
+          "phoneNumber": "9988776655",
+          "role": "waiter",
+          "status": "inactive",
+          "assignedTables": [],
+          "fcmToken": "",
+          "password": "3456"
+        }
+      },
+      "orders": {
+        "order001": {
+          "orderId": "order001",
+          "restaurantId": "rest001",
+          "tableId": "table001",
+          "status": "pending",
+          "assignedServer": "system",
+          "updatedAt": 1678901234,
+          "carts": [
+            {
+              "status": "pending",
+              "statusHistory": [
+                {
+                  "status": "pending",
+                  "timestamp": {
+                    "_seconds": 1678901234,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "system"
+                }
+              ],
+              "checkoutTime": {
+                "_seconds": 1678901234,
+                "_nanoseconds": 0
+              },
+              "notes": "",
+              "estimatedPrepTime": 12,
+              "assignedTo": null,
+              "items": [
+                {
+                  "menuItemId": "item001",
+                  "menuItem": {
+                    "meta": {
+                      "name": "Classic Cheeseburger",
+                      "description": "Juicy beef patty with melted cheddar cheese",
+                      "image": "https://example.com/images/classic-cheeseburger.jpg",
+                      "categoryName": "Burgers"
+                    }
+                  },
+                  "selectedVariantsDetails": [
+                    {
+                      "id": "variant_burger_size",
+                      "isMandatory": true,
+                      "respectParentDiscount": true,
+                      "selected_variant_id": "burger_size_large",
+                      "selected_variant_name": "Large",
+                      "priceInfo": {
+                        "basePrice": 20,
+                        "finalPrice": 18,
+                        "discount": 10
+                      }
+                    }
+                  ],
+                  "selectedAddonsDetails": [
+                    {
+                      "id": "addon_burger_fries",
+                      "name": "French Fries",
+                      "priceInfo": {
+                        "basePrice": 20,
+                        "finalPrice": 18,
+                        "discount": 10
+                      },
+                      "respectParentDiscount": true
+                    }
+                  ],
+                  "priceInfo": {
+                    "itemBasePrice": 100,
+                    "itemVariantBasePrice": 20,
+                    "itemAddonBasePrice": 20,
+                    "itemFinalPrice": 126,
+                    "discount": 10,
+                    "totalBasePrice": 140,
+                    "totalVariantBasePrice": 20,
+                    "totalAddonBasePrice": 20,
+                    "finalPrice": 126
+                  },
+                  "quantity": 1,
+                  "status": "pending",
+                  "statusUpdatedAt": {
+                    "_seconds": 1678901234,
+                    "_nanoseconds": 0
+                  },
+                  "statusUpdatedBy": "system",
+                  "cartItemId": 1
+                }
+              ],
+              "priceInfo": {
+                "basePrice": 140,
+                "finalPrice": 126,
+                "totalDiscount": 10,
+                "totalDiscountAmount": 14,
+                "totalVariantBasePrice": 20,
+                "totalAddonBasePrice": 20
+              }
+            }
+          ],
+          "items": [
+            {
+              "menuItemId": "item001",
+              "menuItem": {
+                "meta": {
+                  "name": "Classic Cheeseburger",
+                  "description": "Juicy beef patty with melted cheddar cheese",
+                  "image": "https://example.com/images/classic-cheeseburger.jpg",
+                  "categoryName": "Burgers"
+                }
+              },
+              "selectedVariantsDetails": [
+                {
+                  "id": "variant_burger_size",
+                  "isMandatory": true,
+                  "respectParentDiscount": true,
+                  "selected_variant_id": "burger_size_large",
+                  "selected_variant_name": "Large",
+                  "priceInfo": {
+                    "basePrice": 20,
+                    "finalPrice": 18,
+                    "discount": 10
+                  }
+                }
+              ],
+              "selectedAddonsDetails": [
+                {
+                  "id": "addon_burger_fries",
+                  "name": "French Fries",
+                  "priceInfo": {
+                    "basePrice": 20,
+                    "finalPrice": 18,
+                    "discount": 10
+                  },
+                  "respectParentDiscount": true
+                }
+              ],
+              "priceInfo": {
+                "itemBasePrice": 100,
+                "itemVariantBasePrice": 20,
+                "itemAddonBasePrice": 20,
+                "itemFinalPrice": 126,
+                "discount": 10,
+                "totalBasePrice": 140,
+                "totalVariantBasePrice": 20,
+                "totalAddonBasePrice": 20,
+                "finalPrice": 126
+              },
+              "quantity": 1,
+              "status": "pending",
+              "statusUpdatedAt": {
+                "_seconds": 1678901234,
+                "_nanoseconds": 0
+              },
+              "statusUpdatedBy": "system",
+              "cartItemId": 1
+            }
+          ],
+          "priceInfo": {
+            "basePrice": 140,
+            "finalPrice": 126,
+            "totalDiscount": 10,
+            "totalDiscountAmount": 14,
+            "totalAddonBasePrice": 20,
+            "totalVariantBasePrice": 20
+          },
+          "timestamps": {
+            "createdAt": {
+              "_seconds": 1678901234,
+              "_nanoseconds": 0
+            },
+            "updatedAt": {
+              "_seconds": 1678905678,
+              "_nanoseconds": 0
+            }
+          },
+          "paymentInfo": {
+            "paymentStatus": "unpaid",
+            "paymentMethod": "cash",
+            "transactionId": null
+          }
+        }
+      },
+      "addons": {
+        "addon_burger_fries": {
+          "meta": {
+            "name": "French Fries",
+            "description": "Crispy golden fries",
+            "categoryAssociatedWith": ["cat_1_food"]
+          },
+          "priceInfo": {
+            "basePrice": 20,
+            "discount": 0,
+            "finalPrice": 20
+          },
+          "isMandatory": false,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": ["item001"],
+          "isInStock": true
+        },
+        "addon_burger_potato_chips": {
+          "meta": {
+            "name": "Potato Chips",
+            "description": "Crunchy house-made potato chips",
+            "categoryAssociatedWith": ["cat_1_food"]
+          },
+          "priceInfo": {
+            "basePrice": 10,
+            "discount": 0,
+            "finalPrice": 10
+          },
+          "isMandatory": false,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": ["item001"],
+          "isInStock": true
+        },
+        "addon_beverage_hazelnut_syrup": {
+          "meta": {
+            "name": "Hazelnut Syrup",
+            "description": "Rich hazelnut flavored syrup",
+            "categoryAssociatedWith": ["cat_2_beverages"]
+          },
+          "priceInfo": {
+            "basePrice": 5,
+            "discount": 0,
+            "finalPrice": 5
+          },
+          "isMandatory": false,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": ["item002"],
+          "isInStock": true
+        },
+        "addon_beverage_vanilla_syrup": {
+          "meta": {
+            "name": "Vanilla Syrup",
+            "description": "Sweet vanilla flavored syrup",
+            "categoryAssociatedWith": ["cat_2_beverages"]
+          },
+          "priceInfo": {
+            "basePrice": 5,
+            "discount": 0,
+            "finalPrice": 5
+          },
+          "isMandatory": false,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": ["item002"],
+          "isInStock": true
+        }
+      },
+      "carts": {
+        "table001": {
+          "restaurantId": "rest001",
+          "tableId": "table001",
+          "sessionId": "session001",
+          "items": [
+            {
+              "cartItemId": 1,
+              "menuItemId": "item001",
+              "quantity": 2,
+              "menuItem": {
+                "meta": {
+                  "name": "Classic Cheeseburger",
+                  "description": "Juicy beef patty with melted cheddar cheese",
+                  "image": "https://example.com/images/classic-cheeseburger.jpg",
+                  "categoryName": "Burgers"
+                },
+                "categoryId": "cat_1_food",
+                "nutritionalInfo": {
+                  "calories": 650,
+                  "protein": 35,
+                  "carbs": 40,
+                  "fat": 38
+                },
+                "allergenTags": ["dairy", "gluten"],
+                "isCustomizable": true,
+                "isInStock": true
+              },
+              "selectedVariantsDetails": [
+                {
+                  "id": "variant_burger_size",
+                  "isMandatory": true,
+                  "respectParentDiscount": true,
+                  "selected_variant_id": "burger_size_large",
+                  "selected_variant_name": "Large",
+                  "priceInfo": {
+                    "basePrice": 20,
+                    "finalPrice": 18,
+                    "discount": 10
+                  }
+                }
+              ],
+              "selectedAddonsDetails": [
+                {
+                  "id": "addon_burger_fries",
+                  "name": "French Fries",
+                  "priceInfo": {
+                    "basePrice": 20,
+                    "finalPrice": 18,
+                    "discount": 10
+                  },
+                  "respectParentDiscount": true
+                }
+              ],
+              "priceInfo": {
+                "itemBasePrice": 100,
+                "itemVariantBasePrice": 20,
+                "itemAddonBasePrice": 20,
+                "itemFinalPrice": 126,
+                "discount": 10,
+                "totalBasePrice": 140,
+                "totalVariantBasePrice": 20,
+                "totalAddonBasePrice": 20,
+                "finalPrice": 126
+              },
+              "status": "pending",
+              "statusUpdatedAt": {
+                "_seconds": 1678901234,
+                "_nanoseconds": 0
+              },
+              "statusUpdatedBy": "system"
+            }
+          ],
+          "priceInfo": {
+            "basePrice": 140,
+            "finalPrice": 126,
+            "totalDiscount": 10,
+            "totalDiscountAmount": 14,
+            "totalAddonBasePrice": 20,
+            "totalVariantBasePrice": 20
+          },
+          "lastUpdated": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        }
+      },
+      "kitchens": {
+        "kitchen1": {
+          "chefs": {
+            "chef1": {
+              "name": "John Doe",
+              "role": "Head Chef",
+              "fcmToken": "fcm_token_here"
+            }
+          }
+        },
+        "kitchen2": {
+          "chefs": {
+            "chef2": {
+              "name": "Jane Smith",
+              "role": "Sous Chef",
+              "fcmToken": "fcm_token_here"
+            }
+          }
+        }
+      },
+      "sessions": {
+        "session001": {
+          "entity": "table",
+          "tableId": "table001",
+          "primaryUserId": "1234567890",
+          "users": ["1234567890"],
+          "status": "active",
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "expiresAt": {
+            "_seconds": 2767225600,
+            "_nanoseconds": 0
+          }
+        },
+        "session002": {
+          "entity": "table",
+          "tableId": "table002",
+          "primaryUserId": "9876543210",
+          "users": ["9876543210"],
+          "status": "active",
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "expiresAt": {
+            "_seconds": 1735689600,
+            "_nanoseconds": 0
+          }
+        },
+        "session003": {
+          "entity": "server",
+          "serverId": "server001",
+          "status": "active",
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "expiresAt": {
+            "_seconds": 1735689600,
+            "_nanoseconds": 0
+          }
+        },
+        "session004": {
+          "entity": "server",
+          "serverId": "server002",
+          "status": "active",
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "expiresAt": {
+            "_seconds": 1735689600,
+            "_nanoseconds": 0
+          }
+        }
+      }
+    }
+  }
+}

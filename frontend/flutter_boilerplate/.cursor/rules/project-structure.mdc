@@ -1,0 +1,17 @@
+---
+description: project structure
+globs: 
+---
+{
+  "description": "Defines the folder structure and file organization for this Flutter project.",
+  "file_patterns": ["lib/**/*"],
+  "guidelines": [
+    "Ensure that the project follows the established folder structure.",
+    "New feature folders should follow the pattern: lib/pages/featureName/",
+    "All state files should be stored inside their respective feature folders as *_state.dart.",
+    "Repositories should be placed inside their respective feature folders as *_repository.dart.",
+    "All routing configurations should be managed inside router.dart and app_routes.dart.",
+    "this flutter project has android, windows, ios and linux folders but they will never be used because they got created by mistake so you can exclude them from context. we are only building for web so lib is the main folder where all my code is",
+    "there is a docs_important folder in the lib folder. this flder has the sample responses of my BE apis, mock data of my sample firestore db to understand the scema of my backend DB structure. this folder also have sume curls that we will be using to hit apis.
+  ]
+}
