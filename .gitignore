@@ -1,0 +1,31 @@
+# General
+.DS_Store
+*.log
+.env*
+
+# VS Code
+.vscode/launch.json
+.vscode/tasks.json
+
+# Node.js
+backend/src-plattr/node_modules
+backend/src-plattr/npm-debug.log
+
+# Flutter/Dart
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/*.iml
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/App.framework
+**/ios/Flutter/engine
+**/ios/Flutter/flutter_assets
+**/ios/Runner/GeneratedPluginRegistrant.h
+**/ios/Runner/GeneratedPluginRegistrant.m
+**/ios/Runner.xcworkspace
+**/ios/Runner.xcodeproj/project.xcworkspace
+**/ios/Runner.xcodeproj/xcshareddata/
+**/ios/Flutter/ephemeral
+**/ios/ServiceDefinitions.json

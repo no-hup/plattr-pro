@@ -1,0 +1,17 @@
+---
+description: best practises - flutter
+globs: 
+---
+{
+  "description": "Defines best practices for Flutter projects using ChangeNotifier state management.",
+  "file_patterns": ["**/*.dart"],
+  "guidelines": [
+    "Adapt to existing project architecture while maintaining clean code principles.",
+    "Use Flutter 3.x features and Material 3 design.",
+    "Implement clean architecture with ChangeNotifier for state management.",
+    "Follow proper state management principles with ChangeNotifier in *_state.dart.",
+    "Ensure robust error handling.",
+    "Follow platform-specific design guidelines.",
+    "use freezed for models and ui states"
+  ]
+}

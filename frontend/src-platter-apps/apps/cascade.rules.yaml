@@ -1,0 +1,37 @@
+# Cascade Agent Guidance Rules (formerly .windsurfrules.yaml)
+rules:
+  - description: "Always adhere to Dart and Flutter best practices for code structure and naming conventions."
+    applies_to: ["*.dart"]
+    severity: "high"
+
+  - description: "API sample response files should use the .md extension; avoid using .js for these files."
+    applies_to: ["*Sample*"]
+    severity: "medium"
+
+  - description: "Do not automatically start Firebase emulators; their startup must be manually triggered by the user."
+    applies_to: ["*"]
+    severity: "critical"
+
+  - description: "Handle small file operations (creation, deletion, modification) automatically without seeking user consent. Reserve confirmation prompts for significant or potentially destructive actions."
+    applies_to: ["*"]
+    severity: "medium"
+
+  - description: "Before implementing new functionality, check for existing code that can be reused to avoid duplication."
+    applies_to: ["*"]
+    severity: "high"
+
+  - description: "When addressing errors, avoid focusing solely on the error logs. Consider potential issues in the original solution and revisit the design if necessary."
+    applies_to: ["*"]
+    severity: "high"
+
+  - description: "Write code that is minimal, modular, readable, and maintainable, reflecting the practices of an experienced developer."
+    applies_to: ["*"]
+    severity: "high"
+
+  - description: "For minor tasks like creating or deleting files, proceed without asking for explicit permission to save time and reduce usage costs."
+    applies_to: ["*"]
+    severity: "medium"
+
+  - description: "After refactoring, ensure that outdated or replaced code is removed to maintain a clean codebase."
+    applies_to: ["*"]
+    severity: "high"

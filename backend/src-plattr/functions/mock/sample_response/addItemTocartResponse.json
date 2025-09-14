@@ -1,0 +1,86 @@
+{
+  "result": {
+    "message": "Item added to cart successfully.",
+    "status": "success",
+    "data": {
+      "cart": {
+        "lastUpdated": { "_seconds": 1741040616, "_nanoseconds": 535000000 },
+        "priceInfo": {
+          "basePrice": 240,
+          "finalPrice": 216,
+          "totalDiscount": 10,
+          "totalDiscountAmount": 24,
+          "totalAddonBasePrice": 40,
+          "totalVariantBasePrice": 0
+        },
+        "restaurantId": "rest001",
+        "items": [
+          {
+            "menuItemId": "item001",
+            "menuItem": {
+              "nutritionalInfo": {
+                "carbs": 40,
+                "protein": 35,
+                "fat": 38,
+                "calories": 650
+              },
+              "priceInfo": {
+                "discount": 10,
+                "finalPrice": 90,
+                "basePrice": 100
+              },
+              "addons": ["addon_burger_fries", "addon_burger_potato_chips"],
+              "isCustomizable": true,
+              "allergenTags": ["dairy", "gluten"],
+              "meta": {
+                "image": "https://example.com/images/classic-cheeseburger.jpg",
+                "name": "Classic Cheeseburger",
+                "description": "Juicy beef patty with melted cheddar cheese",
+                "categoryName": "Burgers"
+              },
+              "isInStock": true,
+              "variants": [{ "id": "variant_burger_size", "name": "Size" }],
+              "categoryId": "cat_1_food",
+              "menuItemId": "item001"
+            },
+            "selectedVariantsDetails": [
+              {
+                "id": "variant_burger_size",
+                "isMandatory": true,
+                "respectParentDiscount": true,
+                "selected_variant_id": "burger_size_regular",
+                "selected_variant_name": "Regular",
+                "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+              }
+            ],
+            "selectedAddonsDetails": [
+              {
+                "id": "addon_burger_fries",
+                "name": "French Fries",
+                "priceInfo": {
+                  "discount": 0,
+                  "finalPrice": 20,
+                  "basePrice": 20
+                },
+                "respectParentDiscount": true
+              }
+            ],
+            "quantity": 2,
+            "priceInfo": {
+              "itemBasePrice": 100,
+              "itemVariantBasePrice": 0,
+              "itemAddonBasePrice": 20,
+              "itemFinalPrice": 108,
+              "discount": 10,
+              "totalBasePrice": 240,
+              "totalVariantBasePrice": 0,
+              "totalAddonBasePrice": 40,
+              "finalPrice": 216
+            },
+            "cartItemId": 1
+          }
+        ]
+      }
+    }
+  }
+}

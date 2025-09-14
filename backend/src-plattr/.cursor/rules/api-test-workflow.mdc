@@ -1,0 +1,63 @@
+---
+description: instruction for how to validate the cloud funcitons using mock data
+globs: 
+---
+# API Testing Guidelines
+
+## Purpose
+Ensure all API changes are properly tested against the workflow test file to maintain API stability and consistency.
+
+## When to Apply
+Apply these guidelines whenever modifying:
+- Cloud functions that expose API endpoints
+- Feature flags that affect API behavior
+- Response structures or error handling
+- API documentation or test files
+
+## Guidelines
+
+### 1. WORKFLOW VERIFICATION
+Always consult the `API_WORKFLOW_TEST.md` file to understand the expected behavior and test flow for affected endpoints. Run the documented curl commands to verify your changes maintain compatibility.
+
+### 2. FEATURE FLAG TESTING
+For endpoints with feature flag dependencies, test both enabled and disabled states to ensure proper behavior in all configurations.
+
+### 3. ERROR HANDLING VALIDATION
+Verify that error responses follow the established format and include appropriate error messages from the ErrorMessages singleton.
+
+### 4. RESPONSE STRUCTURE CONSISTENCY
+Maintain consistent response structures across all endpoints. Any changes to response formats must be documented in `API_WORKFLOW_TEST.md`.
+
+### 5. TEST FILE MAINTENANCE
+If your changes affect endpoint behavior, update the `API_WORKFLOW_TEST.md` file with:
+- Modified curl commands if request format changes
+- Updated expected responses
+- New verification points for changed behavior
+- Additional test cases for new functionality
+
+### CODE ANALYSIS BEFORE MODIFICATION
+When encountering errors or unexpected behavior:
+1. ALWAYS examine the relevant source code first
+2. Identify required parameters and function signatures
+3. Understand error handling patterns
+4. Only then suggest modifications or solutions
+
+### ERROR INVESTIGATION PROTOCOL
+When an API returns an error:
+1. Request to see the implementation code if not already available
+2. Trace the error through the codebase
+3. Check for environment-specific requirements (e.g., Firebase emulator settings)
+4. Verify all required parameters are correctly formatted
+5. Look for recent changes that might have affected the functionality
+
+### 6. SEQUENTIAL DEPENDENCY AWARENESS
+Some tests in the workflow depend on previous steps (e.g., adding items before checking cart). Respect these dependencies when testing changes.
+
+### 7. DOCUMENTATION FIRST
+Before implementing significant API changes, update the `API_WORKFLOW_TEST.md` file first to serve as a specification for the implementation.
+
+### 8. SANITIZATION VERIFICATION
+Ensure all responses are properly sanitized using the appropriate utility functions (e.g., sanitizeCart for cart-related endpoints).
+
+## Remember
+The `API_WORKFLOW_TEST.md` file serves as both documentation and a regression test suite. Keeping it updated is essential for maintaining API stability. 

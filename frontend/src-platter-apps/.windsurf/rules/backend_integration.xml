@@ -1,0 +1,16 @@
+<backend-config>
+  <integration>
+    <alias name="plattr_be" path="./plattr_be"/>
+    <access-type>read-only</access-type>
+    <allowed-actions>
+      <reference>true</reference>
+      <schema-lookup>true</schema-lookup>
+      <edit requires="edit-be">true</edit>
+    </allowed-actions>
+    
+    <key-files>
+      <schema path="plattr_be/functions/**/*.json"/>
+      <response-models path="plattr_be/core/models/**/*.js"/>
+    </key-files>
+  </integration>
+</backend-config>

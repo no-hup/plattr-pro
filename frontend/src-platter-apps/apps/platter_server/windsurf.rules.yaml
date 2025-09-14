@@ -1,0 +1,18 @@
+# Windsurf Rule: Auto-run API Parsing Tests on API Changes
+# This rule will automatically run the API parsing test suite whenever any API-related Dart file changes.
+
+rules:
+  - name: Run API Parsing Test on API Change
+    description: |
+      Whenever any Dart file in lib/network/ or pages/*/repository/ is changed (added, modified, deleted),
+      automatically run the API parsing test suite to validate backend contract and integration.
+    triggers:
+      - type: file_change
+        paths:
+          - lib/network/**/*.dart
+          - lib/pages/**/repository/**/*.dart
+    actions:
+      - type: run_command
+        command: flutter test test/api_parsing_test.dart
+        cwd: apps/platter_server
+        notify_on_failure: true

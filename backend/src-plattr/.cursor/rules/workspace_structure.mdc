@@ -1,0 +1,71 @@
+---
+alwaysApply: true
+---
+
+Monorepo workspace structure (authoritative paths for Cursor and terminal commands)
+
+Root
+- /Users/shauryajaiswal/Desktop/dev/plattr-pro
+
+Backend (Node.js Firebase functions + emulator configs)
+- Project root: /Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr
+  - Always cd here for ANY backend task (npm scripts, firebase emulators, node scripts)
+  - Firebase config: backend/src-plattr/firebase.json
+  - Service account: backend/src-plattr/secure_stuff/service-account.json
+  - Top-level package.json (contains import-mock script): backend/src-plattr/package.json
+  - Cloud Functions codebase: backend/src-plattr/functions
+    - package.json (functions deps): backend/src-plattr/functions/package.json
+    - Entry: backend/src-plattr/functions/index.js
+    - Admin init: backend/src-plattr/functions/admin/admin.js
+    - Mock data + importer:
+      - backend/src-plattr/functions/mock/mockData.json
+      - backend/src-plattr/functions/mock/importMockData.js
+
+Backend emulator commands
+- Start emulators (Terminal 1):
+  1) cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr
+  2) export GOOGLE_APPLICATION_CREDENTIALS="/Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr/secure_stuff/service-account.json"
+  3) firebase emulators:start --only firestore,functions --debug
+
+- Import mock data (Terminal 2):
+  - Preferred (npm script defined in backend/src-plattr/package.json):
+    cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr && npm run import-mock
+  - Direct (no cross-env needed on macOS):
+    cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr && NODE_ENV=development FUNCTIONS_EMULATOR=true FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node functions/mock/importMockData.js
+
+Backend emulator ports (from backend/src-plattr/firebase.json)
+- Firestore: 127.0.0.1:8080
+- Functions: 127.0.0.1:5002
+- Emulator UI: 127.0.0.1:4001
+
+Important gotchas (backend)
+- Do NOT cd to backend/ for backend ops. Use backend/src-plattr/.
+- FIRESTORE_EMULATOR_HOST should be 127.0.0.1:8080 to match firebase.json.
+- The Environment.js helper may set a different default (8081) if env var is absent. Always override via env: FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 when running scripts.
+
+Frontend projects (Flutter)
+- Consumer app: /Users/shauryajaiswal/Desktop/dev/plattr-pro/frontend/flutter_boilerplate
+- Admin app: /Users/shauryajaiswal/Desktop/dev/plattr-pro/frontend/src-platter-apps/apps/platter_admin
+- Kitchen app: /Users/shauryajaiswal/Desktop/dev/plattr-pro/frontend/src-platter-apps/apps/platter_kitchen
+- Server app: /Users/shauryajaiswal/Desktop/dev/plattr-pro/frontend/src-platter-apps/apps/platter_server
+
+Path-resolution rules for this workspace
+- Backend path anchors used by Cursor:
+  - Backend root (commands): backend/src-plattr
+  - Functions code: backend/src-plattr/functions
+  - Mock importer: backend/src-plattr/functions/mock/importMockData.js
+- Always prefer absolute paths in tool calls. Example absolute cd:
+  cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr
+
+Common commands (copy-paste ready)
+- Start emulators:
+  cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr && export GOOGLE_APPLICATION_CREDENTIALS="/Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr/secure_stuff/service-account.json" && firebase emulators:start --only firestore,functions --debug
+
+- Import mock data:
+  cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr && npm run import-mock
+
+If npm script not available or cross-env missing, use:
+  cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr && NODE_ENV=development FUNCTIONS_EMULATOR=true FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node functions/mock/importMockData.js
+
+- Start consumer frontend (Flutter web server):
+  cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/frontend/flutter_boilerplate && flutter pub get && flutter run -d web-server --web-port 5173 --web-hostname 127.0.0.1

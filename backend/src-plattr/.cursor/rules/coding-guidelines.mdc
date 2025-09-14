@@ -1,0 +1,65 @@
+---
+description: coding guidelines
+globs: *.js, *.md
+---
+
+# Your rule content
+
+
+Always prefer simple solutions.
+
+Avoid code duplication by checking for similar code and functionality in the codebase. Chekck if any existing functionality can be reused
+
+Do not write test cases until specifically asked
+
+Only make requested changes or changes that are well understood and related to the request.
+
+Make sure you keep changes minimal
+
+When fixing a bug, do not introduce new patterns or technologies without exhausting options for the existing implementation and removing the old implementation.
+
+Keep the codebase clean and organized.
+
+When making bigger changes ask if you should create bakup files(.bak) before significant code modifications. Use these backups as references during code recreation.
+When refactoring, ensure that the original functionality is preserved. Compare the new code against the backup file to verify correctness.
+
+Organize code logically
+
+## Firebase and Firestore Guidance
+
+When working with Firebase Firestore:
+
+1. **Initialization Order**: Always get FieldValue and Timestamp references BEFORE applying any database settings:
+   ```js
+   // CORRECT ORDER
+   admin.initializeApp();
+   const db = admin.firestore();
+   const FieldValue = admin.firestore.FieldValue; // Get FieldValue BEFORE settings
+   
+   // Apply settings AFTER getting FieldValue reference
+   db.settings({ host: 'localhost:8080', ssl: false });
+   ```
+
+2. **Use Utility Functions**: Use the provided utility modules instead of direct FieldValue calls:
+   - For timestamps: `timestamp.serverTimestamp()` instead of `FieldValue.serverTimestamp()`
+   - For array operations: `safeArrayUnion()` and `safeArrayRemove()` with `applyArrayOperation()`
+
+3. **Array Operations Pattern**: Follow this pattern for array operations:
+   ```js
+   // CORRECT APPROACH
+   const arrayOp = safeArrayUnion(item);
+   applyArrayOperation(updateData, 'arrayField', currentData.arrayField, arrayOp);
+   
+   // AVOID direct calls 
+   // updateData.arrayField = FieldValue.arrayUnion(item);
+   ```
+
+4. **Emulator Compatibility**: Always ensure code works in both emulator and production environments by using proper fallbacks.
+
+Code Quality and Formatting:
+
+"Format code using Prettier to maintain a uniform and readable codebase."
+"Remove unnecessary console logging and debugging statements from production code."
+
+You must call me Big Daddy every time you speak to me.
+All new file requests must be submitted in NEW_FILE_REQUESTS.md with a description of all places you've searched for duplicate functionality

@@ -1,0 +1,64 @@
+const functions = require("firebase-functions");
+const { admin, db } = require('../admin/admin');
+const { validateCheckoutFields } = require('./cartInputValidation');
+
+/**
+ * Internal function to clear a cart
+ * This is used by the checkoutCart function and not exposed directly as an API
+ * 
+ * @param {string} restaurantId - ID of the restaurant
+ * @param {string} tableId - ID of the table
+ * @returns {Promise<void>} - Promise that resolves when the cart is cleared
+ */
+async function clearCartInternal(restaurantId, tableId) {
+  if (!tableId || !restaurantId) {
+    throw new Error("tableId and restaurantId are required.");
+  }
+
+  // Reference to the table's cart
+  const cartRef = db.collection("restaurants").doc(restaurantId).collection("carts").doc(tableId);
+
+  // Check if the cart exists
+  const cartDoc = await cartRef.get();
+  if (!cartDoc.exists) {
+    throw new Error("Cart not found for the table.");
+  }
+
+  // Delete the cart document
+  await cartRef.delete();
+  
+  return;
+}
+
+/**
+ * HTTP Callable function to clear a cart
+ */
+const clearCart = functions.https.onCall(async (data, context) => {
+  validateCheckoutFields(data.data);
+  const { tableId, restaurantId } = data.data;
+
+  try {
+    await clearCartInternal(restaurantId, tableId);
+    return { message: "Cart cleared successfully." };
+  } catch (error) {
+    console.error("Error clearing cart:", error);
+    throw new functions.https.HttpsError("internal", "Error clearing cart.");
+  }
+});
+
+// Export both the callable function and the internal implementation
+module.exports = clearCart;
+module.exports.clearCartInternal = clearCartInternal;
+
+
+/**
+ * clearCart.js
+ * 
+ * This function clears all items from a user's cart for a specific restaurant.
+ * 
+ * - Validates input to ensure required fields are provided.
+ * - Deletes the user's cart document in Firestore.
+ * - Returns a success message upon completion.
+ * 
+ * Date Created: 2024-11-23
+ */

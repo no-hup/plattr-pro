@@ -1,0 +1,16 @@
+---
+description: 
+globs: 
+---
+{
+  "description": "Defines best practices for Flutter UI components and widget development.",
+  "file_patterns": ["lib/pages/**/*.dart", "lib/widgets/**/*.dart"],
+  "guidelines": [
+    "Keep widgets small and focused.",
+    "Use const constructors where possible.",
+    "Implement proper widget keys to avoid unnecessary rebuilds.",
+    "Follow clean layout principles to ensure maintainability.",
+    "Optimize widget lifecycle methods to prevent performance issues.",
+    "try to keep less nesting of widgets and prefer flat view hierarchy whenever relevant"
+  ]
+}

@@ -1,0 +1,370 @@
+{
+  "result": {
+      "categories": [
+          {
+              "id": "cat_1_food",
+              "image": "https://example.com/images/burger-category.jpg",
+              "name": "Burgers",
+              "description": "Delicious handcrafted burgers",
+              "order": 1
+          },
+          {
+              "id": "cat_2_beverages",
+              "image": "https://example.com/images/beverages-category.jpg",
+              "name": "Beverages",
+              "description": "Refreshing drinks and hot beverages",
+              "order": 2
+          }
+      ],
+      "menuItems": {
+          "cat_1_food": [
+              {
+                  "menuItemId": "item001",
+                  "nutritionalInfo": {
+                      "carbs": 40,
+                      "protein": 35,
+                      "fat": 38,
+                      "calories": 650
+                  },
+                  "priceInfo": {
+                      "discount": 10,
+                      "finalPrice": 90,
+                      "basePrice": 100
+                  },
+                  "addons": [
+                      {
+                          "id": "addon_burger_fries",
+                          "priceInfo": {
+                              "discount": 0,
+                              "finalPrice": 20,
+                              "basePrice": 20
+                          },
+                          "meta": {
+                              "name": "French Fries",
+                              "description": "Crispy golden fries",
+                              "categoryAssociatedWith": [
+                                  "cat_1_food"
+                              ]
+                          },
+                          "respectParentDiscount": true,
+                          "isInStock": true,
+                          "itemsAssociatedWith": [
+                              "item001"
+                          ],
+                          "isMandatory": false
+                      },
+                      {
+                          "id": "addon_burger_potato_chips",
+                          "priceInfo": {
+                              "discount": 0,
+                              "finalPrice": 10,
+                              "basePrice": 10
+                          },
+                          "meta": {
+                              "name": "Potato Chips",
+                              "description": "Crunchy house-made potato chips",
+                              "categoryAssociatedWith": [
+                                  "cat_1_food"
+                              ]
+                          },
+                          "respectParentDiscount": true,
+                          "isInStock": true,
+                          "itemsAssociatedWith": [
+                              "item001"
+                          ],
+                          "isMandatory": false
+                      }
+                  ],
+                  "isCustomizable": true,
+                  "allergenTags": [
+                      "dairy",
+                      "gluten"
+                  ],
+                  "meta": {
+                      "image": "https://example.com/images/classic-cheeseburger.jpg",
+                      "name": "Classic Cheeseburger",
+                      "description": "Juicy beef patty with melted cheddar cheese",
+                      "categoryName": "Burgers"
+                  },
+                  "isInStock": true,
+                  "variants": [
+                      {
+                          "id": "variant_burger_size",
+                          "meta": {
+                              "name": "Burger Size",
+                              "description": "Choose your preferred burger size",
+                              "categoryAssociatedWith": [
+                                  "cat_1_food"
+                              ]
+                          },
+                          "options": [
+                              {
+                                  "id": "burger_size_regular",
+                                  "name": "Regular",
+                                  "priceInfo": {
+                                      "basePrice": 0,
+                                      "finalPrice": 0,
+                                      "discount": 0
+                                  }
+                              },
+                              {
+                                  "id": "burger_size_large",
+                                  "name": "Large",
+                                  "priceInfo": {
+                                      "basePrice": 20,
+                                      "finalPrice": 20,
+                                      "discount": 0
+                                  }
+                              }
+                          ],
+                          "respectParentDiscount": true,
+                          "itemsAssociatedWith": [
+                              "item001",
+                              "item003"
+                          ],
+                          "isMandatory": true,
+                          "name": "Size"
+                      }
+                  ],
+                  "categoryId": "cat_1_food"
+              },
+              {
+                  "menuItemId": "item003",
+                  "nutritionalInfo": {
+                      "carbs": 45,
+                      "protein": 20,
+                      "fat": 15,
+                      "calories": 500
+                  },
+                  "priceInfo": {
+                      "discount": 0,
+                      "finalPrice": 80,
+                      "basePrice": 80
+                  },
+                  "addons": [
+                      {
+                          "id": "addon_burger_fries",
+                          "priceInfo": {
+                              "discount": 0,
+                              "finalPrice": 20,
+                              "basePrice": 20
+                          },
+                          "meta": {
+                              "name": "French Fries",
+                              "description": "Crispy golden fries",
+                              "categoryAssociatedWith": [
+                                  "cat_1_food"
+                              ]
+                          },
+                          "respectParentDiscount": true,
+                          "isInStock": true,
+                          "itemsAssociatedWith": [
+                              "item001"
+                          ],
+                          "isMandatory": false
+                      }
+                  ],
+                  "isCustomizable": true,
+                  "allergenTags": [
+                      "gluten"
+                  ],
+                  "meta": {
+                      "image": "https://example.com/images/veggie-burger.jpg",
+                      "name": "Veggie Burger",
+                      "description": "A delicious plant-based burger",
+                      "categoryName": "Burgers"
+                  },
+                  "isInStock": true,
+                  "variants": [
+                      {
+                          "id": "variant_burger_size",
+                          "meta": {
+                              "name": "Burger Size",
+                              "description": "Choose your preferred burger size",
+                              "categoryAssociatedWith": [
+                                  "cat_1_food"
+                              ]
+                          },
+                          "options": [
+                              {
+                                  "id": "burger_size_regular",
+                                  "name": "Regular",
+                                  "priceInfo": {
+                                      "basePrice": 0,
+                                      "finalPrice": 0,
+                                      "discount": 0
+                                  }
+                              },
+                              {
+                                  "id": "burger_size_large",
+                                  "name": "Large",
+                                  "priceInfo": {
+                                      "basePrice": 20,
+                                      "finalPrice": 20,
+                                      "discount": 0
+                                  }
+                              }
+                          ],
+                          "respectParentDiscount": true,
+                          "itemsAssociatedWith": [
+                              "item001",
+                              "item003"
+                          ],
+                          "isMandatory": true,
+                          "name": "Size"
+                      }
+                  ],
+                  "categoryId": "cat_1_food"
+              }
+          ],
+          "cat_2_beverages": [
+              {
+                  "menuItemId": "item002",
+                  "nutritionalInfo": {
+                      "carbs": 0,
+                      "protein": 0,
+                      "fat": 0,
+                      "calories": 5
+                  },
+                  "priceInfo": {
+                      "discount": 5,
+                      "finalPrice": 45,
+                      "basePrice": 50
+                  },
+                  "addons": [
+                      {
+                          "id": "addon_beverage_hazelnut_syrup",
+                          "priceInfo": {
+                              "discount": 0,
+                              "finalPrice": 5,
+                              "basePrice": 5
+                          },
+                          "meta": {
+                              "name": "Hazelnut Syrup",
+                              "description": "Rich hazelnut flavored syrup",
+                              "categoryAssociatedWith": [
+                                  "cat_2_beverages"
+                              ]
+                          },
+                          "respectParentDiscount": true,
+                          "isInStock": true,
+                          "itemsAssociatedWith": [
+                              "item002"
+                          ],
+                          "isMandatory": false
+                      },
+                      {
+                          "id": "addon_beverage_vanilla_syrup",
+                          "priceInfo": {
+                              "discount": 0,
+                              "finalPrice": 5,
+                              "basePrice": 5
+                          },
+                          "meta": {
+                              "name": "Vanilla Syrup",
+                              "description": "Sweet vanilla flavored syrup",
+                              "categoryAssociatedWith": [
+                                  "cat_2_beverages"
+                              ]
+                          },
+                          "respectParentDiscount": true,
+                          "isInStock": true,
+                          "itemsAssociatedWith": [
+                              "item002"
+                          ],
+                          "isMandatory": false
+                      }
+                  ],
+                  "isCustomizable": true,
+                  "allergenTags": [],
+                  "meta": {
+                      "image": "https://example.com/images/gourmet-coffee.jpg",
+                      "name": "Gourmet Coffee",
+                      "description": "Rich, aromatic coffee made from freshly ground beans",
+                      "categoryName": "Beverages"
+                  },
+                  "isInStock": true,
+                  "variants": [
+                      {
+                          "id": "variant_temperature_beverage",
+                          "meta": {
+                              "name": "Temperature",
+                              "description": "Choose between hot or cold coffee",
+                              "categoryAssociatedWith": [
+                                  "cat_2_beverages"
+                              ]
+                          },
+                          "options": [
+                              {
+                                  "id": "beverage_temp_hot",
+                                  "name": "Hot",
+                                  "priceInfo": {
+                                      "basePrice": 0,
+                                      "finalPrice": 0,
+                                      "discount": 0
+                                  }
+                              },
+                              {
+                                  "id": "beverage_temp_cold",
+                                  "name": "Cold",
+                                  "priceInfo": {
+                                      "basePrice": 5,
+                                      "finalPrice": 5,
+                                      "discount": 0
+                                  }
+                              }
+                          ],
+                          "respectParentDiscount": true,
+                          "itemsAssociatedWith": [
+                              "item002"
+                          ],
+                          "isMandatory": true,
+                          "name": "Temperature"
+                      },
+                      {
+                          "id": "variant_beverage_size",
+                          "meta": {
+                              "name": "Beverage Size",
+                              "description": "Choose your preferred coffee size",
+                              "categoryAssociatedWith": [
+                                  "cat_2_beverages"
+                              ]
+                          },
+                          "options": [
+                              {
+                                  "id": "beverage_size_regular",
+                                  "name": "Regular",
+                                  "priceInfo": {
+                                      "basePrice": 0,
+                                      "finalPrice": 0,
+                                      "discount": 0
+                                  }
+                              },
+                              {
+                                  "id": "beverage_size_large",
+                                  "name": "Large",
+                                  "priceInfo": {
+                                      "basePrice": 10,
+                                      "finalPrice": 10,
+                                      "discount": 0
+                                  }
+                              }
+                          ],
+                          "respectParentDiscount": true,
+                          "itemsAssociatedWith": [
+                              "item002"
+                          ],
+                          "isMandatory": true,
+                          "name": "Size"
+                      }
+                  ],
+                  "categoryId": "cat_2_beverages"
+              }
+          ]
+      },
+      "metadata": {
+          "totalCategories": 2,
+          "totalMenuItems": 3
+      }
+  }
+}

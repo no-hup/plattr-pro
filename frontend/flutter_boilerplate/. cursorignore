@@ -1,0 +1,21 @@
+# Exclude everything by default
+*
+
+# Include only specific file types
+!**/*.dart
+!**/*.md
+!**/*.rtf
+!**/*.mdc
+!**/*.json
+
+# Explicitly exclude platform-specific folders even if they contain allowed file types
+android/
+ios/
+macos/
+windows/
+linux/
+web/
+
+# Optional: Include specific non-Dart files you might need
+!pubspec.yaml
+!README.md

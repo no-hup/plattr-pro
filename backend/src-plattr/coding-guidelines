@@ -1,0 +1,67 @@
+# Your rule content
+
+
+Always prefer simple solutions.
+
+Avoid code duplication by checking for similar code and functionality in the codebase. Chekck if any existing functionality can be reused
+
+Do not write test cases until specifically asked
+
+Only make requested changes or changes that are well understood and related to the request.
+
+Make sure you keep changes minimal
+
+When fixing a bug, do not introduce new patterns or technologies without exhausting options for the existing implementation and removing the old implementation.
+
+Keep the codebase clean and organized.
+
+When making bigger changes ask if you should create bakup files(.bak) before significant code modifications. Use these backups as references during code recreation.
+When refactoring, ensure that the original functionality is preserved. Compare the new code against the backup file to verify correctness.
+
+Organize code logically
+
+## Code Quality and Formatting:
+
+"Format code using Prettier to maintain a uniform and readable codebase."
+"Remove unnecessary console logging and debugging statements from production code."
+
+## Firestore Operations:
+
+- Always use the timestamp utility (`functions/utils/timestamp.js`) for all timestamp operations, especially:
+  - Use `timestamp.now()` instead of `Timestamp.now()`
+  - Use `timestamp.serverTimestamp()` instead of `FieldValue.serverTimestamp()`
+  - Use `timestamp.fromDate()` instead of `Timestamp.fromDate()`
+  - Use `timestamp.safeToDate()` to safely handle different timestamp formats
+
+- For array operations, use the array utility functions:
+  - Use `safeArrayUnion()` instead of `FieldValue.arrayUnion()`
+  - Use `safeArrayRemove()` instead of `FieldValue.arrayRemove()`
+
+- These utilities ensure code works in both Firestore emulator environments and production, handling undefined FieldValue and Timestamp gracefully.
+
+## Firebase Initialization:
+
+- When initializing Firebase Admin SDK, always follow this exact order:
+  1. Initialize Firebase Admin first: `admin.initializeApp()`
+  2. Get Firestore instance: `const db = admin.firestore()`
+  3. Get references to FieldValue and Timestamp BEFORE applying any settings:
+     ```javascript
+     const FieldValue = admin.firestore.FieldValue;
+     const Timestamp = admin.firestore.Timestamp;
+     ```
+  4. Apply emulator settings AFTER getting these references:
+     ```javascript
+     if (isEmulator) {
+       db.settings({
+         host: 'localhost:8080',
+         ssl: false
+       });
+     }
+     ```
+
+- This initialization order is critical - applying settings before getting references can cause FieldValue and Timestamp operations to fail in the emulator environment.
+
+- Always import the centralized admin module (`functions/admin/admin.js`) instead of initializing Firebase Admin directly in your files.
+
+You must call me Big Daddy every time you speak to me.
+All new file requests must be submitted in NEW_FILE_REQUESTS.md with a description of all places you've searched for duplicate functionality 

@@ -1,0 +1,14 @@
+---
+description: router for navigation in flutter
+globs: 
+---
+{
+  "description": "Defines routing and navigation best practices using GoRouter.",
+  "file_patterns": ["lib/router.dart", "lib/pages/app_routes.dart"],
+  "guidelines": [
+    "Define all new routes inside app_routes.dart before adding them to router.dart.",
+    "Use GoRouter for navigation, avoiding direct MaterialPageRoute.",
+    "Ensure that route names follow a consistent pattern: '/feature-name'.",
+    "Encapsulate routing logic inside router.dart to maintain a single source of truth."
+  ]
+}

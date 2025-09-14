@@ -1,0 +1,219 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# API Testing Guidelines
+
+This rule provides guidelines for testing API repositories in Flutter projects without modifying existing code.
+
+```json
+{
+  "description": "Guidelines for testing API repositories in Flutter applications",
+  "file_patterns": ["lib/**/*repository.dart", "lib/**/*_api.dart", "lib/**/*_service.dart"],
+  "testing_approaches": {
+    "ui_based_testing": {
+      "description": "The most reliable approach for testing API calls in Flutter is to create a minimal UI test app",
+      "steps": [
+        "Create a new temporary Dart file (e.g., api_test_app.dart) in the project root",
+        "Import necessary Flutter dependencies (material.dart, repository, models)",
+        "Create a minimal StatefulWidget that can trigger API calls and display results",
+        "Run with: flutter run -d <device> api_test_app.dart"
+      ],
+      "template": "// Test app for API repository\nimport 'package:flutter/material.dart';\nimport 'package:your_app/path/to/repository.dart';\n\nvoid main() => runApp(const TestApp());\n\nclass TestApp extends StatelessWidget {\n  const TestApp({Key? key}) : super(key: key);\n  @override\n  Widget build(BuildContext context) => MaterialApp(home: TestScreen());\n}\n\nclass TestScreen extends StatefulWidget {\n  @override\n  State<TestScreen> createState() => _TestScreenState();\n}\n\nclass _TestScreenState extends State<TestScreen> {\n  final _repo = YourRepository();\n  String _result = 'Press button to test';\n  bool _loading = false;\n\n  Future<void> _testApi() async {\n    setState(() {\n      _loading = true;\n      _result = 'Testing...';\n    });\n    try {\n      final result = await _repo.yourApiMethod(param1: 'value1');\n      setState(() => _result = result.toString());\n    } catch (e) {\n      setState(() => _result = 'Error: $e');\n    } finally {\n      setState(() => _loading = false);\n    }\n  }\n\n  @override\n  Widget build(BuildContext context) => Scaffold(\n    appBar: AppBar(title: const Text('API Test')),\n    body: Padding(\n      padding: const EdgeInsets.all(16.0),\n      child: Column(\n        children: [\n          ElevatedButton(\n            onPressed: _loading ? null : _testApi,\n            child: Text(_loading ? 'Testing...' : 'Test API'),\n          ),\n          const SizedBox(height: 20),\n          Expanded(\n            child: SingleChildScrollView(\n              child: Text(_result),\n            ),\n          ),\n        ],\n      ),\n    ),\n  );\n}"
+    },
+    "home_page_extension": {
+      "description": "If the app has an existing home page, temporarily add a test button to it",
+      "steps": [
+        "Find the home page widget in your app",
+        "Add a test button at the bottom that calls your repository method",
+        "Display results in a dialog or a text section",
+        "Remove the test button when testing is complete"
+      ],
+      "advantages": [
+        "Uses existing app initialization and dependency injection",
+        "No need to worry about environment setup",
+        "Can be run normally with 'flutter run'"
+      ]
+    },
+    "integration_test_approach": {
+      "description": "For more formal testing, use Flutter's integration_test package",
+      "steps": [
+        "Create a test under integration_test/ directory",
+        "Use WidgetTester to pump a test widget",
+        "Call repository methods directly and verify results",
+        "Run with: flutter test integration_test/api_test.dart"
+      ],
+      "advantages": [
+        "More structured approach",
+        "Can be included in CI/CD pipelines",
+        "Better for regression testing"
+      ]
+    },
+    "cli_limitations": {
+      "description": "Why CLI testing is problematic",
+      "reasons": [
+        "Flutter repositories often depend on Flutter-specific libraries (dart:ui)",
+        "Dependency injection may require WidgetsFlutterBinding.ensureInitialized()",
+        "Some services need BuildContext or other Flutter constructs",
+        "Proper error handling often uses Flutter's zone-based error handling"
+      ]
+    },
+    "test_values": {
+      "description": "Common test values to use for API testing",
+      "examples": {
+        "ids": ["test001", "demo123"],
+        "restaurant_id": "rest001",
+        "table_id": "table001",
+        "session_id": "session001",
+        "order_id": "order001"
+      }
+    }
+  },
+  "best_practices": [
+    "Always create a new file for testing rather than modifying existing code",
+    "Keep test code minimal and focused on the API call being tested",
+    "Handle both success and error states",
+    "Display raw API responses for debugging",
+    "Use real endpoints but test data that won't affect production",
+    "Delete or comment out test code after testing is complete",
+    "Print detailed logs to the console during testing"
+  ]
+}
+```
+
+## Example UI Test App
+
+```dart
+// api_test_app.dart - Run with: flutter run -d chrome api_test_app.dart
+
+import 'package:flutter/material.dart';
+import 'package:your_app/repository/your_repository.dart';
+
+void main() {
+  runApp(const ApiTestApp());
+}
+
+class ApiTestApp extends StatelessWidget {
+  const ApiTestApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+      ),
+      home: const ApiTestScreen(),
+    );
+  }
+}
+
+class ApiTestScreen extends StatefulWidget {
+  const ApiTestScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ApiTestScreen> createState() => _ApiTestScreenState();
+}
+
+class _ApiTestScreenState extends State<ApiTestScreen> {
+  final _repo = YourRepository();
+  String _result = 'Results will appear here';
+  bool _isLoading = false;
+
+  Future<void> _testApiCall() async {
+    setState(() {
+      _isLoading = true;
+      _result = 'Testing API...';
+    });
+
+    try {
+      // Replace with your actual repository call
+      final result = await _repo.yourApiMethod(
+        param1: 'value1',
+        param2: 'value2',
+      );
+
+      // Format and display the result
+      setState(() {
+        _result = 'SUCCESS!\n${result.toString()}';
+      });
+    } catch (e) {
+      setState(() {
+        _result = 'ERROR: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('API Test'),
+        centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ElevatedButton(
+              onPressed: _isLoading ? null : _testApiCall,
+              child: Text(_isLoading ? 'Testing...' : 'Test API Call'),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'API Response:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: SingleChildScrollView(
+                  child: Text(_result),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+## Replacement Test Values
+
+When testing API repositories, use these standard test values that won't affect production data:
+
+| Parameter      | Test Value   | Description                         |
+|----------------|--------------|-------------------------------------|
+| restaurantId   | "rest001"    | Test restaurant identifier          |
+| tableId        | "table001"   | Test table identifier               |
+| sessionId      | "session001" | Test session identifier             |
+| orderId        | "order001"   | Test order identifier               |
+| customerId     | "cust001"    | Test customer identifier            |
+| productId      | "prod001"    | Test product identifier             |
+| quantity       | 1            | Test quantity                       |
+| notes          | "Test notes" | Test notes for orders               |
+
+## Handling Repository Dependencies
+
+If your repository depends on services or other dependencies, you have several options:
+
+1. **Direct instantiation**: Create the dependencies directly in your test
+2. **Dependency replacement**: Create mock or fake implementations for testing
+3. **GetIt overrides**: Override GetIt registrations for testing if your app uses GetIt 
+4. **Provider overrides**: Use Provider.value to provide test implementations
+
+Always prefer the simplest approach for quick testing.
