@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:flutterboilerplate/pages/cart_listing/cart_listing_repository.dart';
 import 'package:flutterboilerplate/pages/checkout_order_flow/order_listing_state.dart';
@@ -54,7 +56,7 @@ class _MyAppState extends State<MyApp> {
       ],
       child: MaterialApp.router(
         title: 'Flutter Boilerplate',
-        theme: AppTheme.lightTheme, 
+        theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         routeInformationParser: router.routeInformationParser,
         routerDelegate: router.routerDelegate,
@@ -64,3 +66,24 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
+// ----- Logging helpers (SDK noise filtering) -----
+const _sdkNoise = <String>[
+  'dart-sdk/',
+  '_internal/js_dev_runtime/',
+  'ddc_runtime/',
+  'package:flutter/',
+  'flutter/lib/src/',
+  'isolate_helper.dart',
+];
+
+String filterSdkNoise(String input) {
+  final lines = input.split('\n');
+  final kept = lines.where((l) => !_sdkNoise.any(l.contains)).toList();
+  return kept.where((l) => l.trim().isNotEmpty).join('\n');
+}
+
+void appLog(String message) {
+  final filtered = filterSdkNoise(message);
+  if (filtered.isEmpty) return;
+  developer.log(filtered, name: 'APP');
+}

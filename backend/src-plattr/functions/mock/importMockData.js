@@ -1,11 +1,11 @@
-// Set emulator environment variables before importing admin
+// Set emulator environment variables BEFORE importing admin
 const environment = require('../singleton/Environment');
+environment.configureEnvironment(false);
 const { admin, db, FieldValue, Timestamp } = require('../admin/admin');
 const fs = require('fs');
 const path = require('path');
 
-// Configure for emulator mode
-environment.configureEnvironment(false);
+// Environment already configured above to ensure Admin uses emulator settings
 
 // Read the mock data using the correct path
 const mockDataPath = path.join(__dirname, 'mockData.json');

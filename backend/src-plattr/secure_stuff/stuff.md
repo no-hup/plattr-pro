@@ -35,7 +35,7 @@ firebase emulators:start --only firestore,functions --import=./firestore-data --
 
 ### **Set Google Application Credentials**
 ```sh
-export GOOGLE_APPLICATION_CREDENTIALS="/Users/shauryajaiswal/Desktop/theDev/plattr/src-plattr/secure_stuff/service-account.json"
+export GOOGLE_APPLICATION_CREDENTIALS="/Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr/secure_stuff/service-account.json"
 ```
 
 ### **Run Import Mock Data**

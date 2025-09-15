@@ -7,6 +7,7 @@ import 'package:firebase_performance/firebase_performance.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+
 import 'app.dart';
 import 'env.dart';
 import 'firebase_options.dart';
@@ -15,7 +16,7 @@ import 'utils/http_client.dart';
 void main() async {
   await runZonedGuarded(
     () async {
-      final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+      WidgetsFlutterBinding.ensureInitialized();
       // Retain native splash screen until Dart is ready
       //FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
       await Firebase.initializeApp(
@@ -24,11 +25,22 @@ void main() async {
       GetIt.instance.registerLazySingleton(
         () => HttpClient(baseOptions: BaseOptions(baseUrl: Env.serverUrl)),
       );
-      
+
+      // Filter verbose SDK noise in logs
+      debugPrint = (String? message, {int? wrapWidth}) {
+        if (message == null) return;
+        final filtered = filterSdkNoise(message);
+        if (filtered.isEmpty) return;
+        // Use print so it goes through zone print filter too
+        print(filtered);
+      };
+
       // Enhanced error handling
       FlutterError.onError = (FlutterErrorDetails details) {
         FlutterError.presentError(details); // Show full error overlay
-        FirebaseCrashlytics.instance.recordFlutterError(details);
+        if (!kIsWeb) {
+          FirebaseCrashlytics.instance.recordFlutterError(details);
+        }
         Zone.current.handleUncaughtError(details.exception, details.stack!);
       };
 
@@ -46,9 +58,11 @@ void main() async {
               .setCrashlyticsCollectionEnabled(true);
         }
       }
-      if (kDebugMode) {
-        await FirebasePerformance.instance
-            .setPerformanceCollectionEnabled(false);
+      if (!kIsWeb) {
+        if (kDebugMode) {
+          await FirebasePerformance.instance
+              .setPerformanceCollectionEnabled(false);
+        }
       }
 
       runApp(const MyApp());
@@ -56,8 +70,18 @@ void main() async {
     },
     (error, stackTrace) {
       debugPrint('🔥 Uncaught Exception: $error');
-      debugPrintStack(stackTrace: stackTrace);
-      FirebaseCrashlytics.instance.recordError(error, stackTrace);
+      final filtered = filterSdkNoise(stackTrace.toString());
+      if (filtered.isNotEmpty) debugPrint(filtered);
+      if (!kIsWeb) {
+        FirebaseCrashlytics.instance.recordError(error, stackTrace);
+      }
     },
+    zoneSpecification: ZoneSpecification(
+      print: (self, parent, zone, line) {
+        final filtered = filterSdkNoise(line);
+        if (filtered.isEmpty) return;
+        parent.print(zone, filtered);
+      },
+    ),
   );
 }

@@ -6,8 +6,9 @@
 class Environment {
   constructor() {
     this._isEmulator = this._detectEmulator();
+    this._logEnvironment(); // Log at startup for debugging
     this._projectId = 'rms-app-dd875'; // Your Firebase project ID
-    this._serviceAccountPath = '/Users/shauryajaiswal/Desktop/theDev/plattr/src-plattr/secure_stuff/service-account.json';
+    this._serviceAccountPath = '/Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr/secure_stuff/service-account.json';
     
     // List of trigger functions that should not be deployed to production
     this._restrictedTriggers = [
@@ -25,6 +26,14 @@ class Environment {
     return process.env.NODE_ENV === 'development' || 
            process.env.FUNCTIONS_EMULATOR === 'true' ||
            !!process.env.FIRESTORE_EMULATOR_HOST;
+  }
+
+  // Add logging for debugging
+  _logEnvironment() {
+    console.log(`Environment mode: ${this.mode}`);
+    console.log(`FIRESTORE_EMULATOR_HOST: ${process.env.FIRESTORE_EMULATOR_HOST}`);
+    console.log(`FUNCTIONS_EMULATOR: ${process.env.FUNCTIONS_EMULATOR}`);
+    console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
   }
 
   /**
@@ -97,7 +106,7 @@ class Environment {
     } else {
       // Set emulator environment variables if in emulator mode
       if (this._isEmulator) {
-        process.env.FIRESTORE_EMULATOR_HOST = 'localhost:8081';
+        process.env.FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST || 'localhost:8080';
         process.env.FUNCTIONS_EMULATOR = 'true';
         process.env.NODE_ENV = 'development';
       }
