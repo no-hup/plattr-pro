@@ -11,6 +11,7 @@ const timestamp = require('../utils/timestamp');
 const { safeArrayUnion, applyArrayOperation } = require('../utils/arrayOperations');
 const { buildAuthDetails } = require('./tableHelperFunctions');
 const customerService = require('../customer/customerService');
+const ResponseBuilder = require('../utils/ResponseBuilder');
 
 // Initialize Firestore
 console.log('poopoo Table.js - FieldValue available:', !!FieldValue);
@@ -102,30 +103,26 @@ exports.validateTableAndLocation = functions.https.onCall(async (request, contex
         if (validatedSession) {
             const expiresAtString = timestamp.toISOString(validatedSession.expiresAt);
             
-            const response = {
-                status: "success",
-                message: "Access granted",
-                data: {
-                    status: 'success',
-                    tableStatus: originalStatus,
-                    restaurant: restaurantInfo,
-                    table: tableInfo,
-                    session: {
-                        sessionId: validatedSession.id,
-                        expiresAt: expiresAtString
-                    }
+            const responseData = {
+                status: 'success',
+                tableStatus: originalStatus,
+                restaurant: restaurantInfo,
+                table: tableInfo,
+                session: {
+                    sessionId: validatedSession.id,
+                    expiresAt: expiresAtString
                 }
             };
             
             if (tableData.primaryCustomer) {
-                response.data.primaryCustomer = tableData.primaryCustomer;
+                responseData.primaryCustomer = tableData.primaryCustomer;
             }
             
             if (tableData.occupiedBy) {
-                response.data.occupiedBy = tableData.occupiedBy;
+                responseData.occupiedBy = tableData.occupiedBy;
             }
             
-            return response;
+            return ResponseBuilder.success(responseData, "Access granted");
         }
         
         // 6. OTP Generation for Vacant Tables
@@ -189,36 +186,28 @@ exports.validateTableAndLocation = functions.https.onCall(async (request, contex
                 }
             );
         } else {
-            let response;
+            let responseData;
             
             if (originalStatus === TABLE_STATUS.VACANT || originalStatus === TABLE_STATUS.OTP_PENDING) {
-                response = {
-                    status: "success",
-                    message: "Access granted",
-                    data: {
-                        tableStatus: TABLE_STATUS.VACANT,
-                        restaurant: restaurantInfo,
-                        table: tableInfo
-                    }
+                responseData = {
+                    tableStatus: TABLE_STATUS.VACANT,
+                    restaurant: restaurantInfo,
+                    table: tableInfo
                 };
             } else {
-                response = {
-                    status: "success",
-                    message: "Access granted",
-                    data: {
-                        tableStatus: TABLE_STATUS.ACTIVE,
-                        restaurant: restaurantInfo,
-                        table: tableInfo,
-                        otpRequiredForOrder: true
-                    }
+                responseData = {
+                    tableStatus: TABLE_STATUS.ACTIVE,
+                    restaurant: restaurantInfo,
+                    table: tableInfo,
+                    otpRequiredForOrder: true
                 };
                 
                 if (tableData.primaryCustomer) {
-                    response.data.primaryCustomer = tableData.primaryCustomer;
+                    responseData.primaryCustomer = tableData.primaryCustomer;
                 }
             }
             
-            return response;
+            return ResponseBuilder.success(responseData, "Access granted");
         }
     } catch (error) {
         console.error('Error in validateTableAndLocation:', error);
@@ -535,16 +524,15 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
         
         // 8. Return Success Response
         console.log(`poopoo validateOTP - Returning success response, isPrimaryCustomer: ${isPrimaryCustomer}, sessionId: ${session.id}`);
-        return {
+        const responseData = {
             status: 'success',
-            message: isPrimaryCustomer ? 'Primary customer authenticated' : 'Customer successfully joined table',
-            data: {
-                status: 'success',
-                customToken: customToken,
-                isPrimaryCustomer: isPrimaryCustomer,
-                sessionId: session.id
-            }
+            customToken: customToken,
+            isPrimaryCustomer: isPrimaryCustomer,
+            sessionId: session.id
         };
+        
+        const message = isPrimaryCustomer ? 'Primary customer authenticated' : 'Customer successfully joined table';
+        return ResponseBuilder.success(responseData, message);
     } catch (error) {
         console.error('Error in validateOTP:', error);
         console.error('Error stack:', error.stack);
@@ -628,20 +616,12 @@ exports.cleanupInactiveSessions = functions.https.onCall(async (data, context) =
         
         await batch.commit();
         console.log('poopoo cleanupInactiveSessions: Inactive sessions cleaned up successfully');
-        return {
-            status: 'success',
-            message: 'Inactive sessions cleaned up successfully',
-            data: null
-        };
+        return ResponseBuilder.success(null, 'Inactive sessions cleaned up successfully');
     } catch (error) {
         console.error('Error in cleanupInactiveSessions:', error);
-        return {
-            status: 'error',
-            message: 'Failed to clean up inactive sessions',
-            data: {
-                error: error.message
-            }
-        };
+        return ResponseBuilder.internalError('Failed to clean up inactive sessions', {
+            error: error.message
+        });
     }
 });
 
@@ -714,19 +694,17 @@ exports.checkTableStatus = functions.https.onCall(async (data, context) => {
         console.log(`poopoo checkTableStatus - OTP validity: ${hasActiveOTP}`);
         
         console.log("poopoo checkTableStatus - Returning table status response");
-        return {
-            status: "success",
-            message: "Table status retrieved successfully",
-            data: {
-                tableNumber: tableData.number,
-                capacity: tableData.capacity,
-                status: tableData.status,
-                primaryCustomer: tableData.primaryCustomer || null,
-                occupiedBy: tableData.occupiedBy || [],
-                assignedServer: serverInfo,
-                hasActiveOTP: hasActiveOTP
-            }
+        const responseData = {
+            tableNumber: tableData.number,
+            capacity: tableData.capacity,
+            status: tableData.status,
+            primaryCustomer: tableData.primaryCustomer || null,
+            occupiedBy: tableData.occupiedBy || [],
+            assignedServer: serverInfo,
+            hasActiveOTP: hasActiveOTP
         };
+        
+        return ResponseBuilder.success(responseData, "Table status retrieved successfully");
         
     } catch (error) {
         console.error('Error in checkTableStatus:', error);
@@ -800,15 +778,12 @@ exports.getTablesForRestaurant = functions.https.onCall(async (request, context)
         
         if (tablesSnapshot.empty) {
             console.log(`poopoo getTablesForRestaurant - No tables found for restaurant ${restaurantId}`);
-            return {
-                status: "success",
-                message: "No tables found for this restaurant",
-                data: {
-                    restaurantId,
-                    tables: [],
-                    count: 0
-                }
+            const responseData = {
+                restaurantId,
+                tables: [],
+                count: 0
             };
+            return ResponseBuilder.success(responseData, "No tables found for this restaurant");
         }
         
         // 5. Process table data
@@ -864,15 +839,13 @@ exports.getTablesForRestaurant = functions.https.onCall(async (request, context)
         console.log(`poopoo getTablesForRestaurant - Successfully retrieved ${tables.length} tables`);
         
         // 6. Return formatted response
-        return {
-            status: "success",
-            message: "Tables retrieved successfully",
-            data: {
-                restaurantId,
-                tables,
-                count: tables.length
-            }
+        const responseData = {
+            restaurantId,
+            tables,
+            count: tables.length
         };
+        
+        return ResponseBuilder.success(responseData, "Tables retrieved successfully");
         
     } catch (error) {
         console.error('Error in getTablesForRestaurant:', error);
@@ -1037,11 +1010,7 @@ exports.getTableDetails = functions.https.onCall(async (request, context) => {
         }
         
         console.log("poopoo getTableDetails - Returning table details response");
-        return {
-            status: "success",
-            message: "Table details retrieved successfully",
-            data: responseData
-        };
+        return ResponseBuilder.success(responseData, "Table details retrieved successfully");
         
     } catch (error) {
         console.error('Error in getTableDetails:', error);
@@ -1122,16 +1091,13 @@ exports.assignTableToServer = functions.https.onCall(async (request, context) =>
         // 5. Check if table is already assigned to this server
         if (tableData.assignedServerId === serverId) {
             console.log(`poopoo assignTableToServer - Table ${tableId} is already assigned to server ${serverId}`);
-            return {
-                status: "success",
-                message: "Table is already assigned to this server",
-                data: {
-                    tableId,
-                    serverId,
-                    serverName: serverData.name,
-                    tableNumber: tableData.number || tableId
-                }
+            const responseData = {
+                tableId,
+                serverId,
+                serverName: serverData.name,
+                tableNumber: tableData.number || tableId
             };
+            return ResponseBuilder.success(responseData, "Table is already assigned to this server");
         }
         
         // 6. Update table with new server assignment
@@ -1144,16 +1110,14 @@ exports.assignTableToServer = functions.https.onCall(async (request, context) =>
         console.log(`poopoo assignTableToServer - Table ${tableId} successfully assigned to server ${serverId}`);
         
         // 7. Return success response
-        return {
-            status: "success",
-            message: "Table assigned to server successfully",
-            data: {
-                tableId,
-                serverId,
-                serverName: serverData.name,
-                tableNumber: tableData.number || tableId
-            }
+        const responseData = {
+            tableId,
+            serverId,
+            serverName: serverData.name,
+            tableNumber: tableData.number || tableId
         };
+        
+        return ResponseBuilder.success(responseData, "Table assigned to server successfully");
         
     } catch (error) {
         console.error('Error in assignTableToServer:', error);
@@ -1215,14 +1179,11 @@ exports.unassignTableFromServer = functions.https.onCall(async (request, context
         // 4. Check if table is not assigned to any server
         if (!tableData.assignedServerId) {
             console.log(`poopoo unassignTableFromServer - Table ${tableId} is not assigned to any server`);
-            return {
-                status: "success",
-                message: "Table is not assigned to any server",
-                data: {
-                    tableId,
-                    tableNumber: tableData.number || tableId
-                }
+            const responseData = {
+                tableId,
+                tableNumber: tableData.number || tableId
             };
+            return ResponseBuilder.success(responseData, "Table is not assigned to any server");
         }
         
         // Store the current server ID for the response
@@ -1255,16 +1216,14 @@ exports.unassignTableFromServer = functions.https.onCall(async (request, context
         console.log(`poopoo unassignTableFromServer - Table ${tableId} successfully unassigned from server`);
         
         // 7. Return success response
-        return {
-            status: "success",
-            message: "Table unassigned from server successfully",
-            data: {
-                tableId,
-                tableNumber: tableData.number || tableId,
-                previousServerId,
-                previousServerName: serverName
-            }
+        const responseData = {
+            tableId,
+            tableNumber: tableData.number || tableId,
+            previousServerId,
+            previousServerName: serverName
         };
+        
+        return ResponseBuilder.success(responseData, "Table unassigned from server successfully");
         
     } catch (error) {
         console.error('Error in unassignTableFromServer:', error);
@@ -1335,17 +1294,15 @@ exports.generateTableOTP = functions.https.onCall(async (request, context) => {
         console.log(`poopoo generateTableOTP - New OTP generated successfully: ${otpObject.code}`);
         
         // 6. Return success response
-        return {
-            status: "success",
-            message: "Table OTP generated successfully",
-            data: {
-                tableId,
-                tableNumber: tableData.number || tableId,
-                otp: otpObject.code,
-                otpGeneratedAt: timestamp.toISOString(otpObject.createdAt),
-                otpExpiresAt: timestamp.toISOString(otpObject.expiresAt)
-            }
+        const responseData = {
+            tableId,
+            tableNumber: tableData.number || tableId,
+            otp: otpObject.code,
+            otpGeneratedAt: timestamp.toISOString(otpObject.createdAt),
+            otpExpiresAt: timestamp.toISOString(otpObject.expiresAt)
         };
+        
+        return ResponseBuilder.success(responseData, "Table OTP generated successfully");
         
     } catch (error) {
         console.error('Error in generateTableOTP:', error);
@@ -1407,17 +1364,14 @@ exports.updateTableStatus = functions.https.onCall(async (request, context) => {
         // 4. Check if status is already set to requested value
         if (tableData.status === status) {
             console.log(`poopoo updateTableStatus - Table ${tableId} is already in ${status} status`);
-            return {
-                status: "success",
-                message: `Table is already in ${status} status`,
-                data: {
-                    tableId,
-                    tableNumber: tableData.number || tableId,
-                    previousStatus: status,
-                    currentStatus: status,
-                    changed: false
-                }
+            const responseData = {
+                tableId,
+                tableNumber: tableData.number || tableId,
+                previousStatus: status,
+                currentStatus: status,
+                changed: false
             };
+            return ResponseBuilder.success(responseData, `Table is already in ${status} status`);
         }
         
         // Store previous status for response
@@ -1443,17 +1397,15 @@ exports.updateTableStatus = functions.https.onCall(async (request, context) => {
         console.log(`poopoo updateTableStatus - Table ${tableId} status updated successfully`);
         
         // 7. Return success response
-        return {
-            status: "success",
-            message: "Table status updated successfully",
-            data: {
-                tableId,
-                tableNumber: tableData.number || tableId,
-                previousStatus: previousStatus || 'unknown',
-                currentStatus: status,
-                changed: true
-            }
+        const responseData = {
+            tableId,
+            tableNumber: tableData.number || tableId,
+            previousStatus: previousStatus || 'unknown',
+            currentStatus: status,
+            changed: true
         };
+        
+        return ResponseBuilder.success(responseData, "Table status updated successfully");
         
     } catch (error) {
         console.error('Error in updateTableStatus:', error);

@@ -7,6 +7,7 @@ const featureFlags = require('../singleton/FeatureFlags');
 const errorMessages = require('../singleton/ErrorMessages');
 const { compareArraysIgnoringOrder } = require('../utils/arrayUtils');
 const { BasicPriceInfo, CartItemPriceInfo, CartTotalPriceInfo } = require('../genericModels/priceinfo');
+const { CART_ITEM_STATUS, CART_STATUS } = require('../orders/orderConstants');
 
 /**
  * Gets a reference to a cart document in Firestore
@@ -465,7 +466,7 @@ function createCartItem(menuItemId, menuItem, selectedVariantsDetails, selectedA
   // Use CartItemPriceInfo model to standardize the price structure
   const standardizedPriceInfo = new CartItemPriceInfo({
     itemBasePrice: sanitizeNumber(priceInfo.itemBasePrice),
-    itemFinalPrice: sanitizeNumber(priceInfo.finalPrice),
+    itemFinalPrice: sanitizeNumber(priceInfo.itemFinalPrice),
     totalVariantBasePrice: sanitizeNumber(priceInfo.totalVariantBasePrice),
     totalVariantFinalPrice: sanitizeNumber(priceInfo.totalVariantFinalPrice || priceInfo.totalVariantBasePrice),
     totalAddonBasePrice: sanitizeNumber(priceInfo.totalAddonBasePrice),

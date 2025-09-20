@@ -67,3 +67,12 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Local emulator temp config
+firebase.temp.json
+
+# Runtime test artifacts
+responses_runtime/
+
+# Test preflight env
+tests/.env.ports

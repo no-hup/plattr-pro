@@ -180,11 +180,6 @@ abstract class _UserLocation implements UserLocation {
       throw _privateConstructorUsedError;
 }
 
-TableValidationResponse _$TableValidationResponseFromJson(
-    Map<String, dynamic> json) {
-  return _TableValidationResponse.fromJson(json);
-}
-
 /// @nodoc
 mixin _$TableValidationResponse {
   /// Status of the validation ('success', 'error', etc.)
@@ -199,7 +194,6 @@ mixin _$TableValidationResponse {
   /// Whether OTP verification is required
   bool get requiresOtp => throw _privateConstructorUsedError;
 
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $TableValidationResponseCopyWith<TableValidationResponse> get copyWith =>
       throw _privateConstructorUsedError;
@@ -314,7 +308,7 @@ class __$$TableValidationResponseImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
 class _$TableValidationResponseImpl extends _TableValidationResponse {
   const _$TableValidationResponseImpl(
       {required this.status,
@@ -323,9 +317,6 @@ class _$TableValidationResponseImpl extends _TableValidationResponse {
       this.requiresOtp = false})
       : _data = data,
         super._();
-
-  factory _$TableValidationResponseImpl.fromJson(Map<String, dynamic> json) =>
-      _$$TableValidationResponseImplFromJson(json);
 
   /// Status of the validation ('success', 'error', etc.)
   @override
@@ -370,7 +361,6 @@ class _$TableValidationResponseImpl extends _TableValidationResponse {
                 other.requiresOtp == requiresOtp));
   }
 
-  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, status, message,
       const DeepCollectionEquality().hash(_data), requiresOtp);
@@ -381,13 +371,6 @@ class _$TableValidationResponseImpl extends _TableValidationResponse {
   _$$TableValidationResponseImplCopyWith<_$TableValidationResponseImpl>
       get copyWith => __$$TableValidationResponseImplCopyWithImpl<
           _$TableValidationResponseImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$TableValidationResponseImplToJson(
-      this,
-    );
-  }
 }
 
 abstract class _TableValidationResponse extends TableValidationResponse {
@@ -397,9 +380,6 @@ abstract class _TableValidationResponse extends TableValidationResponse {
       final Map<String, dynamic>? data,
       final bool requiresOtp}) = _$TableValidationResponseImpl;
   const _TableValidationResponse._() : super._();
-
-  factory _TableValidationResponse.fromJson(Map<String, dynamic> json) =
-      _$TableValidationResponseImpl.fromJson;
 
   @override
 

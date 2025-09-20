@@ -4,6 +4,7 @@ import 'package:flutterboilerplate/pages/menuListing/mennu_bottomsheet.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_state.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class MenuItemCard extends StatelessWidget {
@@ -33,7 +34,8 @@ class MenuItemCard extends StatelessWidget {
         item: item,
         onConfirm: (selectedVariants, selectedAddons) {
           AppLogger.log(
-              '🛒 MENU: Adding customized item with variants: $selectedVariants, addons: $selectedAddons');
+            '🛒 MENU: Adding customized item with variants: $selectedVariants, addons: $selectedAddons',
+          );
           context.read<MenuState>().updateCartItem(
                 item,
                 true,
@@ -52,16 +54,17 @@ class MenuItemCard extends StatelessWidget {
     final menuState = context.read<MenuState>();
 
     if (menuState.needsCustomization(item)) {
-      final storedCustomization =
-          menuState.getStoredCustomization(item.id);
+      final storedCustomization = menuState.getStoredCustomization(item.id);
 
       if (quantity == 0 || storedCustomization == null) {
         AppLogger.log(
-            '🛒 MENU: Showing customization sheet for item ${item.id}');
+          '🛒 MENU: Showing customization sheet for item ${item.id}',
+        );
         _showCustomizationSheet(context);
       } else {
         AppLogger.log(
-            '🛒 MENU: Using stored customization for item ${item.id}');
+          '🛒 MENU: Using stored customization for item ${item.id}',
+        );
         onQuantityChanged(true);
       }
     } else {
@@ -73,9 +76,9 @@ class MenuItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             Expanded(
@@ -211,9 +214,9 @@ class _QuantityControl extends StatelessWidget {
     return Column(
       children: [
         if (!item.isInStock)
-          ElevatedButton(
+          const ElevatedButton(
             onPressed: null,
-            child: const Text('Add'),
+            child: Text('Add'),
           )
         else if (quantity > 0) ...[
           Row(
@@ -221,8 +224,11 @@ class _QuantityControl extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.remove),
                 onPressed: () => context.read<MenuState>().updateCartItem(
-                    item, false,
-                    tableId: tableId, restaurantId: restaurantId),
+                      item,
+                      false,
+                      tableId: tableId,
+                      restaurantId: restaurantId,
+                    ),
               ),
               Text(
                 '$quantity',
@@ -268,7 +274,7 @@ class CategorySection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16),
           child: Text(
             category.name,
             style: Theme.of(context).textTheme.titleLarge,
@@ -310,7 +316,7 @@ class MenuErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -394,8 +400,8 @@ class FloatingCartWidget extends StatelessWidget {
                                 ),
                       ),
                       // Only show base price if it's non-zero and different from final price
-                      if (cartPriceInfo != null && 
-                          basePrice > 0 && 
+                      if (cartPriceInfo != null &&
+                          basePrice > 0 &&
                           basePrice != finalPrice)
                         Text(
                           '₹${basePrice.toStringAsFixed(2)}',
@@ -424,7 +430,14 @@ class FloatingCartWidget extends StatelessWidget {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      // TODO: Navigate to cart page
+                      final rid = cart.restaurantId ?? '';
+                      final tid = cart.tableId ?? '';
+                      if (rid.isNotEmpty && tid.isNotEmpty) {
+                        context.go('/r/$rid/t/$tid/cart');
+                      } else {
+                        AppLogger.log(
+                            '🛒 MENU: Cannot navigate to cart - missing ids (r="$rid", t="$tid")');
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor:

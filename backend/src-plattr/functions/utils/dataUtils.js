@@ -185,28 +185,63 @@ function safeRecalculateItemPrice(item, quantity = 1) {
   
   // Ensure priceInfo object exists
   const priceInfo = item.priceInfo || {};
-  
-  // Get unit prices, defaulting to 0 if invalid
-  const safeUnitPrices = {
-    itemBasePrice: safeGetNumber(priceInfo.itemBasePrice),
-    itemVariantBasePrice: safeGetNumber(priceInfo.itemVariantBasePrice),
-    itemAddonBasePrice: safeGetNumber(priceInfo.itemAddonBasePrice),
-    itemFinalPrice: safeGetNumber(priceInfo.itemFinalPrice),
-    discount: safeGetNumber(priceInfo.discount)
-  };
-  
-  // Calculate totals based on quantity
-  const totals = {
-    totalBasePrice: safeUnitPrices.itemBasePrice * safeQuantity,
-    totalVariantBasePrice: safeUnitPrices.itemVariantBasePrice * safeQuantity,
-    totalAddonBasePrice: safeUnitPrices.itemAddonBasePrice * safeQuantity,
-    finalPrice: safeUnitPrices.itemFinalPrice * safeQuantity
-  };
-  
-  // Return merged object with unit prices and totals
+
+  // Base item unit prices
+  const itemBasePrice = safeGetNumber(priceInfo.itemBasePrice);
+  const itemFinalPrice = safeGetNumber(priceInfo.itemFinalPrice);
+  const itemDiscountPct = safeGetNumber(priceInfo.discount);
+
+  // Derive unit variant and addon base from selected details (robust against legacy fields)
+  const variants = Array.isArray(item.selectedVariantsDetails) ? item.selectedVariantsDetails : [];
+  const addons = Array.isArray(item.selectedAddonsDetails) ? item.selectedAddonsDetails : [];
+
+  const unitVariantBase = variants.reduce((sum, v) => {
+    const vInfo = v?.priceInfo || {};
+    const base = safeGetNumber(vInfo.basePrice);
+    return sum + base;
+  }, 0);
+
+  const unitAddonBase = addons.reduce((sum, a) => {
+    const aInfo = a?.priceInfo || {};
+    const base = safeGetNumber(aInfo.basePrice);
+    return sum + base;
+  }, 0);
+
+  // Compute unit variant/addon final respecting parent discount when flagged
+  const applyDiscount = (base, pct) => base * (1 - Math.max(0, Math.min(100, pct)) / 100);
+
+  const unitVariantFinal = variants.reduce((sum, v) => {
+    const info = v?.priceInfo || {};
+    const base = safeGetNumber(info.basePrice);
+    const hasOwnFinal = Number.isFinite(info.finalPrice);
+    const ownFinal = hasOwnFinal ? safeGetNumber(info.finalPrice) : base;
+    const final = v?.respectParentDiscount ? applyDiscount(base, itemDiscountPct) : ownFinal;
+    return sum + final;
+  }, 0);
+
+  const unitAddonFinal = addons.reduce((sum, a) => {
+    const info = a?.priceInfo || {};
+    const base = safeGetNumber(info.basePrice);
+    const hasOwnFinal = Number.isFinite(info.finalPrice);
+    const ownFinal = hasOwnFinal ? safeGetNumber(info.finalPrice) : base;
+    const final = a?.respectParentDiscount ? applyDiscount(base, itemDiscountPct) : ownFinal;
+    return sum + final;
+  }, 0);
+
+  // Totals = per-unit totals * quantity
+  const totalBasePrice = (itemBasePrice + unitVariantBase + unitAddonBase) * safeQuantity;
+  const finalPrice = (itemFinalPrice + unitVariantFinal + unitAddonFinal) * safeQuantity;
+
   return {
-    ...safeUnitPrices,
-    ...totals
+    itemBasePrice,
+    itemVariantBasePrice: unitVariantBase,
+    itemAddonBasePrice: unitAddonBase,
+    itemFinalPrice,
+    discount: itemDiscountPct,
+    totalBasePrice,
+    totalVariantBasePrice: unitVariantBase * safeQuantity,
+    totalAddonBasePrice: unitAddonBase * safeQuantity,
+    finalPrice
   };
 }
 

@@ -7,8 +7,8 @@ function validateCart(cart) {
   try {
     // Validate cart-level totals
     let totalBasePrice = 0;
-    let totalVariantFinalPrice = 0;
-    let totalAddonFinalPrice = 0;
+    let totalVariantBasePrice = 0;
+    let totalAddonBasePrice = 0;
     let totalFinalPrice = 0;
 
     cart.items.forEach(item => {
@@ -29,10 +29,10 @@ function validateCart(cart) {
       }
 
       // Validate total-level calculations for the item
-      const expectedTotalBasePrice = item.priceInfo.itemBasePrice * item.quantity;
-      const expectedTotalVariantBasePrice = item.priceInfo.itemVariantBasePrice * item.quantity;
-      const expectedTotalAddonBasePrice = item.priceInfo.itemAddonBasePrice * item.quantity;
-      const expectedTotalFinalPrice = item.priceInfo.itemFinalPrice * item.quantity;
+      const expectedTotalBasePrice = (item.priceInfo.itemBasePrice || 0) * item.quantity;
+      const expectedTotalVariantBasePrice = (item.priceInfo.totalVariantBasePrice || item.priceInfo.itemVariantBasePrice || 0) * item.quantity;
+      const expectedTotalAddonBasePrice = (item.priceInfo.totalAddonBasePrice || item.priceInfo.itemAddonBasePrice || 0) * item.quantity;
+      const expectedTotalFinalPrice = (item.priceInfo.itemFinalPrice || 0) * item.quantity;
 
       if (
         Math.abs(item.priceInfo.totalBasePrice - expectedTotalBasePrice) > 0.01 ||
@@ -45,18 +45,18 @@ function validateCart(cart) {
       }
 
       // Accumulate cart-level totals
-      totalBasePrice += item.priceInfo.totalBasePrice;
-      totalVariantFinalPrice += item.priceInfo.totalVariantBasePrice;
-      totalAddonFinalPrice += item.priceInfo.totalAddonBasePrice;
-      totalFinalPrice += item.priceInfo.finalPrice;
+      totalBasePrice += item.priceInfo.totalBasePrice || 0;
+      totalVariantBasePrice += item.priceInfo.totalVariantBasePrice || 0;
+      totalAddonBasePrice += item.priceInfo.totalAddonBasePrice || 0;
+      totalFinalPrice += item.priceInfo.finalPrice || 0;
     });
 
     // Validate cart-level totals
     if (
-      Math.abs(cart.priceInfo.basePrice - totalBasePrice) > 0.01 ||
-      Math.abs(cart.priceInfo.totalVariantFinalPrice - totalVariantFinalPrice) > 0.01 ||
-      Math.abs(cart.priceInfo.totalAddonFinalPrice - totalAddonFinalPrice) > 0.01 ||
-      Math.abs(cart.priceInfo.finalPrice - totalFinalPrice) > 0.01
+      Math.abs((cart.priceInfo.basePrice || 0) - totalBasePrice) > 0.01 ||
+      Math.abs((cart.priceInfo.totalVariantBasePrice || 0) - totalVariantBasePrice) > 0.01 ||
+      Math.abs((cart.priceInfo.totalAddonBasePrice || 0) - totalAddonBasePrice) > 0.01 ||
+      Math.abs((cart.priceInfo.finalPrice || 0) - totalFinalPrice) > 0.01
     ) {
       console.error('Validation failed for cart-level totals.');
       return false;

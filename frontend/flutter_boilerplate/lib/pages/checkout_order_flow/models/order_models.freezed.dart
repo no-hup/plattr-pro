@@ -14,17 +14,12 @@ T _$identity<T>(T value) => value;
 final _privateConstructorUsedError = UnsupportedError(
     'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
 
-OrderResponse _$OrderResponseFromJson(Map<String, dynamic> json) {
-  return _OrderResponse.fromJson(json);
-}
-
 /// @nodoc
 mixin _$OrderResponse {
   String get status => throw _privateConstructorUsedError;
   String? get message => throw _privateConstructorUsedError;
   OrderData? get data => throw _privateConstructorUsedError;
 
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $OrderResponseCopyWith<OrderResponse> get copyWith =>
       throw _privateConstructorUsedError;
@@ -134,12 +129,10 @@ class __$$OrderResponseImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
-class _$OrderResponseImpl implements _OrderResponse {
-  const _$OrderResponseImpl({required this.status, this.message, this.data});
 
-  factory _$OrderResponseImpl.fromJson(Map<String, dynamic> json) =>
-      _$$OrderResponseImplFromJson(json);
+class _$OrderResponseImpl extends _OrderResponse {
+  const _$OrderResponseImpl({required this.status, this.message, this.data})
+      : super._();
 
   @override
   final String status;
@@ -163,7 +156,6 @@ class _$OrderResponseImpl implements _OrderResponse {
             (identical(other.data, data) || other.data == data));
   }
 
-  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, status, message, data);
 
@@ -172,23 +164,14 @@ class _$OrderResponseImpl implements _OrderResponse {
   @pragma('vm:prefer-inline')
   _$$OrderResponseImplCopyWith<_$OrderResponseImpl> get copyWith =>
       __$$OrderResponseImplCopyWithImpl<_$OrderResponseImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$OrderResponseImplToJson(
-      this,
-    );
-  }
 }
 
-abstract class _OrderResponse implements OrderResponse {
+abstract class _OrderResponse extends OrderResponse {
   const factory _OrderResponse(
       {required final String status,
       final String? message,
       final OrderData? data}) = _$OrderResponseImpl;
-
-  factory _OrderResponse.fromJson(Map<String, dynamic> json) =
-      _$OrderResponseImpl.fromJson;
+  const _OrderResponse._() : super._();
 
   @override
   String get status;
@@ -202,29 +185,24 @@ abstract class _OrderResponse implements OrderResponse {
       throw _privateConstructorUsedError;
 }
 
-OrderData _$OrderDataFromJson(Map<String, dynamic> json) {
-  return _OrderData.fromJson(json);
-}
-
 /// @nodoc
 mixin _$OrderData {
   String get id => throw _privateConstructorUsedError;
   String get orderNumber => throw _privateConstructorUsedError;
   String get orderStatus => throw _privateConstructorUsedError;
+  String get tableId => throw _privateConstructorUsedError;
+  String get restaurantId => throw _privateConstructorUsedError;
+  String get sessionId => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime? get createdAt => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime? get updatedAt => throw _privateConstructorUsedError;
-  String get tableId => throw _privateConstructorUsedError;
-  String get restaurantId => throw _privateConstructorUsedError;
-  String get sessionId => throw _privateConstructorUsedError;
   double get total => throw _privateConstructorUsedError;
   List<OrderItem> get items => throw _privateConstructorUsedError;
   String get notes => throw _privateConstructorUsedError;
   @JsonKey(name: 'carts', defaultValue: [])
   List<CartHistoryItem> get carts => throw _privateConstructorUsedError;
 
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $OrderDataCopyWith<OrderData> get copyWith =>
       throw _privateConstructorUsedError;
@@ -239,11 +217,11 @@ abstract class $OrderDataCopyWith<$Res> {
       {String id,
       String orderNumber,
       String orderStatus,
-      @TimestampConverter() DateTime? createdAt,
-      @TimestampConverter() DateTime? updatedAt,
       String tableId,
       String restaurantId,
       String sessionId,
+      @TimestampConverter() DateTime? createdAt,
+      @TimestampConverter() DateTime? updatedAt,
       double total,
       List<OrderItem> items,
       String notes,
@@ -266,11 +244,11 @@ class _$OrderDataCopyWithImpl<$Res, $Val extends OrderData>
     Object? id = null,
     Object? orderNumber = null,
     Object? orderStatus = null,
-    Object? createdAt = freezed,
-    Object? updatedAt = freezed,
     Object? tableId = null,
     Object? restaurantId = null,
     Object? sessionId = null,
+    Object? createdAt = freezed,
+    Object? updatedAt = freezed,
     Object? total = null,
     Object? items = null,
     Object? notes = null,
@@ -289,14 +267,6 @@ class _$OrderDataCopyWithImpl<$Res, $Val extends OrderData>
           ? _value.orderStatus
           : orderStatus // ignore: cast_nullable_to_non_nullable
               as String,
-      createdAt: freezed == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
       tableId: null == tableId
           ? _value.tableId
           : tableId // ignore: cast_nullable_to_non_nullable
@@ -309,6 +279,14 @@ class _$OrderDataCopyWithImpl<$Res, $Val extends OrderData>
           ? _value.sessionId
           : sessionId // ignore: cast_nullable_to_non_nullable
               as String,
+      createdAt: freezed == createdAt
+          ? _value.createdAt
+          : createdAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      updatedAt: freezed == updatedAt
+          ? _value.updatedAt
+          : updatedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
       total: null == total
           ? _value.total
           : total // ignore: cast_nullable_to_non_nullable
@@ -341,11 +319,11 @@ abstract class _$$OrderDataImplCopyWith<$Res>
       {String id,
       String orderNumber,
       String orderStatus,
-      @TimestampConverter() DateTime? createdAt,
-      @TimestampConverter() DateTime? updatedAt,
       String tableId,
       String restaurantId,
       String sessionId,
+      @TimestampConverter() DateTime? createdAt,
+      @TimestampConverter() DateTime? updatedAt,
       double total,
       List<OrderItem> items,
       String notes,
@@ -366,11 +344,11 @@ class __$$OrderDataImplCopyWithImpl<$Res>
     Object? id = null,
     Object? orderNumber = null,
     Object? orderStatus = null,
-    Object? createdAt = freezed,
-    Object? updatedAt = freezed,
     Object? tableId = null,
     Object? restaurantId = null,
     Object? sessionId = null,
+    Object? createdAt = freezed,
+    Object? updatedAt = freezed,
     Object? total = null,
     Object? items = null,
     Object? notes = null,
@@ -389,14 +367,6 @@ class __$$OrderDataImplCopyWithImpl<$Res>
           ? _value.orderStatus
           : orderStatus // ignore: cast_nullable_to_non_nullable
               as String,
-      createdAt: freezed == createdAt
-          ? _value.createdAt
-          : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      updatedAt: freezed == updatedAt
-          ? _value.updatedAt
-          : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
       tableId: null == tableId
           ? _value.tableId
           : tableId // ignore: cast_nullable_to_non_nullable
@@ -409,6 +379,14 @@ class __$$OrderDataImplCopyWithImpl<$Res>
           ? _value.sessionId
           : sessionId // ignore: cast_nullable_to_non_nullable
               as String,
+      createdAt: freezed == createdAt
+          ? _value.createdAt
+          : createdAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      updatedAt: freezed == updatedAt
+          ? _value.updatedAt
+          : updatedAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
       total: null == total
           ? _value.total
           : total // ignore: cast_nullable_to_non_nullable
@@ -430,27 +408,25 @@ class __$$OrderDataImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
-class _$OrderDataImpl implements _OrderData {
+
+class _$OrderDataImpl extends _OrderData {
   const _$OrderDataImpl(
       {required this.id,
       required this.orderNumber,
       required this.orderStatus,
-      @TimestampConverter() this.createdAt,
-      @TimestampConverter() this.updatedAt,
       required this.tableId,
       required this.restaurantId,
       required this.sessionId,
+      @TimestampConverter() this.createdAt,
+      @TimestampConverter() this.updatedAt,
       this.total = 0.0,
       final List<OrderItem> items = const [],
       this.notes = '',
       @JsonKey(name: 'carts', defaultValue: [])
       final List<CartHistoryItem> carts = const []})
       : _items = items,
-        _carts = carts;
-
-  factory _$OrderDataImpl.fromJson(Map<String, dynamic> json) =>
-      _$$OrderDataImplFromJson(json);
+        _carts = carts,
+        super._();
 
   @override
   final String id;
@@ -459,17 +435,17 @@ class _$OrderDataImpl implements _OrderData {
   @override
   final String orderStatus;
   @override
-  @TimestampConverter()
-  final DateTime? createdAt;
-  @override
-  @TimestampConverter()
-  final DateTime? updatedAt;
-  @override
   final String tableId;
   @override
   final String restaurantId;
   @override
   final String sessionId;
+  @override
+  @TimestampConverter()
+  final DateTime? createdAt;
+  @override
+  @TimestampConverter()
+  final DateTime? updatedAt;
   @override
   @JsonKey()
   final double total;
@@ -496,7 +472,7 @@ class _$OrderDataImpl implements _OrderData {
 
   @override
   String toString() {
-    return 'OrderData(id: $id, orderNumber: $orderNumber, orderStatus: $orderStatus, createdAt: $createdAt, updatedAt: $updatedAt, tableId: $tableId, restaurantId: $restaurantId, sessionId: $sessionId, total: $total, items: $items, notes: $notes, carts: $carts)';
+    return 'OrderData(id: $id, orderNumber: $orderNumber, orderStatus: $orderStatus, tableId: $tableId, restaurantId: $restaurantId, sessionId: $sessionId, createdAt: $createdAt, updatedAt: $updatedAt, total: $total, items: $items, notes: $notes, carts: $carts)';
   }
 
   @override
@@ -509,33 +485,32 @@ class _$OrderDataImpl implements _OrderData {
                 other.orderNumber == orderNumber) &&
             (identical(other.orderStatus, orderStatus) ||
                 other.orderStatus == orderStatus) &&
-            (identical(other.createdAt, createdAt) ||
-                other.createdAt == createdAt) &&
-            (identical(other.updatedAt, updatedAt) ||
-                other.updatedAt == updatedAt) &&
             (identical(other.tableId, tableId) || other.tableId == tableId) &&
             (identical(other.restaurantId, restaurantId) ||
                 other.restaurantId == restaurantId) &&
             (identical(other.sessionId, sessionId) ||
                 other.sessionId == sessionId) &&
+            (identical(other.createdAt, createdAt) ||
+                other.createdAt == createdAt) &&
+            (identical(other.updatedAt, updatedAt) ||
+                other.updatedAt == updatedAt) &&
             (identical(other.total, total) || other.total == total) &&
             const DeepCollectionEquality().equals(other._items, _items) &&
             (identical(other.notes, notes) || other.notes == notes) &&
             const DeepCollectionEquality().equals(other._carts, _carts));
   }
 
-  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
       id,
       orderNumber,
       orderStatus,
-      createdAt,
-      updatedAt,
       tableId,
       restaurantId,
       sessionId,
+      createdAt,
+      updatedAt,
       total,
       const DeepCollectionEquality().hash(_items),
       notes,
@@ -546,33 +521,24 @@ class _$OrderDataImpl implements _OrderData {
   @pragma('vm:prefer-inline')
   _$$OrderDataImplCopyWith<_$OrderDataImpl> get copyWith =>
       __$$OrderDataImplCopyWithImpl<_$OrderDataImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$OrderDataImplToJson(
-      this,
-    );
-  }
 }
 
-abstract class _OrderData implements OrderData {
+abstract class _OrderData extends OrderData {
   const factory _OrderData(
       {required final String id,
       required final String orderNumber,
       required final String orderStatus,
-      @TimestampConverter() final DateTime? createdAt,
-      @TimestampConverter() final DateTime? updatedAt,
       required final String tableId,
       required final String restaurantId,
       required final String sessionId,
+      @TimestampConverter() final DateTime? createdAt,
+      @TimestampConverter() final DateTime? updatedAt,
       final double total,
       final List<OrderItem> items,
       final String notes,
       @JsonKey(name: 'carts', defaultValue: [])
       final List<CartHistoryItem> carts}) = _$OrderDataImpl;
-
-  factory _OrderData.fromJson(Map<String, dynamic> json) =
-      _$OrderDataImpl.fromJson;
+  const _OrderData._() : super._();
 
   @override
   String get id;
@@ -581,17 +547,17 @@ abstract class _OrderData implements OrderData {
   @override
   String get orderStatus;
   @override
-  @TimestampConverter()
-  DateTime? get createdAt;
-  @override
-  @TimestampConverter()
-  DateTime? get updatedAt;
-  @override
   String get tableId;
   @override
   String get restaurantId;
   @override
   String get sessionId;
+  @override
+  @TimestampConverter()
+  DateTime? get createdAt;
+  @override
+  @TimestampConverter()
+  DateTime? get updatedAt;
   @override
   double get total;
   @override
@@ -605,10 +571,6 @@ abstract class _OrderData implements OrderData {
   @JsonKey(ignore: true)
   _$$OrderDataImplCopyWith<_$OrderDataImpl> get copyWith =>
       throw _privateConstructorUsedError;
-}
-
-CartHistoryItem _$CartHistoryItemFromJson(Map<String, dynamic> json) {
-  return _CartHistoryItem.fromJson(json);
 }
 
 /// @nodoc
@@ -625,7 +587,6 @@ mixin _$CartHistoryItem {
   String? get notes => throw _privateConstructorUsedError;
   int? get estimatedPrepTime => throw _privateConstructorUsedError;
 
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $CartHistoryItemCopyWith<CartHistoryItem> get copyWith =>
       throw _privateConstructorUsedError;
@@ -805,8 +766,8 @@ class __$$CartHistoryItemImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
-class _$CartHistoryItemImpl implements _CartHistoryItem {
+
+class _$CartHistoryItemImpl extends _CartHistoryItem {
   const _$CartHistoryItemImpl(
       {this.id = '',
       this.status = 'pending',
@@ -816,10 +777,8 @@ class _$CartHistoryItemImpl implements _CartHistoryItem {
       final List<OrderItem> items = const [],
       this.notes,
       this.estimatedPrepTime})
-      : _items = items;
-
-  factory _$CartHistoryItemImpl.fromJson(Map<String, dynamic> json) =>
-      _$$CartHistoryItemImplFromJson(json);
+      : _items = items,
+        super._();
 
   @override
   @JsonKey()
@@ -874,7 +833,6 @@ class _$CartHistoryItemImpl implements _CartHistoryItem {
                 other.estimatedPrepTime == estimatedPrepTime));
   }
 
-  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -893,16 +851,9 @@ class _$CartHistoryItemImpl implements _CartHistoryItem {
   _$$CartHistoryItemImplCopyWith<_$CartHistoryItemImpl> get copyWith =>
       __$$CartHistoryItemImplCopyWithImpl<_$CartHistoryItemImpl>(
           this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$CartHistoryItemImplToJson(
-      this,
-    );
-  }
 }
 
-abstract class _CartHistoryItem implements CartHistoryItem {
+abstract class _CartHistoryItem extends CartHistoryItem {
   const factory _CartHistoryItem(
       {final String id,
       final String status,
@@ -914,9 +865,7 @@ abstract class _CartHistoryItem implements CartHistoryItem {
       final List<OrderItem> items,
       final String? notes,
       final int? estimatedPrepTime}) = _$CartHistoryItemImpl;
-
-  factory _CartHistoryItem.fromJson(Map<String, dynamic> json) =
-      _$CartHistoryItemImpl.fromJson;
+  const _CartHistoryItem._() : super._();
 
   @override
   String get id;
@@ -943,10 +892,6 @@ abstract class _CartHistoryItem implements CartHistoryItem {
       throw _privateConstructorUsedError;
 }
 
-CartPriceInfoDetail _$CartPriceInfoDetailFromJson(Map<String, dynamic> json) {
-  return _CartPriceInfoDetail.fromJson(json);
-}
-
 /// @nodoc
 mixin _$CartPriceInfoDetail {
   double get basePrice => throw _privateConstructorUsedError;
@@ -956,7 +901,6 @@ mixin _$CartPriceInfoDetail {
   double get totalVariantBasePrice => throw _privateConstructorUsedError;
   double get totalAddonBasePrice => throw _privateConstructorUsedError;
 
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $CartPriceInfoDetailCopyWith<CartPriceInfoDetail> get copyWith =>
       throw _privateConstructorUsedError;
@@ -1091,18 +1035,16 @@ class __$$CartPriceInfoDetailImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
-class _$CartPriceInfoDetailImpl implements _CartPriceInfoDetail {
+
+class _$CartPriceInfoDetailImpl extends _CartPriceInfoDetail {
   const _$CartPriceInfoDetailImpl(
       {this.basePrice = 0.0,
       this.finalPrice = 0.0,
       this.discount = 0.0,
       this.totalDiscountAmount = 0.0,
       this.totalVariantBasePrice = 0.0,
-      this.totalAddonBasePrice = 0.0});
-
-  factory _$CartPriceInfoDetailImpl.fromJson(Map<String, dynamic> json) =>
-      _$$CartPriceInfoDetailImplFromJson(json);
+      this.totalAddonBasePrice = 0.0})
+      : super._();
 
   @override
   @JsonKey()
@@ -1147,7 +1089,6 @@ class _$CartPriceInfoDetailImpl implements _CartPriceInfoDetail {
                 other.totalAddonBasePrice == totalAddonBasePrice));
   }
 
-  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, basePrice, finalPrice, discount,
       totalDiscountAmount, totalVariantBasePrice, totalAddonBasePrice);
@@ -1158,16 +1099,9 @@ class _$CartPriceInfoDetailImpl implements _CartPriceInfoDetail {
   _$$CartPriceInfoDetailImplCopyWith<_$CartPriceInfoDetailImpl> get copyWith =>
       __$$CartPriceInfoDetailImplCopyWithImpl<_$CartPriceInfoDetailImpl>(
           this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$CartPriceInfoDetailImplToJson(
-      this,
-    );
-  }
 }
 
-abstract class _CartPriceInfoDetail implements CartPriceInfoDetail {
+abstract class _CartPriceInfoDetail extends CartPriceInfoDetail {
   const factory _CartPriceInfoDetail(
       {final double basePrice,
       final double finalPrice,
@@ -1175,9 +1109,7 @@ abstract class _CartPriceInfoDetail implements CartPriceInfoDetail {
       final double totalDiscountAmount,
       final double totalVariantBasePrice,
       final double totalAddonBasePrice}) = _$CartPriceInfoDetailImpl;
-
-  factory _CartPriceInfoDetail.fromJson(Map<String, dynamic> json) =
-      _$CartPriceInfoDetailImpl.fromJson;
+  const _CartPriceInfoDetail._() : super._();
 
   @override
   double get basePrice;
@@ -1197,10 +1129,6 @@ abstract class _CartPriceInfoDetail implements CartPriceInfoDetail {
       throw _privateConstructorUsedError;
 }
 
-OrderItem _$OrderItemFromJson(Map<String, dynamic> json) {
-  return _OrderItem.fromJson(json);
-}
-
 /// @nodoc
 mixin _$OrderItem {
   String get menuItemId => throw _privateConstructorUsedError;
@@ -1211,7 +1139,6 @@ mixin _$OrderItem {
   List<OrderAddon> get addons => throw _privateConstructorUsedError;
   String? get cartItemId => throw _privateConstructorUsedError;
 
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $OrderItemCopyWith<OrderItem> get copyWith =>
       throw _privateConstructorUsedError;
@@ -1357,8 +1284,8 @@ class __$$OrderItemImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
-class _$OrderItemImpl implements _OrderItem {
+
+class _$OrderItemImpl extends _OrderItem {
   const _$OrderItemImpl(
       {required this.menuItemId,
       required this.name,
@@ -1368,10 +1295,8 @@ class _$OrderItemImpl implements _OrderItem {
       final List<OrderAddon> addons = const [],
       this.cartItemId})
       : _variants = variants,
-        _addons = addons;
-
-  factory _$OrderItemImpl.fromJson(Map<String, dynamic> json) =>
-      _$$OrderItemImplFromJson(json);
+        _addons = addons,
+        super._();
 
   @override
   final String menuItemId;
@@ -1426,7 +1351,6 @@ class _$OrderItemImpl implements _OrderItem {
                 other.cartItemId == cartItemId));
   }
 
-  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -1443,16 +1367,9 @@ class _$OrderItemImpl implements _OrderItem {
   @pragma('vm:prefer-inline')
   _$$OrderItemImplCopyWith<_$OrderItemImpl> get copyWith =>
       __$$OrderItemImplCopyWithImpl<_$OrderItemImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$OrderItemImplToJson(
-      this,
-    );
-  }
 }
 
-abstract class _OrderItem implements OrderItem {
+abstract class _OrderItem extends OrderItem {
   const factory _OrderItem(
       {required final String menuItemId,
       required final String name,
@@ -1461,9 +1378,7 @@ abstract class _OrderItem implements OrderItem {
       final List<OrderVariant> variants,
       final List<OrderAddon> addons,
       final String? cartItemId}) = _$OrderItemImpl;
-
-  factory _OrderItem.fromJson(Map<String, dynamic> json) =
-      _$OrderItemImpl.fromJson;
+  const _OrderItem._() : super._();
 
   @override
   String get menuItemId;
@@ -1485,20 +1400,15 @@ abstract class _OrderItem implements OrderItem {
       throw _privateConstructorUsedError;
 }
 
-OrderVariant _$OrderVariantFromJson(Map<String, dynamic> json) {
-  return _OrderVariant.fromJson(json);
-}
-
 /// @nodoc
 mixin _$OrderVariant {
   String get id => throw _privateConstructorUsedError;
-  bool get isMandatory => throw _privateConstructorUsedError;
-  bool get respectParentDiscount => throw _privateConstructorUsedError;
   String get selected_variant_id => throw _privateConstructorUsedError;
   String get selected_variant_name => throw _privateConstructorUsedError;
   PriceInfo get priceInfo => throw _privateConstructorUsedError;
+  bool get isMandatory => throw _privateConstructorUsedError;
+  bool get respectParentDiscount => throw _privateConstructorUsedError;
 
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $OrderVariantCopyWith<OrderVariant> get copyWith =>
       throw _privateConstructorUsedError;
@@ -1512,11 +1422,11 @@ abstract class $OrderVariantCopyWith<$Res> {
   @useResult
   $Res call(
       {String id,
-      bool isMandatory,
-      bool respectParentDiscount,
       String selected_variant_id,
       String selected_variant_name,
-      PriceInfo priceInfo});
+      PriceInfo priceInfo,
+      bool isMandatory,
+      bool respectParentDiscount});
 
   $PriceInfoCopyWith<$Res> get priceInfo;
 }
@@ -1535,25 +1445,17 @@ class _$OrderVariantCopyWithImpl<$Res, $Val extends OrderVariant>
   @override
   $Res call({
     Object? id = null,
-    Object? isMandatory = null,
-    Object? respectParentDiscount = null,
     Object? selected_variant_id = null,
     Object? selected_variant_name = null,
     Object? priceInfo = null,
+    Object? isMandatory = null,
+    Object? respectParentDiscount = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
-      isMandatory: null == isMandatory
-          ? _value.isMandatory
-          : isMandatory // ignore: cast_nullable_to_non_nullable
-              as bool,
-      respectParentDiscount: null == respectParentDiscount
-          ? _value.respectParentDiscount
-          : respectParentDiscount // ignore: cast_nullable_to_non_nullable
-              as bool,
       selected_variant_id: null == selected_variant_id
           ? _value.selected_variant_id
           : selected_variant_id // ignore: cast_nullable_to_non_nullable
@@ -1566,6 +1468,14 @@ class _$OrderVariantCopyWithImpl<$Res, $Val extends OrderVariant>
           ? _value.priceInfo
           : priceInfo // ignore: cast_nullable_to_non_nullable
               as PriceInfo,
+      isMandatory: null == isMandatory
+          ? _value.isMandatory
+          : isMandatory // ignore: cast_nullable_to_non_nullable
+              as bool,
+      respectParentDiscount: null == respectParentDiscount
+          ? _value.respectParentDiscount
+          : respectParentDiscount // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 
@@ -1588,11 +1498,11 @@ abstract class _$$OrderVariantImplCopyWith<$Res>
   @useResult
   $Res call(
       {String id,
-      bool isMandatory,
-      bool respectParentDiscount,
       String selected_variant_id,
       String selected_variant_name,
-      PriceInfo priceInfo});
+      PriceInfo priceInfo,
+      bool isMandatory,
+      bool respectParentDiscount});
 
   @override
   $PriceInfoCopyWith<$Res> get priceInfo;
@@ -1610,25 +1520,17 @@ class __$$OrderVariantImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? isMandatory = null,
-    Object? respectParentDiscount = null,
     Object? selected_variant_id = null,
     Object? selected_variant_name = null,
     Object? priceInfo = null,
+    Object? isMandatory = null,
+    Object? respectParentDiscount = null,
   }) {
     return _then(_$OrderVariantImpl(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
-      isMandatory: null == isMandatory
-          ? _value.isMandatory
-          : isMandatory // ignore: cast_nullable_to_non_nullable
-              as bool,
-      respectParentDiscount: null == respectParentDiscount
-          ? _value.respectParentDiscount
-          : respectParentDiscount // ignore: cast_nullable_to_non_nullable
-              as bool,
       selected_variant_id: null == selected_variant_id
           ? _value.selected_variant_id
           : selected_variant_id // ignore: cast_nullable_to_non_nullable
@@ -1641,42 +1543,48 @@ class __$$OrderVariantImplCopyWithImpl<$Res>
           ? _value.priceInfo
           : priceInfo // ignore: cast_nullable_to_non_nullable
               as PriceInfo,
+      isMandatory: null == isMandatory
+          ? _value.isMandatory
+          : isMandatory // ignore: cast_nullable_to_non_nullable
+              as bool,
+      respectParentDiscount: null == respectParentDiscount
+          ? _value.respectParentDiscount
+          : respectParentDiscount // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
 
 /// @nodoc
-@JsonSerializable()
-class _$OrderVariantImpl implements _OrderVariant {
+
+class _$OrderVariantImpl extends _OrderVariant {
   const _$OrderVariantImpl(
       {required this.id,
-      this.isMandatory = false,
-      this.respectParentDiscount = true,
       required this.selected_variant_id,
       required this.selected_variant_name,
-      required this.priceInfo});
-
-  factory _$OrderVariantImpl.fromJson(Map<String, dynamic> json) =>
-      _$$OrderVariantImplFromJson(json);
+      required this.priceInfo,
+      this.isMandatory = false,
+      this.respectParentDiscount = true})
+      : super._();
 
   @override
   final String id;
-  @override
-  @JsonKey()
-  final bool isMandatory;
-  @override
-  @JsonKey()
-  final bool respectParentDiscount;
   @override
   final String selected_variant_id;
   @override
   final String selected_variant_name;
   @override
   final PriceInfo priceInfo;
+  @override
+  @JsonKey()
+  final bool isMandatory;
+  @override
+  @JsonKey()
+  final bool respectParentDiscount;
 
   @override
   String toString() {
-    return 'OrderVariant(id: $id, isMandatory: $isMandatory, respectParentDiscount: $respectParentDiscount, selected_variant_id: $selected_variant_id, selected_variant_name: $selected_variant_name, priceInfo: $priceInfo)';
+    return 'OrderVariant(id: $id, selected_variant_id: $selected_variant_id, selected_variant_name: $selected_variant_name, priceInfo: $priceInfo, isMandatory: $isMandatory, respectParentDiscount: $respectParentDiscount)';
   }
 
   @override
@@ -1685,61 +1593,41 @@ class _$OrderVariantImpl implements _OrderVariant {
         (other.runtimeType == runtimeType &&
             other is _$OrderVariantImpl &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.isMandatory, isMandatory) ||
-                other.isMandatory == isMandatory) &&
-            (identical(other.respectParentDiscount, respectParentDiscount) ||
-                other.respectParentDiscount == respectParentDiscount) &&
             (identical(other.selected_variant_id, selected_variant_id) ||
                 other.selected_variant_id == selected_variant_id) &&
             (identical(other.selected_variant_name, selected_variant_name) ||
                 other.selected_variant_name == selected_variant_name) &&
             (identical(other.priceInfo, priceInfo) ||
-                other.priceInfo == priceInfo));
+                other.priceInfo == priceInfo) &&
+            (identical(other.isMandatory, isMandatory) ||
+                other.isMandatory == isMandatory) &&
+            (identical(other.respectParentDiscount, respectParentDiscount) ||
+                other.respectParentDiscount == respectParentDiscount));
   }
 
-  @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      isMandatory,
-      respectParentDiscount,
-      selected_variant_id,
-      selected_variant_name,
-      priceInfo);
+  int get hashCode => Object.hash(runtimeType, id, selected_variant_id,
+      selected_variant_name, priceInfo, isMandatory, respectParentDiscount);
 
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$OrderVariantImplCopyWith<_$OrderVariantImpl> get copyWith =>
       __$$OrderVariantImplCopyWithImpl<_$OrderVariantImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$OrderVariantImplToJson(
-      this,
-    );
-  }
 }
 
-abstract class _OrderVariant implements OrderVariant {
+abstract class _OrderVariant extends OrderVariant {
   const factory _OrderVariant(
       {required final String id,
-      final bool isMandatory,
-      final bool respectParentDiscount,
       required final String selected_variant_id,
       required final String selected_variant_name,
-      required final PriceInfo priceInfo}) = _$OrderVariantImpl;
-
-  factory _OrderVariant.fromJson(Map<String, dynamic> json) =
-      _$OrderVariantImpl.fromJson;
+      required final PriceInfo priceInfo,
+      final bool isMandatory,
+      final bool respectParentDiscount}) = _$OrderVariantImpl;
+  const _OrderVariant._() : super._();
 
   @override
   String get id;
-  @override
-  bool get isMandatory;
-  @override
-  bool get respectParentDiscount;
   @override
   String get selected_variant_id;
   @override
@@ -1747,13 +1635,13 @@ abstract class _OrderVariant implements OrderVariant {
   @override
   PriceInfo get priceInfo;
   @override
+  bool get isMandatory;
+  @override
+  bool get respectParentDiscount;
+  @override
   @JsonKey(ignore: true)
   _$$OrderVariantImplCopyWith<_$OrderVariantImpl> get copyWith =>
       throw _privateConstructorUsedError;
-}
-
-OrderAddon _$OrderAddonFromJson(Map<String, dynamic> json) {
-  return _OrderAddon.fromJson(json);
 }
 
 /// @nodoc
@@ -1763,7 +1651,6 @@ mixin _$OrderAddon {
   PriceInfo get priceInfo => throw _privateConstructorUsedError;
   bool get respectParentDiscount => throw _privateConstructorUsedError;
 
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $OrderAddonCopyWith<OrderAddon> get copyWith =>
       throw _privateConstructorUsedError;
@@ -1887,16 +1774,14 @@ class __$$OrderAddonImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
-class _$OrderAddonImpl implements _OrderAddon {
+
+class _$OrderAddonImpl extends _OrderAddon {
   const _$OrderAddonImpl(
       {required this.id,
       required this.name,
       required this.priceInfo,
-      this.respectParentDiscount = true});
-
-  factory _$OrderAddonImpl.fromJson(Map<String, dynamic> json) =>
-      _$$OrderAddonImplFromJson(json);
+      this.respectParentDiscount = true})
+      : super._();
 
   @override
   final String id;
@@ -1926,7 +1811,6 @@ class _$OrderAddonImpl implements _OrderAddon {
                 other.respectParentDiscount == respectParentDiscount));
   }
 
-  @JsonKey(ignore: true)
   @override
   int get hashCode =>
       Object.hash(runtimeType, id, name, priceInfo, respectParentDiscount);
@@ -1936,24 +1820,15 @@ class _$OrderAddonImpl implements _OrderAddon {
   @pragma('vm:prefer-inline')
   _$$OrderAddonImplCopyWith<_$OrderAddonImpl> get copyWith =>
       __$$OrderAddonImplCopyWithImpl<_$OrderAddonImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$OrderAddonImplToJson(
-      this,
-    );
-  }
 }
 
-abstract class _OrderAddon implements OrderAddon {
+abstract class _OrderAddon extends OrderAddon {
   const factory _OrderAddon(
       {required final String id,
       required final String name,
       required final PriceInfo priceInfo,
       final bool respectParentDiscount}) = _$OrderAddonImpl;
-
-  factory _OrderAddon.fromJson(Map<String, dynamic> json) =
-      _$OrderAddonImpl.fromJson;
+  const _OrderAddon._() : super._();
 
   @override
   String get id;
@@ -1969,17 +1844,12 @@ abstract class _OrderAddon implements OrderAddon {
       throw _privateConstructorUsedError;
 }
 
-PriceInfo _$PriceInfoFromJson(Map<String, dynamic> json) {
-  return _PriceInfo.fromJson(json);
-}
-
 /// @nodoc
 mixin _$PriceInfo {
   double get basePrice => throw _privateConstructorUsedError;
   double get finalPrice => throw _privateConstructorUsedError;
   double get discount => throw _privateConstructorUsedError;
 
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $PriceInfoCopyWith<PriceInfo> get copyWith =>
       throw _privateConstructorUsedError;
@@ -2071,13 +1941,11 @@ class __$$PriceInfoImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
-class _$PriceInfoImpl implements _PriceInfo {
-  const _$PriceInfoImpl(
-      {this.basePrice = 0.0, this.finalPrice = 0.0, this.discount = 0.0});
 
-  factory _$PriceInfoImpl.fromJson(Map<String, dynamic> json) =>
-      _$$PriceInfoImplFromJson(json);
+class _$PriceInfoImpl extends _PriceInfo {
+  const _$PriceInfoImpl(
+      {this.basePrice = 0.0, this.finalPrice = 0.0, this.discount = 0.0})
+      : super._();
 
   @override
   @JsonKey()
@@ -2107,7 +1975,6 @@ class _$PriceInfoImpl implements _PriceInfo {
                 other.discount == discount));
   }
 
-  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, basePrice, finalPrice, discount);
 
@@ -2116,23 +1983,14 @@ class _$PriceInfoImpl implements _PriceInfo {
   @pragma('vm:prefer-inline')
   _$$PriceInfoImplCopyWith<_$PriceInfoImpl> get copyWith =>
       __$$PriceInfoImplCopyWithImpl<_$PriceInfoImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$PriceInfoImplToJson(
-      this,
-    );
-  }
 }
 
-abstract class _PriceInfo implements PriceInfo {
+abstract class _PriceInfo extends PriceInfo {
   const factory _PriceInfo(
       {final double basePrice,
       final double finalPrice,
       final double discount}) = _$PriceInfoImpl;
-
-  factory _PriceInfo.fromJson(Map<String, dynamic> json) =
-      _$PriceInfoImpl.fromJson;
+  const _PriceInfo._() : super._();
 
   @override
   double get basePrice;

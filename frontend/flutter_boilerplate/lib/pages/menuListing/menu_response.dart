@@ -9,8 +9,33 @@ class MenuResponse with _$MenuResponse {
     required MenuData result,
   }) = _MenuResponse;
 
-  factory MenuResponse.fromJson(Map<String, dynamic> json) =>
-      _$MenuResponseFromJson(json);
+  factory MenuResponse.fromJson(Map<String, dynamic> json) {
+    try {
+      // Sanitize the JSON to handle potential type mismatches and null values
+      final sanitizedJson = <String, dynamic>{
+        'result': json['result'] as Map<String, dynamic>? ?? {},
+      };
+
+      // Manually construct to avoid relying on generated _$*FromJson here
+      return MenuResponse(
+        result: MenuData.fromJson(
+          sanitizedJson['result'] as Map<String, dynamic>,
+        ),
+      );
+    } catch (e) {
+      // Return a default response if parsing fails
+      return MenuResponse(
+        result: MenuData(
+          categories: [],
+          menuItems: {},
+          metadata: MenuMetadata(
+            totalCategories: 0,
+            totalMenuItems: 0,
+          ),
+        ),
+      );
+    }
+  }
 }
 
 @freezed
@@ -21,8 +46,58 @@ class MenuData with _$MenuData {
     required MenuMetadata metadata,
   }) = _MenuData;
 
-  factory MenuData.fromJson(Map<String, dynamic> json) =>
-      _$MenuDataFromJson(json);
+  factory MenuData.fromJson(Map<String, dynamic> json) {
+    try {
+      // Sanitize the JSON to handle potential type mismatches and null values
+      final sanitizedJson = <String, dynamic>{
+        'categories': json['categories'] as List<dynamic>? ?? [],
+        'menuItems': json['menuItems'] as Map<String, dynamic>? ?? {},
+        'metadata': json['metadata'] as Map<String, dynamic>? ?? {},
+      };
+
+      // Parse categories list
+      final categories = (sanitizedJson['categories'] as List<dynamic>)
+          .whereType<Map<String, dynamic>>()
+          .map(Category.fromJson)
+          .toList();
+
+      // Parse menuItems map
+      final rawMenuItems = sanitizedJson['menuItems'] as Map<String, dynamic>;
+      final parsedMenuItems = <String, List<MenuItem>>{};
+      for (final entry in rawMenuItems.entries) {
+        final value = entry.value;
+        if (value is List) {
+          parsedMenuItems[entry.key] = value
+              .whereType<Map<String, dynamic>>()
+              .map(MenuItem.fromJson)
+              .toList();
+        } else {
+          parsedMenuItems[entry.key] = const <MenuItem>[];
+        }
+      }
+
+      // Parse metadata
+      final metadata = MenuMetadata.fromJson(
+        sanitizedJson['metadata'] as Map<String, dynamic>,
+      );
+
+      return MenuData(
+        categories: categories,
+        menuItems: parsedMenuItems,
+        metadata: metadata,
+      );
+    } catch (e) {
+      // Return a default MenuData if parsing fails
+      return MenuData(
+        categories: [],
+        menuItems: {},
+        metadata: MenuMetadata(
+          totalCategories: 0,
+          totalMenuItems: 0,
+        ),
+      );
+    }
+  }
 }
 
 @freezed
@@ -42,8 +117,8 @@ class Category with _$Category {
     required String id,
     required String name,
     required String description,
-    String? image,
     required int order,
+    String? image,
   }) = _Category;
 
   factory Category.fromJson(Map<String, dynamic> json) =>
@@ -57,12 +132,12 @@ class MenuItem with _$MenuItem {
     required String categoryId,
     required MenuItemMeta meta,
     required PriceInfo priceInfo,
+    required bool isInStock,
+    required bool isCustomizable,
     @Default([]) List<Variant> variants,
     @Default([]) List<Addon> addons,
     NutritionalInfo? nutritionalInfo,
     @Default([]) List<String> allergenTags,
-    required bool isInStock,
-    required bool isCustomizable,
     @Default(0) int quantity,
   }) = _MenuItem;
 
@@ -135,8 +210,7 @@ class Addon with _$Addon {
     required bool isMandatory,
   }) = _Addon;
 
-  factory Addon.fromJson(Map<String, dynamic> json) =>
-      _$AddonFromJson(json);
+  factory Addon.fromJson(Map<String, dynamic> json) => _$AddonFromJson(json);
 }
 
 @freezed

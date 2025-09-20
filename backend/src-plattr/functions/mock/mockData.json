@@ -35,6 +35,42 @@
         "dietaryRestrictions": []
       }
     },
+    "test_customer_001": {
+      "phoneNumber": "test_customer_001",
+      "name": "Test Customer One",
+      "email": "test1@example.com",
+      "createdAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "visits": [],
+      "preferences": {
+        "favoriteItems": [],
+        "dietaryRestrictions": []
+      }
+    },
+    "test_customer_002": {
+      "phoneNumber": "test_customer_002",
+      "name": "Test Customer Two",
+      "email": "test2@example.com",
+      "createdAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "visits": [],
+      "preferences": {
+        "favoriteItems": [],
+        "dietaryRestrictions": []
+      }
+    },
     "9876543210": {
       "phoneNumber": "9876543210",
       "name": "Jane Customer",
@@ -322,6 +358,75 @@
           },
           "assignedServerId": "server002",
           "lastActivity": null
+        },
+        "table_test_001": {
+          "number": "T_TEST_1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "createdAt": {
+              "_seconds": 1678901234,
+              "_nanoseconds": 0
+            },
+            "expiresAt": {
+              "_seconds": 1678901534,
+              "_nanoseconds": 0
+            }
+          },
+          "session": null,
+          "occupiedBy": [],
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          },
+          "assignedServerId": "server001",
+          "lastActivity": null
+        },
+        "table_test_002": {
+          "number": "T_TEST_2",
+          "capacity": 2,
+          "status": "disabled",
+          "currentOTP": {
+            "code": "",
+            "createdAt": null,
+            "expiresAt": null
+          },
+          "session": null,
+          "occupiedBy": [],
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          },
+          "assignedServerId": "server002",
+          "lastActivity": null
+        },
+        "table_test_003": {
+          "number": "T_TEST_3",
+          "capacity": 6,
+          "status": "active",
+          "currentOTP": {
+            "code": "654321",
+            "createdAt": {
+              "_seconds": 1678901234,
+              "_nanoseconds": 0
+            },
+            "expiresAt": {
+              "_seconds": 1678901534,
+              "_nanoseconds": 0
+            }
+          },
+          "session": "session_test_001",
+          "occupiedBy": ["test_customer_001"],
+          "primaryCustomer": {
+            "phoneNumber": "test_customer_001",
+            "name": "Test Customer One"
+          },
+          "assignedServerId": "server001",
+          "lastActivity": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
         }
       },
       "servers": {
@@ -778,6 +883,44 @@
           },
           "expiresAt": {
             "_seconds": 1735689600,
+            "_nanoseconds": 0
+          }
+        },
+        "session_test_001": {
+          "entity": "table",
+          "tableId": "table_test_003",
+          "primaryUserId": "test_customer_001",
+          "users": ["test_customer_001"],
+          "status": "active",
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "expiresAt": {
+            "_seconds": 1678915634,
+            "_nanoseconds": 0
+          }
+        },
+        "session_test_002": {
+          "entity": "table",
+          "tableId": "table_test_001",
+          "primaryUserId": "test_customer_002",
+          "users": ["test_customer_002"],
+          "status": "expired",
+          "createdAt": {
+            "_seconds": 1678800000,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678800000,
+            "_nanoseconds": 0
+          },
+          "expiresAt": {
+            "_seconds": 1678803600,
             "_nanoseconds": 0
           }
         }

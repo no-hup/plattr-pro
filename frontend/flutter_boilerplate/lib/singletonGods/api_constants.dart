@@ -12,6 +12,16 @@ class ApiConfig {
   static const timeout = Duration(seconds: 15);
   static const validateTableEndpointDev = '/table-validateTableDev';
   static const validateTableEndpointProd = '/table-validateTableAndLocation';
+  static const validateOtpEndpointProd = '/table-validateOTP';
+  static const checkTableStatusEndpointProd = '/table-checkTableStatus';
+  static const getTablesForRestaurantEndpointProd =
+      '/table-getTablesForRestaurant';
+  static const getTableDetailsEndpointProd = '/table-getTableDetails';
+  static const assignTableToServerEndpointProd = '/table-assignTableToServer';
+  static const unassignTableFromServerEndpointProd =
+      '/table-unassignTableFromServer';
+  static const generateTableOtpEndpointProd = '/table-generateTableOTP';
+  static const updateTableStatusEndpointProd = '/table-updateTableStatus';
   static const menuFetch = '/menu-fetchMenu-fetchMenu';
   static const String addItemToCartEndpoint = '/cart-addItemToCart';
   static const String removeItemFromCartEndpoint = '/cart-removeItemFromCart';
@@ -32,4 +42,5 @@ const errorMessages = {
   'bad_response': 'Received invalid response from server.',
   'unknown_error': 'An unexpected error occurred.',
   'checkout_error': 'An error occurred during checkout.',
+  'auth_required': 'Authentication required to continue.',
 };

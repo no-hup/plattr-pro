@@ -94,10 +94,11 @@ function validateCheckoutFields(data) {
   }
   
   const { tableId, restaurantId, sessionId } = data;
-  if (!tableId || !restaurantId || !sessionId) {
+  // sessionId is validated separately in validateCheckoutSession to standardize unauthenticated errors
+  if (!tableId || !restaurantId) {
     throw new functions.https.HttpsError(
       "invalid-argument",
-      "tableId, restaurantId, and sessionId are required."
+      "tableId and restaurantId are required."
     );
   }
 }
