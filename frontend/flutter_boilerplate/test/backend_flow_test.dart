@@ -25,15 +25,21 @@ void main() {
 
         final uri3 = Uri.parse('/r/rest001');
         expect(
-            uri3.pathSegments.length, isNot(equals(4))); // Missing table part
+          uri3.pathSegments.length,
+          isNot(equals(4)),
+        ); // Missing table part
 
         final uri4 = Uri.parse('/t/table001');
-        expect(uri4.pathSegments.length,
-            isNot(equals(4))); // Missing restaurant part
+        expect(
+          uri4.pathSegments.length,
+          isNot(equals(4)),
+        ); // Missing restaurant part
 
         final uri5 = Uri.parse('invalid-url');
         expect(
-            uri5.pathSegments.length, isNot(equals(4))); // Completely invalid
+          uri5.pathSegments.length,
+          isNot(equals(4)),
+        ); // Completely invalid
       });
 
       // TODO: Add tests for different feature flag combinations
@@ -132,8 +138,10 @@ void main() {
         });
 
         expect(response['status'], equals('success'));
-        expect(response['data']['isPrimaryCustomer'],
-            isFalse); // May be false if table already has session
+        expect(
+          response['data']['isPrimaryCustomer'],
+          isFalse,
+        ); // May be false if table already has session
         expect(response['data']['sessionId'], isA<String>());
         expect(response['data']['customToken'], isA<String>());
       });
@@ -297,8 +305,10 @@ void main() {
           });
 
           expect(otpResponse['status'], equals('success'));
-          expect(otpResponse['data']['isPrimaryCustomer'],
-              isFalse); // May be false if table already has session
+          expect(
+            otpResponse['data']['isPrimaryCustomer'],
+            isFalse,
+          ); // May be false if table already has session
 
           // Step 3: Menu loading
           final menuResponse = await ApiClient.post(

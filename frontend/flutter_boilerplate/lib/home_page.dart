@@ -5,84 +5,100 @@ import 'package:go_router/go_router.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
+  static const restaurants = [
+    {
+      'id': 'rest_basic_001',
+      'name': 'Baseline Bistro',
+      'tables': ['table1', 'table2'],
+    },
+    {
+      'id': 'rest_otp_002',
+      'name': 'OTP First Cafe',
+      'tables': ['table1', 'table2'],
+    },
+    {
+      'id': 'rest_stock_003',
+      'name': 'Discount Depot',
+      'tables': ['table1', 'table2'],
+    },
+    {
+      'id': 'rest_variants_004',
+      'name': 'Variant Villa',
+      'tables': ['table1', 'table2'],
+    },
+    {
+      'id': 'rest_sessions_005',
+      'name': 'Session Sandbox',
+      'tables': ['table1', 'table2'],
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Welcome'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Test Navigation',
+      body: ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: restaurants.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 16),
+        itemBuilder: (context, index) {
+          final r = restaurants[index];
+          final restId = r['id']! as String;
+          final restName = r['name']! as String;
+          final tables = (r['tables']! as List).cast<String>();
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(restName, style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final t in tables)
+                        ElevatedButton(
+                          onPressed: () {
+                            context.go(AppRoutes.tableVerification(restId, t));
+                          },
+                          child: Text('QR: $t'),
+                        ),
+                      ElevatedButton(
+                        onPressed: () {
+                          // Default to first table for direct links if available
+                          final tableId =
+                              tables.isNotEmpty ? tables.first : 'table1';
+                          context.go(AppRoutes.menu(restId, tableId));
+                        },
+                        child: const Text('Test Menu Page'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          final tableId =
+                              tables.isNotEmpty ? tables.first : 'table1';
+                          context.go(AppRoutes.cart(restId, tableId));
+                        },
+                        child: const Text('Test Cart Page'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          final tableId =
+                              tables.isNotEmpty ? tables.first : 'table1';
+                          context.go(AppRoutes.orders(restId, tableId));
+                        },
+                        child: const Text('Test Orders Page'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 20),
-            
-            ElevatedButton(
-              onPressed: () {
-                print('🔑 CLICK: Going to Table Verification');
-                context.go(AppRoutes.tableVerification('rest001', 'table001'));
-              },
-              child: const Text('Test Table Verification'),
-            ),
-            
-            const SizedBox(height: 12),
-            
-            ElevatedButton(
-              onPressed: () {
-                print('🍽️ CLICK: Going to Menu Page');
-                context.go(AppRoutes.menu('rest001', 'table001'));
-              },
-              child: const Text('Test Menu Page'),
-            ),
-
-            const SizedBox(height: 20),
-            const Text('QR Code Simulations'),
-            const SizedBox(height: 12),
-            
-            ElevatedButton(
-              onPressed: () {
-                print('🏪 CLICK: Restaurant 1, Table 1');
-                context.go(AppRoutes.tableVerification('restaurant-1', 'table-1'));
-              },
-              child: const Text('Table 1 QR Code'),
-            ),
-            
-            const SizedBox(height: 8),
-            
-            ElevatedButton(
-              onPressed: () {
-                print('🏪 CLICK: Restaurant 1, Table 2');
-                context.go(AppRoutes.tableVerification('restaurant-1', 'table-2'));
-              },
-              child: const Text('Table 2 QR Code'),
-            ),
-            
-            const SizedBox(height: 20),
-            const Text('Direct Page Access'),
-            const SizedBox(height: 12),
-            
-            ElevatedButton(
-              onPressed: () {
-                print('🛒 CLICK: Going to Cart');
-                context.go(AppRoutes.cart('test-restaurant', 'test-table'));
-              },
-              child: const Text('Test Cart Page'),
-            ),
-            
-            const SizedBox(height: 8),
-            
-            ElevatedButton(
-              onPressed: () {
-                print('📜 CLICK: Going to Orders');
-                context.go(AppRoutes.orders('test-restaurant', 'test-table'));
-              },
-              child: const Text('Test Orders Page'),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
