@@ -1,0 +1,301 @@
+---
+description: "Comprehensive API compliance verification between backend Cloud Functions and Flutter Web App"
+globs: ["lib/**/*.dart", "../../backend/src-plattr/functions/**/*.js"]
+---
+
+## API Compliance Verification Rule
+
+### Overview
+This rule provides structured analysis for verifying API response structure compliance between backend Cloud Functions and Flutter app models, ensuring consistent data parsing across all API endpoints.
+
+### When to Use
+- Adding new API endpoints
+- Debugging parsing failures or null exceptions  
+- Standardizing response formats across APIs
+- Ensuring Flutter models match backend response structures
+
+### Analysis Framework
+
+#### Step 1: Backend Cloud Function Analysis
+**Locate and examine the Cloud Function:**
+```bash
+# Search for the specific API endpoint
+find ../../backend/src-plattr/functions -name "*.js" | grep -i [api-name]
+```
+
+**Verify response structure patterns:**
+```javascript
+// ✅ PREFERRED: Using ResponseBuilder (unified format)
+const ResponseBuilder = require('../utils/ResponseBuilder');
+return ResponseBuilder.success(data, message);
+// Returns: { status: 'success', message: 'Success', data: {...} }
+
+// ❌ LEGACY: Direct result wrapper
+return { result: { status: 'success', message: 'Success', data: {...} } };
+
+// ✅ PREFERRED: Error handling
+return ResponseBuilder.error('validation_failed', 'Invalid input', details);
+// Returns: { status: 'error', message: 'Invalid input', error: { code: 'validation_failed', message: 'Invalid input', details?: {...} } }
+```
+
+**Document all response scenarios:**
+- Success with data
+- Validation failures  
+- Business logic errors
+- System/network errors
+- Empty or null responses
+
+#### Step 2: Flutter Model Analysis
+**Locate model files:**
+```bash
+# Find related model classes
+find lib -name "*.dart" | grep -i [api-name] | grep -E "(model|response|data)"
+```
+
+**Examine model structure:**
+```dart
+// Check fromJson implementation
+@JsonSerializable()
+class ApiResponseModel {
+  @JsonKey(defaultValue: '') // ✅ Good: provides fallback
+  final String requiredField;
+  
+  @JsonKey(name: 'different_name') // ✅ Good: handles field mapping
+  final String? optionalField;
+  
+  // ❌ Problematic: no null safety for required field
+  final String riskyField; // Can cause null exceptions
+  
+  factory ApiResponseModel.fromJson(Map<String, dynamic> json) =>
+      _$ApiResponseModelFromJson(json);
+}
+```
+
+**Find parsing logic:**
+```dart
+// Look for response parsing patterns
+class ApiRepository {
+  Future<ApiResponseFreezed<T>> apiCall<T>() async {
+    return safeApiCall<T>(
+      apiCall: () => dio.post(endpoint, data: requestData),
+      fromJson: (json) => T.fromJson(json), // ✅ Type-safe parsing
+    );
+  }
+}
+```
+
+#### Step 3: Compliance Verification Matrix
+
+**Response Format Compliance:**
+- ✅ COMPLIANT: Backend uses `ResponseBuilder` + Flutter handles unified format
+- ⚠️ MIXED: Format mismatch between backend and Flutter expectations  
+- ❌ NON-COMPLIANT: Incompatible response structures
+
+**Field Mapping Compliance:**
+```dart
+// Verify each field mapping
+Backend Field    Flutter Field    Type Match    Nullable Handling    Status
+---------------------------------------------------------------------------
+'user_id'    =>  'userId'         String        ✅ String?           ✅
+'created_at' =>  'createdAt'      Timestamp     ❌ String            ⚠️
+'total'      =>  'total'          Number        ❌ int (not double)  ⚠️ 
+'items'      =>  'items'          Array         ✅ List<Item>        ✅
+```
+
+**Error Response Compliance:**
+```dart
+// Check error handling patterns
+response.when(
+  success: (data) => handleSuccess(data),
+  error: (message, code, details) {
+    // ✅ Verify all backend error codes are handled
+    switch (code) {
+      case 'validation_failed': // ✅ Matches backend
+      case 'not_found':        // ✅ Matches backend  
+      case 'unauthorized':     // ✅ Matches backend
+      default:                 // ⚠️ Handle unknown errors
+    }
+  },
+);
+```
+
+### Implementation Guidelines
+
+#### Backend Standardization
+```javascript
+// ✅ Always use ResponseBuilder for consistency
+const ResponseBuilder = require('../utils/ResponseBuilder');
+
+// Success responses
+return ResponseBuilder.success(data, 'Operation completed successfully');
+
+// Error responses  
+return ResponseBuilder.error('validation_failed', 'Required field missing', {
+  field: 'email',
+  provided: null
+});
+
+// Validation helper
+return ResponseBuilder.validationError('Invalid email format', {
+  field: 'email',
+  value: invalidEmail
+});
+```
+
+#### Flutter Model Best Practices
+```dart
+// ✅ Robust model with proper null safety
+@JsonSerializable()
+class RobustApiModel {
+  @JsonKey(defaultValue: '')
+  final String requiredString;
+  
+  @JsonKey(defaultValue: 0)
+  final int requiredNumber;
+  
+  @JsonKey(defaultValue: [])
+  final List<SubModel> requiredList;
+  
+  final String? optionalField;
+  
+  @JsonKey(readValue: _readNestedValue)
+  final String? nestedField;
+  
+  // Custom parsing for complex fields
+  static Object? _readNestedValue(Map json, String key) {
+    return json['data']?[key] ?? json[key];
+  }
+}
+```
+
+#### Unified Response Parser
+```dart
+// ✅ Handle both legacy and new formats
+class UnifiedApiParser<T> {
+  static ApiResponseFreezed<T> parse<T>(
+    Map<String, dynamic> json,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
+    try {
+      // Handle wrapper extraction
+      Map<String, dynamic> data;
+      if (json.containsKey('result')) {
+        data = json['result'] as Map<String, dynamic>;
+      } else {
+        data = json;
+      }
+      
+      final status = data['status'] as String?;
+      if (status == 'success') {
+        final parsedData = fromJson(data['data'] as Map<String, dynamic>);
+        return ApiResponseFreezed.success(parsedData);
+      } else {
+        return _parseError(data);
+      }
+    } catch (e) {
+      return ApiResponseFreezed.error('Parse error: $e', 'parsing_error');
+    }
+  }
+}
+```
+
+### Compliance Checklist
+
+**Backend Verification:**
+- [ ] Uses `ResponseBuilder` for consistent format
+- [ ] Returns proper HTTP status codes
+- [ ] Includes all required fields
+- [ ] Handles all error scenarios
+- [ ] Provides meaningful error messages and codes
+
+**Frontend Verification:**
+- [ ] Models use proper null safety (`String?` vs `String`)
+- [ ] `fromJson` includes `@JsonKey(defaultValue: ...)` for required fields
+- [ ] Parser handles both wrapped and direct response formats
+- [ ] Error handling covers all backend error codes
+- [ ] Repository uses `ApiResponseFreezed<T>` pattern
+
+**Testing Requirements:**
+- [ ] Unit tests for model parsing with various inputs
+- [ ] Integration tests for API calls
+- [ ] Error scenario testing (network failures, malformed responses)
+- [ ] Null safety validation tests
+
+### Common Issues and Solutions
+
+**Issue: Null exceptions in production**
+```dart
+// ❌ Problematic
+final String name; // Can be null from backend
+
+// ✅ Solution  
+@JsonKey(defaultValue: 'Unknown')
+final String name;
+```
+
+**Issue: Type casting errors**
+```dart
+// ❌ Problematic
+final int count = json['count']; // Backend sends string "5"
+
+// ✅ Solution
+@JsonKey(fromJson: _parseIntSafely)
+final int count;
+
+static int _parseIntSafely(dynamic value) {
+  if (value is int) return value;
+  if (value is String) return int.tryParse(value) ?? 0;
+  return 0;
+}
+```
+
+**Issue: Inconsistent response formats**
+```dart
+// ✅ Solution: Unified parser that handles both
+static T parseResponse<T>(Map<String, dynamic> json, T Function(Map) parser) {
+  final data = json.containsKey('result') ? json['result'] : json;
+  return parser(data['data'] ?? data);
+}
+```
+
+### Output Template
+
+```markdown
+# API Compliance Analysis: [API_NAME]
+
+## Backend Analysis
+- **Location**: `../../backend/src-plattr/functions/[path]`
+- **Response Format**: unified/legacy/mixed  
+- **Uses ResponseBuilder**: ✅/❌
+- **Success Structure**: `{ status, message, data: {...} }`
+- **Error Handling**: comprehensive/partial/missing
+- **Field Types**: [document field types and requirements]
+
+## Flutter Analysis
+- **Model Location**: `lib/[path]`
+- **Parser Location**: `lib/[path]`
+- **Null Safety**: compliant/needs-fixes
+- **Error Handling**: comprehensive/partial/missing
+- **Response Format Expected**: unified/legacy
+
+## Compliance Status
+- **Format Compliance**: ✅/⚠️/❌
+- **Field Compliance**: ✅/⚠️/❌
+- **Error Compliance**: ✅/⚠️/❌
+- **Overall Status**: PASS/REVIEW/FAIL
+
+## Critical Issues
+1. [Immediate fixes needed for production stability]
+
+## Implementation Plan
+### Backend Changes
+- [ ] [Specific changes needed]
+
+### Frontend Changes  
+- [ ] [Specific changes needed]
+
+### Testing
+- [ ] [Testing requirements]
+```
+
+This rule ensures comprehensive API compliance verification and maintains consistency across your backend Cloud Functions and Flutter Web App.

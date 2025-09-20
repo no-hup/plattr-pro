@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-
 import 'api_client.dart';
 
 void main() {
@@ -7,7 +6,8 @@ void main() {
     group('QR Scan & URL Parsing Tests', () {
       test('should parse valid restaurant and table IDs from URL', () {
         // Test URL parsing logic
-        const qrUrl = '/r/${TestData.restaurantId}/t/${TestData.tableId}';
+        const String qrUrl =
+            '/r/${TestData.restaurantId}/t/${TestData.tableId}';
         final uri = Uri.parse(qrUrl);
 
         expect(uri.pathSegments, hasLength(4));
@@ -16,30 +16,21 @@ void main() {
       });
 
       test('should handle malformed URL formats', () {
-        // Test specific malformed URL cases
-        final uri1 = Uri.parse('/r//t/table001');
-        expect(uri1.pathSegments[1], isEmpty); // Empty restaurant ID
+        const List<String> malformedUrls = [
+          '/r//t/table001', // Empty restaurant ID
+          '/r/rest001/t/', // Empty table ID
+          '/r/rest001', // Missing table part
+          '/t/table001', // Missing restaurant part
+          'invalid-url', // Completely invalid
+        ];
 
-        final uri2 = Uri.parse('/r/rest001/t/');
-        expect(uri2.pathSegments[3], isEmpty); // Empty table ID
-
-        final uri3 = Uri.parse('/r/rest001');
-        expect(
-          uri3.pathSegments.length,
-          isNot(equals(4)),
-        ); // Missing table part
-
-        final uri4 = Uri.parse('/t/table001');
-        expect(
-          uri4.pathSegments.length,
-          isNot(equals(4)),
-        ); // Missing restaurant part
-
-        final uri5 = Uri.parse('invalid-url');
-        expect(
-          uri5.pathSegments.length,
-          isNot(equals(4)),
-        ); // Completely invalid
+        for (final url in malformedUrls) {
+          expect(() {
+            final uri = Uri.parse(url);
+            // Should not have proper structure
+            expect(uri.pathSegments.length, isNot(equals(4)));
+          }, returnsNormally);
+        }
       });
 
       // TODO: Add tests for different feature flag combinations
@@ -49,15 +40,13 @@ void main() {
     });
 
     group('Table Verification API Tests', () {
-      test('should validate table and location successfully with valid session',
-          () async {
+      test('should validate table and location successfully', () async {
         final response =
             await ApiClient.post('table-validateTableAndLocation', {
-          'restaurantId': TestData.restaurantId,
-          'tableId': TestData.tableId,
-          'userLocation': TestData.testLocation,
-          'sessionId': 'session001', // Valid session ID
-        });
+              'restaurantId': TestData.restaurantId,
+              'tableId': TestData.tableId,
+              'userLocation': TestData.testLocation,
+            });
 
         expect(response['status'], equals('success'));
         expect(response['data'], isA<Map<String, dynamic>>());
@@ -86,10 +75,10 @@ void main() {
       test('should handle invalid restaurant ID', () async {
         final response =
             await ApiClient.post('table-validateTableAndLocation', {
-          'restaurantId': 'invalid_restaurant',
-          'tableId': TestData.tableId,
-          'userLocation': TestData.testLocation,
-        });
+              'restaurantId': 'invalid_restaurant',
+              'tableId': TestData.tableId,
+              'userLocation': TestData.testLocation,
+            });
 
         expect(response['status'], equals('error'));
         expect(response['data']['code'], equals('not-found'));
@@ -98,10 +87,10 @@ void main() {
       test('should handle invalid table ID', () async {
         final response =
             await ApiClient.post('table-validateTableAndLocation', {
-          'restaurantId': TestData.restaurantId,
-          'tableId': 'invalid_table',
-          'userLocation': TestData.testLocation,
-        });
+              'restaurantId': TestData.restaurantId,
+              'tableId': 'invalid_table',
+              'userLocation': TestData.testLocation,
+            });
 
         expect(response['status'], equals('error'));
         expect(response['data']['code'], equals('not-found'));
@@ -138,10 +127,7 @@ void main() {
         });
 
         expect(response['status'], equals('success'));
-        expect(
-          response['data']['isPrimaryCustomer'],
-          isFalse,
-        ); // May be false if table already has session
+        expect(response['data']['isPrimaryCustomer'], isTrue);
         expect(response['data']['sessionId'], isA<String>());
         expect(response['data']['customToken'], isA<String>());
       });
@@ -159,30 +145,30 @@ void main() {
         expect(response['data']['code'], equals('unauthenticated'));
       });
 
-      test('should handle missing phone number gracefully', () async {
+      test('should require phone number for primary customer', () async {
         final response = await ApiClient.post('table-validateOTP', {
           'restaurantId': TestData.restaurantId,
           'tableId': TestData.testTableId,
           'otp': TestData.testOTP,
           'name': TestData.testUsername,
-          // Missing phoneNumber - API may not enforce this requirement
+          // Missing phoneNumber
         });
 
-        // API may succeed even without phone number depending on feature flags
-        expect(response['status'], equals('success'));
+        expect(response['status'], equals('error'));
+        expect(response['data']['code'], equals('invalid-argument'));
       });
 
-      test('should handle missing username gracefully', () async {
+      test('should require username when feature flag is enabled', () async {
         final response = await ApiClient.post('table-validateOTP', {
           'restaurantId': TestData.restaurantId,
           'tableId': TestData.testTableId,
           'otp': TestData.testOTP,
           'phoneNumber': TestData.testPhoneNumber,
-          // Missing name - API may not enforce this requirement
+          // Missing name
         });
 
-        // API may succeed even without username depending on feature flags
-        expect(response['status'], equals('success'));
+        expect(response['status'], equals('error'));
+        expect(response['data']['code'], equals('invalid-argument'));
       });
 
       test('should handle missing required parameters', () async {
@@ -233,7 +219,7 @@ void main() {
           'inStock': true,
         });
 
-        expect(response['data']['code'], equals('internal'));
+        expect(response['code'], equals('not-found'));
       });
 
       test('should handle missing restaurant ID', () async {
@@ -242,7 +228,7 @@ void main() {
           // Missing restaurantId
         });
 
-        expect(response['data']['code'], equals('invalid-argument'));
+        expect(response['code'], equals('invalid-argument'));
       });
 
       test('should validate menu structure and data types', () async {
@@ -305,10 +291,7 @@ void main() {
           });
 
           expect(otpResponse['status'], equals('success'));
-          expect(
-            otpResponse['data']['isPrimaryCustomer'],
-            isFalse,
-          ); // May be false if table already has session
+          expect(otpResponse['data']['isPrimaryCustomer'], isTrue);
 
           // Step 3: Menu loading
           final menuResponse = await ApiClient.post(
