@@ -1,5 +1,5 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'models.freezed.dart';
 part 'models.g.dart';
@@ -13,13 +13,14 @@ class UserLocation with _$UserLocation {
   const factory UserLocation({
     /// Latitude coordinate
     required double latitude,
-    
+
     /// Longitude coordinate
     required double longitude,
   }) = _UserLocation;
 
   /// Creates a UserLocation from a JSON map
-  factory UserLocation.fromJson(Map<String, dynamic> json) => _$UserLocationFromJson(json);
+  factory UserLocation.fromJson(Map<String, dynamic> json) =>
+      _$UserLocationFromJson(json);
 }
 
 /// Response from the table validation API
@@ -28,84 +29,115 @@ class UserLocation with _$UserLocation {
 /// and user authentication requirements
 @freezed
 class TableValidationResponse with _$TableValidationResponse {
-  const TableValidationResponse._(); // Add a private constructor for custom methods
+  // Add a private constructor for custom methods
 
   /// Creates a table validation response
   const factory TableValidationResponse({
     /// Status of the validation ('success', 'error', etc.)
     required String status,
-    
+
     /// Message describing the validation result
     required String message,
-    
+
     /// Additional data from the response
     Map<String, dynamic>? data,
-    
+
     /// Whether OTP verification is required
     @Default(false) bool requiresOtp,
   }) = _TableValidationResponse;
+  const TableValidationResponse._();
 
   /// Creates a TableValidationResponse from a JSON map
-  factory TableValidationResponse.fromJson(Map<String, dynamic> json) => 
-      _$TableValidationResponseFromJson(json);
+  factory TableValidationResponse.fromJson(Map<String, dynamic> json) {
+    try {
+      // Sanitize the JSON to handle potential type mismatches and null values
+      final sanitizedJson = <String, dynamic>{
+        'status': json['status'] as String? ?? 'error',
+        'message': json['message'] as String? ?? 'Unknown error',
+        'data': json['data'] as Map<String, dynamic>?,
+        'requiresOtp': json['requiresOtp'] as bool? ?? false,
+      };
+
+      return TableValidationResponse(
+        status: sanitizedJson['status'] as String,
+        message: sanitizedJson['message'] as String,
+        data: sanitizedJson['data'] as Map<String, dynamic>?,
+        requiresOtp: sanitizedJson['requiresOtp'] as bool,
+      );
+    } catch (e) {
+      AppLogger.log(
+        '❌ TABLE_VALIDATION: Error parsing TableValidationResponse: $e',
+      );
+      return const TableValidationResponse(
+        status: 'error',
+        message: 'Failed to parse response',
+      );
+    }
+  }
 
   // Session information getters
-  
+
   /// Session ID for the current user session
   String? get sessionId => data?['session']?['sessionId'] as String?;
-  
+
   /// Expiration timestamp for the session
   String? get sessionExpiresAt => data?['session']?['expiresAt'] as String?;
-  
+
   // Table information getters
-  
+
   /// Current status of the table ('vacant', 'active', etc.)
   String? get tableStatus => data?['tableStatus'] as String?;
-  
+
   /// Table number or identifier
   String? get tableNumber => data?['table']?['number'] as String?;
-  
+
   /// Maximum capacity of the table
   int? get tableCapacity => data?['table']?['capacity'] as int?;
-  
+
   // Restaurant information getters
-  
+
   /// Name of the restaurant
   String? get restaurantName => data?['restaurant']?['name'] as String?;
-  
+
   /// ID of the restaurant
   String? get restaurantId => data?['restaurant']?['id'] as String?;
-  
+
   // Feature flags
-  
+
   /// Whether OTP is required for ordering
-  bool get otpRequiredForOrder => data?['otpRequiredForOrder'] as bool? ?? false;
-  
+  bool get otpRequiredForOrder =>
+      data?['otpRequiredForOrder'] as bool? ?? false;
+
   /// Whether username is mandatory for authentication
   bool get isUsernameMandatory => data?['isUsernameMandatory'] as bool? ?? true;
-  
+
   /// Whether phone number is mandatory for authentication
-  bool get isPhoneNumberMandatory => data?['isPhoneNumberMandatory'] as bool? ?? true;
-  
+  bool get isPhoneNumberMandatory =>
+      data?['isPhoneNumberMandatory'] as bool? ?? true;
+
   /// Whether multiple users can share a table
-  bool get isMultiUserSupported => data?['isMultiUserSupported'] as bool? ?? false;
-  
+  bool get isMultiUserSupported =>
+      data?['isMultiUserSupported'] as bool? ?? false;
+
   // Primary customer information
-  
+
   /// Name of the primary customer
-  String? get primaryCustomerName => data?['primaryCustomer']?['name'] as String?;
-  
+  String? get primaryCustomerName =>
+      data?['primaryCustomer']?['name'] as String?;
+
   /// Phone number of the primary customer
-  String? get primaryCustomerPhone => data?['primaryCustomer']?['phoneNumber'] as String?;
-  
+  String? get primaryCustomerPhone =>
+      data?['primaryCustomer']?['phoneNumber'] as String?;
+
   // Auth message for OTP guidance
-  
+
   /// Message to guide users through authentication
-  String? get authMessage => data?['authMessage'] as String?;
-  
+  String get authMessage =>
+      data?['authMessage'] as String? ?? 'Authentication required';
+
   /// Whether the table is currently active
   bool get isTableActive => tableStatus == 'active';
-  
+
   /// Whether the table is currently vacant
   bool get isTableVacant => tableStatus == 'vacant';
 }
@@ -114,15 +146,16 @@ class TableValidationResponse with _$TableValidationResponse {
 ///
 /// Used to represent errors that occur during the table validation process
 @freezed
-class TableValidationException with _$TableValidationException implements Exception {
+class TableValidationException
+    with _$TableValidationException
+    implements Exception {
   /// Creates a table validation exception
   const factory TableValidationException(
     /// Error message
     String message, {
-    
     /// Optional error code
     String? code,
-    
+
     /// Optional stack trace
     StackTrace? stackTrace,
   }) = _TableValidationException;

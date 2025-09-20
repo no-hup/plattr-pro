@@ -1,10 +1,11 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
 import '../timestamp.dart';
 import 'addon_selection.dart';
 import 'cart_item_price_info.dart';
-import 'variant_selection.dart';
 import 'variant_option.dart';
+import 'variant_selection.dart';
 
 part 'cart_item.freezed.dart';
 part 'cart_item.g.dart';
@@ -14,7 +15,7 @@ void _safelyAddToJson<T>(
   Map<String, dynamic> target,
   Map<String, dynamic> source,
   String key,
-  T? Function(dynamic) converter
+  T? Function(dynamic) converter,
 ) {
   if (source.containsKey(key)) {
     try {
@@ -41,8 +42,11 @@ class VariantSelectionListConverter
       final map = item;
       try {
         final priceInfo = map['priceInfo'] as Map<String, dynamic>? ?? {};
+        // Tolerate backend keys: finalPrice/basePrice as well as itemFinalPrice/itemBasePrice
         final optionPrice = priceInfo['itemFinalPrice'] as num?
+                           ?? priceInfo['finalPrice'] as num?
                            ?? priceInfo['itemBasePrice'] as num?
+                           ?? priceInfo['basePrice'] as num?
                            ?? 0;
         final optionId = map['selected_variant_id'] as String? ?? '';
         final optionName = map['selected_variant_name'] as String? ?? '';
@@ -71,7 +75,7 @@ class VariantSelectionListConverter
       'selected_variant_id': variant.optionId,
       'selected_variant_name': variant.selectedOption.name,
       'priceInfo': { 'itemFinalPrice': variant.selectedOption.price },
-    }).toList();
+    },).toList();
   }
 }
 
@@ -90,8 +94,11 @@ class AddonSelectionListConverter
       final map = item;
        try {
         final priceInfo = map['priceInfo'] as Map<String, dynamic>? ?? {};
+        // Tolerate backend keys: finalPrice/basePrice as well as itemFinalPrice/itemBasePrice
         final addonPrice = priceInfo['itemFinalPrice'] as num?
+                           ?? priceInfo['finalPrice'] as num?
                            ?? priceInfo['itemBasePrice'] as num?
+                           ?? priceInfo['basePrice'] as num?
                            ?? 0;
         return AddonSelection(
           addonId: map['id'] as String? ?? '',
@@ -111,7 +118,7 @@ class AddonSelectionListConverter
       'id': addon.addonId,
       'name': addon.name,
       'priceInfo': { 'itemFinalPrice': addon.price },
-    }).toList();
+    },).toList();
   }
 }
 
@@ -167,8 +174,8 @@ extension CartItemExtensions on CartItem {
   Map<String, String>? get selectedVariantsMap {
     if (selectedVariants.isEmpty) return null;
     return {
-      for (var variant in selectedVariants)
-        variant.variantId: variant.optionId
+      for (final variant in selectedVariants)
+        variant.variantId: variant.optionId,
     };
   }
   

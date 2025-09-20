@@ -4,13 +4,14 @@ const { validateRemoveItemFields } = require('./cartInputValidation');
 const timestamp = require('../utils/timestamp');
 const { calculateCartValue } = require('./calculateCartValue');
 const { CartTotalPriceInfo } = require('../genericModels/priceinfo');
+const { safeRecalculateItemPrice } = require('../utils/dataUtils');
 
 /**
  * Simplified function to remove an item from cart
  */
 const removeItemFromCart = functions.https.onCall(async (data, context) => {
   console.log("poopoo removeItemFromCart called with data:", JSON.stringify(data.data));
-  const { tableId, restaurantId, menuItemId } = data.data;
+  const { tableId, restaurantId, menuItemId, cartItemId } = data.data;
 
   // Input validation
   validateRemoveItemFields(data.data);
@@ -33,28 +34,41 @@ const removeItemFromCart = functions.https.onCall(async (data, context) => {
       throw new functions.https.HttpsError("internal", "Cart data is corrupted.");
     }
     
-    // Filter out the item to remove
-    const updatedItems = cart.items.filter(item => item.menuItemId !== menuItemId);
-    
-    // Check if any item was removed
-    if (updatedItems.length === cart.items.length) {
-      console.error("Item not found in cart:", menuItemId);
+    // Find target item (prefer cartItemId when provided)
+    let targetIndex = -1;
+    if (cartItemId !== undefined && cartItemId !== null) {
+      targetIndex = cart.items.findIndex((it) => it.cartItemId === cartItemId);
+    }
+    if (targetIndex === -1) {
+      targetIndex = cart.items.findIndex((it) => it.menuItemId === menuItemId);
+    }
+    if (targetIndex === -1) {
+      console.error("Item not found in cart:", { menuItemId, cartItemId });
       throw new functions.https.HttpsError("not-found", "Item not found in cart.");
     }
-    
-    // Update cart object with filtered items
-    cart.items = updatedItems;
+
+    // Decrement quantity; if becomes 0, remove the item
+    const item = cart.items[targetIndex];
+    const prevQty = typeof item.quantity === 'number' && !isNaN(item.quantity) ? item.quantity : 1;
+    const newQty = prevQty - 1;
+    if (newQty > 0) {
+      item.quantity = newQty;
+      item.priceInfo = safeRecalculateItemPrice(item, newQty);
+      cart.items[targetIndex] = item;
+    } else {
+      cart.items.splice(targetIndex, 1);
+    }
     
     // Calculate new price info using the calculateCartValue function
     // which now uses our price info models internally
     let updatedPriceInfo;
     
-    if (updatedItems.length > 0) {
+    if (cart.items.length > 0) {
       updatedPriceInfo = await calculateCartValue(cart);
       
       // Update cart in Firestore with calculated price info
       await cartRef.update({
-        items: updatedItems,
+        items: cart.items,
         priceInfo: updatedPriceInfo,
         lastUpdated: timestamp.now()
       });

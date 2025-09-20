@@ -6,111 +6,100 @@ part of 'order_models.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$OrderResponseImpl _$$OrderResponseImplFromJson(Map<String, dynamic> json) =>
-    _$OrderResponseImpl(
+OrderResponse _$OrderResponseFromJson(Map json) => OrderResponse(
       status: json['status'] as String,
       message: json['message'] as String?,
       data: json['data'] == null
           ? null
-          : OrderData.fromJson(json['data'] as Map<String, dynamic>),
+          : OrderData.fromJson(Map<String, dynamic>.from(json['data'] as Map)),
     );
 
-Map<String, dynamic> _$$OrderResponseImplToJson(_$OrderResponseImpl instance) =>
+Map<String, dynamic> _$OrderResponseToJson(OrderResponse instance) =>
     <String, dynamic>{
       'status': instance.status,
       'message': instance.message,
-      'data': instance.data,
+      'data': instance.data?.toJson(),
     };
 
-_$OrderDataImpl _$$OrderDataImplFromJson(Map<String, dynamic> json) =>
-    _$OrderDataImpl(
+OrderData _$OrderDataFromJson(Map json) => OrderData(
       id: json['id'] as String,
       orderNumber: json['orderNumber'] as String,
       orderStatus: json['orderStatus'] as String,
+      tableId: json['tableId'] as String,
+      restaurantId: json['restaurantId'] as String,
+      sessionId: json['sessionId'] as String,
       createdAt: const TimestampConverter()
           .fromJson(json['createdAt'] as Map<String, dynamic>?),
       updatedAt: const TimestampConverter()
           .fromJson(json['updatedAt'] as Map<String, dynamic>?),
-      tableId: json['tableId'] as String,
-      restaurantId: json['restaurantId'] as String,
-      sessionId: json['sessionId'] as String,
-      total: (json['total'] as num?)?.toDouble() ?? 0.0,
-      items: (json['items'] as List<dynamic>?)
-              ?.map((e) => OrderItem.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          const [],
-      notes: json['notes'] as String? ?? '',
+      total: (json['total'] as num).toDouble(),
+      items: (json['items'] as List<dynamic>)
+          .map((e) => OrderItem.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+      notes: json['notes'] as String,
       carts: (json['carts'] as List<dynamic>?)
-              ?.map((e) => CartHistoryItem.fromJson(e as Map<String, dynamic>))
+              ?.map((e) =>
+                  CartHistoryItem.fromJson(Map<String, dynamic>.from(e as Map)))
               .toList() ??
           [],
     );
 
-Map<String, dynamic> _$$OrderDataImplToJson(_$OrderDataImpl instance) =>
-    <String, dynamic>{
+Map<String, dynamic> _$OrderDataToJson(OrderData instance) => <String, dynamic>{
       'id': instance.id,
       'orderNumber': instance.orderNumber,
       'orderStatus': instance.orderStatus,
-      'createdAt': const TimestampConverter().toJson(instance.createdAt),
-      'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
       'tableId': instance.tableId,
       'restaurantId': instance.restaurantId,
       'sessionId': instance.sessionId,
+      'createdAt': const TimestampConverter().toJson(instance.createdAt),
+      'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
       'total': instance.total,
-      'items': instance.items,
+      'items': instance.items.map((e) => e.toJson()).toList(),
       'notes': instance.notes,
-      'carts': instance.carts,
+      'carts': instance.carts.map((e) => e.toJson()).toList(),
     };
 
-_$CartHistoryItemImpl _$$CartHistoryItemImplFromJson(
-        Map<String, dynamic> json) =>
-    _$CartHistoryItemImpl(
-      id: json['id'] as String? ?? '',
-      status: json['status'] as String? ?? 'pending',
+CartHistoryItem _$CartHistoryItemFromJson(Map json) => CartHistoryItem(
+      id: json['id'] as String,
+      status: json['status'] as String,
       checkoutTime: const TimestampConverter()
           .fromJson(json['checkoutTime'] as Map<String, dynamic>?),
-      total: (json['total'] as num?)?.toDouble() ?? 0.0,
+      total: (json['total'] as num).toDouble(),
       priceInfo: json['priceInfo'] == null
           ? null
           : CartPriceInfoDetail.fromJson(
-              json['priceInfo'] as Map<String, dynamic>),
-      items: (json['items'] as List<dynamic>?)
-              ?.map((e) => OrderItem.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          const [],
+              Map<String, dynamic>.from(json['priceInfo'] as Map)),
+      items: (json['items'] as List<dynamic>)
+          .map((e) => OrderItem.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
       notes: json['notes'] as String?,
       estimatedPrepTime: (json['estimatedPrepTime'] as num?)?.toInt(),
     );
 
-Map<String, dynamic> _$$CartHistoryItemImplToJson(
-        _$CartHistoryItemImpl instance) =>
+Map<String, dynamic> _$CartHistoryItemToJson(CartHistoryItem instance) =>
     <String, dynamic>{
       'id': instance.id,
       'status': instance.status,
       'checkoutTime': const TimestampConverter().toJson(instance.checkoutTime),
       'total': instance.total,
-      'priceInfo': instance.priceInfo,
-      'items': instance.items,
+      'priceInfo': instance.priceInfo?.toJson(),
+      'items': instance.items.map((e) => e.toJson()).toList(),
       'notes': instance.notes,
       'estimatedPrepTime': instance.estimatedPrepTime,
     };
 
-_$CartPriceInfoDetailImpl _$$CartPriceInfoDetailImplFromJson(
-        Map<String, dynamic> json) =>
-    _$CartPriceInfoDetailImpl(
-      basePrice: (json['basePrice'] as num?)?.toDouble() ?? 0.0,
-      finalPrice: (json['finalPrice'] as num?)?.toDouble() ?? 0.0,
-      discount: (json['discount'] as num?)?.toDouble() ?? 0.0,
-      totalDiscountAmount:
-          (json['totalDiscountAmount'] as num?)?.toDouble() ?? 0.0,
-      totalVariantBasePrice:
-          (json['totalVariantBasePrice'] as num?)?.toDouble() ?? 0.0,
-      totalAddonBasePrice:
-          (json['totalAddonBasePrice'] as num?)?.toDouble() ?? 0.0,
+CartPriceInfoDetail _$CartPriceInfoDetailFromJson(Map json) =>
+    CartPriceInfoDetail(
+      basePrice: (json['basePrice'] as num).toDouble(),
+      finalPrice: (json['finalPrice'] as num).toDouble(),
+      discount: (json['discount'] as num).toDouble(),
+      totalDiscountAmount: (json['totalDiscountAmount'] as num).toDouble(),
+      totalVariantBasePrice: (json['totalVariantBasePrice'] as num).toDouble(),
+      totalAddonBasePrice: (json['totalAddonBasePrice'] as num).toDouble(),
     );
 
-Map<String, dynamic> _$$CartPriceInfoDetailImplToJson(
-        _$CartPriceInfoDetailImpl instance) =>
+Map<String, dynamic> _$CartPriceInfoDetailToJson(
+        CartPriceInfoDetail instance) =>
     <String, dynamic>{
       'basePrice': instance.basePrice,
       'finalPrice': instance.finalPrice,
@@ -120,79 +109,74 @@ Map<String, dynamic> _$$CartPriceInfoDetailImplToJson(
       'totalAddonBasePrice': instance.totalAddonBasePrice,
     };
 
-_$OrderItemImpl _$$OrderItemImplFromJson(Map<String, dynamic> json) =>
-    _$OrderItemImpl(
+OrderItem _$OrderItemFromJson(Map json) => OrderItem(
       menuItemId: json['menuItemId'] as String,
       name: json['name'] as String,
-      quantity: (json['quantity'] as num?)?.toInt() ?? 1,
-      price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      variants: (json['variants'] as List<dynamic>?)
-              ?.map((e) => OrderVariant.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          const [],
-      addons: (json['addons'] as List<dynamic>?)
-              ?.map((e) => OrderAddon.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          const [],
+      quantity: (json['quantity'] as num).toInt(),
+      price: (json['price'] as num).toDouble(),
+      variants: (json['variants'] as List<dynamic>)
+          .map(
+              (e) => OrderVariant.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+      addons: (json['addons'] as List<dynamic>)
+          .map((e) => OrderAddon.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
       cartItemId: json['cartItemId'] as String?,
     );
 
-Map<String, dynamic> _$$OrderItemImplToJson(_$OrderItemImpl instance) =>
-    <String, dynamic>{
+Map<String, dynamic> _$OrderItemToJson(OrderItem instance) => <String, dynamic>{
       'menuItemId': instance.menuItemId,
       'name': instance.name,
       'quantity': instance.quantity,
       'price': instance.price,
-      'variants': instance.variants,
-      'addons': instance.addons,
+      'variants': instance.variants.map((e) => e.toJson()).toList(),
+      'addons': instance.addons.map((e) => e.toJson()).toList(),
       'cartItemId': instance.cartItemId,
     };
 
-_$OrderVariantImpl _$$OrderVariantImplFromJson(Map<String, dynamic> json) =>
-    _$OrderVariantImpl(
+OrderVariant _$OrderVariantFromJson(Map json) => OrderVariant(
       id: json['id'] as String,
-      isMandatory: json['isMandatory'] as bool? ?? false,
-      respectParentDiscount: json['respectParentDiscount'] as bool? ?? true,
       selected_variant_id: json['selected_variant_id'] as String,
       selected_variant_name: json['selected_variant_name'] as String,
-      priceInfo: PriceInfo.fromJson(json['priceInfo'] as Map<String, dynamic>),
+      priceInfo: PriceInfo.fromJson(
+          Map<String, dynamic>.from(json['priceInfo'] as Map)),
+      isMandatory: json['isMandatory'] as bool,
+      respectParentDiscount: json['respectParentDiscount'] as bool,
     );
 
-Map<String, dynamic> _$$OrderVariantImplToJson(_$OrderVariantImpl instance) =>
+Map<String, dynamic> _$OrderVariantToJson(OrderVariant instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'isMandatory': instance.isMandatory,
-      'respectParentDiscount': instance.respectParentDiscount,
       'selected_variant_id': instance.selected_variant_id,
       'selected_variant_name': instance.selected_variant_name,
-      'priceInfo': instance.priceInfo,
+      'priceInfo': instance.priceInfo.toJson(),
+      'isMandatory': instance.isMandatory,
+      'respectParentDiscount': instance.respectParentDiscount,
     };
 
-_$OrderAddonImpl _$$OrderAddonImplFromJson(Map<String, dynamic> json) =>
-    _$OrderAddonImpl(
+OrderAddon _$OrderAddonFromJson(Map json) => OrderAddon(
       id: json['id'] as String,
       name: json['name'] as String,
-      priceInfo: PriceInfo.fromJson(json['priceInfo'] as Map<String, dynamic>),
-      respectParentDiscount: json['respectParentDiscount'] as bool? ?? true,
+      priceInfo: PriceInfo.fromJson(
+          Map<String, dynamic>.from(json['priceInfo'] as Map)),
+      respectParentDiscount: json['respectParentDiscount'] as bool,
     );
 
-Map<String, dynamic> _$$OrderAddonImplToJson(_$OrderAddonImpl instance) =>
+Map<String, dynamic> _$OrderAddonToJson(OrderAddon instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
-      'priceInfo': instance.priceInfo,
+      'priceInfo': instance.priceInfo.toJson(),
       'respectParentDiscount': instance.respectParentDiscount,
     };
 
-_$PriceInfoImpl _$$PriceInfoImplFromJson(Map<String, dynamic> json) =>
-    _$PriceInfoImpl(
-      basePrice: (json['basePrice'] as num?)?.toDouble() ?? 0.0,
-      finalPrice: (json['finalPrice'] as num?)?.toDouble() ?? 0.0,
-      discount: (json['discount'] as num?)?.toDouble() ?? 0.0,
+PriceInfo _$PriceInfoFromJson(Map json) => PriceInfo(
+      basePrice: (json['basePrice'] as num).toDouble(),
+      finalPrice: (json['finalPrice'] as num).toDouble(),
+      discount: (json['discount'] as num).toDouble(),
     );
 
-Map<String, dynamic> _$$PriceInfoImplToJson(_$PriceInfoImpl instance) =>
-    <String, dynamic>{
+Map<String, dynamic> _$PriceInfoToJson(PriceInfo instance) => <String, dynamic>{
       'basePrice': instance.basePrice,
       'finalPrice': instance.finalPrice,
       'discount': instance.discount,

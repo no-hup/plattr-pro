@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
+import 'package:flutterboilerplate/networking/dio_client.dart';
 import 'package:flutterboilerplate/pages/cart_listing/cart_listing_repository.dart';
 import 'package:flutterboilerplate/pages/checkout_order_flow/order_listing_state.dart';
 import 'package:flutterboilerplate/pages/checkout_order_flow/order_repository.dart';
@@ -27,6 +28,8 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    // Ensure Dio singleton (with interceptors) is initialized early
+    DioClient.ensureInitialized();
     router = appRouter();
   }
 

@@ -82,8 +82,9 @@ class Environment {
    */
   getFirestoreSettings() {
     if (this._isEmulator) {
+      const hostFromEnv = process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080';
       return {
-        host: 'localhost:8080',
+        host: hostFromEnv,
         ssl: false,
         ignoreUndefinedProperties: true
       };

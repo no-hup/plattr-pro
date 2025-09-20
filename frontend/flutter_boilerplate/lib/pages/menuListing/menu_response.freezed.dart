@@ -14,15 +14,10 @@ T _$identity<T>(T value) => value;
 final _privateConstructorUsedError = UnsupportedError(
     'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
 
-MenuResponse _$MenuResponseFromJson(Map<String, dynamic> json) {
-  return _MenuResponse.fromJson(json);
-}
-
 /// @nodoc
 mixin _$MenuResponse {
   MenuData get result => throw _privateConstructorUsedError;
 
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $MenuResponseCopyWith<MenuResponse> get copyWith =>
       throw _privateConstructorUsedError;
@@ -108,12 +103,9 @@ class __$$MenuResponseImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
 class _$MenuResponseImpl implements _MenuResponse {
   _$MenuResponseImpl({required this.result});
-
-  factory _$MenuResponseImpl.fromJson(Map<String, dynamic> json) =>
-      _$$MenuResponseImplFromJson(json);
 
   @override
   final MenuData result;
@@ -131,7 +123,6 @@ class _$MenuResponseImpl implements _MenuResponse {
             (identical(other.result, result) || other.result == result));
   }
 
-  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, result);
 
@@ -140,20 +131,10 @@ class _$MenuResponseImpl implements _MenuResponse {
   @pragma('vm:prefer-inline')
   _$$MenuResponseImplCopyWith<_$MenuResponseImpl> get copyWith =>
       __$$MenuResponseImplCopyWithImpl<_$MenuResponseImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$MenuResponseImplToJson(
-      this,
-    );
-  }
 }
 
 abstract class _MenuResponse implements MenuResponse {
   factory _MenuResponse({required final MenuData result}) = _$MenuResponseImpl;
-
-  factory _MenuResponse.fromJson(Map<String, dynamic> json) =
-      _$MenuResponseImpl.fromJson;
 
   @override
   MenuData get result;
@@ -163,10 +144,6 @@ abstract class _MenuResponse implements MenuResponse {
       throw _privateConstructorUsedError;
 }
 
-MenuData _$MenuDataFromJson(Map<String, dynamic> json) {
-  return _MenuData.fromJson(json);
-}
-
 /// @nodoc
 mixin _$MenuData {
   List<Category> get categories => throw _privateConstructorUsedError;
@@ -174,7 +151,6 @@ mixin _$MenuData {
       throw _privateConstructorUsedError;
   MenuMetadata get metadata => throw _privateConstructorUsedError;
 
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $MenuDataCopyWith<MenuData> get copyWith =>
       throw _privateConstructorUsedError;
@@ -285,7 +261,7 @@ class __$$MenuDataImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
 class _$MenuDataImpl implements _MenuData {
   _$MenuDataImpl(
       {required final List<Category> categories,
@@ -293,9 +269,6 @@ class _$MenuDataImpl implements _MenuData {
       required this.metadata})
       : _categories = categories,
         _menuItems = menuItems;
-
-  factory _$MenuDataImpl.fromJson(Map<String, dynamic> json) =>
-      _$$MenuDataImplFromJson(json);
 
   final List<Category> _categories;
   @override
@@ -334,7 +307,6 @@ class _$MenuDataImpl implements _MenuData {
                 other.metadata == metadata));
   }
 
-  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -347,13 +319,6 @@ class _$MenuDataImpl implements _MenuData {
   @pragma('vm:prefer-inline')
   _$$MenuDataImplCopyWith<_$MenuDataImpl> get copyWith =>
       __$$MenuDataImplCopyWithImpl<_$MenuDataImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$MenuDataImplToJson(
-      this,
-    );
-  }
 }
 
 abstract class _MenuData implements MenuData {
@@ -361,9 +326,6 @@ abstract class _MenuData implements MenuData {
       {required final List<Category> categories,
       required final Map<String, List<MenuItem>> menuItems,
       required final MenuMetadata metadata}) = _$MenuDataImpl;
-
-  factory _MenuData.fromJson(Map<String, dynamic> json) =
-      _$MenuDataImpl.fromJson;
 
   @override
   List<Category> get categories;
@@ -543,8 +505,8 @@ mixin _$Category {
   String get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
   String get description => throw _privateConstructorUsedError;
-  String? get image => throw _privateConstructorUsedError;
   int get order => throw _privateConstructorUsedError;
+  String? get image => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -558,7 +520,7 @@ abstract class $CategoryCopyWith<$Res> {
       _$CategoryCopyWithImpl<$Res, Category>;
   @useResult
   $Res call(
-      {String id, String name, String description, String? image, int order});
+      {String id, String name, String description, int order, String? image});
 }
 
 /// @nodoc
@@ -577,8 +539,8 @@ class _$CategoryCopyWithImpl<$Res, $Val extends Category>
     Object? id = null,
     Object? name = null,
     Object? description = null,
-    Object? image = freezed,
     Object? order = null,
+    Object? image = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -593,14 +555,14 @@ class _$CategoryCopyWithImpl<$Res, $Val extends Category>
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
               as String,
-      image: freezed == image
-          ? _value.image
-          : image // ignore: cast_nullable_to_non_nullable
-              as String?,
       order: null == order
           ? _value.order
           : order // ignore: cast_nullable_to_non_nullable
               as int,
+      image: freezed == image
+          ? _value.image
+          : image // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -614,7 +576,7 @@ abstract class _$$CategoryImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {String id, String name, String description, String? image, int order});
+      {String id, String name, String description, int order, String? image});
 }
 
 /// @nodoc
@@ -631,8 +593,8 @@ class __$$CategoryImplCopyWithImpl<$Res>
     Object? id = null,
     Object? name = null,
     Object? description = null,
-    Object? image = freezed,
     Object? order = null,
+    Object? image = freezed,
   }) {
     return _then(_$CategoryImpl(
       id: null == id
@@ -647,14 +609,14 @@ class __$$CategoryImplCopyWithImpl<$Res>
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
               as String,
-      image: freezed == image
-          ? _value.image
-          : image // ignore: cast_nullable_to_non_nullable
-              as String?,
       order: null == order
           ? _value.order
           : order // ignore: cast_nullable_to_non_nullable
               as int,
+      image: freezed == image
+          ? _value.image
+          : image // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -666,8 +628,8 @@ class _$CategoryImpl implements _Category {
       {required this.id,
       required this.name,
       required this.description,
-      this.image,
-      required this.order});
+      required this.order,
+      this.image});
 
   factory _$CategoryImpl.fromJson(Map<String, dynamic> json) =>
       _$$CategoryImplFromJson(json);
@@ -679,13 +641,13 @@ class _$CategoryImpl implements _Category {
   @override
   final String description;
   @override
-  final String? image;
-  @override
   final int order;
+  @override
+  final String? image;
 
   @override
   String toString() {
-    return 'Category(id: $id, name: $name, description: $description, image: $image, order: $order)';
+    return 'Category(id: $id, name: $name, description: $description, order: $order, image: $image)';
   }
 
   @override
@@ -697,14 +659,14 @@ class _$CategoryImpl implements _Category {
             (identical(other.name, name) || other.name == name) &&
             (identical(other.description, description) ||
                 other.description == description) &&
-            (identical(other.image, image) || other.image == image) &&
-            (identical(other.order, order) || other.order == order));
+            (identical(other.order, order) || other.order == order) &&
+            (identical(other.image, image) || other.image == image));
   }
 
   @JsonKey(ignore: true)
   @override
   int get hashCode =>
-      Object.hash(runtimeType, id, name, description, image, order);
+      Object.hash(runtimeType, id, name, description, order, image);
 
   @JsonKey(ignore: true)
   @override
@@ -725,8 +687,8 @@ abstract class _Category implements Category {
       {required final String id,
       required final String name,
       required final String description,
-      final String? image,
-      required final int order}) = _$CategoryImpl;
+      required final int order,
+      final String? image}) = _$CategoryImpl;
 
   factory _Category.fromJson(Map<String, dynamic> json) =
       _$CategoryImpl.fromJson;
@@ -738,9 +700,9 @@ abstract class _Category implements Category {
   @override
   String get description;
   @override
-  String? get image;
-  @override
   int get order;
+  @override
+  String? get image;
   @override
   @JsonKey(ignore: true)
   _$$CategoryImplCopyWith<_$CategoryImpl> get copyWith =>
@@ -758,12 +720,12 @@ mixin _$MenuItem {
   String get categoryId => throw _privateConstructorUsedError;
   MenuItemMeta get meta => throw _privateConstructorUsedError;
   PriceInfo get priceInfo => throw _privateConstructorUsedError;
+  bool get isInStock => throw _privateConstructorUsedError;
+  bool get isCustomizable => throw _privateConstructorUsedError;
   List<Variant> get variants => throw _privateConstructorUsedError;
   List<Addon> get addons => throw _privateConstructorUsedError;
   NutritionalInfo? get nutritionalInfo => throw _privateConstructorUsedError;
   List<String> get allergenTags => throw _privateConstructorUsedError;
-  bool get isInStock => throw _privateConstructorUsedError;
-  bool get isCustomizable => throw _privateConstructorUsedError;
   int get quantity => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -782,12 +744,12 @@ abstract class $MenuItemCopyWith<$Res> {
       String categoryId,
       MenuItemMeta meta,
       PriceInfo priceInfo,
+      bool isInStock,
+      bool isCustomizable,
       List<Variant> variants,
       List<Addon> addons,
       NutritionalInfo? nutritionalInfo,
       List<String> allergenTags,
-      bool isInStock,
-      bool isCustomizable,
       int quantity});
 
   $MenuItemMetaCopyWith<$Res> get meta;
@@ -812,12 +774,12 @@ class _$MenuItemCopyWithImpl<$Res, $Val extends MenuItem>
     Object? categoryId = null,
     Object? meta = null,
     Object? priceInfo = null,
+    Object? isInStock = null,
+    Object? isCustomizable = null,
     Object? variants = null,
     Object? addons = null,
     Object? nutritionalInfo = freezed,
     Object? allergenTags = null,
-    Object? isInStock = null,
-    Object? isCustomizable = null,
     Object? quantity = null,
   }) {
     return _then(_value.copyWith(
@@ -837,6 +799,14 @@ class _$MenuItemCopyWithImpl<$Res, $Val extends MenuItem>
           ? _value.priceInfo
           : priceInfo // ignore: cast_nullable_to_non_nullable
               as PriceInfo,
+      isInStock: null == isInStock
+          ? _value.isInStock
+          : isInStock // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isCustomizable: null == isCustomizable
+          ? _value.isCustomizable
+          : isCustomizable // ignore: cast_nullable_to_non_nullable
+              as bool,
       variants: null == variants
           ? _value.variants
           : variants // ignore: cast_nullable_to_non_nullable
@@ -853,14 +823,6 @@ class _$MenuItemCopyWithImpl<$Res, $Val extends MenuItem>
           ? _value.allergenTags
           : allergenTags // ignore: cast_nullable_to_non_nullable
               as List<String>,
-      isInStock: null == isInStock
-          ? _value.isInStock
-          : isInStock // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isCustomizable: null == isCustomizable
-          ? _value.isCustomizable
-          : isCustomizable // ignore: cast_nullable_to_non_nullable
-              as bool,
       quantity: null == quantity
           ? _value.quantity
           : quantity // ignore: cast_nullable_to_non_nullable
@@ -910,12 +872,12 @@ abstract class _$$MenuItemImplCopyWith<$Res>
       String categoryId,
       MenuItemMeta meta,
       PriceInfo priceInfo,
+      bool isInStock,
+      bool isCustomizable,
       List<Variant> variants,
       List<Addon> addons,
       NutritionalInfo? nutritionalInfo,
       List<String> allergenTags,
-      bool isInStock,
-      bool isCustomizable,
       int quantity});
 
   @override
@@ -941,12 +903,12 @@ class __$$MenuItemImplCopyWithImpl<$Res>
     Object? categoryId = null,
     Object? meta = null,
     Object? priceInfo = null,
+    Object? isInStock = null,
+    Object? isCustomizable = null,
     Object? variants = null,
     Object? addons = null,
     Object? nutritionalInfo = freezed,
     Object? allergenTags = null,
-    Object? isInStock = null,
-    Object? isCustomizable = null,
     Object? quantity = null,
   }) {
     return _then(_$MenuItemImpl(
@@ -966,6 +928,14 @@ class __$$MenuItemImplCopyWithImpl<$Res>
           ? _value.priceInfo
           : priceInfo // ignore: cast_nullable_to_non_nullable
               as PriceInfo,
+      isInStock: null == isInStock
+          ? _value.isInStock
+          : isInStock // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isCustomizable: null == isCustomizable
+          ? _value.isCustomizable
+          : isCustomizable // ignore: cast_nullable_to_non_nullable
+              as bool,
       variants: null == variants
           ? _value._variants
           : variants // ignore: cast_nullable_to_non_nullable
@@ -982,14 +952,6 @@ class __$$MenuItemImplCopyWithImpl<$Res>
           ? _value._allergenTags
           : allergenTags // ignore: cast_nullable_to_non_nullable
               as List<String>,
-      isInStock: null == isInStock
-          ? _value.isInStock
-          : isInStock // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isCustomizable: null == isCustomizable
-          ? _value.isCustomizable
-          : isCustomizable // ignore: cast_nullable_to_non_nullable
-              as bool,
       quantity: null == quantity
           ? _value.quantity
           : quantity // ignore: cast_nullable_to_non_nullable
@@ -1006,12 +968,12 @@ class _$MenuItemImpl implements _MenuItem {
       required this.categoryId,
       required this.meta,
       required this.priceInfo,
+      required this.isInStock,
+      required this.isCustomizable,
       final List<Variant> variants = const [],
       final List<Addon> addons = const [],
       this.nutritionalInfo,
       final List<String> allergenTags = const [],
-      required this.isInStock,
-      required this.isCustomizable,
       this.quantity = 0})
       : _variants = variants,
         _addons = addons,
@@ -1029,6 +991,10 @@ class _$MenuItemImpl implements _MenuItem {
   final MenuItemMeta meta;
   @override
   final PriceInfo priceInfo;
+  @override
+  final bool isInStock;
+  @override
+  final bool isCustomizable;
   final List<Variant> _variants;
   @override
   @JsonKey()
@@ -1059,16 +1025,12 @@ class _$MenuItemImpl implements _MenuItem {
   }
 
   @override
-  final bool isInStock;
-  @override
-  final bool isCustomizable;
-  @override
   @JsonKey()
   final int quantity;
 
   @override
   String toString() {
-    return 'MenuItem(id: $id, categoryId: $categoryId, meta: $meta, priceInfo: $priceInfo, variants: $variants, addons: $addons, nutritionalInfo: $nutritionalInfo, allergenTags: $allergenTags, isInStock: $isInStock, isCustomizable: $isCustomizable, quantity: $quantity)';
+    return 'MenuItem(id: $id, categoryId: $categoryId, meta: $meta, priceInfo: $priceInfo, isInStock: $isInStock, isCustomizable: $isCustomizable, variants: $variants, addons: $addons, nutritionalInfo: $nutritionalInfo, allergenTags: $allergenTags, quantity: $quantity)';
   }
 
   @override
@@ -1082,16 +1044,16 @@ class _$MenuItemImpl implements _MenuItem {
             (identical(other.meta, meta) || other.meta == meta) &&
             (identical(other.priceInfo, priceInfo) ||
                 other.priceInfo == priceInfo) &&
+            (identical(other.isInStock, isInStock) ||
+                other.isInStock == isInStock) &&
+            (identical(other.isCustomizable, isCustomizable) ||
+                other.isCustomizable == isCustomizable) &&
             const DeepCollectionEquality().equals(other._variants, _variants) &&
             const DeepCollectionEquality().equals(other._addons, _addons) &&
             (identical(other.nutritionalInfo, nutritionalInfo) ||
                 other.nutritionalInfo == nutritionalInfo) &&
             const DeepCollectionEquality()
                 .equals(other._allergenTags, _allergenTags) &&
-            (identical(other.isInStock, isInStock) ||
-                other.isInStock == isInStock) &&
-            (identical(other.isCustomizable, isCustomizable) ||
-                other.isCustomizable == isCustomizable) &&
             (identical(other.quantity, quantity) ||
                 other.quantity == quantity));
   }
@@ -1104,12 +1066,12 @@ class _$MenuItemImpl implements _MenuItem {
       categoryId,
       meta,
       priceInfo,
+      isInStock,
+      isCustomizable,
       const DeepCollectionEquality().hash(_variants),
       const DeepCollectionEquality().hash(_addons),
       nutritionalInfo,
       const DeepCollectionEquality().hash(_allergenTags),
-      isInStock,
-      isCustomizable,
       quantity);
 
   @JsonKey(ignore: true)
@@ -1132,12 +1094,12 @@ abstract class _MenuItem implements MenuItem {
       required final String categoryId,
       required final MenuItemMeta meta,
       required final PriceInfo priceInfo,
+      required final bool isInStock,
+      required final bool isCustomizable,
       final List<Variant> variants,
       final List<Addon> addons,
       final NutritionalInfo? nutritionalInfo,
       final List<String> allergenTags,
-      required final bool isInStock,
-      required final bool isCustomizable,
       final int quantity}) = _$MenuItemImpl;
 
   factory _MenuItem.fromJson(Map<String, dynamic> json) =
@@ -1153,6 +1115,10 @@ abstract class _MenuItem implements MenuItem {
   @override
   PriceInfo get priceInfo;
   @override
+  bool get isInStock;
+  @override
+  bool get isCustomizable;
+  @override
   List<Variant> get variants;
   @override
   List<Addon> get addons;
@@ -1160,10 +1126,6 @@ abstract class _MenuItem implements MenuItem {
   NutritionalInfo? get nutritionalInfo;
   @override
   List<String> get allergenTags;
-  @override
-  bool get isInStock;
-  @override
-  bool get isCustomizable;
   @override
   int get quantity;
   @override
