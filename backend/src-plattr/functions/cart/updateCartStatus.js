@@ -3,18 +3,19 @@ const admin = require('../admin/initializeAdmin');
 const db = admin.firestore();
 const { Timestamp } = require("firebase-admin/firestore");
 const { CART_STATUS } = require('../orders/orderConstants');
+const { mapCartStatus } = require('../utils/statusUtils');
 const OrderInputValidation = require('../orders/orderInputValidation');
 const { timestamp } = require('../utils/timestamp');
 
 // Valid status transitions map
 const VALID_TRANSITIONS = {
-  'pending': ['accepted', 'cancelled'],
-  'accepted': ['preparing', 'cancelled'],
-  'preparing': ['ready', 'cancelled'],
-  'ready': ['served', 'cancelled'],
-  'served': ['returned'],
-  'cancelled': [],
-  'returned': []
+  [CART_STATUS.PENDING]: [CART_STATUS.ACCEPTED, CART_STATUS.CANCELLED],
+  [CART_STATUS.ACCEPTED]: [CART_STATUS.PREPARING, CART_STATUS.CANCELLED],
+  [CART_STATUS.PREPARING]: [CART_STATUS.READY, CART_STATUS.CANCELLED],
+  [CART_STATUS.READY]: [CART_STATUS.SERVED, CART_STATUS.CANCELLED],
+  [CART_STATUS.SERVED]: [CART_STATUS.RETURNED],
+  [CART_STATUS.RETURNED]: [],
+  [CART_STATUS.CANCELLED]: []
 };
 
 /**
@@ -37,6 +38,7 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
     OrderInputValidation.validateUpdateCartStatusFields(data);
     
     const { restaurantId, orderId, cartIndex, newStatus, notes = '', sessionId } = data;
+    const mappedStatus = OrderInputValidation.validateCartStatus(newStatus);
     const userId = context.auth?.uid || 'system';  // Fallback to 'system' if no auth
 
     // Validate session if provided
@@ -61,7 +63,7 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
       restaurantId,
       orderId,
       cartIndex,
-      newStatus,
+      mappedStatus,
       userId,
       notes,
       sessionId
@@ -69,7 +71,7 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
     
     return {
       success: true,
-      message: `Cart status updated to ${newStatus}`,
+      message: `Cart status updated to ${mappedStatus}`,
       data: updatedOrder
     };
   } catch (error) {
@@ -126,16 +128,17 @@ async function _updateCartStatus(
       }
       
       const cart = orderData.carts[cartIndex];
-      const currentStatus = cart.status;
+      const currentStatus = OrderInputValidation.validateCartStatus(cart.status);
+      const normalizedNewStatus = OrderInputValidation.validateCartStatus(newStatus);
       
       // Validate status transition
-      if (!isValidStatusTransition(currentStatus, newStatus)) {
-        throw new Error(`Invalid status transition from ${currentStatus} to ${newStatus}`);
+      if (!isValidStatusTransition(currentStatus, normalizedNewStatus)) {
+        throw new Error(`Invalid status transition from ${currentStatus} to ${normalizedNewStatus}`);
       }
       
       // Create status history entry
       const statusEntry = {
-        status: newStatus,
+        status: normalizedNewStatus,
         timestamp: timestamp.now(),
         userId: userId,
         notes: notes
@@ -144,12 +147,12 @@ async function _updateCartStatus(
       // Update cart status
       const updatedCart = {
         ...cart,
-        status: newStatus,
+        status: normalizedNewStatus,
         statusHistory: [...(cart.statusHistory || []), statusEntry]
       };
       
       // Update assigned staff if status is accepted
-      if (newStatus === CART_STATUS.ACCEPTED) {
+      if (normalizedNewStatus === CART_STATUS.ACCEPTED) {
         updatedCart.assignedTo = userId;
       }
       
@@ -164,11 +167,11 @@ async function _updateCartStatus(
       };
       
       // Check if all active items are now served
-      if (newStatus === CART_STATUS.SERVED) {
+      if (normalizedNewStatus === CART_STATUS.SERVED) {
         const allActiveCartsServed = updatedCarts.every(c => 
-          c.status === CART_STATUS.SERVED || 
-          c.status === CART_STATUS.CANCELLED || 
-          c.status === CART_STATUS.RETURNED
+          OrderInputValidation.validateCartStatus(c.status) === CART_STATUS.SERVED || 
+          OrderInputValidation.validateCartStatus(c.status) === CART_STATUS.CANCELLED || 
+          OrderInputValidation.validateCartStatus(c.status) === CART_STATUS.RETURNED
         );
         
         if (allActiveCartsServed) {
@@ -200,13 +203,14 @@ async function _updateCartStatus(
  * @returns {boolean} Whether the transition is valid
  */
 function isValidStatusTransition(currentStatus, newStatus) {
-  // Check if the current status exists in our transition map
-  if (!VALID_TRANSITIONS.hasOwnProperty(currentStatus)) {
+  const fromStatus = mapCartStatus(currentStatus);
+  const toStatus = mapCartStatus(newStatus);
+
+  if (!VALID_TRANSITIONS[fromStatus]) {
     return false;
   }
-  
-  // Check if the new status is a valid transition from the current status
-  return VALID_TRANSITIONS[currentStatus].includes(newStatus);
+
+  return VALID_TRANSITIONS[fromStatus].includes(toStatus);
 }
 
 module.exports = updateCartStatus; 

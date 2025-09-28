@@ -43,8 +43,8 @@ const updateMenuItemStatus = functions.https.onCall(async (data, context) => {
       
       const order = orderDoc.data();
       
-      // Check if order is active
-      if (order.orderStatus !== ORDER_STATUS.ACTIVE) {
+      // Check if order is in progress
+      if (order.orderStatus !== ORDER_STATUS.IN_PROGRESS) {
         throw new functions.https.HttpsError(
           'failed-precondition',
           'Cannot update items in a non-active order'
