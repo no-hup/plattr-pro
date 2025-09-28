@@ -1,7 +1,8 @@
 const functions = require("firebase-functions");
 const admin = require('../admin/initializeAdmin');
 const db = admin.firestore();
-const { ORDER_STATUS } = require('./orderConstants');
+const { ORDER_STATUS, CART_STATUS } = require('./orderConstants');
+const { mapOrderStatus, mapCartStatus } = require('../utils/statusUtils');
 const OrderInputValidation = require('./orderInputValidation');
 const timestamp = require('../utils/timestamp');
 
@@ -49,15 +50,16 @@ async function getActiveOrdersForRestaurant(data, context) {
     for (const doc of allOrdersQuery.docs) {
       const orderData = doc.data();
       console.log('[poopoo ORDER_DATA]', JSON.stringify(orderData));
+      const normalizedStatus = mapOrderStatus(orderData.orderStatus || orderData.status);
       // Only include orders that are NOT completed
-      if (orderData.status && orderData.status.toLowerCase() === ORDER_STATUS.COMPLETED) continue;
+      if (normalizedStatus === ORDER_STATUS.COMPLETED) continue;
       setStage(`sanitize-order:${doc.id}`);
       // Pass through assignedServer and updatedAt for sorting
       orders.push({
         ...sanitizeOrderData(doc.id, orderData),
         // Always include orderId and status at the order level
         orderId: doc.id,
-        status: orderData.orderStatus || orderData.status || '',
+        status: normalizedStatus,
         assignedServer: orderData.assignedServer || '',
         updatedAt: (() => {
           const dateObj = timestamp.safeToDate(orderData.updatedAt);
@@ -100,17 +102,19 @@ async function getActiveOrdersForRestaurant(data, context) {
 function sanitizeOrderData(id, orderData) {
   // Only include carts that are not served, but keep all other fields
   const carts = Array.isArray(orderData.carts)
-    ? orderData.carts.filter(cart => cart.status && cart.status.toLowerCase() !== 'served')
+    ? orderData.carts.filter(cart => mapCartStatus(cart.status) !== CART_STATUS.SERVED)
     : orderData.carts;
 
-  // Sort items in each cart to prioritize 'ready' status items
+  // Sort items in each cart to prioritize 'READY' status items
   if (Array.isArray(carts)) {
     carts.forEach(cart => {
       if (Array.isArray(cart.items)) {
         cart.items.sort((a, b) => {
-          // 'ready' items come first
-          return (a.status === 'ready' ? -1 : 0) - (b.status === 'ready' ? -1 : 0);
+          const statusA = mapCartStatus(a.status);
+          const statusB = mapCartStatus(b.status);
+          return (statusA === CART_STATUS.READY ? -1 : 0) - (statusB === CART_STATUS.READY ? -1 : 0);
         });
+        cart.status = mapCartStatus(cart.status) || CART_STATUS.PENDING;
       }
     });
   }
@@ -118,6 +122,7 @@ function sanitizeOrderData(id, orderData) {
   return {
     ...orderData,
     orderId: id,
+    orderStatus: mapOrderStatus(orderData.orderStatus || orderData.status),
     carts
   };
 }
@@ -149,4 +154,3 @@ function sortOrdersForServer(orders, serverId) {
 }
 
 module.exports = { getActiveOrdersForRestaurant };
-

@@ -1,5 +1,6 @@
 const functions = require("firebase-functions");
 const { ORDER_STATUS, PAYMENT_STATUS, CART_STATUS } = require('./orderConstants');
+const { mapOrderStatus, mapCartStatus } = require('../utils/statusUtils');
 
 /**
  * Order input validation utilities
@@ -96,12 +97,14 @@ class OrderInputValidation {
     }
 
     const allowedStatuses = Object.values(CART_STATUS);
-    if (!allowedStatuses.includes(status)) {
+    const normalizedStatus = mapCartStatus(status);
+    if (!allowedStatuses.includes(normalizedStatus)) {
       throw new functions.https.HttpsError(
         "invalid-argument",
         `status must be one of: ${allowedStatuses.join(', ')}`
       );
     }
+    return normalizedStatus;
   }
 
   /**
@@ -235,18 +238,22 @@ class OrderInputValidation {
     
     const validStatuses = [
       CART_STATUS.PENDING,
-      CART_STATUS.PREPARING, 
-      CART_STATUS.READY, 
-      CART_STATUS.SERVED, 
+      CART_STATUS.ACCEPTED,
+      CART_STATUS.PREPARING,
+      CART_STATUS.READY,
+      CART_STATUS.SERVED,
+      CART_STATUS.RETURNED,
       CART_STATUS.CANCELLED
     ];
     
-    if (!validStatuses.includes(newStatus)) {
+    const normalizedStatus = mapCartStatus(newStatus);
+    if (!validStatuses.includes(normalizedStatus)) {
       throw new functions.https.HttpsError(
         "invalid-argument",
         `Status must be one of: ${validStatuses.join(', ')}`
       );
     }
+    return normalizedStatus;
   }
 
   /**
@@ -262,7 +269,8 @@ class OrderInputValidation {
       throw new functions.https.HttpsError('invalid-argument','orderStatus is required and must be a string');
     }
     const allowed = Object.values(ORDER_STATUS);
-    if (!allowed.includes(orderStatus)) {
+    const normalizedOrderStatus = mapOrderStatus(orderStatus);
+    if (!allowed.includes(normalizedOrderStatus)) {
       throw new functions.https.HttpsError('invalid-argument',`orderStatus must be one of: ${allowed.join(', ')}`);
     }
     if (!sessionId || typeof sessionId !== 'string') {
