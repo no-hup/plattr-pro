@@ -1,0 +1,96 @@
+---
+description: Canonical runbook for Firebase emulator (backend) and Flutter apps (frontend) including port handling and troubleshooting
+globs: *.md
+---
+# Emulator & Flutter Runbook (Canonical)
+
+This document is the single source of truth for running the Firebase emulator and the Flutter apps locally for the Plattr Pro monorepo. Point other READMEs to this file and avoid duplicating steps.
+
+## Backend: Firebase emulator (recommended steps)
+
+1. Change to the backend project root:
+   ```bash
+   cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr
+   ```
+
+2. Export required environment variables in your shell (replace path if needed):
+   ```bash
+   export GOOGLE_APPLICATION_CREDENTIALS="/Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr/secure_stuff/service-account.json"
+   export FIRESTORE_EMULATOR_HOST="127.0.0.1:8080"
+   ```
+
+3. Before starting: check whether the emulator is already running. If it is, **skip starting a second instance** unless you explicitly need a fresh session.
+
+   Quick checks:
+
+   - Open the emulator UI in a browser: `http://127.0.0.1:4001` — if it loads, emulators are running.
+   - Check listening ports (functions/firestore):
+     ```bash
+     lsof -i :5002 -i:8080 -sTCP:LISTEN
+     ```
+   - Lightweight HTTP check for the UI:
+     ```bash
+     curl -sI http://127.0.0.1:4001 | head -n 1
+     ```
+
+   If none of the checks indicate a running emulator, start it (Terminal 1):
+   ```bash
+   firebase emulators:start --project rms-app-dd875 --only firestore,functions --debug
+   ```
+   - Emulator UI: `http://127.0.0.1:4001`
+   - Default ports in `firebase.json`: functions=5002, firestore=8080, ui=4001, logging=4501
+
+4. Import mock data (Terminal 2) after emulators are ready:
+   ```bash
+   cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr
+   npm run import-mock
+   ```
+   - On macOS you can run the importer directly without cross-env flags:
+     ```bash
+     NODE_ENV=development FUNCTIONS_EMULATOR=true FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node functions/mock/importMockData.js
+     ```
+
+### Port troubleshooting (backend)
+- Check which process holds a port:
+  ```bash
+  lsof -i :8080 -sTCP:LISTEN
+  lsof -t -i:8080 -i:5002 -i:4001
+  ```
+- Kill an unexpected process (be careful):
+  ```bash
+  lsof -t -i:8080 | xargs kill -9
+  ```
+- If you need automatic port selection, use a preflight helper that writes `firebase.temp.json` and `tests/.env.ports` and then start the emulator with the adjusted config. If you prefer not to use such helpers, edit `firebase.json` directly.
+- Always set `FIRESTORE_EMULATOR_HOST=127.0.0.1:PORT` when running import scripts to avoid `localhost`/`127.0.0.1` mismatches.
+
+## Frontend: Flutter apps (canonical)
+
+Use `frontend/flutter_boilerplate/README.md` as the runtime entry; this file contains step-by-step instructions for the consumer app and references for admin/kitchen/server apps. Key commands:
+
+1. Consumer app (preferred, web-server):
+   ```bash
+   cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/frontend/flutter_boilerplate
+   flutter pub get
+   flutter run -d web-server --web-port 5173 --web-hostname 127.0.0.1
+   ```
+
+2. Admin/Kitchen/Server apps (examples):
+   ```bash
+   # Admin
+   cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/frontend/src-platter-apps/apps/platter_admin
+   flutter pub get
+   flutter run -d chrome --web-port 5101
+   ```
+
+### Port troubleshooting (frontend)
+- If `--web-port` is in use, either pick another port or use `--web-port 0` to let Flutter choose a free port.
+- If Chrome isn't detected, enable web support: `flutter config --enable-web` or use `-d web-server`.
+
+## Where to reference this rule
+- Update project READMEs and workflow docs to reference this file instead of embedding duplicate run steps. Example reference text:
+  > See `backend/src-plattr/.cursor/rules/emulator-flutter-run.mdc` for canonical run instructions.
+
+## Maintenance notes
+- Keep the default ports in `backend/src-plattr/firebase.json` in sync with this document.
+- If you remove any port helper scripts, update the reference here and in other docs.
+
