@@ -21,93 +21,13 @@ That said, I may consider creating branches with my architecture and state manag
 
 ## Getting Started
 
-1. **Get the template**
+This README contains project-specific notes. The canonical emulator and Flutter run instructions (including port handling and troubleshooting) are maintained in:
 
-   Create your project using this repo by either:
+```
+backend/src-plattr/.cursor/rules/emulator-flutter-run.mdc
+```
 
-   * On Github, click the `"Use this template" ` button, which will allow you to create your project using this repo as your baseline, or
-   * Clone this repo to your local machine
-
-2. **Install dependencies**
-
-   Run `flutter pub get` to fetch dependencies.
-
-3. **Application Bundle Name**
-
-   Now to change your app's package name/bundle identifier in both Android and iOS manifests, run `flutter pub run change_app_package_name:main <com.new.package.name>`.
-
-   * This step uses [change_app_package_name](https://pub.dev/packages/change_app_package_name), go give the package some love.
-
-4. **Application Name**
-   Next, you'll need to change your app's user-readable label - the `CFBundleName` and/or `CFBundleDisplayName` within the `Info.plist` (for iOS) and `android:label` field in your application node in `AndroidManifest.xml` (for Android).
-
-   I'm afraid this step is manual; it would be cool if `change_app_package_name` could do this for you.
-
-   **NOTE**: You'll also need to change your package `name` and `description` within `pubspec.yaml`
-
-5. **App Icons**
-
-   Then we'll auto-generate your app launcher icons using the [flutter_launcher_icons](https://pub.dev/packages/flutter_launcher_icons) package.
-   * Copy the image you want to make your launcher icons out of to `assets/icon/icon.png.`
-   * Now run `flutter pub run flutter_launcher_icons`. This command will auto-generate Android and iOS launcher icons from the PNG file for the different DPIs and place them in their respective resource directories.
-
-   **NOTE**: Check the [package documentation](https://pub.dev/packages/flutter_launcher_icons#book-guide) for more configuration options on generating launcher icons updating your `pubspec. yaml` accordingly.
-   For example, you may want different icons for different platforms since Android allows you to use a transparent icon and iOS doesn't.
-   However, the default configuration included in this template will be sufficient in most cases.
-
-6. **Splash screen**
-
-   We'll then generate native splash screens for both of our platforms which your app will display before loading is complete and for this, we'll use [flutter_native_splash](https://pub.dev/packages/flutter_native_splash).
-   * Copy the image you want to be displayed at the center of your splash screen to `assets/splash/splash.png.`
-   * To change the background color of your splash screen, go to your `pubspec.yaml` under `flutter_native_splash -> color` and put your preferred color code. The default is white.
-   * Finally, run `flutter pub run flutter_native_splash:create` to generate your resources from the splash image and update your manifest files.
-
-7. **Environment variables**
-
-   We'll make use of [envied package](https://pub.dev/packages/envied) to load app configuration from `.env` files.
-   This will allow us to easily switch between different app configurations when running the app under different environments like production, staging, or debug modes.
-
-   All `.env` files can be placed in the root directory of your project. The
-   To set up a new environment, create a new file with a `.env` extension (e.g. `.env` or `debug.env` or `staging.env`), then copy the contents of `.env-sample` and populate it as needed.
-
-   The `lib/env.dart` file imports the environment variables into the app. Look at [the documentation](https://pub.dev/packages/envied#overview) to understand how to use the `envied` package. 
-
-   To obfuscate and hide sensitive ENV variable use the `obfuscate` attribute like so: `@EnviedField(obfuscate: true)`.
-
-   **NOTE:** All `.env` files (and `envied`'s `env.g.dart` file) are `.gitignored` by default since they may contain sensitive information such as paths, keys, and such
-   To specify new env keys add them to the `.env-sample` file, which will be copied by other devs and the corresponding configuration will be provided
-
-8. **Firebase Reporting**
-
-   In this step, we are going to integrate different Firebase Reporting Tools into your app, including [Firebase Analytics](https://firebase.google.com/products/analytics), [Firebase Performance](https://firebase.google.com/products/performance/), and [Crashlytics](https://firebase.google.com/products/crashlytics/).
-
-   * Create your Firebase project on the [Firebase Console](https://console.firebase.google.com/)
-   * Download your `GoogleService-Info.plist` & `google-services.json` and drop them into their corresponding folders for iOS and Android. I've `.gitignore'd these files so that you won't, by any chance, have them checked into your VCS by mistake.
-   * Well, that's it. You're done! No further configuration is needed; I've already done that for you.
-
-   **NOTES:**
-   * All the Firebase Services we're using in this project are free of charge - at least at the time of writing - so they will not attract any charges.
-   * With this step, we'll also have integrated [Firebase Performance Monitoring](https://firebase.google.com/products/performance/) into your HTTP Client using [dio_firebase_performance](https://pub.dev/packages/dio_firebase_performance) which is a [Dio Interceptor](https://pub.dev/packages/dio#interceptors) that will measure the performance of all your HTTP calls and report the stats to Firebase.
-
-9. **TODOs**
-
-   Locate any `TODOs` within the lib folder and get that sorted.
-
-10. **Work work work work!**
-
-   Now go start working on your app. Happy hacking.
-
-11. **Deploying**
-
-   Before releasing your Android app, make sure to sign it by:
-
-   [Generate a Keystore file](https://flutter.dev/docs/deployment/android#create-a-keystore) if you don't already have one. If you have one, ignore this step and go to the next.
-
-   Go to `android/key.properties` and include your Keystore path, alias, and password.
-
-12. Profit!
-
-<img height=200 src="https://melmagazine.com/wp-content/uploads/2019/07/Screen-Shot-2019-07-31-at-5.47.12-PM.png">
+Follow that rule file for bootstrapping the backend emulator and running Flutter apps locally. Use this README for app-specific notes and links to tooling.
 
 ## Packages used
 
