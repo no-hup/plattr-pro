@@ -8,6 +8,8 @@ const errorHandler = require('../singleton/ErrorHandler');
 const { OrderPriceInfo, CartTotalPriceInfo } = require('../genericModels/priceinfo');
 const { BasicPriceInfo } = require('../genericModels/priceinfo');
 const { v4: uuidv4 } = require('uuid');
+const { mapOrderStatus, mapCartStatus } = require('../utils/statusUtils');
+
 
 /**
  * Creates a new order or updates an existing one during cart checkout
@@ -54,17 +56,21 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
   try {
     // Begin a transaction to ensure data consistency
     return await db.runTransaction(async (transaction) => {
-      // Check if there's an active order for this table
+      // Check if there's an in-progress order for this table
       const orderQuery = db.collection("restaurants").doc(restaurantId)
         .collection("orders")
-        .where('tableId', '==', tableId)
-        .where('orderStatus', '==', ORDER_STATUS.ACTIVE);
-      
+        .where('tableId', '==', tableId);
+
       const orderSnapshot = await transaction.get(orderQuery);
-      
+
+      const existingOrderDoc = orderSnapshot.docs.find(doc => {
+        const normalizedStatus = mapOrderStatus(doc.data().orderStatus || doc.data().status);
+        return normalizedStatus === ORDER_STATUS.IN_PROGRESS || normalizedStatus === ORDER_STATUS.PENDING;
+      });
+
       let orderResult;
-      
-      if (orderSnapshot.empty) {
+
+      if (!existingOrderDoc) {
         // Create new order
         const orderNumber = await generateOrderNumber(transaction, restaurantId);
         console.log(`poopoo Creating new order for table ${tableId} with order number ${orderNumber}`);
@@ -80,7 +86,7 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
         );
       } else {
         // Update existing order
-        const orderDoc = orderSnapshot.docs[0];
+        const orderDoc = existingOrderDoc;
         console.log(`poopoo Updating existing order ${orderDoc.id} for table ${tableId}`);
         orderResult = await updateExistingOrder(
           transaction,
@@ -174,7 +180,7 @@ async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, 
     restaurantId,
     tableId: tableId,
     orderNumber,
-    orderStatus: ORDER_STATUS.ACTIVE,
+    orderStatus: ORDER_STATUS.IN_PROGRESS,
     paymentStatus: PAYMENT_STATUS.UNPAID,
     carts: [cartSnapshot],  // Store the cart directly in the order
     items: orderItems,      // Add extracted items for direct access
@@ -235,15 +241,26 @@ async function updateExistingOrder(transaction, restaurantId, orderId, existingO
   if (cartSnapshot.notes) {
     updatedNotes = updatedNotes ? `${updatedNotes}\n${cartSnapshot.notes}` : cartSnapshot.notes;
   }
-  
+
+  const existingCreatedAt = existingOrder.createdAt || existingOrder.timestamps?.createdAt || null;
+
   // Update order document
   const updates = {
     carts: updatedCarts,
     items: updatedItems,
     priceInfo: updatedPriceInfo,
     updatedAt: timestamp.serverTimestamp(),
-    notes: updatedNotes
+    notes: updatedNotes,
+    orderStatus: ORDER_STATUS.IN_PROGRESS,
+    isActive: true,
+    ...(existingCreatedAt ? { createdAt: existingCreatedAt } : { createdAt: timestamp.serverTimestamp() })
   };
+
+  let effectiveOrderNumber = existingOrder.orderNumber || existingOrder.order_number || null;
+  if (!effectiveOrderNumber) {
+    effectiveOrderNumber = await generateOrderNumber(transaction, restaurantId);
+    updates.orderNumber = effectiveOrderNumber;
+  }
   
   // Add sessionId to updates if provided
   if (sessionId) {
@@ -263,6 +280,10 @@ async function updateExistingOrder(transaction, restaurantId, orderId, existingO
     id: orderId,
     ...existingOrder,
     ...updates,
+    orderNumber: effectiveOrderNumber || existingOrder.orderNumber || existingOrder.order_number || orderId,
+    orderStatus: ORDER_STATUS.IN_PROGRESS,
+    isActive: true,
+    createdAt: existingCreatedAt || timestamp.now(),
     // Replace serverTimestamp placeholder with actual Timestamp for the returned value
     updatedAt: timestamp.now()
   };

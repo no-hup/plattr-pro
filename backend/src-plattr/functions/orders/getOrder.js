@@ -5,6 +5,7 @@ const admin = require('../admin/initializeAdmin');
 const db = admin.firestore();
 const { Timestamp } = require("firebase-admin/firestore");
 const { ORDER_STATUS } = require('./orderConstants');
+const { mapOrderStatus } = require('../utils/statusUtils');
 const OrderInputValidation = require('./orderInputValidation');
 const timestamp = require('../utils/timestamp');
 
@@ -109,10 +110,21 @@ const getOrder = functions.https.onCall(async (data, context) => {
           .collection("orders")
           .where('tableId', '==', tableId)
           .orderBy('createdAt', 'desc');
-        
+
         if (activeOnly) {
-          ordersQuery = ordersQuery.where('orderStatus', 'in', 
-            ["PLACED", "PREPARING", "READY", "PENDING", ORDER_STATUS.ACTIVE]);
+          const activeStatusFilters = [
+            ORDER_STATUS.PENDING,
+            ORDER_STATUS.IN_PROGRESS,
+            'pending',
+            'in_progress',
+            'PLACED',
+            'PREPARING',
+            'READY',
+            'active',
+            'ACTIVE'
+          ];
+
+          ordersQuery = ordersQuery.where('orderStatus', 'in', activeStatusFilters);
         }
         
         const ordersSnapshot = await ordersQuery.get();
@@ -148,7 +160,17 @@ const getOrder = functions.https.onCall(async (data, context) => {
         const ordersSnapshot = await db.collection("restaurants").doc(restaurantId)
           .collection("orders")
           .where("tableId", "==", tableId)
-          .where("orderStatus", "in", ["PLACED", "PREPARING", "READY", "PENDING", ORDER_STATUS.ACTIVE])
+          .where('orderStatus', 'in', [
+            ORDER_STATUS.PENDING,
+            ORDER_STATUS.IN_PROGRESS,
+            'pending',
+            'in_progress',
+            'PLACED',
+            'PREPARING',
+            'READY',
+            'active',
+            'ACTIVE'
+          ])
           .orderBy("createdAt", "desc")
           .limit(1)
           .get();
@@ -193,11 +215,42 @@ const getOrder = functions.https.onCall(async (data, context) => {
  * @param {Object} orderData - Raw order data from Firestore
  * @returns {Object} Sanitized order object
  */
+function computeOrderTotal(orderData) {
+  try {
+    if (orderData?.priceInfo && typeof orderData.priceInfo.finalPrice === 'number') {
+      return orderData.priceInfo.finalPrice;
+    }
+
+    if (Array.isArray(orderData?.carts)) {
+      const cartSum = orderData.carts.reduce((sum, cart) => {
+        const finalPrice = cart?.priceInfo?.finalPrice;
+        return typeof finalPrice === 'number' ? sum + finalPrice : sum;
+      }, 0);
+      if (cartSum > 0) return cartSum;
+    }
+
+    if (Array.isArray(orderData?.items)) {
+      const itemSum = orderData.items.reduce((sum, item) => {
+        const price = item?.priceInfo?.finalPrice ?? item?.price;
+        const quantity = typeof item?.quantity === 'number' ? item.quantity : 1;
+        if (typeof price === 'number') {
+          return sum + price * quantity;
+        }
+        return sum;
+      }, 0);
+      if (itemSum > 0) return itemSum;
+    }
+  } catch (error) {
+    console.error('[getOrder] Failed to compute order total', error);
+  }
+  return 0;
+}
+
 function sanitizeOrderData(id, orderData) {
   return {
     id: id,
     orderNumber: orderData.orderNumber || '',
-    orderStatus: orderData.orderStatus || '',
+    orderStatus: mapOrderStatus(orderData.orderStatus || orderData.status || ''),
     createdAt: orderData.createdAt instanceof Timestamp ? 
       orderData.createdAt.toDate().toISOString() : orderData.createdAt || '',
     updatedAt: orderData.updatedAt instanceof Timestamp ? 
@@ -205,7 +258,7 @@ function sanitizeOrderData(id, orderData) {
     tableId: orderData.tableId || '',
     restaurantId: orderData.restaurantId || '',
     sessionId: orderData.sessionId || null,
-    total: orderData.total || 0,
+    total: computeOrderTotal(orderData),
     items: Array.isArray(orderData.items) ? orderData.items.map(item => ({
       menuItemId: item.menuItemId || '',
       name: item.name || (item.menuItem?.meta?.name || ''),
