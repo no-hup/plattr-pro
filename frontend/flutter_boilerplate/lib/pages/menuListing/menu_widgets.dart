@@ -436,7 +436,8 @@ class FloatingCartWidget extends StatelessWidget {
                         context.go('/r/$rid/t/$tid/cart');
                       } else {
                         AppLogger.log(
-                            '🛒 MENU: Cannot navigate to cart - missing ids (r="$rid", t="$tid")');
+                          '🛒 MENU: Cannot navigate to cart - missing ids (r="$rid", t="$tid")',
+                        );
                       }
                     },
                     style: ElevatedButton.styleFrom(

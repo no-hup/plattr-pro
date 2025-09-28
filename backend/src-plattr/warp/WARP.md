@@ -5,33 +5,14 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 ## Development Commands
 
 ### Backend (Firebase Functions)
-```bash
-cd backend/src-plattr
-```
+Reference the canonical runbook for emulator and port guidance:
 
-**Start emulators:**
-```bash
-firebase emulators:start
-```
+> See `backend/src-plattr/.cursor/rules/emulator-flutter-run.mdc` for step-by-step bootstrap, port handling, and troubleshooting.
 
 **Deploy functions:**
 ```bash
 cd functions && npm run deploy
 ```
-
-**Import mock data:**
-```bash
-npm run import-mock
-```
-
-**View emulator UI:**
-http://localhost:4001 (after starting emulators)
-
-**Emulator ports:**
-- Functions: localhost:5002
-- Firestore: localhost:8080
-- UI: localhost:4001
-- Logging: localhost:4501
 
 ### Frontend Applications
 

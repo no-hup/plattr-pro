@@ -152,12 +152,7 @@ apiResponse.when(
 ## 🚀 Running the Tests
 
 ### Prerequisites
-1. **Firebase Emulator Running**:
-   ```bash
-   cd backend/src-plattr
-   export GOOGLE_APPLICATION_CREDENTIALS="path/to/service-account.json"
-   firebase emulators:start --project rms-app-dd875 --only firestore,functions
-   ```
+1. **Firebase Emulator Ready**: Follow the canonical runbook in `backend/src-plattr/.cursor/rules/emulator-flutter-run.mdc` to export credentials, start the emulators, and import mock data.
 
 2. **Mock Data Imported**:
    ```bash
