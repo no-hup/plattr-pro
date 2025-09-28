@@ -4,66 +4,126 @@
       "phoneNumber": "1234567890",
       "name": "John Customer",
       "email": "john@example.com",
-      "createdAt": { "_seconds": 1678901234, "_nanoseconds": 0 },
-      "updatedAt": { "_seconds": 1678901234, "_nanoseconds": 0 },
+      "createdAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
       "currentVisit": {
         "restaurantId": "rest_basic_001",
         "tableId": "table1",
-        "startTime": { "_seconds": 1678901234, "_nanoseconds": 0 }
+        "startTime": {
+          "_seconds": 1678901234,
+          "_nanoseconds": 0
+        }
       },
       "visits": [
         {
           "restaurantId": "rest_basic_001",
           "tableId": "table1",
-          "startTime": { "_seconds": 1678901234, "_nanoseconds": 0 }
+          "startTime": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
         }
       ],
-      "preferences": { "favoriteItems": [], "dietaryRestrictions": [] }
+      "preferences": {
+        "favoriteItems": [],
+        "dietaryRestrictions": []
+      }
     },
     "9876543210": {
       "phoneNumber": "9876543210",
       "name": "Jane Customer",
       "email": "jane@example.com",
-      "createdAt": { "_seconds": 1678901234, "_nanoseconds": 0 },
-      "updatedAt": { "_seconds": 1678901234, "_nanoseconds": 0 },
+      "createdAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
       "visits": [],
-      "preferences": { "favoriteItems": [], "dietaryRestrictions": [] }
+      "preferences": {
+        "favoriteItems": [],
+        "dietaryRestrictions": []
+      }
     },
     "test_customer_001": {
       "phoneNumber": "test_customer_001",
       "name": "Test Customer One",
       "email": "test1@example.com",
-      "createdAt": { "_seconds": 1678901234, "_nanoseconds": 0 },
-      "updatedAt": { "_seconds": 1678901234, "_nanoseconds": 0 },
+      "createdAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
       "visits": [],
-      "preferences": { "favoriteItems": [], "dietaryRestrictions": [] }
+      "preferences": {
+        "favoriteItems": [],
+        "dietaryRestrictions": []
+      }
     },
     "test_customer_002": {
       "phoneNumber": "test_customer_002",
       "name": "Test Customer Two",
       "email": "test2@example.com",
-      "createdAt": { "_seconds": 1678901234, "_nanoseconds": 0 },
-      "updatedAt": { "_seconds": 1678901234, "_nanoseconds": 0 },
+      "createdAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
       "visits": [],
-      "preferences": { "favoriteItems": [], "dietaryRestrictions": [] }
+      "preferences": {
+        "favoriteItems": [],
+        "dietaryRestrictions": []
+      }
     },
     "cust_alice": {
       "phoneNumber": "5550000001",
       "name": "Alice Example",
       "email": "alice@example.com",
-      "createdAt": { "_seconds": 1678902234, "_nanoseconds": 0 },
-      "updatedAt": { "_seconds": 1678902234, "_nanoseconds": 0 },
+      "createdAt": {
+        "_seconds": 1678902234,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1678902234,
+        "_nanoseconds": 0
+      },
       "visits": [],
-      "preferences": { "favoriteItems": [], "dietaryRestrictions": [] }
+      "preferences": {
+        "favoriteItems": [],
+        "dietaryRestrictions": []
+      }
     },
     "cust_bob": {
       "phoneNumber": "5550000002",
       "name": "Bob Example",
       "email": "bob@example.com",
-      "createdAt": { "_seconds": 1678902234, "_nanoseconds": 0 },
-      "updatedAt": { "_seconds": 1678902234, "_nanoseconds": 0 },
+      "createdAt": {
+        "_seconds": 1678902234,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1678902234,
+        "_nanoseconds": 0
+      },
       "visits": [],
-      "preferences": { "favoriteItems": [], "dietaryRestrictions": [] }
+      "preferences": {
+        "favoriteItems": [],
+        "dietaryRestrictions": []
+      }
     }
   },
   "restaurants": {
@@ -73,32 +133,81 @@
         "address": "1 Main St, Foodville",
         "phone": "5551111001",
         "email": "hello@baselinebistro.com",
-        "location": { "_latitude": 40.7128, "_longitude": -74.006 }
+        "location": {
+          "_latitude": 40.7128,
+          "_longitude": -74.006
+        }
       },
       "categories": {
-        "cat_food": { "name": "Food", "description": "All-time favourites", "image": "https://example.com/images/cat-food.jpg", "order": 1 },
-        "cat_bev": { "name": "Beverages", "description": "Drinks", "image": "https://example.com/images/cat-bev.jpg", "order": 2 }
+        "cat_food": {
+          "name": "Food",
+          "description": "All-time favourites",
+          "image": "https://example.com/images/cat-food.jpg",
+          "order": 1
+        },
+        "cat_bev": {
+          "name": "Beverages",
+          "description": "Drinks",
+          "image": "https://example.com/images/cat-bev.jpg",
+          "order": 2
+        }
       },
       "variants": {
         "var_size_burger": {
           "id": "var_size_burger",
-          "meta": { "name": "Burger Size", "description": "Choose size", "categoryAssociatedWith": ["cat_food"] },
+          "meta": {
+            "name": "Burger Size",
+            "description": "Choose size",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ]
+          },
           "options": [
-            { "id": "size_reg", "name": "Regular", "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 } },
-            { "id": "size_lg", "name": "Large", "priceInfo": { "basePrice": 20, "finalPrice": 18, "discount": 10 } }
+            {
+              "id": "size_reg",
+              "name": "Regular",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "size_lg",
+              "name": "Large",
+              "priceInfo": {
+                "basePrice": 20,
+                "finalPrice": 18,
+                "discount": 10
+              }
+            }
           ],
           "isMandatory": true,
           "respectParentDiscount": true,
-          "itemsAssociatedWith": ["item_burger_cls"]
+          "itemsAssociatedWith": [
+            "item_burger_cls"
+          ]
         }
       },
       "addons": {
         "addon_fries": {
-          "meta": { "name": "French Fries", "description": "Crispy fries", "categoryAssociatedWith": ["cat_food"] },
-          "priceInfo": { "basePrice": 20, "discount": 0, "finalPrice": 20 },
+          "meta": {
+            "name": "French Fries",
+            "description": "Crispy fries",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ]
+          },
+          "priceInfo": {
+            "basePrice": 20,
+            "discount": 0,
+            "finalPrice": 20
+          },
           "isMandatory": false,
           "respectParentDiscount": true,
-          "itemsAssociatedWith": ["item_burger_cls"],
+          "itemsAssociatedWith": [
+            "item_burger_cls"
+          ],
           "isInStock": true
         }
       },
@@ -106,23 +215,61 @@
         "item_burger_cls": {
           "menuItemId": "item_burger_cls",
           "categoryId": "cat_food",
-          "meta": { "name": "Classic Burger", "description": "Beef patty with cheddar", "categoryName": "Food", "image": "https://example.com/images/burger-classic.jpg" },
-          "priceInfo": { "basePrice": 100, "discount": 10, "finalPrice": 90 },
-          "variants": [{ "id": "var_size_burger", "name": "Size" }],
-          "addons": ["addon_fries"],
-          "nutritionalInfo": { "calories": 600, "protein": 30, "carbs": 40, "fat": 30 },
-          "allergenTags": ["gluten", "dairy"],
+          "meta": {
+            "name": "Classic Burger",
+            "description": "Beef patty with cheddar",
+            "categoryName": "Food",
+            "image": "https://example.com/images/burger-classic.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 100,
+            "discount": 10,
+            "finalPrice": 90
+          },
+          "variants": [
+            {
+              "id": "var_size_burger",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_fries"
+          ],
+          "nutritionalInfo": {
+            "calories": 600,
+            "protein": 30,
+            "carbs": 40,
+            "fat": 30
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
           "isInStock": true,
           "isCustomizable": true
         },
         "item_tea": {
           "menuItemId": "item_tea",
           "categoryId": "cat_bev",
-          "meta": { "name": "House Tea", "description": "Simple and warm", "categoryName": "Beverages", "image": "https://example.com/images/tea.jpg" },
-          "priceInfo": { "basePrice": 20, "discount": 0, "finalPrice": 20 },
+          "meta": {
+            "name": "House Tea",
+            "description": "Simple and warm",
+            "categoryName": "Beverages",
+            "image": "https://example.com/images/tea.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 20,
+            "discount": 0,
+            "finalPrice": 20
+          },
           "variants": [],
           "addons": [],
-          "nutritionalInfo": { "calories": 0, "protein": 0, "carbs": 0, "fat": 0 },
+          "nutritionalInfo": {
+            "calories": 0,
+            "protein": 0,
+            "carbs": 0,
+            "fat": 0
+          },
           "allergenTags": [],
           "isInStock": true,
           "isCustomizable": false
@@ -133,66 +280,250 @@
           "number": "B1",
           "capacity": 4,
           "status": "active",
-        "currentOTP": { "code": "123456", "createdAt": { "_seconds": 1678901000, "_nanoseconds": 0 }, "expiresAt": { "_seconds": 1678901600, "_nanoseconds": 0 } },
+          "currentOTP": {
+            "code": "123456",
+            "createdAt": {
+              "_seconds": 1678901000,
+              "_nanoseconds": 0
+            },
+            "expiresAt": {
+              "_seconds": 1678901600,
+              "_nanoseconds": 0
+            }
+          },
           "session": "sess_b1_001",
-          "occupiedBy": ["1234567890"],
-          "primaryCustomer": { "phoneNumber": "1234567890", "name": "John Customer" },
+          "occupiedBy": [
+            "1234567890"
+          ],
+          "primaryCustomer": {
+            "phoneNumber": "1234567890",
+            "name": "John Customer"
+          },
           "assignedServerId": "server_bob",
-          "lastActivity": { "_seconds": 1678901234, "_nanoseconds": 0 }
+          "lastActivity": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
         },
         "table2": {
           "number": "B2",
           "capacity": 2,
           "status": "vacant",
-          "currentOTP": { "code": "", "createdAt": null, "expiresAt": null },
+          "currentOTP": {
+            "code": "",
+            "createdAt": null,
+            "expiresAt": null
+          },
           "session": null,
           "occupiedBy": [],
-          "primaryCustomer": { "phoneNumber": "", "name": "" },
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          },
           "assignedServerId": "server_anna",
           "lastActivity": null
         }
       },
       "servers": {
-        "server_anna": { "name": "Anna Waiter", "email": "anna@baselinebistro.com", "phoneNumber": "5551111222", "role": "waiter", "status": "active", "assignedTables": ["table2"], "fcmToken": "", "password": "1111" },
-        "server_bob": { "name": "Bob Waiter", "email": "bob@baselinebistro.com", "phoneNumber": "5551111333", "role": "waiter", "status": "active", "assignedTables": ["table1"], "fcmToken": "", "password": "2222" }
+        "server_anna": {
+          "name": "Anna Waiter",
+          "email": "anna@baselinebistro.com",
+          "phoneNumber": "5551111222",
+          "role": "waiter",
+          "status": "active",
+          "assignedTables": [
+            "table2"
+          ],
+          "fcmToken": "",
+          "password": "1111"
+        },
+        "server_bob": {
+          "name": "Bob Waiter",
+          "email": "bob@baselinebistro.com",
+          "phoneNumber": "5551111333",
+          "role": "waiter",
+          "status": "active",
+          "assignedTables": [
+            "table1"
+          ],
+          "fcmToken": "",
+          "password": "2222"
+        }
       },
       "orders": {
         "order_b1_001": {
           "orderId": "order_b1_001",
           "restaurantId": "rest_basic_001",
           "tableId": "table1",
-          "status": "pending",
           "assignedServer": "server_bob",
-          "updatedAt": 1678901500,
+          "updatedAt": {
+            "_seconds": 1678901500,
+            "_nanoseconds": 0
+          },
           "carts": [
             {
-              "status": "pending",
-              "statusHistory": [ { "status": "pending", "timestamp": { "_seconds": 1678901500, "_nanoseconds": 0 }, "userId": "server_bob" } ],
-              "checkoutTime": { "_seconds": 1678901500, "_nanoseconds": 0 },
+              "status": "PENDING",
+              "statusHistory": [
+                {
+                  "status": "PENDING",
+                  "timestamp": {
+                    "_seconds": 1678901500,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "server_bob"
+                }
+              ],
+              "checkoutTime": {
+                "_seconds": 1678901500,
+                "_nanoseconds": 0
+              },
               "notes": "",
               "estimatedPrepTime": 15,
               "assignedTo": null,
               "items": [
                 {
                   "menuItemId": "item_burger_cls",
-                  "menuItem": { "meta": { "name": "Classic Burger", "description": "Beef patty with cheddar", "image": "https://example.com/images/burger-classic.jpg", "categoryName": "Food" } },
-                  "selectedVariantsDetails": [ { "id": "var_size_burger", "isMandatory": true, "respectParentDiscount": true, "selected_variant_id": "size_lg", "selected_variant_name": "Large", "priceInfo": { "basePrice": 20, "finalPrice": 18, "discount": 10 } } ],
-                  "selectedAddonsDetails": [ { "id": "addon_fries", "name": "French Fries", "priceInfo": { "basePrice": 20, "finalPrice": 18, "discount": 10 }, "respectParentDiscount": true } ],
-                  "priceInfo": { "itemBasePrice": 100, "itemVariantBasePrice": 20, "itemAddonBasePrice": 20, "itemFinalPrice": 90, "discount": 10, "totalBasePrice": 140, "totalVariantBasePrice": 20, "totalAddonBasePrice": 20, "finalPrice": 126 },
+                  "menuItem": {
+                    "meta": {
+                      "name": "Classic Burger",
+                      "description": "Beef patty with cheddar",
+                      "image": "https://example.com/images/burger-classic.jpg",
+                      "categoryName": "Food"
+                    }
+                  },
+                  "selectedVariantsDetails": [
+                    {
+                      "id": "var_size_burger",
+                      "isMandatory": true,
+                      "respectParentDiscount": true,
+                      "selected_variant_id": "size_lg",
+                      "selected_variant_name": "Large",
+                      "priceInfo": {
+                        "basePrice": 20,
+                        "finalPrice": 18,
+                        "discount": 10
+                      }
+                    }
+                  ],
+                  "selectedAddonsDetails": [
+                    {
+                      "id": "addon_fries",
+                      "name": "French Fries",
+                      "priceInfo": {
+                        "basePrice": 20,
+                        "finalPrice": 18,
+                        "discount": 10
+                      },
+                      "respectParentDiscount": true
+                    }
+                  ],
+                  "priceInfo": {
+                    "itemBasePrice": 100,
+                    "itemVariantBasePrice": 20,
+                    "itemAddonBasePrice": 20,
+                    "itemFinalPrice": 90,
+                    "discount": 10,
+                    "totalBasePrice": 140,
+                    "totalVariantBasePrice": 20,
+                    "totalAddonBasePrice": 20,
+                    "finalPrice": 126
+                  },
                   "quantity": 1,
-                  "status": "pending",
-                  "statusUpdatedAt": { "_seconds": 1678901500, "_nanoseconds": 0 },
+                  "status": "PENDING",
+                  "statusUpdatedAt": {
+                    "_seconds": 1678901500,
+                    "_nanoseconds": 0
+                  },
                   "statusUpdatedBy": "server_bob",
                   "cartItemId": 1
                 }
               ],
-              "priceInfo": { "basePrice": 140, "finalPrice": 126, "totalDiscount": 10, "totalDiscountAmount": 14, "totalVariantBasePrice": 20, "totalAddonBasePrice": 20 }
+              "priceInfo": {
+                "basePrice": 140,
+                "finalPrice": 126,
+                "totalDiscount": 10,
+                "totalDiscountAmount": 14,
+                "totalVariantBasePrice": 20,
+                "totalAddonBasePrice": 20
+              }
             }
           ],
-          "items": [],
-          "priceInfo": { "basePrice": 140, "finalPrice": 126, "totalDiscount": 10, "totalDiscountAmount": 14, "totalAddonBasePrice": 20, "totalVariantBasePrice": 20 },
-          "timestamps": { "createdAt": { "_seconds": 1678901500, "_nanoseconds": 0 }, "updatedAt": { "_seconds": 1678901510, "_nanoseconds": 0 } },
-          "paymentInfo": { "paymentStatus": "unpaid", "paymentMethod": "cash", "transactionId": null }
+          "items": [
+            {
+              "menuItemId": "item_burger_cls",
+              "name": "Classic Burger",
+              "description": "Beef patty with cheddar",
+              "quantity": 1,
+              "priceInfo": {
+                "itemBasePrice": 100,
+                "itemVariantBasePrice": 20,
+                "itemAddonBasePrice": 20,
+                "itemFinalPrice": 90,
+                "discount": 10,
+                "totalBasePrice": 140,
+                "totalVariantBasePrice": 20,
+                "totalAddonBasePrice": 20,
+                "finalPrice": 126
+              },
+              "selectedVariants": {},
+              "selectedVariantsDetails": [
+                {
+                  "id": "var_size_burger",
+                  "isMandatory": true,
+                  "respectParentDiscount": true,
+                  "selected_variant_id": "size_lg",
+                  "selected_variant_name": "Large",
+                  "priceInfo": {
+                    "basePrice": 20,
+                    "finalPrice": 18,
+                    "discount": 10
+                  }
+                }
+              ],
+              "selectedAddons": [],
+              "selectedAddonsDetails": [
+                {
+                  "id": "addon_fries",
+                  "name": "French Fries",
+                  "priceInfo": {
+                    "basePrice": 20,
+                    "finalPrice": 18,
+                    "discount": 10
+                  },
+                  "respectParentDiscount": true
+                }
+              ],
+              "cartItemId": 1,
+              "checkoutTime": {
+                "_seconds": 1678901500,
+                "_nanoseconds": 0
+              },
+              "status": "PENDING"
+            }
+          ],
+          "priceInfo": {
+            "basePrice": 140,
+            "finalPrice": 126,
+            "totalDiscount": 10,
+            "totalDiscountAmount": 14,
+            "totalAddonBasePrice": 20,
+            "totalVariantBasePrice": 20
+          },
+          "paymentInfo": {
+            "paymentStatus": "unpaid",
+            "paymentMethod": "cash",
+            "transactionId": null
+          },
+          "orderStatus": "PENDING",
+          "orderNumber": "ORD-00001",
+          "createdAt": {
+            "_seconds": 1678901500,
+            "_nanoseconds": 0
+          },
+          "paymentStatus": "UNPAID",
+          "isActive": true,
+          "total": 126,
+          "sessionId": "session_dev_001"
         }
       },
       "carts": {
@@ -205,47 +536,318 @@
               "cartItemId": 1,
               "menuItemId": "item_burger_cls",
               "quantity": 1,
-              "menuItem": { "meta": { "name": "Classic Burger", "description": "Beef patty with cheddar", "image": "https://example.com/images/burger-classic.jpg", "categoryName": "Food" }, "categoryId": "cat_food", "nutritionalInfo": { "calories": 600, "protein": 30, "carbs": 40, "fat": 30 }, "allergenTags": ["gluten", "dairy"], "isCustomizable": true, "isInStock": true },
-              "selectedVariantsDetails": [ { "id": "var_size_burger", "isMandatory": true, "respectParentDiscount": true, "selected_variant_id": "size_lg", "selected_variant_name": "Large", "priceInfo": { "basePrice": 20, "finalPrice": 18, "discount": 10 } } ],
-              "selectedAddonsDetails": [ { "id": "addon_fries", "name": "French Fries", "priceInfo": { "basePrice": 20, "finalPrice": 18, "discount": 10 }, "respectParentDiscount": true } ],
-              "priceInfo": { "itemBasePrice": 100, "itemVariantBasePrice": 20, "itemAddonBasePrice": 20, "itemFinalPrice": 90, "discount": 10, "totalBasePrice": 140, "totalVariantBasePrice": 20, "totalAddonBasePrice": 20, "finalPrice": 126 },
+              "menuItem": {
+                "meta": {
+                  "name": "Classic Burger",
+                  "description": "Beef patty with cheddar",
+                  "image": "https://example.com/images/burger-classic.jpg",
+                  "categoryName": "Food"
+                },
+                "categoryId": "cat_food",
+                "nutritionalInfo": {
+                  "calories": 600,
+                  "protein": 30,
+                  "carbs": 40,
+                  "fat": 30
+                },
+                "allergenTags": [
+                  "gluten",
+                  "dairy"
+                ],
+                "isCustomizable": true,
+                "isInStock": true
+              },
+              "selectedVariantsDetails": [
+                {
+                  "id": "var_size_burger",
+                  "isMandatory": true,
+                  "respectParentDiscount": true,
+                  "selected_variant_id": "size_lg",
+                  "selected_variant_name": "Large",
+                  "priceInfo": {
+                    "basePrice": 20,
+                    "finalPrice": 18,
+                    "discount": 10
+                  }
+                }
+              ],
+              "selectedAddonsDetails": [
+                {
+                  "id": "addon_fries",
+                  "name": "French Fries",
+                  "priceInfo": {
+                    "basePrice": 20,
+                    "finalPrice": 18,
+                    "discount": 10
+                  },
+                  "respectParentDiscount": true
+                }
+              ],
+              "priceInfo": {
+                "itemBasePrice": 100,
+                "itemVariantBasePrice": 20,
+                "itemAddonBasePrice": 20,
+                "itemFinalPrice": 90,
+                "discount": 10,
+                "totalBasePrice": 140,
+                "totalVariantBasePrice": 20,
+                "totalAddonBasePrice": 20,
+                "finalPrice": 126
+              },
               "status": "pending",
-              "statusUpdatedAt": { "_seconds": 1678901450, "_nanoseconds": 0 },
+              "statusUpdatedAt": {
+                "_seconds": 1678901450,
+                "_nanoseconds": 0
+              },
               "statusUpdatedBy": "system"
             }
           ],
-          "priceInfo": { "basePrice": 140, "finalPrice": 126, "totalDiscount": 10, "totalDiscountAmount": 14, "totalAddonBasePrice": 20, "totalVariantBasePrice": 20 },
-          "lastUpdated": { "_seconds": 1678901450, "_nanoseconds": 0 }
+          "priceInfo": {
+            "basePrice": 140,
+            "finalPrice": 126,
+            "totalDiscount": 10,
+            "totalDiscountAmount": 14,
+            "totalAddonBasePrice": 20,
+            "totalVariantBasePrice": 20
+          },
+          "lastUpdated": {
+            "_seconds": 1678901450,
+            "_nanoseconds": 0
+          }
         }
       },
-      "kitchens": { "kitchen1": { "chefs": { "chef1": { "name": "Head Chef Henry", "role": "Head Chef", "fcmToken": "fcm_token_here" } } } },
+      "kitchens": {
+        "kitchen1": {
+          "chefs": {
+            "chef1": {
+              "name": "Head Chef Henry",
+              "role": "Head Chef",
+              "fcmToken": "fcm_token_here"
+            }
+          }
+        }
+      },
       "sessions": {
-        "sess_b1_001": { "entity": "table", "tableId": "table1", "primaryUserId": "1234567890", "users": ["1234567890"], "status": "active", "createdAt": { "_seconds": 1678901200, "_nanoseconds": 0 }, "updatedAt": { "_seconds": 1678901400, "_nanoseconds": 0 }, "expiresAt": { "_seconds": 2767225600, "_nanoseconds": 0 } }
+        "sess_b1_001": {
+          "entity": "table",
+          "tableId": "table1",
+          "primaryUserId": "1234567890",
+          "users": [
+            "1234567890"
+          ],
+          "status": "active",
+          "createdAt": {
+            "_seconds": 1678901200,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901400,
+            "_nanoseconds": 0
+          },
+          "expiresAt": {
+            "_seconds": 2767225600,
+            "_nanoseconds": 0
+          }
+        }
       }
     },
-
     "rest_otp_002": {
-      "info": { "name": "OTP First Cafe", "address": "22 Secure Ave, Codecity", "phone": "5552222002", "email": "hi@otpfirstcafe.com", "location": { "_latitude": 40.7138, "_longitude": -74.005 } },
-      "categories": { "cat_otp_food": { "name": "OTP Specials", "description": "Secured bites", "image": "https://example.com/images/cat-otp.jpg", "order": 1 } },
+      "info": {
+        "name": "OTP First Cafe",
+        "address": "22 Secure Ave, Codecity",
+        "phone": "5552222002",
+        "email": "hi@otpfirstcafe.com",
+        "location": {
+          "_latitude": 40.7138,
+          "_longitude": -74.005
+        }
+      },
+      "categories": {
+        "cat_otp_food": {
+          "name": "OTP Specials",
+          "description": "Secured bites",
+          "image": "https://example.com/images/cat-otp.jpg",
+          "order": 1
+        }
+      },
       "variants": {
         "var_spice_level": {
           "id": "var_spice_level",
-          "meta": { "name": "Spice Level", "description": "Choose spice", "categoryAssociatedWith": ["cat_otp_food"] },
-          "options": [ { "id": "spice_mild", "name": "Mild", "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 } }, { "id": "spice_hot", "name": "Hot", "priceInfo": { "basePrice": 10, "finalPrice": 10, "discount": 0 } } ],
+          "meta": {
+            "name": "Spice Level",
+            "description": "Choose spice",
+            "categoryAssociatedWith": [
+              "cat_otp_food"
+            ]
+          },
+          "options": [
+            {
+              "id": "spice_mild",
+              "name": "Mild",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "spice_hot",
+              "name": "Hot",
+              "priceInfo": {
+                "basePrice": 10,
+                "finalPrice": 10,
+                "discount": 0
+              }
+            }
+          ],
           "isMandatory": true,
           "respectParentDiscount": true,
-          "itemsAssociatedWith": ["item_otp_taco"]
+          "itemsAssociatedWith": [
+            "item_otp_taco"
+          ]
         }
       },
-      "addons": { "addon_salsa": { "meta": { "name": "Extra Salsa", "description": "Fresh salsa", "categoryAssociatedWith": ["cat_otp_food"] }, "priceInfo": { "basePrice": 10, "discount": 0, "finalPrice": 10 }, "isMandatory": false, "respectParentDiscount": true, "itemsAssociatedWith": ["item_otp_taco"], "isInStock": true } },
+      "addons": {
+        "addon_salsa": {
+          "meta": {
+            "name": "Extra Salsa",
+            "description": "Fresh salsa",
+            "categoryAssociatedWith": [
+              "cat_otp_food"
+            ]
+          },
+          "priceInfo": {
+            "basePrice": 10,
+            "discount": 0,
+            "finalPrice": 10
+          },
+          "isMandatory": false,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_otp_taco"
+          ],
+          "isInStock": true
+        }
+      },
       "menuItems": {
-        "item_otp_taco": { "menuItemId": "item_otp_taco", "categoryId": "cat_otp_food", "meta": { "name": "Security Taco", "description": "OTP-required taco", "categoryName": "OTP Specials", "image": "https://example.com/images/taco.jpg" }, "priceInfo": { "basePrice": 60, "discount": 0, "finalPrice": 60 }, "variants": [ { "id": "var_spice_level", "name": "Spice Level" } ], "addons": ["addon_salsa"], "nutritionalInfo": { "calories": 350, "protein": 15, "carbs": 30, "fat": 12 }, "allergenTags": ["gluten"], "isInStock": true, "isCustomizable": true }
+        "item_otp_taco": {
+          "menuItemId": "item_otp_taco",
+          "categoryId": "cat_otp_food",
+          "meta": {
+            "name": "Security Taco",
+            "description": "OTP-required taco",
+            "categoryName": "OTP Specials",
+            "image": "https://example.com/images/taco.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 60,
+            "discount": 0,
+            "finalPrice": 60
+          },
+          "variants": [
+            {
+              "id": "var_spice_level",
+              "name": "Spice Level"
+            }
+          ],
+          "addons": [
+            "addon_salsa"
+          ],
+          "nutritionalInfo": {
+            "calories": 350,
+            "protein": 15,
+            "carbs": 30,
+            "fat": 12
+          },
+          "allergenTags": [
+            "gluten"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        }
       },
       "tables": {
-        "table1": { "number": "O1", "capacity": 4, "status": "vacant", "currentOTP": { "code": "123456", "createdAt": { "_seconds": 1678902000, "_nanoseconds": 0 }, "expiresAt": { "_seconds": 1678902300, "_nanoseconds": 0 } }, "session": null, "occupiedBy": [], "primaryCustomer": { "phoneNumber": "", "name": "" }, "assignedServerId": "server_cara", "lastActivity": null },
-        "table2": { "number": "O2", "capacity": 2, "status": "active", "currentOTP": { "code": "123456", "createdAt": { "_seconds": 1678902100, "_nanoseconds": 0 }, "expiresAt": { "_seconds": 1678902400, "_nanoseconds": 0 } }, "session": "sess_o2_001", "occupiedBy": ["test_customer_001", "test_customer_002"], "primaryCustomer": { "phoneNumber": "test_customer_001", "name": "Test Customer One" }, "assignedServerId": "server_dan", "lastActivity": { "_seconds": 1678902150, "_nanoseconds": 0 } }
+        "table1": {
+          "number": "O1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "createdAt": {
+              "_seconds": 1678902000,
+              "_nanoseconds": 0
+            },
+            "expiresAt": {
+              "_seconds": 1678902300,
+              "_nanoseconds": 0
+            }
+          },
+          "session": null,
+          "occupiedBy": [],
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          },
+          "assignedServerId": "server_cara",
+          "lastActivity": null
+        },
+        "table2": {
+          "number": "O2",
+          "capacity": 2,
+          "status": "active",
+          "currentOTP": {
+            "code": "123456",
+            "createdAt": {
+              "_seconds": 1678902100,
+              "_nanoseconds": 0
+            },
+            "expiresAt": {
+              "_seconds": 1678902400,
+              "_nanoseconds": 0
+            }
+          },
+          "session": "sess_o2_001",
+          "occupiedBy": [
+            "test_customer_001",
+            "test_customer_002"
+          ],
+          "primaryCustomer": {
+            "phoneNumber": "test_customer_001",
+            "name": "Test Customer One"
+          },
+          "assignedServerId": "server_dan",
+          "lastActivity": {
+            "_seconds": 1678902150,
+            "_nanoseconds": 0
+          }
+        }
       },
-      "servers": { "server_cara": { "name": "Cara Waiter", "email": "cara@otpfirstcafe.com", "phoneNumber": "5552222333", "role": "waiter", "status": "active", "assignedTables": ["table1"], "fcmToken": "", "password": "3333" }, "server_dan": { "name": "Dan Waiter", "email": "dan@otpfirstcafe.com", "phoneNumber": "5552222444", "role": "waiter", "status": "active", "assignedTables": ["table2"], "fcmToken": "", "password": "4444" } },
+      "servers": {
+        "server_cara": {
+          "name": "Cara Waiter",
+          "email": "cara@otpfirstcafe.com",
+          "phoneNumber": "5552222333",
+          "role": "waiter",
+          "status": "active",
+          "assignedTables": [
+            "table1"
+          ],
+          "fcmToken": "",
+          "password": "3333"
+        },
+        "server_dan": {
+          "name": "Dan Waiter",
+          "email": "dan@otpfirstcafe.com",
+          "phoneNumber": "5552222444",
+          "role": "waiter",
+          "status": "active",
+          "assignedTables": [
+            "table2"
+          ],
+          "fcmToken": "",
+          "password": "4444"
+        }
+      },
       "orders": {},
       "carts": {
         "table2": {
@@ -253,69 +855,1485 @@
           "tableId": "table2",
           "sessionId": "sess_o2_001",
           "items": [
-            { "cartItemId": 1, "menuItemId": "item_otp_taco", "quantity": 2, "menuItem": { "meta": { "name": "Security Taco", "description": "OTP-required taco", "image": "https://example.com/images/taco.jpg", "categoryName": "OTP Specials" }, "categoryId": "cat_otp_food", "nutritionalInfo": { "calories": 350, "protein": 15, "carbs": 30, "fat": 12 }, "allergenTags": ["gluten"], "isCustomizable": true, "isInStock": true }, "selectedVariantsDetails": [ { "id": "var_spice_level", "isMandatory": true, "respectParentDiscount": true, "selected_variant_id": "spice_hot", "selected_variant_name": "Hot", "priceInfo": { "basePrice": 10, "finalPrice": 10, "discount": 0 } } ], "selectedAddonsDetails": [ { "id": "addon_salsa", "name": "Extra Salsa", "priceInfo": { "basePrice": 10, "finalPrice": 10, "discount": 0 }, "respectParentDiscount": true } ], "priceInfo": { "itemBasePrice": 60, "itemVariantBasePrice": 10, "itemAddonBasePrice": 10, "itemFinalPrice": 60, "discount": 0, "totalBasePrice": 120, "totalVariantBasePrice": 20, "totalAddonBasePrice": 20, "finalPrice": 160 }, "status": "pending", "statusUpdatedAt": { "_seconds": 1678902200, "_nanoseconds": 0 }, "statusUpdatedBy": "system" }
+            {
+              "cartItemId": 1,
+              "menuItemId": "item_otp_taco",
+              "quantity": 2,
+              "menuItem": {
+                "meta": {
+                  "name": "Security Taco",
+                  "description": "OTP-required taco",
+                  "image": "https://example.com/images/taco.jpg",
+                  "categoryName": "OTP Specials"
+                },
+                "categoryId": "cat_otp_food",
+                "nutritionalInfo": {
+                  "calories": 350,
+                  "protein": 15,
+                  "carbs": 30,
+                  "fat": 12
+                },
+                "allergenTags": [
+                  "gluten"
+                ],
+                "isCustomizable": true,
+                "isInStock": true
+              },
+              "selectedVariantsDetails": [
+                {
+                  "id": "var_spice_level",
+                  "isMandatory": true,
+                  "respectParentDiscount": true,
+                  "selected_variant_id": "spice_hot",
+                  "selected_variant_name": "Hot",
+                  "priceInfo": {
+                    "basePrice": 10,
+                    "finalPrice": 10,
+                    "discount": 0
+                  }
+                }
+              ],
+              "selectedAddonsDetails": [
+                {
+                  "id": "addon_salsa",
+                  "name": "Extra Salsa",
+                  "priceInfo": {
+                    "basePrice": 10,
+                    "finalPrice": 10,
+                    "discount": 0
+                  },
+                  "respectParentDiscount": true
+                }
+              ],
+              "priceInfo": {
+                "itemBasePrice": 60,
+                "itemVariantBasePrice": 10,
+                "itemAddonBasePrice": 10,
+                "itemFinalPrice": 60,
+                "discount": 0,
+                "totalBasePrice": 120,
+                "totalVariantBasePrice": 20,
+                "totalAddonBasePrice": 20,
+                "finalPrice": 160
+              },
+              "status": "pending",
+              "statusUpdatedAt": {
+                "_seconds": 1678902200,
+                "_nanoseconds": 0
+              },
+              "statusUpdatedBy": "system"
+            }
           ],
-          "priceInfo": { "basePrice": 120, "finalPrice": 160, "totalDiscount": 0, "totalDiscountAmount": 0, "totalAddonBasePrice": 20, "totalVariantBasePrice": 20 },
-          "lastUpdated": { "_seconds": 1678902200, "_nanoseconds": 0 }
+          "priceInfo": {
+            "basePrice": 120,
+            "finalPrice": 160,
+            "totalDiscount": 0,
+            "totalDiscountAmount": 0,
+            "totalAddonBasePrice": 20,
+            "totalVariantBasePrice": 20
+          },
+          "lastUpdated": {
+            "_seconds": 1678902200,
+            "_nanoseconds": 0
+          }
         }
       },
-      "kitchens": { "kitchen1": { "chefs": { "chef1": { "name": "Chef Carla", "role": "Head Chef", "fcmToken": "fcm_token_here" } } } },
-      "sessions": { "sess_o2_001": { "entity": "table", "tableId": "table2", "primaryUserId": "test_customer_001", "users": ["test_customer_001", "test_customer_002"], "status": "active", "createdAt": { "_seconds": 1678902100, "_nanoseconds": 0 }, "updatedAt": { "_seconds": 1678902200, "_nanoseconds": 0 }, "expiresAt": { "_seconds": 1735689600, "_nanoseconds": 0 } } }
+      "kitchens": {
+        "kitchen1": {
+          "chefs": {
+            "chef1": {
+              "name": "Chef Carla",
+              "role": "Head Chef",
+              "fcmToken": "fcm_token_here"
+            }
+          }
+        }
+      },
+      "sessions": {
+        "sess_o2_001": {
+          "entity": "table",
+          "tableId": "table2",
+          "primaryUserId": "test_customer_001",
+          "users": [
+            "test_customer_001",
+            "test_customer_002"
+          ],
+          "status": "active",
+          "createdAt": {
+            "_seconds": 1678902100,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678902200,
+            "_nanoseconds": 0
+          },
+          "expiresAt": {
+            "_seconds": 1735689600,
+            "_nanoseconds": 0
+          }
+        }
+      }
     },
-
     "rest_stock_003": {
-      "info": { "name": "Discount Depot", "address": "77 Saver Rd, Bargain Bay", "phone": "5553333003", "email": "contact@discountdepot.com", "location": { "_latitude": 40.7148, "_longitude": -74.004 } },
-      "categories": { "cat_burgers": { "name": "Burgers", "description": "Juicy deals", "image": "https://example.com/images/cat-burger.jpg", "order": 1 }, "cat_drinks": { "name": "Drinks", "description": "Best prices", "image": "https://example.com/images/cat-drinks.jpg", "order": 2 } },
-      "variants": { "var_burger_size": { "id": "var_burger_size", "meta": { "name": "Size", "description": "Pick size", "categoryAssociatedWith": ["cat_burgers"] }, "options": [ { "id": "bsize_reg", "name": "Regular", "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 } }, { "id": "bsize_lg", "name": "Large", "priceInfo": { "basePrice": 10, "finalPrice": 9, "discount": 10 } } ], "isMandatory": true, "respectParentDiscount": true, "itemsAssociatedWith": ["item_deal_burger"] } },
-      "addons": { "addon_cheese": { "meta": { "name": "Cheese Slice", "description": "Add cheese", "categoryAssociatedWith": ["cat_burgers"] }, "priceInfo": { "basePrice": 10, "discount": 0, "finalPrice": 10 }, "isMandatory": false, "respectParentDiscount": false, "itemsAssociatedWith": ["item_deal_burger"], "isInStock": false } },
+      "info": {
+        "name": "Discount Depot",
+        "address": "77 Saver Rd, Bargain Bay",
+        "phone": "5553333003",
+        "email": "contact@discountdepot.com",
+        "location": {
+          "_latitude": 40.7148,
+          "_longitude": -74.004
+        }
+      },
+      "categories": {
+        "cat_burgers": {
+          "name": "Burgers",
+          "description": "Juicy deals",
+          "image": "https://example.com/images/cat-burger.jpg",
+          "order": 1
+        },
+        "cat_drinks": {
+          "name": "Drinks",
+          "description": "Best prices",
+          "image": "https://example.com/images/cat-drinks.jpg",
+          "order": 2
+        }
+      },
+      "variants": {
+        "var_burger_size": {
+          "id": "var_burger_size",
+          "meta": {
+            "name": "Size",
+            "description": "Pick size",
+            "categoryAssociatedWith": [
+              "cat_burgers"
+            ]
+          },
+          "options": [
+            {
+              "id": "bsize_reg",
+              "name": "Regular",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "bsize_lg",
+              "name": "Large",
+              "priceInfo": {
+                "basePrice": 10,
+                "finalPrice": 9,
+                "discount": 10
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_deal_burger"
+          ]
+        }
+      },
+      "addons": {
+        "addon_cheese": {
+          "meta": {
+            "name": "Cheese Slice",
+            "description": "Add cheese",
+            "categoryAssociatedWith": [
+              "cat_burgers"
+            ]
+          },
+          "priceInfo": {
+            "basePrice": 10,
+            "discount": 0,
+            "finalPrice": 10
+          },
+          "isMandatory": false,
+          "respectParentDiscount": false,
+          "itemsAssociatedWith": [
+            "item_deal_burger"
+          ],
+          "isInStock": false
+        }
+      },
       "menuItems": {
-        "item_deal_burger": { "menuItemId": "item_deal_burger", "categoryId": "cat_burgers", "meta": { "name": "Deal Burger", "description": "Discounted classic", "categoryName": "Burgers", "image": "https://example.com/images/burger-deal.jpg" }, "priceInfo": { "basePrice": 80, "discount": 20, "finalPrice": 64 }, "variants": [ { "id": "var_burger_size", "name": "Size" } ], "addons": ["addon_cheese"], "nutritionalInfo": { "calories": 550, "protein": 28, "carbs": 40, "fat": 25 }, "allergenTags": ["gluten", "dairy"], "isInStock": true, "isCustomizable": true },
-        "item_lemonade": { "menuItemId": "item_lemonade", "categoryId": "cat_drinks", "meta": { "name": "Lemonade", "description": "Fresh and sweet", "categoryName": "Drinks", "image": "https://example.com/images/lemonade.jpg" }, "priceInfo": { "basePrice": 30, "discount": 0, "finalPrice": 30 }, "variants": [], "addons": [], "nutritionalInfo": { "calories": 120, "protein": 0, "carbs": 30, "fat": 0 }, "allergenTags": [], "isInStock": false, "isCustomizable": false }
+        "item_deal_burger": {
+          "menuItemId": "item_deal_burger",
+          "categoryId": "cat_burgers",
+          "meta": {
+            "name": "Deal Burger",
+            "description": "Discounted classic",
+            "categoryName": "Burgers",
+            "image": "https://example.com/images/burger-deal.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 80,
+            "discount": 20,
+            "finalPrice": 64
+          },
+          "variants": [
+            {
+              "id": "var_burger_size",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_cheese"
+          ],
+          "nutritionalInfo": {
+            "calories": 550,
+            "protein": 28,
+            "carbs": 40,
+            "fat": 25
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_lemonade": {
+          "menuItemId": "item_lemonade",
+          "categoryId": "cat_drinks",
+          "meta": {
+            "name": "Lemonade",
+            "description": "Fresh and sweet",
+            "categoryName": "Drinks",
+            "image": "https://example.com/images/lemonade.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 30,
+            "discount": 0,
+            "finalPrice": 30
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 120,
+            "protein": 0,
+            "carbs": 30,
+            "fat": 0
+          },
+          "allergenTags": [],
+          "isInStock": false,
+          "isCustomizable": false
+        }
       },
       "tables": {
-        "table1": { "number": "S1", "capacity": 4, "status": "active", "currentOTP": { "code": "123456", "createdAt": { "_seconds": 1678903000, "_nanoseconds": 0 }, "expiresAt": { "_seconds": 1678903300, "_nanoseconds": 0 } }, "session": "sess_s1_001", "occupiedBy": ["9876543210"], "primaryCustomer": { "phoneNumber": "9876543210", "name": "Jane Customer" }, "assignedServerId": "server_eve", "lastActivity": { "_seconds": 1678903050, "_nanoseconds": 0 } },
-        "table2": { "number": "S2", "capacity": 2, "status": "vacant", "currentOTP": { "code": "", "createdAt": null, "expiresAt": null }, "session": null, "occupiedBy": [], "primaryCustomer": { "phoneNumber": "", "name": "" }, "assignedServerId": "server_eve", "lastActivity": null }
+        "table1": {
+          "number": "S1",
+          "capacity": 4,
+          "status": "active",
+          "currentOTP": {
+            "code": "123456",
+            "createdAt": {
+              "_seconds": 1678903000,
+              "_nanoseconds": 0
+            },
+            "expiresAt": {
+              "_seconds": 1678903300,
+              "_nanoseconds": 0
+            }
+          },
+          "session": "sess_s1_001",
+          "occupiedBy": [
+            "9876543210"
+          ],
+          "primaryCustomer": {
+            "phoneNumber": "9876543210",
+            "name": "Jane Customer"
+          },
+          "assignedServerId": "server_eve",
+          "lastActivity": {
+            "_seconds": 1678903050,
+            "_nanoseconds": 0
+          }
+        },
+        "table2": {
+          "number": "S2",
+          "capacity": 2,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "",
+            "createdAt": null,
+            "expiresAt": null
+          },
+          "session": null,
+          "occupiedBy": [],
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          },
+          "assignedServerId": "server_eve",
+          "lastActivity": null
+        }
       },
-      "servers": { "server_eve": { "name": "Eve Waiter", "email": "eve@discountdepot.com", "phoneNumber": "5553333444", "role": "waiter", "status": "active", "assignedTables": ["table1", "table2"], "fcmToken": "", "password": "5555" } },
+      "servers": {
+        "server_eve": {
+          "name": "Eve Waiter",
+          "email": "eve@discountdepot.com",
+          "phoneNumber": "5553333444",
+          "role": "waiter",
+          "status": "active",
+          "assignedTables": [
+            "table1",
+            "table2"
+          ],
+          "fcmToken": "",
+          "password": "5555"
+        }
+      },
       "orders": {
-        "order_s1_001": { "orderId": "order_s1_001", "restaurantId": "rest_stock_003", "tableId": "table1", "status": "pending", "assignedServer": "server_eve", "updatedAt": 1678903200, "carts": [ { "status": "pending", "statusHistory": [ { "status": "pending", "timestamp": { "_seconds": 1678903200, "_nanoseconds": 0 }, "userId": "server_eve" } ], "checkoutTime": { "_seconds": 1678903200, "_nanoseconds": 0 }, "notes": "No cheese if out of stock", "estimatedPrepTime": 10, "assignedTo": null, "items": [ { "menuItemId": "item_deal_burger", "menuItem": { "meta": { "name": "Deal Burger", "description": "Discounted classic", "image": "https://example.com/images/burger-deal.jpg", "categoryName": "Burgers" } }, "selectedVariantsDetails": [ { "id": "var_burger_size", "isMandatory": true, "respectParentDiscount": true, "selected_variant_id": "bsize_lg", "selected_variant_name": "Large", "priceInfo": { "basePrice": 10, "finalPrice": 9, "discount": 10 } } ], "selectedAddonsDetails": [ { "id": "addon_cheese", "name": "Cheese Slice", "priceInfo": { "basePrice": 10, "finalPrice": 10, "discount": 0 }, "respectParentDiscount": false } ], "priceInfo": { "itemBasePrice": 80, "itemVariantBasePrice": 10, "itemAddonBasePrice": 10, "itemFinalPrice": 64, "discount": 20, "totalBasePrice": 100, "totalVariantBasePrice": 10, "totalAddonBasePrice": 10, "finalPrice": 83 }, "quantity": 1, "status": "pending", "statusUpdatedAt": { "_seconds": 1678903200, "_nanoseconds": 0 }, "statusUpdatedBy": "server_eve", "cartItemId": 1 } ], "priceInfo": { "basePrice": 100, "finalPrice": 83, "totalDiscount": 20, "totalDiscountAmount": 17, "totalVariantBasePrice": 10, "totalAddonBasePrice": 10 } } ], "items": [], "priceInfo": { "basePrice": 100, "finalPrice": 83, "totalDiscount": 20, "totalDiscountAmount": 17, "totalAddonBasePrice": 10, "totalVariantBasePrice": 10 }, "timestamps": { "createdAt": { "_seconds": 1678903200, "_nanoseconds": 0 }, "updatedAt": { "_seconds": 1678903210, "_nanoseconds": 0 } }, "paymentInfo": { "paymentStatus": "unpaid", "paymentMethod": "cash", "transactionId": null } }
+        "order_s1_001": {
+          "orderId": "order_s1_001",
+          "restaurantId": "rest_stock_003",
+          "tableId": "table1",
+          "assignedServer": "server_eve",
+          "updatedAt": {
+            "_seconds": 1678903200,
+            "_nanoseconds": 0
+          },
+          "carts": [
+            {
+              "status": "PENDING",
+              "statusHistory": [
+                {
+                  "status": "PENDING",
+                  "timestamp": {
+                    "_seconds": 1678903200,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "server_eve"
+                }
+              ],
+              "checkoutTime": {
+                "_seconds": 1678903200,
+                "_nanoseconds": 0
+              },
+              "notes": "No cheese if out of stock",
+              "estimatedPrepTime": 10,
+              "assignedTo": null,
+              "items": [
+                {
+                  "menuItemId": "item_deal_burger",
+                  "menuItem": {
+                    "meta": {
+                      "name": "Deal Burger",
+                      "description": "Discounted classic",
+                      "image": "https://example.com/images/burger-deal.jpg",
+                      "categoryName": "Burgers"
+                    }
+                  },
+                  "selectedVariantsDetails": [
+                    {
+                      "id": "var_burger_size",
+                      "isMandatory": true,
+                      "respectParentDiscount": true,
+                      "selected_variant_id": "bsize_lg",
+                      "selected_variant_name": "Large",
+                      "priceInfo": {
+                        "basePrice": 10,
+                        "finalPrice": 9,
+                        "discount": 10
+                      }
+                    }
+                  ],
+                  "selectedAddonsDetails": [
+                    {
+                      "id": "addon_cheese",
+                      "name": "Cheese Slice",
+                      "priceInfo": {
+                        "basePrice": 10,
+                        "finalPrice": 10,
+                        "discount": 0
+                      },
+                      "respectParentDiscount": false
+                    }
+                  ],
+                  "priceInfo": {
+                    "itemBasePrice": 80,
+                    "itemVariantBasePrice": 10,
+                    "itemAddonBasePrice": 10,
+                    "itemFinalPrice": 64,
+                    "discount": 20,
+                    "totalBasePrice": 100,
+                    "totalVariantBasePrice": 10,
+                    "totalAddonBasePrice": 10,
+                    "finalPrice": 83
+                  },
+                  "quantity": 1,
+                  "status": "PENDING",
+                  "statusUpdatedAt": {
+                    "_seconds": 1678903200,
+                    "_nanoseconds": 0
+                  },
+                  "statusUpdatedBy": "server_eve",
+                  "cartItemId": 1
+                }
+              ],
+              "priceInfo": {
+                "basePrice": 100,
+                "finalPrice": 83,
+                "totalDiscount": 20,
+                "totalDiscountAmount": 17,
+                "totalVariantBasePrice": 10,
+                "totalAddonBasePrice": 10
+              }
+            }
+          ],
+          "items": [
+            {
+              "menuItemId": "item_deal_burger",
+              "name": "Deal Burger",
+              "description": "Discounted classic",
+              "quantity": 1,
+              "priceInfo": {
+                "itemBasePrice": 80,
+                "itemVariantBasePrice": 10,
+                "itemAddonBasePrice": 10,
+                "itemFinalPrice": 64,
+                "discount": 20,
+                "totalBasePrice": 100,
+                "totalVariantBasePrice": 10,
+                "totalAddonBasePrice": 10,
+                "finalPrice": 83
+              },
+              "selectedVariants": {},
+              "selectedVariantsDetails": [
+                {
+                  "id": "var_burger_size",
+                  "isMandatory": true,
+                  "respectParentDiscount": true,
+                  "selected_variant_id": "bsize_lg",
+                  "selected_variant_name": "Large",
+                  "priceInfo": {
+                    "basePrice": 10,
+                    "finalPrice": 9,
+                    "discount": 10
+                  }
+                }
+              ],
+              "selectedAddons": [],
+              "selectedAddonsDetails": [
+                {
+                  "id": "addon_cheese",
+                  "name": "Cheese Slice",
+                  "priceInfo": {
+                    "basePrice": 10,
+                    "finalPrice": 10,
+                    "discount": 0
+                  },
+                  "respectParentDiscount": false
+                }
+              ],
+              "cartItemId": 1,
+              "checkoutTime": {
+                "_seconds": 1678903200,
+                "_nanoseconds": 0
+              },
+              "status": "PENDING"
+            }
+          ],
+          "priceInfo": {
+            "basePrice": 100,
+            "finalPrice": 83,
+            "totalDiscount": 20,
+            "totalDiscountAmount": 17,
+            "totalAddonBasePrice": 10,
+            "totalVariantBasePrice": 10
+          },
+          "paymentInfo": {
+            "paymentStatus": "unpaid",
+            "paymentMethod": "cash",
+            "transactionId": null
+          },
+          "orderStatus": "PENDING",
+          "orderNumber": "ORD-00001",
+          "createdAt": {
+            "_seconds": 1678903200,
+            "_nanoseconds": 0
+          },
+          "paymentStatus": "UNPAID",
+          "isActive": true,
+          "total": 83,
+          "sessionId": "session_dev_001"
+        }
       },
-      "carts": { "table1": { "restaurantId": "rest_stock_003", "tableId": "table1", "sessionId": "sess_s1_001", "items": [ { "cartItemId": 1, "menuItemId": "item_lemonade", "quantity": 1, "menuItem": { "meta": { "name": "Lemonade", "description": "Fresh and sweet", "image": "https://example.com/images/lemonade.jpg", "categoryName": "Drinks" }, "categoryId": "cat_drinks", "nutritionalInfo": { "calories": 120, "protein": 0, "carbs": 30, "fat": 0 }, "allergenTags": [], "isCustomizable": false, "isInStock": false }, "selectedVariantsDetails": [], "selectedAddonsDetails": [], "priceInfo": { "itemBasePrice": 30, "itemVariantBasePrice": 0, "itemAddonBasePrice": 0, "itemFinalPrice": 30, "discount": 0, "totalBasePrice": 30, "totalVariantBasePrice": 0, "totalAddonBasePrice": 0, "finalPrice": 30 }, "status": "pending", "statusUpdatedAt": { "_seconds": 1678903150, "_nanoseconds": 0 }, "statusUpdatedBy": "system" } ], "priceInfo": { "basePrice": 30, "finalPrice": 30, "totalDiscount": 0, "totalDiscountAmount": 0, "totalAddonBasePrice": 0, "totalVariantBasePrice": 0 }, "lastUpdated": { "_seconds": 1678903150, "_nanoseconds": 0 } } },
-      "kitchens": { "kitchen1": { "chefs": { "chef1": { "name": "Chef Erin", "role": "Head Chef", "fcmToken": "fcm_token_here" } } } },
-      "sessions": { "sess_s1_001": { "entity": "table", "tableId": "table1", "primaryUserId": "9876543210", "users": ["9876543210"], "status": "active", "createdAt": { "_seconds": 1678903000, "_nanoseconds": 0 }, "updatedAt": { "_seconds": 1678903150, "_nanoseconds": 0 }, "expiresAt": { "_seconds": 1735689600, "_nanoseconds": 0 } } }
+      "carts": {
+        "table1": {
+          "restaurantId": "rest_stock_003",
+          "tableId": "table1",
+          "sessionId": "sess_s1_001",
+          "items": [
+            {
+              "cartItemId": 1,
+              "menuItemId": "item_lemonade",
+              "quantity": 1,
+              "menuItem": {
+                "meta": {
+                  "name": "Lemonade",
+                  "description": "Fresh and sweet",
+                  "image": "https://example.com/images/lemonade.jpg",
+                  "categoryName": "Drinks"
+                },
+                "categoryId": "cat_drinks",
+                "nutritionalInfo": {
+                  "calories": 120,
+                  "protein": 0,
+                  "carbs": 30,
+                  "fat": 0
+                },
+                "allergenTags": [],
+                "isCustomizable": false,
+                "isInStock": false
+              },
+              "selectedVariantsDetails": [],
+              "selectedAddonsDetails": [],
+              "priceInfo": {
+                "itemBasePrice": 30,
+                "itemVariantBasePrice": 0,
+                "itemAddonBasePrice": 0,
+                "itemFinalPrice": 30,
+                "discount": 0,
+                "totalBasePrice": 30,
+                "totalVariantBasePrice": 0,
+                "totalAddonBasePrice": 0,
+                "finalPrice": 30
+              },
+              "status": "pending",
+              "statusUpdatedAt": {
+                "_seconds": 1678903150,
+                "_nanoseconds": 0
+              },
+              "statusUpdatedBy": "system"
+            }
+          ],
+          "priceInfo": {
+            "basePrice": 30,
+            "finalPrice": 30,
+            "totalDiscount": 0,
+            "totalDiscountAmount": 0,
+            "totalAddonBasePrice": 0,
+            "totalVariantBasePrice": 0
+          },
+          "lastUpdated": {
+            "_seconds": 1678903150,
+            "_nanoseconds": 0
+          }
+        }
+      },
+      "kitchens": {
+        "kitchen1": {
+          "chefs": {
+            "chef1": {
+              "name": "Chef Erin",
+              "role": "Head Chef",
+              "fcmToken": "fcm_token_here"
+            }
+          }
+        }
+      },
+      "sessions": {
+        "sess_s1_001": {
+          "entity": "table",
+          "tableId": "table1",
+          "primaryUserId": "9876543210",
+          "users": [
+            "9876543210"
+          ],
+          "status": "active",
+          "createdAt": {
+            "_seconds": 1678903000,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678903150,
+            "_nanoseconds": 0
+          },
+          "expiresAt": {
+            "_seconds": 1735689600,
+            "_nanoseconds": 0
+          }
+        }
+      }
     },
-
     "rest_variants_004": {
-      "info": { "name": "Variant Villa", "address": "9 Options Blvd, Choice Town", "phone": "5554444004", "email": "team@variantvilla.com", "location": { "_latitude": 40.7158, "_longitude": -74.003 } },
-      "categories": { "cat_pizza": { "name": "Pizza", "description": "Many ways", "image": "https://example.com/images/cat-pizza.jpg", "order": 1 } },
-      "variants": {
-        "var_pizza_size": { "id": "var_pizza_size", "meta": { "name": "Size", "description": "Pick size", "categoryAssociatedWith": ["cat_pizza"] }, "options": [ { "id": "pz_size_s", "name": "Small", "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 } }, { "id": "pz_size_m", "name": "Medium", "priceInfo": { "basePrice": 40, "finalPrice": 36, "discount": 10 } }, { "id": "pz_size_l", "name": "Large", "priceInfo": { "basePrice": 80, "finalPrice": 72, "discount": 10 } } ], "isMandatory": true, "respectParentDiscount": true, "itemsAssociatedWith": ["item_pizza_build"] },
-        "var_crust_type": { "id": "var_crust_type", "meta": { "name": "Crust", "description": "Choose crust", "categoryAssociatedWith": ["cat_pizza"] }, "options": [ { "id": "crust_thin", "name": "Thin", "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 } }, { "id": "crust_cheese", "name": "Cheese Burst", "priceInfo": { "basePrice": 30, "finalPrice": 27, "discount": 10 } } ], "isMandatory": false, "respectParentDiscount": true, "itemsAssociatedWith": ["item_pizza_build"] }
+      "info": {
+        "name": "Variant Villa",
+        "address": "9 Options Blvd, Choice Town",
+        "phone": "5554444004",
+        "email": "team@variantvilla.com",
+        "location": {
+          "_latitude": 40.7158,
+          "_longitude": -74.003
+        }
       },
-      "addons": { "addon_mushroom": { "meta": { "name": "Mushroom", "description": "Fresh mushrooms", "categoryAssociatedWith": ["cat_pizza"] }, "priceInfo": { "basePrice": 20, "discount": 0, "finalPrice": 20 }, "isMandatory": false, "respectParentDiscount": true, "itemsAssociatedWith": ["item_pizza_build"], "isInStock": true }, "addon_olive": { "meta": { "name": "Olives", "description": "Black olives", "categoryAssociatedWith": ["cat_pizza"] }, "priceInfo": { "basePrice": 10, "discount": 0, "finalPrice": 10 }, "isMandatory": false, "respectParentDiscount": false, "itemsAssociatedWith": ["item_pizza_build"], "isInStock": true } },
-      "menuItems": { "item_pizza_build": { "menuItemId": "item_pizza_build", "categoryId": "cat_pizza", "meta": { "name": "Build-Your-Pizza", "description": "Multiple variants/addons", "categoryName": "Pizza", "image": "https://example.com/images/pizza.jpg" }, "priceInfo": { "basePrice": 200, "discount": 10, "finalPrice": 180 }, "variants": [ { "id": "var_pizza_size", "name": "Size" }, { "id": "var_crust_type", "name": "Crust" } ], "addons": ["addon_mushroom", "addon_olive"], "nutritionalInfo": { "calories": 900, "protein": 40, "carbs": 90, "fat": 40 }, "allergenTags": ["gluten", "dairy"], "isInStock": true, "isCustomizable": true } },
-      "tables": { "table1": { "number": "V1", "capacity": 6, "status": "active", "currentOTP": { "code": "123456", "createdAt": { "_seconds": 1678904000, "_nanoseconds": 0 }, "expiresAt": { "_seconds": 1678904300, "_nanoseconds": 0 } }, "session": "sess_v1_001", "occupiedBy": ["cust_alice"], "primaryCustomer": { "phoneNumber": "5550000001", "name": "Alice Example" }, "assignedServerId": "server_fred", "lastActivity": { "_seconds": 1678904050, "_nanoseconds": 0 } }, "table2": { "number": "V2", "capacity": 4, "status": "active", "currentOTP": { "code": "123456", "createdAt": { "_seconds": 1678904060, "_nanoseconds": 0 }, "expiresAt": { "_seconds": 1678904360, "_nanoseconds": 0 } }, "session": null, "occupiedBy": [], "primaryCustomer": { "phoneNumber": "", "name": "" }, "assignedServerId": "server_fred", "lastActivity": null } },
-      "servers": { "server_fred": { "name": "Fred Waiter", "email": "fred@variantvilla.com", "phoneNumber": "5554444555", "role": "waiter", "status": "active", "assignedTables": ["table1", "table2"], "fcmToken": "", "password": "6666" } },
-      "orders": { "order_v1_001": { "orderId": "order_v1_001", "restaurantId": "rest_variants_004", "tableId": "table1", "status": "pending", "assignedServer": "server_fred", "updatedAt": 1678904200, "carts": [ { "status": "READY", "statusHistory": [ { "status": "pending", "timestamp": { "_seconds": 1678904150, "_nanoseconds": 0 }, "userId": "server_fred" }, { "status": "READY", "timestamp": { "_seconds": 1678904200, "_nanoseconds": 0 }, "userId": "kitchen" } ], "checkoutTime": { "_seconds": 1678904150, "_nanoseconds": 0 }, "notes": "", "estimatedPrepTime": 20, "assignedTo": "kitchen_station_1", "items": [ { "menuItemId": "item_pizza_build", "menuItem": { "meta": { "name": "Build-Your-Pizza", "description": "Multiple variants/addons", "image": "https://example.com/images/pizza.jpg", "categoryName": "Pizza" } }, "selectedVariantsDetails": [ { "id": "var_pizza_size", "isMandatory": true, "respectParentDiscount": true, "selected_variant_id": "pz_size_m", "selected_variant_name": "Medium", "priceInfo": { "basePrice": 40, "finalPrice": 36, "discount": 10 } }, { "id": "var_crust_type", "isMandatory": false, "respectParentDiscount": true, "selected_variant_id": "crust_cheese", "selected_variant_name": "Cheese Burst", "priceInfo": { "basePrice": 30, "finalPrice": 27, "discount": 10 } } ], "selectedAddonsDetails": [ { "id": "addon_mushroom", "name": "Mushroom", "priceInfo": { "basePrice": 20, "finalPrice": 18, "discount": 10 }, "respectParentDiscount": true }, { "id": "addon_olive", "name": "Olives", "priceInfo": { "basePrice": 10, "finalPrice": 10, "discount": 0 }, "respectParentDiscount": false } ], "priceInfo": { "itemBasePrice": 200, "itemVariantBasePrice": 70, "itemAddonBasePrice": 30, "itemFinalPrice": 234, "discount": 10, "totalBasePrice": 300, "totalVariantBasePrice": 70, "totalAddonBasePrice": 30, "finalPrice": 234 }, "quantity": 1, "status": "pending", "statusUpdatedAt": { "_seconds": 1678904200, "_nanoseconds": 0 }, "statusUpdatedBy": "kitchen", "cartItemId": 1 } ], "priceInfo": { "basePrice": 300, "finalPrice": 234, "totalDiscount": 10, "totalDiscountAmount": 66, "totalVariantBasePrice": 70, "totalAddonBasePrice": 30 } } ], "items": [], "priceInfo": { "basePrice": 300, "finalPrice": 234, "totalDiscount": 10, "totalDiscountAmount": 66, "totalAddonBasePrice": 30, "totalVariantBasePrice": 70 }, "timestamps": { "createdAt": { "_seconds": 1678904150, "_nanoseconds": 0 }, "updatedAt": { "_seconds": 1678904200, "_nanoseconds": 0 } }, "paymentInfo": { "paymentStatus": "unpaid", "paymentMethod": "cash", "transactionId": null } } },
+      "categories": {
+        "cat_pizza": {
+          "name": "Pizza",
+          "description": "Many ways",
+          "image": "https://example.com/images/cat-pizza.jpg",
+          "order": 1
+        }
+      },
+      "variants": {
+        "var_pizza_size": {
+          "id": "var_pizza_size",
+          "meta": {
+            "name": "Size",
+            "description": "Pick size",
+            "categoryAssociatedWith": [
+              "cat_pizza"
+            ]
+          },
+          "options": [
+            {
+              "id": "pz_size_s",
+              "name": "Small",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "pz_size_m",
+              "name": "Medium",
+              "priceInfo": {
+                "basePrice": 40,
+                "finalPrice": 36,
+                "discount": 10
+              }
+            },
+            {
+              "id": "pz_size_l",
+              "name": "Large",
+              "priceInfo": {
+                "basePrice": 80,
+                "finalPrice": 72,
+                "discount": 10
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_pizza_build"
+          ]
+        },
+        "var_crust_type": {
+          "id": "var_crust_type",
+          "meta": {
+            "name": "Crust",
+            "description": "Choose crust",
+            "categoryAssociatedWith": [
+              "cat_pizza"
+            ]
+          },
+          "options": [
+            {
+              "id": "crust_thin",
+              "name": "Thin",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "crust_cheese",
+              "name": "Cheese Burst",
+              "priceInfo": {
+                "basePrice": 30,
+                "finalPrice": 27,
+                "discount": 10
+              }
+            }
+          ],
+          "isMandatory": false,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_pizza_build"
+          ]
+        }
+      },
+      "addons": {
+        "addon_mushroom": {
+          "meta": {
+            "name": "Mushroom",
+            "description": "Fresh mushrooms",
+            "categoryAssociatedWith": [
+              "cat_pizza"
+            ]
+          },
+          "priceInfo": {
+            "basePrice": 20,
+            "discount": 0,
+            "finalPrice": 20
+          },
+          "isMandatory": false,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_pizza_build"
+          ],
+          "isInStock": true
+        },
+        "addon_olive": {
+          "meta": {
+            "name": "Olives",
+            "description": "Black olives",
+            "categoryAssociatedWith": [
+              "cat_pizza"
+            ]
+          },
+          "priceInfo": {
+            "basePrice": 10,
+            "discount": 0,
+            "finalPrice": 10
+          },
+          "isMandatory": false,
+          "respectParentDiscount": false,
+          "itemsAssociatedWith": [
+            "item_pizza_build"
+          ],
+          "isInStock": true
+        }
+      },
+      "menuItems": {
+        "item_pizza_build": {
+          "menuItemId": "item_pizza_build",
+          "categoryId": "cat_pizza",
+          "meta": {
+            "name": "Build-Your-Pizza",
+            "description": "Multiple variants/addons",
+            "categoryName": "Pizza",
+            "image": "https://example.com/images/pizza.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 200,
+            "discount": 10,
+            "finalPrice": 180
+          },
+          "variants": [
+            {
+              "id": "var_pizza_size",
+              "name": "Size"
+            },
+            {
+              "id": "var_crust_type",
+              "name": "Crust"
+            }
+          ],
+          "addons": [
+            "addon_mushroom",
+            "addon_olive"
+          ],
+          "nutritionalInfo": {
+            "calories": 900,
+            "protein": 40,
+            "carbs": 90,
+            "fat": 40
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        }
+      },
+      "tables": {
+        "table1": {
+          "number": "V1",
+          "capacity": 6,
+          "status": "active",
+          "currentOTP": {
+            "code": "123456",
+            "createdAt": {
+              "_seconds": 1678904000,
+              "_nanoseconds": 0
+            },
+            "expiresAt": {
+              "_seconds": 1678904300,
+              "_nanoseconds": 0
+            }
+          },
+          "session": "sess_v1_001",
+          "occupiedBy": [
+            "cust_alice"
+          ],
+          "primaryCustomer": {
+            "phoneNumber": "5550000001",
+            "name": "Alice Example"
+          },
+          "assignedServerId": "server_fred",
+          "lastActivity": {
+            "_seconds": 1678904050,
+            "_nanoseconds": 0
+          }
+        },
+        "table2": {
+          "number": "V2",
+          "capacity": 4,
+          "status": "active",
+          "currentOTP": {
+            "code": "123456",
+            "createdAt": {
+              "_seconds": 1678904060,
+              "_nanoseconds": 0
+            },
+            "expiresAt": {
+              "_seconds": 1678904360,
+              "_nanoseconds": 0
+            }
+          },
+          "session": null,
+          "occupiedBy": [],
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          },
+          "assignedServerId": "server_fred",
+          "lastActivity": null
+        }
+      },
+      "servers": {
+        "server_fred": {
+          "name": "Fred Waiter",
+          "email": "fred@variantvilla.com",
+          "phoneNumber": "5554444555",
+          "role": "waiter",
+          "status": "active",
+          "assignedTables": [
+            "table1",
+            "table2"
+          ],
+          "fcmToken": "",
+          "password": "6666"
+        }
+      },
+      "orders": {
+        "order_v1_001": {
+          "orderId": "order_v1_001",
+          "restaurantId": "rest_variants_004",
+          "tableId": "table1",
+          "assignedServer": "server_fred",
+          "updatedAt": {
+            "_seconds": 1678904200,
+            "_nanoseconds": 0
+          },
+          "carts": [
+            {
+              "status": "READY",
+              "statusHistory": [
+                {
+                  "status": "PENDING",
+                  "timestamp": {
+                    "_seconds": 1678904150,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "server_fred"
+                },
+                {
+                  "status": "READY",
+                  "timestamp": {
+                    "_seconds": 1678904200,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "kitchen"
+                }
+              ],
+              "checkoutTime": {
+                "_seconds": 1678904150,
+                "_nanoseconds": 0
+              },
+              "notes": "",
+              "estimatedPrepTime": 20,
+              "assignedTo": "kitchen_station_1",
+              "items": [
+                {
+                  "menuItemId": "item_pizza_build",
+                  "menuItem": {
+                    "meta": {
+                      "name": "Build-Your-Pizza",
+                      "description": "Multiple variants/addons",
+                      "image": "https://example.com/images/pizza.jpg",
+                      "categoryName": "Pizza"
+                    }
+                  },
+                  "selectedVariantsDetails": [
+                    {
+                      "id": "var_pizza_size",
+                      "isMandatory": true,
+                      "respectParentDiscount": true,
+                      "selected_variant_id": "pz_size_m",
+                      "selected_variant_name": "Medium",
+                      "priceInfo": {
+                        "basePrice": 40,
+                        "finalPrice": 36,
+                        "discount": 10
+                      }
+                    },
+                    {
+                      "id": "var_crust_type",
+                      "isMandatory": false,
+                      "respectParentDiscount": true,
+                      "selected_variant_id": "crust_cheese",
+                      "selected_variant_name": "Cheese Burst",
+                      "priceInfo": {
+                        "basePrice": 30,
+                        "finalPrice": 27,
+                        "discount": 10
+                      }
+                    }
+                  ],
+                  "selectedAddonsDetails": [
+                    {
+                      "id": "addon_mushroom",
+                      "name": "Mushroom",
+                      "priceInfo": {
+                        "basePrice": 20,
+                        "finalPrice": 18,
+                        "discount": 10
+                      },
+                      "respectParentDiscount": true
+                    },
+                    {
+                      "id": "addon_olive",
+                      "name": "Olives",
+                      "priceInfo": {
+                        "basePrice": 10,
+                        "finalPrice": 10,
+                        "discount": 0
+                      },
+                      "respectParentDiscount": false
+                    }
+                  ],
+                  "priceInfo": {
+                    "itemBasePrice": 200,
+                    "itemVariantBasePrice": 70,
+                    "itemAddonBasePrice": 30,
+                    "itemFinalPrice": 234,
+                    "discount": 10,
+                    "totalBasePrice": 300,
+                    "totalVariantBasePrice": 70,
+                    "totalAddonBasePrice": 30,
+                    "finalPrice": 234
+                  },
+                  "quantity": 1,
+                  "status": "PENDING",
+                  "statusUpdatedAt": {
+                    "_seconds": 1678904200,
+                    "_nanoseconds": 0
+                  },
+                  "statusUpdatedBy": "kitchen",
+                  "cartItemId": 1
+                }
+              ],
+              "priceInfo": {
+                "basePrice": 300,
+                "finalPrice": 234,
+                "totalDiscount": 10,
+                "totalDiscountAmount": 66,
+                "totalVariantBasePrice": 70,
+                "totalAddonBasePrice": 30
+              }
+            }
+          ],
+          "items": [
+            {
+              "menuItemId": "item_pizza_build",
+              "name": "Build-Your-Pizza",
+              "description": "Multiple variants/addons",
+              "quantity": 1,
+              "priceInfo": {
+                "itemBasePrice": 200,
+                "itemVariantBasePrice": 70,
+                "itemAddonBasePrice": 30,
+                "itemFinalPrice": 234,
+                "discount": 10,
+                "totalBasePrice": 300,
+                "totalVariantBasePrice": 70,
+                "totalAddonBasePrice": 30,
+                "finalPrice": 234
+              },
+              "selectedVariants": {},
+              "selectedVariantsDetails": [
+                {
+                  "id": "var_pizza_size",
+                  "isMandatory": true,
+                  "respectParentDiscount": true,
+                  "selected_variant_id": "pz_size_m",
+                  "selected_variant_name": "Medium",
+                  "priceInfo": {
+                    "basePrice": 40,
+                    "finalPrice": 36,
+                    "discount": 10
+                  }
+                },
+                {
+                  "id": "var_crust_type",
+                  "isMandatory": false,
+                  "respectParentDiscount": true,
+                  "selected_variant_id": "crust_cheese",
+                  "selected_variant_name": "Cheese Burst",
+                  "priceInfo": {
+                    "basePrice": 30,
+                    "finalPrice": 27,
+                    "discount": 10
+                  }
+                }
+              ],
+              "selectedAddons": [],
+              "selectedAddonsDetails": [
+                {
+                  "id": "addon_mushroom",
+                  "name": "Mushroom",
+                  "priceInfo": {
+                    "basePrice": 20,
+                    "finalPrice": 18,
+                    "discount": 10
+                  },
+                  "respectParentDiscount": true
+                },
+                {
+                  "id": "addon_olive",
+                  "name": "Olives",
+                  "priceInfo": {
+                    "basePrice": 10,
+                    "finalPrice": 10,
+                    "discount": 0
+                  },
+                  "respectParentDiscount": false
+                }
+              ],
+              "cartItemId": 1,
+              "checkoutTime": {
+                "_seconds": 1678904150,
+                "_nanoseconds": 0
+              },
+              "status": "READY"
+            }
+          ],
+          "priceInfo": {
+            "basePrice": 300,
+            "finalPrice": 234,
+            "totalDiscount": 10,
+            "totalDiscountAmount": 66,
+            "totalAddonBasePrice": 30,
+            "totalVariantBasePrice": 70
+          },
+          "paymentInfo": {
+            "paymentStatus": "unpaid",
+            "paymentMethod": "cash",
+            "transactionId": null
+          },
+          "orderStatus": "PENDING",
+          "orderNumber": "ORD-00001",
+          "createdAt": {
+            "_seconds": 1678904150,
+            "_nanoseconds": 0
+          },
+          "paymentStatus": "UNPAID",
+          "isActive": true,
+          "total": 234,
+          "sessionId": "session_dev_001"
+        }
+      },
       "carts": {},
-      "kitchens": { "kitchen1": { "chefs": { "chef1": { "name": "Chef Fiona", "role": "Head Chef", "fcmToken": "fcm_token_here" } } } },
-      "sessions": { "sess_v1_001": { "entity": "table", "tableId": "table1", "primaryUserId": "5550000001", "users": ["5550000001"], "status": "active", "createdAt": { "_seconds": 1678904000, "_nanoseconds": 0 }, "updatedAt": { "_seconds": 1678904100, "_nanoseconds": 0 }, "expiresAt": { "_seconds": 1735689600, "_nanoseconds": 0 } } }
+      "kitchens": {
+        "kitchen1": {
+          "chefs": {
+            "chef1": {
+              "name": "Chef Fiona",
+              "role": "Head Chef",
+              "fcmToken": "fcm_token_here"
+            }
+          }
+        }
+      },
+      "sessions": {
+        "sess_v1_001": {
+          "entity": "table",
+          "tableId": "table1",
+          "primaryUserId": "5550000001",
+          "users": [
+            "5550000001"
+          ],
+          "status": "active",
+          "createdAt": {
+            "_seconds": 1678904000,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678904100,
+            "_nanoseconds": 0
+          },
+          "expiresAt": {
+            "_seconds": 1735689600,
+            "_nanoseconds": 0
+          }
+        }
+      }
     },
-
     "rest_sessions_005": {
-      "info": { "name": "Session Sandbox", "address": "5 Timeout Ln, Edge City", "phone": "5555555005", "email": "ops@sessionsandbox.com", "location": { "_latitude": 40.7168, "_longitude": -74.002 } },
-      "categories": { "cat_hot": { "name": "Hot Meals", "description": "Freshly cooked", "image": "https://example.com/images/cat-hot.jpg", "order": 1 } },
+      "info": {
+        "name": "Session Sandbox",
+        "address": "5 Timeout Ln, Edge City",
+        "phone": "5555555005",
+        "email": "ops@sessionsandbox.com",
+        "location": {
+          "_latitude": 40.7168,
+          "_longitude": -74.002
+        }
+      },
+      "categories": {
+        "cat_hot": {
+          "name": "Hot Meals",
+          "description": "Freshly cooked",
+          "image": "https://example.com/images/cat-hot.jpg",
+          "order": 1
+        }
+      },
       "variants": {},
       "addons": {},
-      "menuItems": { "item_pasta": { "menuItemId": "item_pasta", "categoryId": "cat_hot", "meta": { "name": "Plain Pasta", "description": "Simple pasta for testing", "categoryName": "Hot Meals", "image": "https://example.com/images/pasta.jpg" }, "priceInfo": { "basePrice": 50, "discount": 0, "finalPrice": 50 }, "variants": [], "addons": [], "nutritionalInfo": { "calories": 400, "protein": 12, "carbs": 70, "fat": 5 }, "allergenTags": ["gluten"], "isInStock": true, "isCustomizable": false } },
-      "tables": { "table1": { "number": "X1", "capacity": 4, "status": "active", "currentOTP": { "code": "123456", "createdAt": { "_seconds": 1678905000, "_nanoseconds": 0 }, "expiresAt": { "_seconds": 1678905300, "_nanoseconds": 0 } }, "session": "sess_x1_active", "occupiedBy": ["cust_bob"], "primaryCustomer": { "phoneNumber": "5550000002", "name": "Bob Example" }, "assignedServerId": "server_gina", "lastActivity": { "_seconds": 1678905050, "_nanoseconds": 0 } }, "table2": { "number": "X2", "capacity": 2, "status": "disabled", "currentOTP": { "code": "", "createdAt": null, "expiresAt": null }, "session": null, "occupiedBy": [], "primaryCustomer": { "phoneNumber": "", "name": "" }, "assignedServerId": "server_gina", "lastActivity": null } },
-      "servers": { "server_gina": { "name": "Gina Waiter", "email": "gina@sessionsandbox.com", "phoneNumber": "5555555666", "role": "waiter", "status": "active", "assignedTables": ["table1", "table2"], "fcmToken": "", "password": "7777" } },
-      "orders": { "order_x1_001": { "orderId": "order_x1_001", "restaurantId": "rest_sessions_005", "tableId": "table1", "status": "pending", "assignedServer": "server_gina", "updatedAt": 1678905100, "carts": [ { "status": "pending", "statusHistory": [ { "status": "pending", "timestamp": { "_seconds": 1678905100, "_nanoseconds": 0 }, "userId": "server_gina" } ], "checkoutTime": { "_seconds": 1678905100, "_nanoseconds": 0 }, "notes": "", "estimatedPrepTime": 12, "assignedTo": null, "items": [ { "menuItemId": "item_pasta", "menuItem": { "meta": { "name": "Plain Pasta", "description": "Simple pasta for testing", "image": "https://example.com/images/pasta.jpg", "categoryName": "Hot Meals" } }, "selectedVariantsDetails": [], "selectedAddonsDetails": [], "priceInfo": { "itemBasePrice": 50, "itemVariantBasePrice": 0, "itemAddonBasePrice": 0, "itemFinalPrice": 50, "discount": 0, "totalBasePrice": 50, "totalVariantBasePrice": 0, "totalAddonBasePrice": 0, "finalPrice": 50 }, "quantity": 1, "status": "pending", "statusUpdatedAt": { "_seconds": 1678905100, "_nanoseconds": 0 }, "statusUpdatedBy": "server_gina", "cartItemId": 1 } ], "priceInfo": { "basePrice": 50, "finalPrice": 50, "totalDiscount": 0, "totalDiscountAmount": 0, "totalVariantBasePrice": 0, "totalAddonBasePrice": 0 } }, { "status": "READY", "statusHistory": [ { "status": "pending", "timestamp": { "_seconds": 1678905050, "_nanoseconds": 0 }, "userId": "server_gina" }, { "status": "READY", "timestamp": { "_seconds": 1678905090, "_nanoseconds": 0 }, "userId": "kitchen" } ], "checkoutTime": { "_seconds": 1678905050, "_nanoseconds": 0 }, "notes": "Second cart ready", "estimatedPrepTime": 8, "assignedTo": "kitchen_station_2", "items": [], "priceInfo": { "basePrice": 0, "finalPrice": 0, "totalDiscount": 0, "totalDiscountAmount": 0, "totalVariantBasePrice": 0, "totalAddonBasePrice": 0 } } ], "items": [], "priceInfo": { "basePrice": 50, "finalPrice": 50, "totalDiscount": 0, "totalDiscountAmount": 0, "totalAddonBasePrice": 0, "totalVariantBasePrice": 0 }, "timestamps": { "createdAt": { "_seconds": 1678905050, "_nanoseconds": 0 }, "updatedAt": { "_seconds": 1678905100, "_nanoseconds": 0 } }, "paymentInfo": { "paymentStatus": "unpaid", "paymentMethod": "cash", "transactionId": null } } },
-      "carts": { "table1": { "restaurantId": "rest_sessions_005", "tableId": "table1", "sessionId": "sess_x1_active", "items": [], "priceInfo": { "basePrice": 0, "finalPrice": 0, "totalDiscount": 0, "totalDiscountAmount": 0, "totalAddonBasePrice": 0, "totalVariantBasePrice": 0 }, "lastUpdated": { "_seconds": 1678905050, "_nanoseconds": 0 } } },
-      "kitchens": { "kitchen1": { "chefs": { "chef1": { "name": "Chef Greg", "role": "Head Chef", "fcmToken": "fcm_token_here" } } } },
-      "sessions": { "sess_x1_active": { "entity": "table", "tableId": "table1", "primaryUserId": "5550000002", "users": ["5550000002"], "status": "active", "createdAt": { "_seconds": 1678905000, "_nanoseconds": 0 }, "updatedAt": { "_seconds": 1678905050, "_nanoseconds": 0 }, "expiresAt": { "_seconds": 1735689600, "_nanoseconds": 0 } }, "sess_x_expired": { "entity": "table", "tableId": "table1", "primaryUserId": "5550000002", "users": ["5550000002"], "status": "expired", "createdAt": { "_seconds": 1678800000, "_nanoseconds": 0 }, "updatedAt": { "_seconds": 1678800000, "_nanoseconds": 0 }, "expiresAt": { "_seconds": 1678803600, "_nanoseconds": 0 } } }
+      "menuItems": {
+        "item_pasta": {
+          "menuItemId": "item_pasta",
+          "categoryId": "cat_hot",
+          "meta": {
+            "name": "Plain Pasta",
+            "description": "Simple pasta for testing",
+            "categoryName": "Hot Meals",
+            "image": "https://example.com/images/pasta.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 50,
+            "discount": 0,
+            "finalPrice": 50
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 400,
+            "protein": 12,
+            "carbs": 70,
+            "fat": 5
+          },
+          "allergenTags": [
+            "gluten"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        }
+      },
+      "tables": {
+        "table1": {
+          "number": "X1",
+          "capacity": 4,
+          "status": "active",
+          "currentOTP": {
+            "code": "123456",
+            "createdAt": {
+              "_seconds": 1678905000,
+              "_nanoseconds": 0
+            },
+            "expiresAt": {
+              "_seconds": 1678905300,
+              "_nanoseconds": 0
+            }
+          },
+          "session": "sess_x1_active",
+          "occupiedBy": [
+            "cust_bob"
+          ],
+          "primaryCustomer": {
+            "phoneNumber": "5550000002",
+            "name": "Bob Example"
+          },
+          "assignedServerId": "server_gina",
+          "lastActivity": {
+            "_seconds": 1678905050,
+            "_nanoseconds": 0
+          }
+        },
+        "table2": {
+          "number": "X2",
+          "capacity": 2,
+          "status": "disabled",
+          "currentOTP": {
+            "code": "",
+            "createdAt": null,
+            "expiresAt": null
+          },
+          "session": null,
+          "occupiedBy": [],
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          },
+          "assignedServerId": "server_gina",
+          "lastActivity": null
+        }
+      },
+      "servers": {
+        "server_gina": {
+          "name": "Gina Waiter",
+          "email": "gina@sessionsandbox.com",
+          "phoneNumber": "5555555666",
+          "role": "waiter",
+          "status": "active",
+          "assignedTables": [
+            "table1",
+            "table2"
+          ],
+          "fcmToken": "",
+          "password": "7777"
+        }
+      },
+      "orders": {
+        "order_x1_001": {
+          "orderId": "order_x1_001",
+          "restaurantId": "rest_sessions_005",
+          "tableId": "table1",
+          "assignedServer": "server_gina",
+          "updatedAt": {
+            "_seconds": 1678905100,
+            "_nanoseconds": 0
+          },
+          "carts": [
+            {
+              "status": "PENDING",
+              "statusHistory": [
+                {
+                  "status": "PENDING",
+                  "timestamp": {
+                    "_seconds": 1678905100,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "server_gina"
+                }
+              ],
+              "checkoutTime": {
+                "_seconds": 1678905100,
+                "_nanoseconds": 0
+              },
+              "notes": "",
+              "estimatedPrepTime": 12,
+              "assignedTo": null,
+              "items": [
+                {
+                  "menuItemId": "item_pasta",
+                  "menuItem": {
+                    "meta": {
+                      "name": "Plain Pasta",
+                      "description": "Simple pasta for testing",
+                      "image": "https://example.com/images/pasta.jpg",
+                      "categoryName": "Hot Meals"
+                    }
+                  },
+                  "selectedVariantsDetails": [],
+                  "selectedAddonsDetails": [],
+                  "priceInfo": {
+                    "itemBasePrice": 50,
+                    "itemVariantBasePrice": 0,
+                    "itemAddonBasePrice": 0,
+                    "itemFinalPrice": 50,
+                    "discount": 0,
+                    "totalBasePrice": 50,
+                    "totalVariantBasePrice": 0,
+                    "totalAddonBasePrice": 0,
+                    "finalPrice": 50
+                  },
+                  "quantity": 1,
+                  "status": "PENDING",
+                  "statusUpdatedAt": {
+                    "_seconds": 1678905100,
+                    "_nanoseconds": 0
+                  },
+                  "statusUpdatedBy": "server_gina",
+                  "cartItemId": 1
+                }
+              ],
+              "priceInfo": {
+                "basePrice": 50,
+                "finalPrice": 50,
+                "totalDiscount": 0,
+                "totalDiscountAmount": 0,
+                "totalVariantBasePrice": 0,
+                "totalAddonBasePrice": 0
+              }
+            },
+            {
+              "status": "READY",
+              "statusHistory": [
+                {
+                  "status": "PENDING",
+                  "timestamp": {
+                    "_seconds": 1678905050,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "server_gina"
+                },
+                {
+                  "status": "READY",
+                  "timestamp": {
+                    "_seconds": 1678905090,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "kitchen"
+                }
+              ],
+              "checkoutTime": {
+                "_seconds": 1678905050,
+                "_nanoseconds": 0
+              },
+              "notes": "Second cart ready",
+              "estimatedPrepTime": 8,
+              "assignedTo": "kitchen_station_2",
+              "items": [],
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "totalDiscount": 0,
+                "totalDiscountAmount": 0,
+                "totalVariantBasePrice": 0,
+                "totalAddonBasePrice": 0
+              }
+            }
+          ],
+          "items": [
+            {
+              "menuItemId": "item_pasta",
+              "name": "Plain Pasta",
+              "description": "Simple pasta for testing",
+              "quantity": 1,
+              "priceInfo": {
+                "itemBasePrice": 50,
+                "itemVariantBasePrice": 0,
+                "itemAddonBasePrice": 0,
+                "itemFinalPrice": 50,
+                "discount": 0,
+                "totalBasePrice": 50,
+                "totalVariantBasePrice": 0,
+                "totalAddonBasePrice": 0,
+                "finalPrice": 50
+              },
+              "selectedVariants": {},
+              "selectedVariantsDetails": [],
+              "selectedAddons": [],
+              "selectedAddonsDetails": [],
+              "cartItemId": 1,
+              "checkoutTime": {
+                "_seconds": 1678905100,
+                "_nanoseconds": 0
+              },
+              "status": "PENDING"
+            }
+          ],
+          "priceInfo": {
+            "basePrice": 50,
+            "finalPrice": 50,
+            "totalDiscount": 0,
+            "totalDiscountAmount": 0,
+            "totalAddonBasePrice": 0,
+            "totalVariantBasePrice": 0
+          },
+          "paymentInfo": {
+            "paymentStatus": "unpaid",
+            "paymentMethod": "cash",
+            "transactionId": null
+          },
+          "orderStatus": "PENDING",
+          "orderNumber": "ORD-00001",
+          "createdAt": {
+            "_seconds": 1678905050,
+            "_nanoseconds": 0
+          },
+          "paymentStatus": "UNPAID",
+          "isActive": true,
+          "total": 50,
+          "sessionId": "session_dev_001"
+        }
+      },
+      "carts": {
+        "table1": {
+          "restaurantId": "rest_sessions_005",
+          "tableId": "table1",
+          "sessionId": "sess_x1_active",
+          "items": [],
+          "priceInfo": {
+            "basePrice": 0,
+            "finalPrice": 0,
+            "totalDiscount": 0,
+            "totalDiscountAmount": 0,
+            "totalAddonBasePrice": 0,
+            "totalVariantBasePrice": 0
+          },
+          "lastUpdated": {
+            "_seconds": 1678905050,
+            "_nanoseconds": 0
+          }
+        }
+      },
+      "kitchens": {
+        "kitchen1": {
+          "chefs": {
+            "chef1": {
+              "name": "Chef Greg",
+              "role": "Head Chef",
+              "fcmToken": "fcm_token_here"
+            }
+          }
+        }
+      },
+      "sessions": {
+        "sess_x1_active": {
+          "entity": "table",
+          "tableId": "table1",
+          "primaryUserId": "5550000002",
+          "users": [
+            "5550000002"
+          ],
+          "status": "active",
+          "createdAt": {
+            "_seconds": 1678905000,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678905050,
+            "_nanoseconds": 0
+          },
+          "expiresAt": {
+            "_seconds": 1735689600,
+            "_nanoseconds": 0
+          }
+        },
+        "sess_x_expired": {
+          "entity": "table",
+          "tableId": "table1",
+          "primaryUserId": "5550000002",
+          "users": [
+            "5550000002"
+          ],
+          "status": "expired",
+          "createdAt": {
+            "_seconds": 1678800000,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678800000,
+            "_nanoseconds": 0
+          },
+          "expiresAt": {
+            "_seconds": 1678803600,
+            "_nanoseconds": 0
+          }
+        }
+      }
     }
   }
 }
-
-
