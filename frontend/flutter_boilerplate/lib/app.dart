@@ -1,6 +1,8 @@
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
+import 'package:flutterboilerplate/home/home_repository.dart';
+import 'package:flutterboilerplate/home/home_state.dart';
 import 'package:flutterboilerplate/networking/dio_client.dart';
 import 'package:flutterboilerplate/pages/cart_listing/cart_listing_repository.dart';
 import 'package:flutterboilerplate/pages/checkout_order_flow/order_listing_state.dart';
@@ -37,6 +39,9 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(
+          create: (context) => HomeState(HomeRepository()),
+        ),
         ChangeNotifierProvider(
           create: (context) => MenuState(MenuRepository()),
         ),

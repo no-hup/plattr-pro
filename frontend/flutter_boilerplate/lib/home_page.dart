@@ -1,37 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutterboilerplate/home/home_state.dart';
+import 'package:flutterboilerplate/home/models/restaurant_summary.dart';
 import 'package:flutterboilerplate/pages/app_routes.dart';
+import 'package:flutterboilerplate/widgets/page_state_view.dart';
+import 'package:flutterboilerplate/widgets/primary_action_button.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
-  static const restaurants = [
-    {
-      'id': 'rest_basic_001',
-      'name': 'Baseline Bistro',
-      'tables': ['table1', 'table2'],
-    },
-    {
-      'id': 'rest_otp_002',
-      'name': 'OTP First Cafe',
-      'tables': ['table1', 'table2'],
-    },
-    {
-      'id': 'rest_stock_003',
-      'name': 'Discount Depot',
-      'tables': ['table1', 'table2'],
-    },
-    {
-      'id': 'rest_variants_004',
-      'name': 'Variant Villa',
-      'tables': ['table1', 'table2'],
-    },
-    {
-      'id': 'rest_sessions_005',
-      'name': 'Session Sandbox',
-      'tables': ['table1', 'table2'],
-    },
-  ];
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HomeState>().loadRestaurants();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,67 +29,137 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Welcome'),
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: restaurants.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          final r = restaurants[index];
-          final restId = r['id']! as String;
-          final restName = r['name']! as String;
-          final tables = (r['tables']! as List).cast<String>();
-          return Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(restName, style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final t in tables)
-                        ElevatedButton(
-                          onPressed: () {
-                            context.go(AppRoutes.tableVerification(restId, t));
-                          },
-                          child: Text('QR: $t'),
-                        ),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Default to first table for direct links if available
-                          final tableId =
-                              tables.isNotEmpty ? tables.first : 'table1';
-                          context.go(AppRoutes.menu(restId, tableId));
-                        },
-                        child: const Text('Test Menu Page'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          final tableId =
-                              tables.isNotEmpty ? tables.first : 'table1';
-                          context.go(AppRoutes.cart(restId, tableId));
-                        },
-                        child: const Text('Test Cart Page'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          final tableId =
-                              tables.isNotEmpty ? tables.first : 'table1';
-                          context.go(AppRoutes.orders(restId, tableId));
-                        },
-                        child: const Text('Test Orders Page'),
-                      ),
-                    ],
-                  ),
-                ],
+      body: Consumer<HomeState>(
+        builder: (context, state, _) {
+          if (state.isLoading) {
+            return PageStateView.loading();
+          }
+
+          if (state.error != null) {
+            return PageStateView.error(
+              message: state.error,
+              primaryAction: PrimaryActionButton(
+                label: 'Try Again',
+                onPressed: () => state.retry(),
               ),
+            );
+          }
+
+          if (state.isEmpty) {
+            return PageStateView.empty(
+              title: 'No restaurants found',
+              message: 'Import mock data or add restaurants in the emulator.',
+              primaryAction: PrimaryActionButton(
+                label: 'Refresh',
+                onPressed: () => state.retry(),
+              ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: state.retry,
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: state.restaurants.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 16),
+              itemBuilder: (context, index) {
+                final restaurant = state.restaurants[index];
+                return _RestaurantCard(restaurant: restaurant);
+              },
             ),
           );
         },
       ),
     );
+  }
+}
+
+class _RestaurantCard extends StatelessWidget {
+  const _RestaurantCard({
+    required this.restaurant,
+  });
+
+  final RestaurantSummary restaurant;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              restaurant.name,
+              style: theme.textTheme.titleLarge,
+            ),
+            if (restaurant.address.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                restaurant.address,
+                style: theme.textTheme.bodyMedium,
+              ),
+            ],
+            if (restaurant.phone.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                restaurant.phone,
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final table in restaurant.tables)
+                  ElevatedButton(
+                    onPressed: () {
+                      _goToTableVerification(context, restaurant.id, table.id);
+                    },
+                    child: Text('QR: ${table.label}'),
+                  ),
+                ElevatedButton(
+                  onPressed: () {
+                    final tableId = restaurant.hasTables
+                        ? restaurant.tables.first.id
+                        : 'table1';
+                    context.go(AppRoutes.menu(restaurant.id, tableId));
+                  },
+                  child: const Text('Test Menu Page'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final tableId = restaurant.hasTables
+                        ? restaurant.tables.first.id
+                        : 'table1';
+                    context.go(AppRoutes.cart(restaurant.id, tableId));
+                  },
+                  child: const Text('Test Cart Page'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final tableId = restaurant.hasTables
+                        ? restaurant.tables.first.id
+                        : 'table1';
+                    context.go(AppRoutes.orders(restaurant.id, tableId));
+                  },
+                  child: const Text('Test Orders Page'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _goToTableVerification(
+    BuildContext context,
+    String restaurantId,
+    String tableId,
+  ) {
+    context.go(AppRoutes.tableVerification(restaurantId, tableId));
   }
 }

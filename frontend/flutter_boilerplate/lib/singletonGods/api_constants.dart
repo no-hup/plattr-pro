@@ -29,6 +29,7 @@ class ApiConfig {
   static const String validateOtpEndpoint = '/table-validateOTP';
   static const String checkoutCartEndpoint = '/cart-checkoutCart';
   static const String orderGetCartEndpoint = '/order-getOrder';
+  static const String listRestaurantsDevEndpoint = '/dev-listRestaurants';
 }
 
 const errorMessages = {
