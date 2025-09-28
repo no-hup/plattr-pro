@@ -215,37 +215,6 @@ const getOrder = functions.https.onCall(async (data, context) => {
  * @param {Object} orderData - Raw order data from Firestore
  * @returns {Object} Sanitized order object
  */
-function computeOrderTotal(orderData) {
-  try {
-    if (orderData?.priceInfo && typeof orderData.priceInfo.finalPrice === 'number') {
-      return orderData.priceInfo.finalPrice;
-    }
-
-    if (Array.isArray(orderData?.carts)) {
-      const cartSum = orderData.carts.reduce((sum, cart) => {
-        const finalPrice = cart?.priceInfo?.finalPrice;
-        return typeof finalPrice === 'number' ? sum + finalPrice : sum;
-      }, 0);
-      if (cartSum > 0) return cartSum;
-    }
-
-    if (Array.isArray(orderData?.items)) {
-      const itemSum = orderData.items.reduce((sum, item) => {
-        const price = item?.priceInfo?.finalPrice ?? item?.price;
-        const quantity = typeof item?.quantity === 'number' ? item.quantity : 1;
-        if (typeof price === 'number') {
-          return sum + price * quantity;
-        }
-        return sum;
-      }, 0);
-      if (itemSum > 0) return itemSum;
-    }
-  } catch (error) {
-    console.error('[getOrder] Failed to compute order total', error);
-  }
-  return 0;
-}
-
 function sanitizeOrderData(id, orderData) {
   return {
     id: id,
@@ -258,7 +227,7 @@ function sanitizeOrderData(id, orderData) {
     tableId: orderData.tableId || '',
     restaurantId: orderData.restaurantId || '',
     sessionId: orderData.sessionId || null,
-    total: computeOrderTotal(orderData),
+    total: orderData.priceInfo?.finalPrice || 0,
     items: Array.isArray(orderData.items) ? orderData.items.map(item => ({
       menuItemId: item.menuItemId || '',
       name: item.name || (item.menuItem?.meta?.name || ''),
