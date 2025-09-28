@@ -8,6 +8,8 @@ const errorHandler = require('../singleton/ErrorHandler');
 const { validateCart } = require('./validateCart');
 const { calculateCartValue } = require('./calculateCartValue');
 const timestamp = require('../utils/timestamp');
+const { ORDER_STATUS } = require('../orders/orderConstants');
+const { mapOrderStatus } = require('../utils/statusUtils');
 
 /**
  * Checkout Cart Cloud Function
@@ -111,13 +113,14 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
       console.log(`poopoo Checkout completed successfully for table ${tableId}, order ID: ${order.id}`);
       
       // Return order details
+      const normalizedStatus = mapOrderStatus(order.orderStatus || order.status || ORDER_STATUS.IN_PROGRESS);
       return {
         message: "Checkout completed successfully.",
         status: "success",
         data: {
           orderId: order.id,
-          orderNumber: order.orderNumber,
-          orderStatus: order.orderStatus,
+          orderNumber: order.orderNumber || order.order_number || order.id,
+          orderStatus: normalizedStatus,
           timestamp: timestamp.toISOString(order.updatedAt)
         }
       };

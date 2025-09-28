@@ -86,7 +86,10 @@ class OrderData with _$OrderData {
       final sanitizedJson = <String, dynamic>{
         'id': json['id'] as String? ?? '',
         'orderNumber': json['orderNumber'] as String? ?? '',
-        'orderStatus': json['orderStatus'] as String? ?? 'unknown',
+        'orderStatus': (json['orderStatus'] as String? ??
+                json['status'] as String? ??
+                'UNKNOWN')
+            .toUpperCase(),
         'createdAt': _coerceToTimestampMap(json['createdAt']),
         'updatedAt': _coerceToTimestampMap(json['updatedAt']),
         'tableId': json['tableId'] as String? ?? '',
@@ -133,7 +136,7 @@ extension OrderDataErrorState on OrderData {
   static OrderData createErrorState() => const OrderData(
         id: '',
         orderNumber: '',
-        orderStatus: '',
+        orderStatus: 'UNKNOWN',
         tableId: '',
         restaurantId: '',
         sessionId: '',
