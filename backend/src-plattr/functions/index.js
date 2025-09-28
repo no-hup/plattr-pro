@@ -8,12 +8,14 @@ const customerFunctions = require('./customer/customer');
 const cartFunctions = require('./cart/indexCart');
 const menuFunctions = require('./menu/indexMenu');
 const orderFunctions = require('./orders/indexOrders');
+const devFunctions = require('./dev/indexDev');
 
 exports.table = tableFunctions;
 exports.server = serverFunctions;
 exports.customer = customerFunctions;
 exports.cart = cartFunctions;
 exports.menu = menuFunctions;
+exports.dev = devFunctions;
 
 // Export order functions using the orderFunctions import
 exports.order = {
