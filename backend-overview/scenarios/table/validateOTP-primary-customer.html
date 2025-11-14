@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>table-validateOTP · Primary Customer</title>
+  <style>
+    body { font-family: 'SFMono-Regular', Consolas, monospace; margin: 24px; line-height: 1.4; }
+    pre { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; }
+    code { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <h1>table-validateOTP</h1>
+  <p><strong>Scenario:</strong> Vacant table, OTP converts visitor to primary customer and spins up a new session.</p>
+
+  <h2>Request</h2>
+  <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "tableId": "table009",
+    "otp": "123456",
+    "phoneNumber": "+911234567890",
+    "name": "Aditi",
+    "userLocation": { "latitude": 12.9717, "longitude": 77.5945 }
+  }
+}</code></pre>
+
+  <h2>Response</h2>
+  <pre><code>{
+  "status": "success",
+  "message": "Session created",
+  "data": {
+    "sessionId": "sess_table009_primary",
+    "tableState": "ACTIVE",
+    "primaryCustomer": {
+      "customerId": "cust_aditi",
+      "phoneNumber": "+911234567890"
+    },
+    "customToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}</code></pre>
+
+  <h2>Notes</h2>
+  <ul>
+    <li>Creates session + updates <code>restaurants/{restaurantId}/tables/{tableId}</code> document.</li>
+    <li>Sends custom token so the client can sign in to Firebase.</li>
+  </ul>
+</body>
+</html>

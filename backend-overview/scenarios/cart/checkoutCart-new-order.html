@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>cart-checkoutCart · New Order</title>
+  <style>
+    body { font-family: 'Space Mono', monospace; margin: 24px; }
+    pre { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>cart-checkoutCart</h1>
+  <p><strong>Scenario:</strong> Creates a fresh order because no active order exists for the session.</p>
+
+  <h2>Request</h2>
+  <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "tableId": "table009",
+    "sessionId": "sess_table009_primary",
+    "notes": "Less spicy",
+    "expectedTotal": 848
+  }
+}</code></pre>
+
+  <h2>Response</h2>
+  <pre><code>{
+  "status": "success",
+  "message": "Checkout completed",
+  "data": {
+    "orderId": "order_20251114_001",
+    "orderNumber": "ORD-458",
+    "orderStatus": "active",
+    "paymentStatus": "pending",
+    "cartIds": ["cart_table009_2025_11_14"],
+    "timestamp": "2025-11-14T10:18:22Z"
+  }
+}</code></pre>
+
+  <h2>Notes</h2>
+  <ul>
+    <li>Clears the cart document upon success.</li>
+    <li>Emits FCM notifications when <code>sendServerNotifications</code> flag is true.</li>
+  </ul>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>cart-addItemToCart · New Configuration</title>
+    <style>
+      body { font-family: 'Inter', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 2rem; line-height: 1.5; }
+      pre { background: #020617; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid rgba(148, 163, 184, 0.3); }
+      code { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+      h1 { margin-top: 0; }
+    </style>
+  </head>
+  <body>
+    <h1>cart-addItemToCart · New Configuration</h1>
+    <p>
+      Adds a burger with a unique combination of variant/addon choices, so a new cart item is created with a generated cartItemId.
+    </p>
+
+    <h2>Sample Request</h2>
+    <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "tableId": "table001",
+    "menuItemId": "item001",
+    "quantity": 1,
+    "selectedVariants": {
+      "variant_burger_size": "burger_size_large"
+    },
+    "selectedAddons": ["addon_burger_fries"],
+    "sessionId": "session_abc123"
+  }
+}</code></pre>
+
+    <h2>Sample Response</h2>
+    <pre><code>{
+  "status": "success",
+  "message": "Item added to cart",
+  "data": {
+    "cartItem": {
+      "cartItemId": 7,
+      "menuItemId": "item001",
+      "quantity": 1,
+      "selectedVariantsDetails": [...],
+      "selectedAddonsDetails": [...],
+      "priceInfo": {
+        "itemBasePrice": 100,
+        "itemVariantBasePrice": 20,
+        "itemAddonBasePrice": 20,
+        "finalPrice": 126
+      }
+    }
+  }
+}</code></pre>
+  </body>
+</html>

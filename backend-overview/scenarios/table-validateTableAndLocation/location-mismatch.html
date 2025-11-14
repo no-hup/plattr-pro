@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>table-validateTableAndLocation · Location Mismatch</title>
+    <style>
+      body { font-family: 'Inter', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 2rem; line-height: 1.5; }
+      pre { background: #020617; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid rgba(148, 163, 184, 0.3); }
+      code { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+      h1 { margin-top: 0; }
+    </style>
+  </head>
+  <body>
+    <h1>table-validateTableAndLocation · Location Mismatch</h1>
+    <p>
+      The reported GPS coordinates are outside the configured radius for the restaurant, so the callable throws a
+      <code>failed-precondition</code> error.
+    </p>
+
+    <h2>Sample Request</h2>
+    <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "tableId": "table001",
+    "userLocation": {
+      "latitude": 13.0350,
+      "longitude": 77.5970,
+      "accuracy": 35.0
+    }
+  }
+}</code></pre>
+
+    <h2>Sample Error Response</h2>
+    <pre><code>{
+  "status": "error",
+  "message": "User is outside the restaurant geofence",
+  "error": {
+    "code": "location-mismatch",
+    "httpCode": 412,
+    "details": {
+      "distanceMeters": 820,
+      "allowedRadiusMeters": 200
+    }
+  }
+}</code></pre>
+  </body>
+</html>

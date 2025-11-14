@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>menu-fetchMenu · In-Stock View</title>
+  <style>
+    body { font-family: 'Inter', 'Segoe UI', sans-serif; margin: 24px; line-height: 1.5; }
+    pre { background: #111827; color: #f9fafb; padding: 16px; border-radius: 8px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>menu-fetchMenu</h1>
+  <p><strong>Scenario:</strong> Default flow filtering out unavailable menu items.</p>
+
+  <h2>Request</h2>
+  <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "inStock": true
+  }
+}</code></pre>
+
+  <h2>Response</h2>
+  <pre><code>{
+  "status": "success",
+  "message": "Menu fetched",
+  "data": {
+    "categories": [
+      { "id": "cat_burgers", "name": "Burgers", "sequence": 1 },
+      { "id": "cat_beverages", "name": "Beverages", "sequence": 2 }
+    ],
+    "menuItems": {
+      "cat_burgers": [
+        {
+          "id": "item_classic_burger",
+          "name": "Classic Cheeseburger",
+          "isInStock": true,
+          "variants": [
+            {
+              "id": "variant_size",
+              "isMandatory": true,
+              "options": [
+                { "id": "regular", "priceModifier": 0 },
+                { "id": "large", "priceModifier": 20 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}</code></pre>
+
+  <h2>Notes</h2>
+  <ul>
+    <li>Downstream selection events feed <code>cart-addItemToCart</code>.</li>
+    <li>Discounts and addon inheritance resolved server-side.</li>
+  </ul>
+</body>
+</html>
