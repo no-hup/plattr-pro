@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>cart-fetchCart · Populated Cart</title>
+  <style>
+    body { font-family: 'IBM Plex Mono', monospace; margin: 24px; }
+    pre { background: #111; color: #f8fafc; padding: 16px; border-radius: 8px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>cart-fetchCart</h1>
+  <p><strong>Scenario:</strong> Cart contains multiple items with variants and addons.</p>
+
+  <h2>Request</h2>
+  <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "tableId": "table009"
+  }
+}</code></pre>
+
+  <h2>Response</h2>
+  <pre><code>{
+  "status": "success",
+  "message": "Cart fetched",
+  "data": {
+    "items": [
+      {
+        "cartItemId": 7,
+        "menuItemId": "item_classic_burger",
+        "quantity": 3,
+        "selectedVariantsDetails": [ ... ],
+        "selectedAddonsDetails": [ ... ],
+        "priceInfo": {
+          "itemBasePrice": 180,
+          "totalAddonBasePrice": 120,
+          "finalPrice": 594
+        }
+      },
+      {
+        "cartItemId": 11,
+        "menuItemId": "item_chai_latte",
+        "quantity": 2,
+        "priceInfo": {
+          "itemBasePrice": 160,
+          "finalPrice": 320
+        }
+      }
+    ],
+    "priceSummary": {
+      "subtotal": 914,
+      "discount": 66,
+      "finalPrice": 848
+    }
+  }
+}</code></pre>
+
+  <h2>Notes</h2>
+  <ul>
+    <li>Used by both the cart screen and the order-review drawer.</li>
+    <li>Includes repaired data from menu collection so clients stay stateless.</li>
+  </ul>
+</body>
+</html>

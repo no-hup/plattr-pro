@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>menu-fetchMenu-fetchMenu · In-Stock Filter</title>
+    <style>
+      body { font-family: 'Inter', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 2rem; line-height: 1.5; }
+      pre { background: #020617; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid rgba(148, 163, 184, 0.3); }
+      code { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+      h1 { margin-top: 0; }
+    </style>
+  </head>
+  <body>
+    <h1>menu-fetchMenu-fetchMenu · In-Stock Only</h1>
+    <p>Client requests only in-stock menu items to keep payloads light for busy tables.</p>
+
+    <h2>Sample Request</h2>
+    <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "inStock": true
+  }
+}</code></pre>
+
+    <h2>Sample Response (excerpt)</h2>
+    <pre><code>{
+  "status": "success",
+  "message": "Menu fetched",
+  "data": {
+    "categories": [
+      { "id": "cat_1_food", "name": "Burgers" }
+    ],
+    "menuItems": {
+      "cat_1_food": [
+        {
+          "id": "item001",
+          "name": "Classic Cheeseburger",
+          "isInStock": true,
+          "variants": [
+            {
+              "id": "variant_burger_size",
+              "options": [
+                { "id": "burger_size_regular", "priceModifier": 0 }
+              ]
+            }
+          ],
+          "addons": [
+            { "id": "addon_burger_fries", "price": 20 }
+          ]
+        }
+      ]
+    }
+  }
+}</code></pre>
+  </body>
+</html>

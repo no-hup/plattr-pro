@@ -1,0 +1,257 @@
+{
+  "metadata": {
+    "title": "Consumer Journey Backend Overview",
+    "version": "2025-11-14",
+    "description": "Force-directed map of the primary callable functions that power the consumer app",
+    "lastUpdated": "2025-11-14"
+  },
+  "groups": [
+    {
+      "id": "tableAuth",
+      "label": "Table & Session",
+      "color": "#6c63ff"
+    },
+    {
+      "id": "menu",
+      "label": "Menu",
+      "color": "#ff6584"
+    },
+    {
+      "id": "cart",
+      "label": "Cart",
+      "color": "#3ecf8e"
+    },
+    {
+      "id": "orders",
+      "label": "Orders",
+      "color": "#f7b500"
+    }
+  ],
+  "apis": [
+    {
+      "id": "table-validateTableAndLocation",
+      "name": "Validate Table & Location",
+      "function": "table-validateTableAndLocation",
+      "group": "tableAuth",
+      "description": "Entry point after QR scan; validates table status, geofence and existing session.",
+      "source": "backend/src-plattr/functions/table/table.js",
+      "docs": [
+        "backend/src-plattr/warp/CONSUMER_APP_FLOW_ANALYSIS.md#table-validation--authentication-apis"
+      ],
+      "scenarios": [
+        {
+          "id": "session-valid",
+          "label": "Session OK",
+          "summary": "Existing session grants direct access.",
+          "sample": "scenarios/table/validateTableAndLocation-session-valid.html"
+        },
+        {
+          "id": "otp-required",
+          "label": "OTP Needed",
+          "summary": "Primary user must validate OTP before proceeding.",
+          "sample": "scenarios/table/validateTableAndLocation-otp-required.html"
+        }
+      ]
+    },
+    {
+      "id": "table-validateOTP",
+      "name": "Validate OTP",
+      "function": "table-validateOTP",
+      "group": "tableAuth",
+      "description": "Confirms OTP, creates/joins sessions, and updates table occupancy state.",
+      "source": "backend/src-plattr/functions/table/table.js",
+      "docs": [
+        "backend/src-plattr/warp/CONSUMER_APP_FLOW_ANALYSIS.md#table-validation--authentication-apis"
+      ],
+      "scenarios": [
+        {
+          "id": "primary-customer",
+          "label": "Primary",
+          "summary": "Vacant table -> primary customer & new session.",
+          "sample": "scenarios/table/validateOTP-primary-customer.html"
+        },
+        {
+          "id": "secondary-customer",
+          "label": "Secondary",
+          "summary": "Existing session -> add secondary user.",
+          "sample": "scenarios/table/validateOTP-secondary-customer.html"
+        }
+      ]
+    },
+    {
+      "id": "menu-fetchMenu",
+      "name": "Fetch Menu",
+      "function": "menu-fetchMenu-fetchMenu",
+      "group": "menu",
+      "description": "Loads menu categories, items, variants, and addons, respecting stock filters.",
+      "source": "backend/src-plattr/functions/menu/menu_fetch.js",
+      "docs": [
+        "backend/src-plattr/warp/CONSUMER_APP_FLOW_ANALYSIS.md#menu-management-apis"
+      ],
+      "scenarios": [
+        {
+          "id": "instock",
+          "label": "In Stock",
+          "summary": "Default flow filtering out unavailable items.",
+          "sample": "scenarios/menu/fetchMenu-instock.html"
+        },
+        {
+          "id": "show-all",
+          "label": "Show All",
+          "summary": "Returns full menu, including out-of-stock items.",
+          "sample": "scenarios/menu/fetchMenu-show-all.html"
+        }
+      ]
+    },
+    {
+      "id": "cart-addItemToCart",
+      "name": "Add Item To Cart",
+      "function": "cart-addItemToCart",
+      "group": "cart",
+      "description": "Validates selections, recalculates prices, and inserts/updates cart items.",
+      "source": "backend/src-plattr/functions/cart/addItemToCart.js",
+      "docs": [
+        "backend/src-plattr/warp/CONSUMER_APP_FLOW_ANALYSIS.md#cart-management-apis"
+      ],
+      "scenarios": [
+        {
+          "id": "new-item",
+          "label": "New Item",
+          "summary": "Creates a new cart entry with its own cartItemId.",
+          "sample": "scenarios/cart/addItemToCart-new-item.html"
+        },
+        {
+          "id": "merge-item",
+          "label": "Merge",
+          "summary": "Detects identical variant/addon combo and increments quantity.",
+          "sample": "scenarios/cart/addItemToCart-merge-item.html"
+        }
+      ]
+    },
+    {
+      "id": "cart-fetchCart",
+      "name": "Fetch Cart",
+      "function": "cart-fetchCart",
+      "group": "cart",
+      "description": "Returns the enriched cart snapshot with price breakdowns and menu details.",
+      "source": "backend/src-plattr/functions/cart/getCart.js",
+      "docs": [
+        "backend/src-plattr/warp/CONSUMER_APP_FLOW_ANALYSIS.md#cart-management-apis"
+      ],
+      "scenarios": [
+        {
+          "id": "with-items",
+          "label": "Populated",
+          "summary": "Cart includes multiple items with addons.",
+          "sample": "scenarios/cart/fetchCart-with-items.html"
+        },
+        {
+          "id": "empty",
+          "label": "Empty",
+          "summary": "Cart exists but contains zero items after cleanup.",
+          "sample": "scenarios/cart/fetchCart-empty.html"
+        }
+      ]
+    },
+    {
+      "id": "cart-checkoutCart",
+      "name": "Checkout Cart",
+      "function": "cart-checkoutCart",
+      "group": "cart",
+      "description": "Validates cart + session, creates/updates order documents, clears cart, and triggers notifications.",
+      "source": "backend/src-plattr/functions/cart/checkoutCart.js",
+      "docs": [
+        "backend/src-plattr/warp/CONSUMER_APP_FLOW_ANALYSIS.md#order-placement--tracking"
+      ],
+      "scenarios": [
+        {
+          "id": "new-order",
+          "label": "New Order",
+          "summary": "Creates a fresh order for the table.",
+          "sample": "scenarios/cart/checkoutCart-new-order.html"
+        },
+        {
+          "id": "append-order",
+          "label": "Append",
+          "summary": "Adds items to an active order (same session).",
+          "sample": "scenarios/cart/checkoutCart-append-order.html"
+        }
+      ]
+    },
+    {
+      "id": "order-getOrder",
+      "name": "Get Order",
+      "function": "order-getOrder",
+      "group": "orders",
+      "description": "Retrieves order history, active carts, and status timelines for the current session or table.",
+      "source": "backend/src-plattr/functions/orders/getOrder.js",
+      "docs": [
+        "backend/src-plattr/warp/CONSUMER_APP_FLOW_ANALYSIS.md#order-placement--tracking"
+      ],
+      "scenarios": [
+        {
+          "id": "active-only",
+          "label": "Active",
+          "summary": "Returns only active orders for the table.",
+          "sample": "scenarios/orders/getOrder-active-only.html"
+        },
+        {
+          "id": "history",
+          "label": "History",
+          "summary": "Fetches order history for the session.",
+          "sample": "scenarios/orders/getOrder-history.html"
+        }
+      ]
+    }
+  ],
+  "links": [
+    {
+      "source": "table-validateTableAndLocation",
+      "target": "table-validateOTP",
+      "label": "OTP required",
+      "type": "conditional"
+    },
+    {
+      "source": "table-validateTableAndLocation",
+      "target": "menu-fetchMenu",
+      "label": "Session valid",
+      "type": "success"
+    },
+    {
+      "source": "table-validateOTP",
+      "target": "menu-fetchMenu",
+      "label": "Session created",
+      "type": "success"
+    },
+    {
+      "source": "menu-fetchMenu",
+      "target": "cart-addItemToCart",
+      "label": "Item selected",
+      "type": "flow"
+    },
+    {
+      "source": "cart-addItemToCart",
+      "target": "cart-fetchCart",
+      "label": "Cart refresh",
+      "type": "flow"
+    },
+    {
+      "source": "cart-fetchCart",
+      "target": "cart-checkoutCart",
+      "label": "Checkout",
+      "type": "flow"
+    },
+    {
+      "source": "cart-checkoutCart",
+      "target": "order-getOrder",
+      "label": "Order created",
+      "type": "flow"
+    },
+    {
+      "source": "order-getOrder",
+      "target": "cart-addItemToCart",
+      "label": "Reorder",
+      "type": "loop"
+    }
+  ]
+}

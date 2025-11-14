@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>cart-checkoutCart · Success</title>
+    <style>
+      body { font-family: 'Inter', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 2rem; line-height: 1.5; }
+      pre { background: #020617; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid rgba(148, 163, 184, 0.3); }
+      code { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+      h1 { margin-top: 0; }
+    </style>
+  </head>
+  <body>
+    <h1>cart-checkoutCart · Successful Checkout</h1>
+    <p>
+      Valid session and cart produce a new active order; cart is cleared afterwards and server notifications fire.
+    </p>
+
+    <h2>Sample Request</h2>
+    <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "tableId": "table001",
+    "sessionId": "session_abc123",
+    "notes": "Extra napkins please"
+  }
+}</code></pre>
+
+    <h2>Sample Response</h2>
+    <pre><code>{
+  "status": "success",
+  "message": "Checkout completed successfully",
+  "data": {
+    "orderId": "order_12345",
+    "orderNumber": "ORD-001",
+    "orderStatus": "active",
+    "paymentStatus": "pending",
+    "timestamp": "2024-01-01T10:00:00Z"
+  }
+}</code></pre>
+  </body>
+</html>

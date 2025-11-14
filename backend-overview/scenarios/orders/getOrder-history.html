@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>order-getOrder · Session History</title>
+  <style>
+    body { font-family: 'Roboto Mono', monospace; margin: 24px; }
+    pre { background: #0b1220; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>order-getOrder</h1>
+  <p><strong>Scenario:</strong> Return all orders placed by the session, including completed ones.</p>
+
+  <h2>Request</h2>
+  <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "sessionId": "sess_table009_primary",
+    "getAllOrders": true,
+    "activeOnly": false
+  }
+}</code></pre>
+
+  <h2>Response</h2>
+  <pre><code>{
+  "status": "success",
+  "message": "Orders retrieved",
+  "data": {
+    "orders": [
+      {
+        "orderId": "order_20251114_001",
+        "orderStatus": "completed",
+        "statusHistory": [ ... ],
+        "priceInfo": { "finalPrice": 1160, "paymentStatus": "paid" }
+      },
+      {
+        "orderId": "order_20251114_002",
+        "orderStatus": "active",
+        "statusHistory": [ ... ],
+        "priceInfo": { "finalPrice": 312, "paymentStatus": "pending" }
+      }
+    ]
+  }
+}</code></pre>
+
+  <h2>Notes</h2>
+  <ul>
+    <li>Client uses this to populate the order timeline component.</li>
+    <li>Includes sanitized cart items (no sensitive server notes).</li>
+  </ul>
+</body>
+</html>

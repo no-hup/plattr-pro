@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>cart-addItemToCart · New Item</title>
+  <style>
+    body { font-family: 'JetBrains Mono', monospace; margin: 24px; }
+    pre { background: #0d1117; color: #c9d1d9; padding: 16px; border-radius: 8px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>cart-addItemToCart</h1>
+  <p><strong>Scenario:</strong> Customer adds a brand-new configuration to the cart.</p>
+
+  <h2>Request</h2>
+  <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "tableId": "table009",
+    "menuItemId": "item_classic_burger",
+    "quantity": 1,
+    "selectedVariants": { "variant_size": "large" },
+    "selectedAddons": ["addon_fries"],
+    "sessionId": "sess_table009_primary"
+  }
+}</code></pre>
+
+  <h2>Response</h2>
+  <pre><code>{
+  "status": "success",
+  "message": "Item added to cart",
+  "data": {
+    "cartItemId": 7,
+    "priceInfo": {
+      "itemBasePrice": 180,
+      "totalAddonBasePrice": 40,
+      "discount": 10,
+      "finalPrice": 198
+    },
+    "quantity": 1,
+    "merge": false
+  }
+}</code></pre>
+
+  <h2>Notes</h2>
+  <ul>
+    <li>Triggers downstream cart enrichment when <code>cart-fetchCart</code> runs.</li>
+    <li>All price math is server-side using the same helpers as checkout.</li>
+  </ul>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>order-getOrder · Active Orders</title>
+  <style>
+    body { font-family: 'Roboto Mono', monospace; margin: 24px; }
+    pre { background: #101828; color: #f4f4f5; padding: 16px; border-radius: 8px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>order-getOrder</h1>
+  <p><strong>Scenario:</strong> Fetch only the active orders for the table.</p>
+
+  <h2>Request</h2>
+  <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "tableId": "table009",
+    "activeOnly": true
+  }
+}</code></pre>
+
+  <h2>Response</h2>
+  <pre><code>{
+  "status": "success",
+  "message": "Orders retrieved",
+  "data": {
+    "orders": [
+      {
+        "orderId": "order_20251114_001",
+        "orderNumber": "ORD-458",
+        "orderStatus": "active",
+        "carts": [ ... ],
+        "priceInfo": {
+          "finalPrice": 1160,
+          "paymentStatus": "pending"
+        }
+      }
+    ]
+  }
+}</code></pre>
+
+  <h2>Notes</h2>
+  <ul>
+    <li>Used by both the consumer order-tracking screen and the server dashboard.</li>
+    <li>Combines cart status updates with order-level history.</li>
+  </ul>
+</body>
+</html>

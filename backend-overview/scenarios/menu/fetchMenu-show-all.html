@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>menu-fetchMenu · Show All Items</title>
+  <style>
+    body { font-family: 'Inter', 'Segoe UI', sans-serif; margin: 24px; line-height: 1.5; }
+    pre { background: #1f2937; color: #f3f4f6; padding: 16px; border-radius: 8px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>menu-fetchMenu</h1>
+  <p><strong>Scenario:</strong> Admin/debug toggle fetches entire menu regardless of stock.</p>
+
+  <h2>Request</h2>
+  <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "inStock": false
+  }
+}</code></pre>
+
+  <h2>Response</h2>
+  <pre><code>{
+  "status": "success",
+  "message": "Menu fetched",
+  "data": {
+    "categories": [ ... ],
+    "menuItems": {
+      "cat_burgers": [
+        { "id": "item_classic_burger", "isInStock": true },
+        { "id": "item_secret_patty", "isInStock": false }
+      ],
+      "cat_beverages": [
+        { "id": "item_chai_latte", "isInStock": true }
+      ]
+    }
+  }
+}</code></pre>
+
+  <h2>Notes</h2>
+  <ul>
+    <li>Useful for staff experiences which show disabled dishes.</li>
+    <li>Clients should gray out <code>isInStock=false</code> items before enabling add-to-cart.</li>
+  </ul>
+</body>
+</html>
