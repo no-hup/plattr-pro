@@ -3,8 +3,9 @@ const { admin, db } = require("../admin/admin");
 const { validateGetCartFields, validateSessionId } = require('./cartInputValidation');
 const timestamp = require('../utils/timestamp');
 const { calculateCartValue } = require('./calculateCartValue');
-const { HttpsError } = require('firebase-functions/v2/https');
 const { BasicPriceInfo, CartItemPriceInfo, CartTotalPriceInfo } = require('../genericModels/priceinfo');
+const ResponseBuilder = require('../utils/ResponseBuilder');
+const errorHandler = require('../singleton/ErrorHandler');
 
 /**
  * Sanitizes numeric values to prevent NaN errors
@@ -86,9 +87,12 @@ const getCart = functions.https.onCall(async (data, context) => {
 
     const cartDoc = await cartRef.get().catch((error) => {
       console.error("Error fetching cart:", error);
-      throw new functions.https.HttpsError(
-        "internal",
-        "Failed to access cart document."
+      errorHandler.internalError(
+        "Failed to access cart document.",
+        {
+          restaurantId,
+          tableId,
+        }
       );
     });
 
@@ -144,22 +148,19 @@ const getCart = functions.https.onCall(async (data, context) => {
       sanitizedCart.priceInfo = new CartTotalPriceInfo().toObject();
     }
 
-    return {
-      message: "Cart retrieved successfully.",
-      status: "success",
-      data: {
+    return ResponseBuilder.success(
+      {
         cart: sanitizedCart,
       },
-    };
+      "Cart retrieved successfully."
+    );
   } catch (error) {
     console.error("Error in getCart:", error, error.stack);
-    if (error instanceof functions.https.HttpsError) {
-      throw error;
-    }
-    throw new functions.https.HttpsError(
-      "internal",
-      "An unexpected error occurred while retrieving the cart."
-    );
+    errorHandler.handleError(error, "getCart", {
+      restaurantId: data?.data?.restaurantId,
+      tableId: data?.data?.tableId,
+      sessionId: data?.data?.sessionId,
+    });
   }
 });
 

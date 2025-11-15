@@ -1,6 +1,8 @@
 const functions = require('firebase-functions');
 const { admin, db } = require('../admin/admin');
 const MenuValidation = require('./menuValidation');
+const ResponseBuilder = require('../utils/ResponseBuilder');
+const errorHandler = require('../singleton/ErrorHandler');
 
 const getRestaurantMenu = functions.https.onCall(async (data, context) => {
   let stage = 'init';
@@ -31,14 +33,14 @@ const getRestaurantMenu = functions.https.onCall(async (data, context) => {
       console.log("poopoo using direct object format");
     } else {
       console.error("poopoo invalid request format - missing restaurantId");
-      throw new functions.https.HttpsError('invalid-argument', 'Restaurant ID is required');
+      errorHandler.badRequest('Restaurant ID is required');
     }
     
     console.log("poopoo using restaurantId:", restaurantId, "inStock:", inStock);
     
     // Validate restaurantId
     if (!restaurantId) {
-      throw new functions.https.HttpsError('invalid-argument', 'Restaurant ID is required');
+      errorHandler.badRequest('Restaurant ID is required');
     }
 
     setStage('validate-restaurant');
@@ -46,7 +48,7 @@ const getRestaurantMenu = functions.https.onCall(async (data, context) => {
     const restaurantDoc = await restaurantRef.get();
 
     if (!restaurantDoc.exists) {
-      throw new functions.https.HttpsError('not-found', 'Restaurant not found');
+      errorHandler.notFound('Restaurant not found', { restaurantId });
     }
 
     setStage('fetch-menu-components');
@@ -65,31 +67,16 @@ const getRestaurantMenu = functions.https.onCall(async (data, context) => {
     };
 
     setStage('return-response');
-    return {
-      success: true,
-      message: 'Restaurant menu fetched successfully',
-      data: organizedMenu
-    };
-
+    return ResponseBuilder.success(
+      organizedMenu,
+      'Restaurant menu fetched successfully'
+    );
   } catch (error) {
     console.error(`[getRestaurantMenu][stage=${stage}]`, error);
-    // If it's a Firebase HttpsError, return a consistent error object
-    if (error && typeof error.code === 'string' && error.code.match(/^[a-z_]+$/)) {
-      return {
-        success: false,
-        message: error.message || 'Failed to fetch menu',
-        errorCode: error.code,
-        data: null
-      };
-    } else {
-      // Wrap all other errors
-      return {
-        success: false,
-        message: error && error.message ? error.message : 'Unable to fetch menu',
-        errorCode: 'internal',
-        data: null
-      };
-    }
+    errorHandler.handleError(error, 'getRestaurantMenu', {
+      stage,
+      restaurantId
+    });
   }
 });
 

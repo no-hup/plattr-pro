@@ -5,6 +5,8 @@ const { ORDER_STATUS, CART_STATUS } = require('./orderConstants');
 const { mapOrderStatus, mapCartStatus } = require('../utils/statusUtils');
 const OrderInputValidation = require('./orderInputValidation');
 const timestamp = require('../utils/timestamp');
+const ResponseBuilder = require('../utils/ResponseBuilder');
+const errorHandler = require('../singleton/ErrorHandler');
 
 
 /**
@@ -31,14 +33,17 @@ async function getActiveOrdersForRestaurant(data, context) {
     const { restaurantId, sessionId } = requestData;
     OrderInputValidation.validateRestaurantId(restaurantId);
     if (!sessionId || typeof sessionId !== 'string') {
-      throw new functions.https.HttpsError('invalid-argument', 'sessionId is required and must be a string');
+      errorHandler.badRequest('sessionId is required and must be a string');
     }
 
     setStage('session-validation');
     const sessionRef = db.collection('restaurants').doc(restaurantId).collection('sessions').doc(sessionId);
     const sessionDoc = await sessionRef.get();
     if (!sessionDoc.exists || sessionDoc.data().status !== 'active') {
-      throw new functions.https.HttpsError('failed-precondition', 'Invalid or inactive session');
+      errorHandler.preconditionFailed('Invalid or inactive session', {
+        restaurantId,
+        sessionId
+      });
     }
 
     setStage('fetch-orders');
@@ -74,21 +79,17 @@ async function getActiveOrdersForRestaurant(data, context) {
     const sortedOrders = sortOrdersForServer(orders, serverId);
 
     setStage('return-response');
-    return {
-      success: true,
-      message: 'Active orders fetched successfully',
-      data: sortedOrders
-    };
-
+    return ResponseBuilder.success(
+      sortedOrders,
+      'Active orders fetched successfully'
+    );
   } catch (error) {
     console.error(`[getActiveOrdersForRestaurant][stage=${stage}]`, error);
-    if (error && typeof error.code === 'string' && error.code.match(/^[a-z_]+$/)) {
-      // Already a Firebase HttpsError, rethrow
-      throw error;
-    } else {
-      // Wrap all other errors
-      throw new functions.https.HttpsError('internal', error && error.message ? error.message : 'Failed to fetch active orders');
-    }
+    errorHandler.handleError(error, 'getActiveOrdersForRestaurant', {
+      stage,
+      restaurantId: data?.data?.restaurantId || data?.restaurantId,
+      sessionId: data?.data?.sessionId || data?.sessionId
+    });
   }
 }
 

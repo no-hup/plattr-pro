@@ -4,6 +4,7 @@ const ServerInputValidation = require('./serverInputValidation');
 const timestamp = require('../utils/timestamp');
 const { safeArrayUnion, safeArrayRemove, applyArrayOperation } = require('../utils/arrayOperations');
 const errorHandler = require('../singleton/ErrorHandler');
+const ResponseBuilder = require('../utils/ResponseBuilder');
 
 // Import modular server logic
 const tablesFetch = require('./tables_fetch');
@@ -38,10 +39,13 @@ exports.createServer = functions.https.onCall(async (data, context) => {
     };
     try {
         const serverRef = await db.collection('servers').add(serverData);
-        return { id: serverRef.id, ...serverData };
+        return ResponseBuilder.success(
+            { id: serverRef.id, ...serverData },
+            'Server created successfully'
+        );
     } catch (error) {
         console.error('Error creating server:', error);
-        throw new functions.https.HttpsError('internal', 'Failed to create server');
+        errorHandler.handleError(error, 'createServer', { name, email });
     }
 });
 
@@ -67,10 +71,13 @@ exports.updateServer = functions.https.onCall(async (data, context) => {
         }
         updateData.updatedAt = timestamp.serverTimestamp();
         await serverRef.update(updateData);
-        return { message: 'Server updated successfully' };
+        return ResponseBuilder.success(
+            { id, ...updateData },
+            'Server updated successfully'
+        );
     } catch (error) {
         console.error('Error updating server:', error);
-        throw new functions.https.HttpsError('internal', 'Failed to update server');
+        errorHandler.handleError(error, 'updateServer', { id });
     }
 });
 
@@ -84,18 +91,18 @@ exports.getServer = functions.https.onCall(async (data, context) => {
     // TODO: Add authentication check here
     const { id } = data;
     if (!id) {
-        throw new functions.https.HttpsError('invalid-argument', 'Server ID is required');
+        errorHandler.badRequest('Server ID is required');
     }
     try {
         const serverRef = db.collection('servers').doc(id);
         const server = await serverRef.get();
         if (!server.exists) {
-            throw new functions.https.HttpsError('not-found', 'Server not found');
+            errorHandler.notFound('Server not found', { id });
         }
-        return server.data();
+        return ResponseBuilder.success(server.data(), 'Server retrieved successfully');
     } catch (error) {
         console.error('Error getting server:', error);
-        throw new functions.https.HttpsError('internal', 'Failed to get server');
+        errorHandler.handleError(error, 'getServer', { id });
     }
 });
 
@@ -116,10 +123,13 @@ exports.assignTable = functions.https.onCall(async (data, context) => {
         // Example logic, adjust as per your schema
         await serverRef.update({ assignedTables: safeArrayUnion(tableId) });
         await tableRef.update({ assignedServerId: serverId });
-        return { message: 'Table assigned successfully' };
+        return ResponseBuilder.success(
+            { serverId, tableId },
+            'Table assigned successfully'
+        );
     } catch (error) {
         console.error('Error assigning table:', error);
-        throw new functions.https.HttpsError('internal', 'Failed to assign table');
+        errorHandler.handleError(error, 'assignTable', { serverId, tableId });
     }
 });
 
@@ -140,9 +150,12 @@ exports.unassignTable = functions.https.onCall(async (data, context) => {
         // Example logic, adjust as per your schema
         await serverRef.update({ assignedTables: safeArrayRemove(tableId) });
         await tableRef.update({ assignedServerId: null });
-        return { message: 'Table unassigned successfully' };
+        return ResponseBuilder.success(
+            { serverId, tableId },
+            'Table unassigned successfully'
+        );
     } catch (error) {
         console.error('Error unassigning table:', error);
-        throw new functions.https.HttpsError('internal', 'Failed to unassign table');
+        errorHandler.handleError(error, 'unassignTable', { serverId, tableId });
     }
 });
