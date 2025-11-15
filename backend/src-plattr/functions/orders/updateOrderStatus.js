@@ -8,6 +8,8 @@ const { OrderPriceInfo } = require('../genericModels/priceinfo');
 const { timestamp } = require('../utils/timestamp');
 const featureFlags = require('../singleton/FeatureFlags');
 const { sendFCMNotification } = require('../notifications/sendNotification');
+const ResponseBuilder = require('../utils/ResponseBuilder');
+const errorHandler = require('../singleton/ErrorHandler');
 
 const COLLECTIONS = {
   RESTAURANTS: 'restaurants',
@@ -39,7 +41,7 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
     return await db.runTransaction(async (tx) => {
       const orderDoc = await tx.get(orderRef);
       if (!orderDoc.exists) {
-        throw new functions.https.HttpsError('not-found', 'Order not found');
+        errorHandler.notFound('Order not found', { restaurantId, orderId });
       }
       const order = orderDoc.data();
 
@@ -56,7 +58,10 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
         const recomputedPriceInfo = new OrderPriceInfo({ basePrice: totalBase, finalPrice: totalFinal }).toObject();
         if (recomputedPriceInfo.basePrice !== order.priceInfo.basePrice ||
             recomputedPriceInfo.finalPrice !== order.priceInfo.finalPrice) {
-          throw new functions.https.HttpsError('failed-precondition', 'Recomputed bill does not match stored bill');
+          errorHandler.preconditionFailed('Recomputed bill does not match stored bill', {
+            restaurantId,
+            orderId
+          });
         }
         updatePayload.paymentStatus = PAYMENT_STATUS.PAID;
         updatePayload.priceInfo = recomputedPriceInfo;
@@ -90,13 +95,17 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
         }
       }
 
-      return { status: 'success', orderId, orderStatus };
+      return ResponseBuilder.success(
+        { orderId, orderStatus },
+        'Order status updated successfully'
+      );
     });
   } catch (error) {
     console.error('Error in updateOrderStatus:', error);
-    if (error instanceof functions.https.HttpsError) {
-      throw error;
-    }
-    throw new functions.https.HttpsError('internal', 'Failed to update order status');
+    errorHandler.handleError(error, 'updateOrderStatus', {
+      restaurantId,
+      orderId,
+      orderStatus
+    });
   }
 });

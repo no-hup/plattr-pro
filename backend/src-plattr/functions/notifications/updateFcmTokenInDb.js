@@ -2,6 +2,8 @@ const functions = require('firebase-functions');
 const { admin, db, FieldValue } = require('../admin/admin');
 const { validateFCMTokenUpdate } = require('./notificationValidation');
 const timestamp = require('../utils/timestamp');
+const ResponseBuilder = require('../utils/ResponseBuilder');
+const errorHandler = require('../singleton/ErrorHandler');
 const logger = functions.logger;
 
 /**
@@ -32,22 +34,19 @@ exports.updateServerFCMToken = functions.https.onCall(async (data, context) => {
     });
 
     logger.info(`Successfully updated FCM token for server ${data.serverId}`);
-    return { 
-      status: 'success',
-      serverId: data.serverId,
-      updatedAt: new Date().toISOString()
-    };
+    return ResponseBuilder.success(
+      { 
+        serverId: data.serverId,
+        updatedAt: new Date().toISOString()
+      },
+      'FCM token updated successfully'
+    );
 
   } catch (error) {
     logger.error('FCM Token Update Failed:', error);
-    throw new functions.https.HttpsError(
-      error.code || 'internal',
-      error.message || 'Token update failed',
-      {
-        serverId: data?.serverId,
-        authUid: context.auth?.uid,
-        errorCode: error.code
-      }
-    );
+    errorHandler.handleError(error, 'updateServerFCMToken', {
+      serverId: data?.serverId,
+      authUid: context.auth?.uid
+    });
   }
 });
