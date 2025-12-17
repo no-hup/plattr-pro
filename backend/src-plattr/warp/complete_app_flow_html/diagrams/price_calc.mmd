@@ -1,0 +1,31 @@
+flowchart LR
+    subgraph ITEM["Menu Item"]
+        BASE["Base Price: ₹100"]
+        DISC["Discount: 10%"]
+    end
+    
+    subgraph VARIANT["Selected Variant"]
+        VBASE["+ Variant Price: ₹20"]
+        VDISC{{"respectParentDiscount?"}}
+    end
+    
+    subgraph ADDON["Selected Addons"]
+        ABASE["+ Addon Price: ₹30"]
+        ADISC{{"respectParentDiscount?"}}
+    end
+    
+    subgraph CALC["Calculation"]
+        FINAL["Final Price"]
+    end
+    
+    BASE --> DISC
+    DISC -->|"Item: ₹90"| VBASE
+    VBASE --> VDISC
+    VDISC -->|"Yes: ₹18"| ABASE
+    VDISC -->|"No: ₹20"| ABASE
+    ABASE --> ADISC
+    ADISC -->|"Yes: ₹27"| FINAL
+    ADISC -->|"No: ₹30"| FINAL
+    
+    FINAL -->|"₹90 + ₹18 + ₹27 = ₹135"| TOTAL["Total per Item"]
+    TOTAL -->|"× Quantity"| CART["Cart Total"]

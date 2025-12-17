@@ -1,0 +1,45 @@
+sequenceDiagram
+    autonumber
+    participant User as 📱 Customer
+    participant App as 🌐 Flutter App
+    participant Table as ⚡ table.*
+    participant Session as 🔗 session.*
+    participant Customer as 👤 customer.*
+    
+    User->>App: Scans QR Code
+    App->>Table: validateTableAndLocation(restaurantId, tableId, location)
+    
+    alt Table Disabled
+        Table-->>App: ❌ 403 Table Unavailable
+        App-->>User: Show "Table Unavailable" Error
+    else Session Already Valid
+        Table-->>App: ✅ Access Granted + Session Info
+        App-->>User: Navigate to Menu
+    else OTP Required
+        Table->>Table: Generate OTP (6-digit, 5min expiry)
+        Table-->>App: 🔑 OTP Required + Auth Requirements
+        App-->>User: Show OTP Input Dialog
+        
+        User->>App: Enter OTP + Phone + Name
+        App->>Table: validateOTP(otp, phoneNumber, name)
+        
+        alt Invalid OTP
+            Table-->>App: ❌ Invalid/Expired OTP
+            App-->>User: Show Error, Retry
+        else Valid OTP
+            Table->>Customer: createOrUpdateCustomerProfile(phone, name)
+            Customer-->>Table: Customer Profile
+            
+            alt First Customer (Primary)
+                Table->>Session: createOrGetTableSession(primaryUserId)
+                Note over Table,Session: Table status: VACANT → ACTIVE
+            else Additional Customer (Secondary)
+                Table->>Session: addUserToTableSession(userId)
+                Note over Table,Session: Table status stays ACTIVE
+            end
+            
+            Session-->>Table: Session ID + Expiry
+            Table-->>App: ✅ Success + Token + Session
+            App-->>User: Navigate to Menu
+        end
+    end

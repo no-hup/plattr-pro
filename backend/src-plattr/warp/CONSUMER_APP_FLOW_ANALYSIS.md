@@ -1,80 +1,240 @@
 # Plattr Pro Consumer App - Complete Flow Analysis & API Documentation
 
 ## Overview
-The Plattr Pro consumer app is a Flutter web application for restaurant customers to scan QR codes, authenticate, browse menus, manage cart, place orders, and track order status. The app follows a restaurant table-based session model.
 
-## Application Flow Diagram
+The Plattr Pro consumer app is a **Flutter web application** for restaurant customers to:
+1. **Scan QR codes** at restaurant tables
+2. **Authenticate** via OTP verification  
+3. **Browse menus** with variants/addons
+4. **Manage cart** and place orders
+5. **Track order status** in real-time
 
+The app follows a **session-based table model** where customers join a table session to collaborate on orders.
+
+---
+
+## 🗺️ Complete User Journey
+
+![User Journey Flow](diagrams/user_journey.svg)
+
+---
+
+## 🔐 Authentication Flow (Detailed)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User as 📱 Customer
+    participant App as 🌐 Flutter App
+    participant Table as ⚡ table.*
+    participant Session as 🔗 session.*
+    participant Customer as 👤 customer.*
+    
+    User->>App: Scans QR Code
+    App->>Table: validateTableAndLocation(restaurantId, tableId, location)
+    
+    alt Table Disabled
+        Table-->>App: ❌ 403 Table Unavailable
+        App-->>User: Show "Table Unavailable" Error
+    else Session Already Valid
+        Table-->>App: ✅ Access Granted + Session Info
+        App-->>User: Navigate to Menu
+    else OTP Required
+        Table->>Table: Generate OTP (6-digit, 5min expiry)
+        Table-->>App: 🔑 OTP Required + Auth Requirements
+        App-->>User: Show OTP Input Dialog
+        
+        User->>App: Enter OTP + Phone + Name
+        App->>Table: validateOTP(otp, phoneNumber, name)
+        
+        alt Invalid OTP
+            Table-->>App: ❌ Invalid/Expired OTP
+            App-->>User: Show Error, Retry
+        else Valid OTP
+            Table->>Customer: createOrUpdateCustomerProfile(phone, name)
+            Customer-->>Table: Customer Profile
+            
+            alt First Customer (Primary)
+                Table->>Session: createOrGetTableSession(primaryUserId)
+                Note over Table,Session: Table status: VACANT → ACTIVE
+            else Additional Customer (Secondary)
+                Table->>Session: addUserToTableSession(userId)
+                Note over Table,Session: Table status stays ACTIVE
+            end
+            
+            Session-->>Table: Session ID + Expiry
+            Table-->>App: ✅ Success + Token + Session
+            App-->>User: Navigate to Menu
+        end
+    end
 ```
-┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                                CONSUMER APP FLOW                                        │
-├─────────────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                         │
-│  1. QR SCAN ENTRY                                                                      │
-│  ┌─────────────────┐    User scans QR code                                             │
-│  │ QR Code Landing │ ──► /r/{restaurantId}/t/{tableId}                                 │
-│  │ Page            │                                                                   │
-│  └─────────────────┘                                                                   │
-│           │                                                                             │
-│           ▼                                                                             │
-│                                                                                         │
-│  2. TABLE VERIFICATION & AUTHENTICATION                                                 │
-│  ┌─────────────────┐    API: validateTableAndLocation                                  │
-│  │ Table           │ ──► Endpoint: table-validateTableAndLocation                      │
-│  │ Verification    │    Request: { restaurantId, tableId, userLocation, sessionId? }  │
-│  │ Page            │                                                                   │
-│  └─────────────────┘                                                                   │
-│           │                                                                             │
-│           ├── Session Valid? ──YES──► Navigate to Menu                                  │
-│           │                                                                             │
-│           └── NO ──► OTP Required                                                       │
-│                                                                                         │
-│  ┌─────────────────┐    API: validateOTP                                               │
-│  │ OTP Input       │ ──► Endpoint: table-validateOTP                                   │
-│  │ Dialog          │    Request: { restaurantId, tableId, otp, phoneNumber?, name? }  │
-│  └─────────────────┘                                                                   │
-│           │                                                                             │
-│           ├── Valid OTP? ──YES──► Create Session & Customer Profile                    │
-│           └── NO ──► Show Error                                                         │
-│                                                                                         │
-│  3. MENU BROWSING                                                                       │
-│  ┌─────────────────┐    API: fetchMenu                                                 │
-│  │ Menu Page       │ ──► Endpoint: menu-fetchMenu-fetchMenu                            │
-│  │ /r/{rid}/t/     │    Request: { restaurantId, inStock: true }                      │
-│  │ {tid}/menu      │                                                                   │
-│  └─────────────────┘                                                                   │
-│           │                                                                             │
-│           ├── Select Item ──► Item Customization Modal                                  │
-│           ├── View Cart ────► Cart Page                                                 │
-│           └── View Orders ──► Orders Page                                               │
-│                                                                                         │
-│  4. CART MANAGEMENT                                                                     │
-│  ┌─────────────────┐    API: addItemToCart                                             │
-│  │ Cart Page       │ ◄─► Endpoint: cart-addItemToCart                                  │
-│  │ /r/{rid}/t/     │    Request: { restaurantId, tableId, menuItemId, quantity,       │
-│  │ {tid}/cart      │              selectedVariants, selectedAddons, sessionId? }      │
-│  └─────────────────┘                                                                   │
-│           │           API: fetchCart                                                    │
-│           ├────────► Endpoint: cart-fetchCart                                          │
-│           │          Request: { restaurantId, tableId }                                │
-│           │                                                                             │
-│           └── Checkout ──► Order Placement                                              │
-│                                                                                         │
-│  5. ORDER PLACEMENT & TRACKING                                                          │
-│  ┌─────────────────┐    API: checkoutCart                                              │
-│  │ Checkout Flow   │ ──► Endpoint: cart-checkoutCart                                   │
-│  │                 │    Request: { restaurantId, tableId, sessionId, notes? }         │
-│  └─────────────────┘                                                                   │
-│           │                                                                             │
-│           ▼                                                                             │
-│  ┌─────────────────┐    API: getOrder                                                  │
-│  │ Orders Page     │ ──► Endpoint: order-getOrder                                      │
-│  │ /r/{rid}/t/     │    Request: { restaurantId, tableId?, orderId?,                  │
-│  │ {tid}/orders    │              getAllOrders?, activeOnly?, sessionId? }            │
-│  └─────────────────┘                                                                   │
-│                                                                                         │
-└─────────────────────────────────────────────────────────────────────────────────────────┘
+
+---
+
+## 🍔 Ordering Flow (Menu → Cart → Checkout)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User as 📱 Customer
+    participant App as 🌐 Flutter App
+    participant Menu as 📋 menu.*
+    participant Cart as 🛒 cart.*
+    participant Order as 📦 order.*
+    
+    User->>App: Opens Menu
+    App->>Menu: fetchMenu(restaurantId, inStock: true)
+    Menu-->>App: Categories + Items + Variants + Addons
+    App-->>User: Display Menu
+    
+    loop Add Items to Cart
+        User->>App: Select Item + Variants + Addons
+        App->>Cart: addItemToCart(menuItemId, variants, addons, qty, sessionId)
+        Cart->>Cart: Validate stock, variants, calculate price
+        Cart-->>App: Updated Cart
+        App-->>User: Show Cart Badge Count
+    end
+    
+    User->>App: View Cart
+    App->>Cart: getCart(restaurantId, tableId)
+    Cart-->>App: Cart with Items & Total
+    App-->>User: Display Cart
+    
+    User->>App: Checkout
+    App->>Cart: checkoutCart(restaurantId, tableId, sessionId, notes)
+    Cart->>Cart: Validate session, stock, prices
+    Cart->>Order: createOrUpdateOrder(cart, sessionId)
+    Order-->>Cart: Order Created
+    Cart->>Cart: clearCartInternal()
+    Cart-->>App: ✅ orderId, orderNumber, orderStatus
+    App-->>User: Navigate to Order Tracking
+    
+    loop Real-time Status Updates
+        App->>Order: getOrder(restaurantId, sessionId)
+        Order-->>App: Order with Cart Statuses
+        App-->>User: Update Order Status UI
+    end
 ```
+
+---
+
+## 🔄 Table State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> VACANT: Table Created
+    
+    VACANT --> OTP_PENDING: QR Scanned\n(OTP Generated)
+    OTP_PENDING --> ACTIVE: OTP Validated\n(Session Created)
+    OTP_PENDING --> VACANT: OTP Expired\n(5 min timeout)
+    
+    ACTIVE --> ACTIVE: Secondary User Joins\n(Same Session)
+    ACTIVE --> VACANT: Session Ended\n(Bill Paid / Timeout)
+    
+    VACANT --> DISABLED: Admin Disables
+    DISABLED --> VACANT: Admin Enables
+    
+    note right of ACTIVE
+        Multiple users can join
+        Same session, shared cart
+        Orders tracked together
+    end note
+    
+    note right of OTP_PENDING
+        OTP displayed on table screen
+        Valid for 5 minutes
+        Server can regenerate
+    end note
+```
+
+---
+
+## 📦 Order & Cart Status Lifecycle
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    
+    state "ORDER STATUS" as OS {
+        [*] --> PENDING: Checkout
+        PENDING --> IN_PROGRESS: Kitchen Accepts
+        IN_PROGRESS --> COMPLETED: All Items Served
+        IN_PROGRESS --> CANCELLED: Order Cancelled
+        COMPLETED --> [*]
+        CANCELLED --> [*]
+    }
+    
+    state "CART STATUS (within Order)" as CS {
+        [*] --> PENDING_C: Created
+        PENDING_C --> ACCEPTED: Kitchen Sees
+        ACCEPTED --> PREPARING: Cooking Started
+        PREPARING --> READY: Ready for Pickup
+        READY --> SERVED: Delivered to Table
+        SERVED --> [*]
+        
+        PENDING_C --> CANCELLED_C: Cancelled
+        ACCEPTED --> CANCELLED_C: Cancelled
+        CANCELLED_C --> [*]
+        
+        PENDING_C --> RETURNED: Item Returned
+        ACCEPTED --> RETURNED: Item Returned
+        RETURNED --> [*]
+    }
+```
+
+---
+
+## 💰 Price Calculation Flow
+
+```mermaid
+flowchart LR
+    subgraph ITEM["Menu Item"]
+        BASE["Base Price: ₹100"]
+        DISC["Discount: 10%"]
+    end
+    
+    subgraph VARIANT["Selected Variant"]
+        VBASE["+ Variant Price: ₹20"]
+        VDISC{{"respectParentDiscount?"}}
+    end
+    
+    subgraph ADDON["Selected Addons"]
+        ABASE["+ Addon Price: ₹30"]
+        ADISC{{"respectParentDiscount?"}}
+    end
+    
+    subgraph CALC["Calculation"]
+        FINAL["Final Price"]
+    end
+    
+    BASE --> DISC
+    DISC -->|"Item: ₹90"| VBASE
+    VBASE --> VDISC
+    VDISC -->|"Yes: ₹18"| ABASE
+    VDISC -->|"No: ₹20"| ABASE
+    ABASE --> ADISC
+    ADISC -->|"Yes: ₹27"| FINAL
+    ADISC -->|"No: ₹30"| FINAL
+    
+    FINAL -->|"₹90 + ₹18 + ₹27 = ₹135"| TOTAL["Total per Item"]
+    TOTAL -->|"× Quantity"| CART["Cart Total"]
+```
+
+---
+
+## 🎯 Quick Reference: API Endpoints
+
+| Stage | Function | Key Parameters |
+|-------|----------|----------------|
+| **Entry** | `validateTableAndLocation` | restaurantId, tableId, location, sessionId? |
+| **Auth** | `validateOTP` | restaurantId, tableId, otp, phoneNumber, name |
+| **Menu** | `fetchMenu` | restaurantId, inStock |
+| **Cart** | `addItemToCart` | menuItemId, variants, addons, quantity, sessionId |
+| **Cart** | `getCart` | restaurantId, tableId |
+| **Checkout** | `checkoutCart` | restaurantId, tableId, sessionId, notes |
+| **Orders** | `getOrder` | restaurantId, tableId, orderId, sessionId |
+
+---
 
 ## Key API Endpoints & Nuances
 

@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plattr Pro - Menu Management System</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <span class="nav-logo">🍽️ Plattr Pro</span>
+        <a href="#specs">SPECS</a>
+        <a href="#entities">Entities</a>
+        <a href="#flags">Flags</a>
+        <a href="#main-flow">Main Flow</a>
+        <a href="#nuances">Nuances</a>
+        <a href="#cross-entity">Cross-Entity</a>
+        <a href="#states">States</a>
+        <a href="#api">API</a>
+        <a href="#errors">Errors</a>
+        <span style="margin-left: auto; display: flex; gap: 8px;">
+            <a href="CONSUMER_APP_FLOW.html"
+                style="color:#10b981;border:1px solid #10b981;background:rgba(16,185,129,0.1);">🏠 Main Flow</a>
+            <a href="CART_CHECKOUT_SYSTEM.html"
+                style="color:#a78bfa;border:1px solid #7c3aed;">🛒 Cart & Checkout</a>
+            <a href="ORDER_LIFECYCLE_SYSTEM.html" style="color:#f97316;border:1px solid #f97316;">📦 Orders</a>
+            <a href="AUTH_SYSTEM.html" style="color:#10b981;border:1px solid #10b981;">🔐 Auth</a>
+        </span>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>📋 Menu Management System</h1>
+            <p>Complete specification for menu browsing, fetching, and CRUD operations in Plattr Pro</p>
+            <div class="badges">
+                <span class="badge">🔥 Firebase Functions</span>
+                <span class="badge">📱 Real-time Sync</span>
+                <span class="badge">🏗️ Hierarchical</span>
+                <span class="badge">💰 Dynamic Pricing</span>
+                <span class="badge">📦 Stock Management</span>
+            </div>
+        </header>
+
+        <!-- ============================================
+             SECTION 1: SPECS (CRITICAL - MUST BE FIRST)
+             ============================================ -->
+        <section class="section" id="specs">
+            <div class="section-title"><span class="section-icon">📋</span> SPECS: Menu Management System</div>
+            <div class="specs-container">
+                <div class="specs-header">
+                    <h2>Complete Specification</h2>
+                </div>
+
+                <div class="specs-category">
+                    <div class="specs-category-title">Core Flow (SPEC-001 to SPEC-010)</div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-001</div>
+                        <div class="spec-text">Menu is organized in 4-level hierarchy: Categories → Menu Items → Variants → Addons</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-002</div>
+                        <div class="spec-text">fetchMenu() is the primary API for consumer apps, takes restaurantId and optional inStock filter</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-003</div>
+                        <div class="spec-text">When inStock=true, only items/addons with isInStock=true are returned (default behavior)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-004</div>
+                        <div class="spec-text">Categories are fetched ordered by 'order' field and must have a name</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-005</div>
+                        <div class="spec-text">Menu items are grouped by categoryId in the response structure</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-006</div>
+                        <div class="spec-text">Each menu item includes enriched variants and addons (denormalized for performance)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-007</div>
+                        <div class="spec-text">Variants are fetched as a map (key: variantId) for O(1) lookup during organization</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-008</div>
+                        <div class="spec-text">Addons are filtered by isInStock during fetch, not during organization</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-009</div>
+                        <div class="spec-text">Response includes metadata with totalCategories and totalMenuItems counts</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-010</div>
+                        <div class="spec-text">All 4 collections fetched in parallel using Promise.all for optimal performance</div>
+                    </div>
+                </div>
+
+                <div class="specs-category">
+                    <div class="specs-category-title">Data Structures (SPEC-011 to SPEC-020)</div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-011</div>
+                        <div class="spec-text">Category: {id, name, description, image, order}</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-012</div>
+                        <div class="spec-text">MenuItem: {menuItemId, meta{name, description, image}, categoryId, priceInfo{basePrice, discount, finalPrice}, variants[], addons[], isInStock, isCustomizable, nutritionalInfo, allergenTags}</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-013</div>
+                        <div class="spec-text">Variant: {id, meta{name, description}, options[{id, name, priceInfo}], isMandatory, respectParentDiscount?}</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-014</div>
+                        <div class="spec-text">Addon: {id, meta{name, description}, priceInfo{basePrice, discount, finalPrice}, isInStock, isMandatory?, respectParentDiscount?}</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-015</div>
+                        <div class="spec-text">priceInfo always contains: basePrice (required), discount (optional, default 0), finalPrice (calculated)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-016</div>
+                        <div class="spec-text">Menu items reference variants by {id, name} - name stored at item level for variant groups</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-017</div>
+                        <div class="spec-text">Menu items reference addons by addonId string only (denormalized during fetch)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-018</div>
+                        <div class="spec-text">Organized menu structure: {categories: [], menuItems: {categoryId: [items]}, metadata: {}}</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-019</div>
+                        <div class="spec-text">Missing variant IDs are filtered out (graceful degradation if variant deleted)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-020</div>
+                        <div class="spec-text">Missing addon IDs are filtered out (graceful degradation if addon deleted)</div>
+                    </div>
+                </div>
+
+                <div class="specs-category">
+                    <div class="specs-category-title">Feature Flags (SPEC-021 to SPEC-030)</div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-021</div>
+                        <div class="spec-text">isMultipleVariantOrAddonForMenuItemsSupported: Controls cart item consolidation in addItemToCart (NOT in menu fetch)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-022</div>
+                        <div class="spec-text">No direct feature flags affect menu fetching logic</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-023</div>
+                        <div class="spec-text">Frontend determines display logic based on item.isCustomizable flag</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-024</div>
+                        <div class="spec-text">fallbackToSameCustomConfigurationForAddItem: Auto-fills last configuration when re-adding item</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-025</div>
+                        <div class="spec-text">Menu CRUD operations (add/update/delete) not gated by feature flags</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-026</div>
+                        <div class="spec-text">Stock availability is data-driven (isInStock field), not flag-driven</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-027</div>
+                        <div class="spec-text">Reserved for future menu-related flags</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-028</div>
+                        <div class="spec-text">Reserved for future menu-related flags</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-029</div>
+                        <div class="spec-text">Reserved for future menu-related flags</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-030</div>
+                        <div class="spec-text">Reserved for future menu-related flags</div>
+                    </div>
+                </div>
+
+                <div class="specs-category">
+                    <div class="specs-category-title">Validation Rules (SPEC-031 to SPEC-040)</div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-031</div>
+                        <div class="spec-text">restaurantId is required for all menu operations</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-032</div>
+                        <div class="spec-text">Restaurant must exist in Firestore (404 if not found)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-033</div>
+                        <div class="spec-text">Category name is mandatory (throws error if missing during fetch)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-034</div>
+                        <div class="spec-text">Menu item creation requires: meta.name, categoryId, priceInfo.basePrice</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-035</div>
+                        <div class="spec-text">Variant creation requires: meta.name, priceInfo.basePrice</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-036</div>
+                        <div class="spec-text">Update operations validate field types if present (e.g., basePrice must be number)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-037</div>
+                        <div class="spec-text">menuItemId required for update/delete operations</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-038</div>
+                        <div class="spec-text">isAvailable field for stock update must be boolean</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-039</div>
+                        <div class="spec-text">Input validation handled by MenuValidation singleton class</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-040</div>
+                        <div class="spec-text">Validation errors return HTTP 400 with descriptive message</div>
+                    </div>
+                </div>
+
+                <div class="specs-category">
+                    <div class="specs-category-title">Error Cases (SPEC-041 to SPEC-050)</div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-041</div>
+                        <div class="spec-text">404 NOT_FOUND: Restaurant doesn't exist</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-042</div>
+                        <div class="spec-text">404 NOT_FOUND: Menu item doesn't exist (update/delete operations)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-043</div>
+                        <div class="spec-text">400 INVALID_ARGUMENT: Missing required fields (restaurantId, menuItemData, etc.)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-044</div>
+                        <div class="spec-text">400 INVALID_ARGUMENT: Category name missing during fetch</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-045</div>
+                        <div class="spec-text">500 INTERNAL: Generic error for unexpected failures in menu fetch</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-046</div>
+                        <div class="spec-text">All errors logged with context (restaurantId, menuItemId, stage)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-047</div>
+                        <div class="spec-text">CRUD operations use ErrorHandler singleton for consistent error responses</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-048</div>
+                        <div class="spec-text">Failed Promise.all in fetch returns first error encountered</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-049</div>
+                        <div class="spec-text">Organization errors (missing variants/addons) handled gracefully with filtering</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-050</div>
+                        <div class="spec-text">Frontend must handle empty menuItems arrays for categories with no items</div>
+                    </div>
+                </div>
+
+                <div class="specs-category">
+                    <div class="specs-category-title">Cross-Entity Effects (SPEC-051 to SPEC-060)</div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-051</div>
+                        <div class="spec-text">Menu fetch is READ-ONLY, no side effects on any entities</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-052</div>
+                        <div class="spec-text">addMenuItem creates document in /restaurants/{rid}/menuItems/{auto-id}</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-053</div>
+                        <div class="spec-text">updateMenuItem modifies existing /restaurants/{rid}/menuItems/{mid}</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-054</div>
+                        <div class="spec-text">deleteMenuItem removes document from /restaurants/{rid}/menuItems/{mid}</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-055</div>
+                        <div class="spec-text">updateMenuItemAvailability only updates isInStock field (partial update)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-056</div>
+                        <div class="spec-text">Deleting a variant doesn't cascade-delete references in menu items (gracefully filtered)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-057</div>
+                        <div class="spec-text">Deleting an addon doesn't cascade-delete references in menu items (gracefully filtered)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-058</div>
+                        <div class="spec-text">Cart operations reference menuItemId but don't mutate menu entities</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-059</div>
+                        <div class="spec-text">No FCM notifications triggered by menu CRUD operations</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-060</div>
+                        <div class="spec-text">Menu changes are not real-time propagated to active consumer sessions</div>
+                    </div>
+                </div>
+
+                <div class="specs-category">
+                    <div class="specs-category-title">Edge Cases (SPEC-061 to SPEC-070)</div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-061</div>
+                        <div class="spec-text">Empty categories array returns valid response with empty menuItems object</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-062</div>
+                        <div class="spec-text">Categories with no items return empty array for that categoryId</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-063</div>
+                        <div class="spec-text">Menu item with no variants/addons returns empty arrays (valid state)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-064</div>
+                        <div class="spec-text">Variant with no options still returned (frontend must handle)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-065</div>
+                        <div class="spec-text">inStock filter applies to both menuItems AND addons independently</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-066</div>
+                        <div class="spec-text">Item marked out-of-stock after user views menu: handled at addToCart validation</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-067</div>
+                        <div class="spec-text">Price changes after menu fetch: recalculated at checkout, not at addToCart</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-068</div>
+                        <div class="spec-text">Concurrent CRUD operations: Firestore handles optimistic locking</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-069</div>
+                        <div class="spec-text">Large menus (100+ items): consider pagination in future (not currently implemented)</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-id">SPEC-070</div>
+                        <div class="spec-text">Menu fetch time increases linearly with number of items (no caching implemented)</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================
+             SECTION 2: ENTITIES INVOLVED
+             ============================================ -->
+        <section class="section" id="entities">
+            <div class="section-title"><span class="section-icon">🗄️</span> Entities Involved</div>
+            <div class="grid grid-2">
+                <div class="card entity-card">
+                    <div class="entity-name"><span class="entity-icon">🏢</span> Restaurant</div>
+                    <div class="entity-path">restaurants/{restaurantId}</div>
+                    <div class="entity-fields">
+                        <strong>Read:</strong> Document existence check<br>
+                        <strong>Write:</strong> None (menu flow is read-only for restaurant doc)
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <span class="entity-badge entity-read">READ</span>
+                    </div>
+                </div>
+
+                <div class="card entity-card">
+                    <div class="entity-name"><span class="entity-icon">📂</span> Categories</div>
+                    <div class="entity-path">restaurants/{restaurantId}/categories/{categoryId}</div>
+                    <div class="entity-fields">
+                        <strong>Read:</strong> id, name, description, image, order<br>
+                        <strong>Write:</strong> CRUD operations (add/update/delete categories)
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <span class="entity-badge entity-read">READ (Fetch)</span>
+                        <span class="entity-badge entity-write">WRITE (CRUD)</span>
+                    </div>
+                </div>
+
+                <div class="card entity-card">
+                    <div class="entity-name"><span class="entity-icon">🍔</span> Menu Items</div>
+                    <div class="entity-path">restaurants/{restaurantId}/menuItems/{menuItemId}</div>
+                    <div class="entity-fields">
+                        <strong>Read:</strong> All fields (meta, priceInfo, variants, addons, isInStock, isCustomizable, nutritionalInfo, allergenTags, categoryId)<br>
+                        <strong>Write:</strong> Full CRUD (create, update, delete, availability toggle)
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <span class="entity-badge entity-read">READ</span>
+                        <span class="entity-badge entity-write">WRITE</span>
+                        <span class="entity-badge entity-delete">DELETE</span>
+                    </div>
+                </div>
+
+                <div class="card entity-card">
+                    <div class="entity-name"><span class="entity-icon">🔀</span> Variants</div>
+                    <div class="entity-path">restaurants/{restaurantId}/variants/{variantId}</div>
+                    <div class="entity-fields">
+                        <strong>Read:</strong> id, meta (name, description), options[], isMandatory, respectParentDiscount<br>
+                        <strong>Write:</strong> CRUD operations (managed via variant APIs)
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <span class="entity-badge entity-read">READ</span>
+                        <span class="entity-badge entity-write">WRITE (CRUD)</span>
+                    </div>
+                </div>
+
+                <div class="card entity-card">
+                    <div class="entity-name"><span class="entity-icon">➕</span> Addons</div>
+                    <div class="entity-path">restaurants/{restaurantId}/addons/{addonId}</div>
+                    <div class="entity-fields">
+                        <strong>Read:</strong> id, meta, priceInfo, isInStock, isMandatory, respectParentDiscount<br>
+                        <strong>Write:</strong> CRUD operations (managed via addon APIs)
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <span class="entity-badge entity-read">READ</span>
+                        <span class="entity-badge entity-write">WRITE (CRUD)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="note">
+                <strong>Entity Relationships:</strong> Menu Items reference Categories (categoryId), Variants (variant.id array), and Addons (addon string array). Denormalization happens during fetchMenu for performance.
+            </div>
+        </section>
+
+        <!-- ============================================
+             SECTION 3: FEATURE FLAGS
+             ============================================ -->
+        <section class="section" id="flags">
+            <div class="section-title"><span class="section-icon">🚩</span> Feature Flags</div>
+            <div class="cols">
+                <div class="card flag-card">
+                    <div class="card-title">🔀 isMultipleVariantOrAddonForMenuItemsSupported</div>
+                    <p><strong>ON:</strong> Cart consolidates items with identical configurations (increments quantity)</p>
+                    <p><strong>OFF:</strong> Each addItemToCart creates a separate cart entry</p>
+                    <p><strong>Impact:</strong> Affects cart behavior, not menu fetch</p>
+                    <span class="flag flag-on">Default: ON</span>
+                </div>
+
+                <div class="card flag-card">
+                    <div class="card-title">🔄 fallbackToSameCustomConfigurationForAddItem</div>
+                    <p><strong>ON:</strong> Auto-fills last selected configuration when re-adding same item</p>
+                    <p><strong>OFF:</strong> Always shows blank customization modal</p>
+                    <p><strong>Impact:</strong> UX convenience, doesn't affect menu data</p>
+                    <span class="flag flag-on">Default: ON</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">📦 inStock Query Parameter</div>
+                    <p><strong>true:</strong> Returns only items/addons with isInStock=true</p>
+                    <p><strong>false:</strong> Returns all items regardless of stock status</p>
+                    <p><strong>Impact:</strong> Data-driven filter, not a feature flag</p>
+                    <span class="flag flag-info">Default: true</span>
+                </div>
+            </div>
+            <div class="note">
+                Menu flow itself has NO direct feature flags. Flags listed affect downstream operations (cart, customization).
+            </div>
+        </section>
+
+        <!-- ============================================
+             SECTION 4: MAIN FLOW DIAGRAM
+             ============================================ -->
+        <section class="section" id="main-flow">
+            <div class="section-title"><span class="section-icon">🗺️</span> Main Flow Diagram: Menu Management</div>
+            <div class="legend">
+                <div class="legend-item"><span class="legend-color" style="background:#e8f5e9"></span> Fetch Flow</div>
+                <div class="legend-item"><span class="legend-color" style="background:#fff3e0"></span> Organization</div>
+                <div class="legend-item"><span class="legend-color" style="background:#fce4ec"></span> CRUD Operations</div>
+                <div class="legend-item"><span class="legend-color" style="background:#fee2e2"></span> Errors</div>
+                <div class="legend-item"><span class="legend-color" style="background:#f0f9ff"></span> Validation</div>
+            </div>
+            <div class="diagram">
+                <div class="mermaid">
+                    flowchart TB
+                    subgraph ENTRY["📱 Consumer Entry Point"]
+                    START["User Authenticated & Session Active"]
+                    CALL["API: fetchMenu(restaurantId, inStock?)"]
+                    end
+
+                    subgraph VALIDATE["🔍 Validation"]
+                    CHK_RID{"restaurantId provided?"}
+                    CHK_REST{"Restaurant exists?"}
+                    PARSE_FILTER["Parse inStock filter (default: true)"]
+                    end
+
+                    subgraph PARALLEL["⚡ Parallel Data Fetch"]
+                    FETCH_CAT["fetchCategories()"]
+                    FETCH_ITEMS["fetchMenuItems(inStock)"]
+                    FETCH_VAR["fetchVariants()"]
+                    FETCH_ADD["fetchAddons(inStock)"]
+                    end
+
+                    subgraph ORGANIZE["🔧 Data Organization"]
+                    CREATE_STRUCT["Create {categories, menuItems{}}"]
+                    LOOP_ITEMS["Loop through menuItems"]
+                    ENRICH_VAR["Enrich with variant details"]
+                    ENRICH_ADD["Enrich with addon details"]
+                    FILTER_NULL["Filter out null references"]
+                    GROUP_CAT["Group items by categoryId"]
+                    ADD_META["Add metadata counts"]
+                    end
+
+                    subgraph RESPONSE["✅ Response"]
+                    RETURN["Return organized menu"]
+                    CACHE_CLIENT["Client caches locally"]
+                    end
+
+                    subgraph ERRORS["❌ Error Handling"]
+                    ERR_NO_RID["400: restaurantId required"]
+                    ERR_NO_REST["404: Restaurant not found"]
+                    ERR_CAT_NAME["Error: Category name missing"]
+                    ERR_INTERNAL["500: Unable to fetch menu"]
+                    end
+
+                    subgraph CRUD["🔧 CRUD Operations (Admin/Server)"]
+                    ADD_ITEM["API: addMenuItem"]
+                    UPDATE_ITEM["API: updateMenuItem"]
+                    DELETE_ITEM["API: deleteMenuItem"]
+                    UPDATE_STOCK["API: updateMenuItemAvailability"]
+                    VALIDATE_CRUD["Validate required fields"]
+                    MUTATE_DB["Update Firestore"]
+                    RETURN_ITEM["Return updated item"]
+                    end
+
+                    %% Entry Flow
+                    START --> CALL --> CHK_RID
+                    CHK_RID -->|No| ERR_NO_RID
+                    CHK_RID -->|Yes| CHK_REST
+                    CHK_REST -->|No| ERR_NO_REST
+                    CHK_REST -->|Yes| PARSE_FILTER
+
+                    %% Parallel Fetch
+                    PARSE_FILTER --> FETCH_CAT
+                    PARSE_FILTER --> FETCH_ITEMS
+                    PARSE_FILTER --> FETCH_VAR
+                    PARSE_FILTER --> FETCH_ADD
+
+                    %% Check for category name error
+                    FETCH_CAT --> |Missing name| ERR_CAT_NAME
+                    FETCH_CAT --> ORGANIZE
+                    FETCH_ITEMS --> ORGANIZE
+                    FETCH_VAR --> ORGANIZE
+                    FETCH_ADD --> ORGANIZE
+
+                    %% Organization
+                    FETCH_CAT & FETCH_ITEMS & FETCH_VAR & FETCH_ADD --> CREATE_STRUCT
+                    CREATE_STRUCT --> LOOP_ITEMS
+                    LOOP_ITEMS --> ENRICH_VAR
+                    ENRICH_VAR --> ENRICH_ADD
+                    ENRICH_ADD --> FILTER_NULL
+                    FILTER_NULL --> GROUP_CAT
+                    GROUP_CAT --> ADD_META
+                    ADD_META --> RETURN
+                    RETURN --> CACHE_CLIENT
+
+                    %% CRUD Flow
+                    ADD_ITEM --> VALIDATE_CRUD
+                    UPDATE_ITEM --> VALIDATE_CRUD
+                    DELETE_ITEM --> VALIDATE_CRUD
+                    UPDATE_STOCK --> VALIDATE_CRUD
+                    VALIDATE_CRUD --> |Invalid| ERR_NO_RID
+                    VALIDATE_CRUD --> |Valid| MUTATE_DB
+                    MUTATE_DB --> RETURN_ITEM
+
+                    %% Error catch-all
+                    FETCH_CAT & FETCH_ITEMS & FETCH_VAR & FETCH_ADD -.->|Any error| ERR_INTERNAL
+
+                    %% Styling
+                    style ENTRY fill:#e8f5e9,color:#000
+                    style VALIDATE fill:#f0f9ff,color:#000
+                    style PARALLEL fill:#e8f5e9,color:#000
+                    style ORGANIZE fill:#fff3e0,color:#000
+                    style RESPONSE fill:#e8f5e9,color:#000
+                    style ERRORS fill:#fee2e2,color:#000
+                    style CRUD fill:#fce4ec,color:#000
+                </div>
+            </div>
+            <div class="note">
+                <strong>Performance:</strong> All 4 collections fetched in parallel. Organization is O(n) for items, O(1) for variant/addon lookups (using maps).
+            </div>
+        </section>
+
+        <!-- ============================================
+             SECTION 5: NUANCES & EDGE CASES
+             ============================================ -->
+        <section class="section" id="nuances">
+            <div class="section-title"><span class="section-icon">💡</span> Nuances & Edge Cases</div>
+            <div class="card">
+                <div class="bullet-section">
+                    <div class="bullet-title">Validation Nuances</div>
+                    <ul class="nuance-list">
+                        <li class="nuance-info">
+                            <span class="marker">→</span>
+                            <span>restaurantId validation happens before Firestore query (fail fast)</span>
+                        </li>
+                        <li class="nuance-warning">
+                            <span class="marker">⚠</span>
+                            <span>Category name missing throws error DURING fetch, not during validation (side effect of map)</span>
+                        </li>
+                        <li class="nuance-info">
+                            <span class="marker">→</span>
+                            <span>inStock parameter defaults to false internally (explicit check: inStock !== false)</span>
+                        </li>
+                        <li class="nuance-success">
+                            <span class="marker">✓</span>
+                            <span>MenuValidation class provides centralized validation for consistency</span>
+                        </li>
+                        <li class="nuance-warning">
+                            <span class="marker">⚠</span>
+                            <span>CRUD operations validate BEFORE existence check (different order than fetch)</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bullet-section">
+                    <div class="bullet-title">Data Structure Nuances</div>
+                    <ul class="nuance-list">
+                        <li class="nuance-info">
+                            <span class="marker">→</span>
+                            <span>Menu items store variant references as {id, name} - name is variant GROUP name, not option name</span>
+                        </li>
+                        <li class="nuance-info">
+                            <span class="marker">→</span>
+                            <span>Addon references in menu items are string IDs only (simpler structure)</span>
+                        </li>
+                        <li class="nuance-success">
+                            <span class="marker">✓</span>
+                            <span>Response denormalizes for performance: clients don't need additional lookups</span>
+                        </li>
+                        <li class="nuance-warning">
+                            <span class="marker">⚠</span>
+                            <span>Missing variant/addon IDs silently filtered (no error) - could hide data integrity issues</span>
+                        </li>
+                        <li class="nuance-info">
+                            <span class="marker">→</span>
+                            <span>finalPrice calculated as (basePrice - discount), NOT stored separately in DB</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bullet-section">
+                    <div class="bullet-title">Stock Management Nuances</div>
+                    <ul class="nuance-list">
+                        <li class="nuance-info">
+                            <span class="marker">→</span>
+                            <span>inStock filter applies at QUERY level for performance (WHERE clause, not post-filter)</span>
+                        </li>
+                        <li class="nuance-warning">
+                            <span class="marker">⚠</span>
+                            <span>Item can be in-stock but have all addons out-of-stock (still returned)</span>
+                        </li>
+                        <li class="nuance-warning">
+                            <span class="marker">⚠</span>
+                            <span>Stock status NOT re-validated when adding to cart (race condition possible)</span>
+                        </li>
+                        <li class="nuance-error">
+                            <span class="marker">✗</span>
+                            <span>If item goes out-of-stock after menu fetch, caught at checkout, not addToCart</span>
+                        </li>
+                        <li class="nuance-success">
+                            <span class="marker">✓</span>
+                            <span>updateMenuItemAvailability is partial update (only isInStock field)</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bullet-section">
+                    <div class="bullet-title">Performance Considerations</div>
+                    <ul class="nuance-list">
+                        <li class="nuance-success">
+                            <span class="marker">✓</span>
+                            <span>Promise.all fetches 4 collections in parallel (~60% faster than sequential)</span>
+                        </li>
+                        <li class="nuance-info">
+                            <span class="marker">→</span>
+                            <span>Variants stored as map for O(1) lookup during organization (100+ items benefit)</span>
+                        </li>
+                        <li class="nuance-info">
+                            <span class="marker">→</span>
+                            <span>Addons stored as map for O(1) lookup during organization</span>
+                        </li>
+                        <li class="nuance-warning">
+                            <span class="marker">⚠</span>
+                            <span>No caching implemented - every fetchMenu hits Firestore (consider Redis for high traffic)</span>
+                        </li>
+                        <li class="nuance-warning">
+                            <span class="marker">⚠</span>
+                            <span>Large menus (500+ items) may hit Firestore read limits - pagination not implemented</span>
+                        </li>
+                        <li class="nuance-info">
+                            <span class="marker">→</span>
+                            <span>Categories ordered by 'order' field at query level (efficient)</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bullet-section">
+                    <div class="bullet-title">Edge Case Recovery</div>
+                    <ul class="nuance-list">
+                        <li class="nuance-success">
+                            <span class="marker">✓</span>
+                            <span>Empty categories array returns valid response (graceful degradation)</span>
+                        </li>
+                        <li class="nuance-success">
+                            <span class="marker">✓</span>
+                            <span>Category with no items returns empty array (not null)</span>
+                        </li>
+                        <li class="nuance-success">
+                            <span class="marker">✓</span>
+                            <span>Deleted variants/addons filtered out without breaking response</span>
+                        </li>
+                        <li class="nuance-error">
+                            <span class="marker">✗</span>
+                            <span>Category name missing throws hard error (breaks entire fetch)</span>
+                        </li>
+                        <li class="nuance-warning">
+                            <span class="marker">⚠</span>
+                            <span>Frontend must handle empty menuItems[categoryId] for display logic</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bullet-section">
+                    <div class="bullet-title">Pricing Nuances</div>
+                    <ul class="nuance-list">
+                        <li class="nuance-info">
+                            <span class="marker">→</span>
+                            <span>respectParentDiscount flag on variants/addons affects CART price calculation, not menu display</span>
+                        </li>
+                        <li class="nuance-warning">
+                            <span class="marker">⚠</span>
+                            <span>Price changes after menu fetch NOT communicated to user until checkout</span>
+                        </li>
+                        <li class="nuance-info">
+                            <span class="marker">→</span>
+                            <span>Discounts displayed in menu but recalculated at checkout for accuracy</span>
+                        </li>
+                        <li class="nuance-success">
+                            <span class="marker">✓</span>
+                            <span>Menu fetch returns both basePrice AND finalPrice for transparent pricing</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================
+             SECTION 6: CROSS-ENTITY EFFECTS
+             ============================================ -->
+        <section class="section" id="cross-entity">
+            <div class="section-title"><span class="section-icon">🔗</span> Cross-Entity Effect Matrix</div>
+            <div class="card">
+                <div class="matrix-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Event/Action</th>
+                                <th>Restaurant</th>
+                                <th>Categories</th>
+                                <th>Menu Items</th>
+                                <th>Variants</th>
+                                <th>Addons</th>
+                                <th>Cart</th>
+                                <th>Orders</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="event-col">fetchMenu()</td>
+                                <td><span class="matrix-read">Existence check</span></td>
+                                <td><span class="matrix-read">Read all</span></td>
+                                <td><span class="matrix-read">Read all/filtered</span></td>
+                                <td><span class="matrix-read">Read all</span></td>
+                                <td><span class="matrix-read">Read all/filtered</span></td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td class="event-col">addMenuItem()</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td><span class="matrix-create">Create new</span></td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td class="event-col">updateMenuItem()</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td><span class="matrix-update">Update fields</span></td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>⚠ Stale data</td>
+                                <td>⚠ Stale prices</td>
+                            </tr>
+                            <tr>
+                                <td class="event-col">deleteMenuItem()</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td><span class="matrix-delete">Delete doc</span></td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>⚠ Orphaned refs</td>
+                                <td>⚠ Orphaned refs</td>
+                            </tr>
+                            <tr>
+                                <td class="event-col">updateAvailability()</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td><span class="matrix-update">isInStock field</span></td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>⚠ Stale stock</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td class="event-col">Delete Variant</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>⚠ Dangling refs (filtered)</td>
+                                <td><span class="matrix-delete">Delete doc</span></td>
+                                <td>-</td>
+                                <td>⚠ Invalid config</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td class="event-col">Delete Addon</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>⚠ Dangling refs (filtered)</td>
+                                <td>-</td>
+                                <td><span class="matrix-delete">Delete doc</span></td>
+                                <td>⚠ Invalid config</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td class="event-col">addItemToCart()</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td><span class="matrix-read">Read for validation</span></td>
+                                <td><span class="matrix-read">Read for validation</span></td>
+                                <td><span class="matrix-read">Read for validation</span></td>
+                                <td><span class="matrix-create">Create/Update</span></td>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="note warn">
+                    <strong>Key Insight:</strong> Menu CRUD operations don't cascade or trigger updates in Cart/Orders. Frontend must handle stale data scenarios.
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================
+             SECTION 7: STATE MACHINES
+             ============================================ -->
+        <section class="section" id="states">
+            <div class="section-title"><span class="section-icon">🔄</span> State Machines</div>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">Menu Item Lifecycle</div>
+                    <div class="diagram">
+                        <div class="mermaid">
+                            stateDiagram-v2
+                            [*] --> Draft: addMenuItem()
+                            Draft --> Available: isInStock=true
+                            Draft --> Unavailable: isInStock=false
+                            Available --> Unavailable: updateAvailability(false)
+                            Unavailable --> Available: updateAvailability(true)
+                            Available --> Modified: updateMenuItem()
+                            Modified --> Available: auto
+                            Available --> Deleted: deleteMenuItem()
+                            Unavailable --> Deleted: deleteMenuItem()
+                            Modified --> Deleted: deleteMenuItem()
+                            Deleted --> [*]
+                        </div>
+                    </div>
+                    <div class="note">Items don't have explicit state field - derived from isInStock + existence</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Category Lifecycle</div>
+                    <div class="diagram">
+                        <div class="mermaid">
+                            stateDiagram-v2
+                            [*] --> Created: addCategory()
+                            Created --> Active: Has menu items
+                            Created --> Empty: No menu items
+                            Active --> Modified: updateCategory()
+                            Empty --> Modified: updateCategory()
+                            Modified --> Active: auto
+                            Active --> Empty: All items deleted
+                            Active --> Deleted: deleteCategory()
+                            Empty --> Deleted: deleteCategory()
+                            Deleted --> [*]
+                        </div>
+                    </div>
+                    <div class="note">Categories with items NOT blocked from deletion (orphan items possible)</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Stock Status State Machine</div>
+                <div class="diagram">
+                    <div class="mermaid">
+                        stateDiagram-v2
+                        [*] --> InStock: Default state
+                        InStock --> OutOfStock: Kitchen marks unavailable
+                        OutOfStock --> InStock: Kitchen restocks
+                        InStock --> FilteredOut: inStock=true query
+                        OutOfStock --> FilteredOut: inStock=true query
+                        FilteredOut --> [*]: Not returned in response
+                        
+                        note right of InStock
+                            isInStock: true
+                            Visible to consumers
+                        end note
+                        
+                        note right of OutOfStock
+                            isInStock: false
+                            Hidden in default queries
+                        end note
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================
+             SECTION 8: API REFERENCE
+             ============================================ -->
+        <section class="section" id="api">
+            <div class="section-title"><span class="section-icon">🎯</span> API Reference</div>
+            
+            <!-- PUBLIC APIs -->
+            <div class="card">
+                <div class="card-title" style="background: rgba(5, 150, 105, 0.1); padding: 10px; border-radius: 6px; border-left: 3px solid var(--success);">
+                    🌐 PUBLIC APIs (Consumer-Facing)
+                </div>
+                
+                <!-- fetchMenu API -->
+                <div class="api-endpoint">
+                    <div class="api-header" onclick="toggleApiDetails('api-fetchMenu')">
+                        <div class="api-name">
+                            <code>menu-fetchMenu-fetchMenu</code>
+                            <span class="badge-accent" style="margin-left: 10px; font-size: 10px;">Firebase Callable</span>
+                        </div>
+                        <div class="api-summary">Fetch complete menu with categories, items, variants, and addons</div>
+                        <div class="api-toggle">▼</div>
+                    </div>
+                    <div id="api-fetchMenu" class="api-details" style="display: none;">
+                        <div class="api-section">
+                            <strong>Endpoint:</strong> <code>menu-fetchMenu-fetchMenu</code><br>
+                            <strong>Method:</strong> Firebase Callable Function<br>
+                            <strong>Module:</strong> <code>functions/menu/menu_fetch.js</code><br>
+                            <strong>Auth Required:</strong> Optional (but recommended for user context)
+                        </div>
+                        
+                        <div class="api-section">
+                            <strong>Request Parameters:</strong>
+                            <div class="param-list">
+                                <div class="param-item param-required">
+                                    <span class="param-name">restaurantId</span>
+                                    <span class="param-type">string</span>
+                                    <span class="param-desc">Unique identifier of the restaurant</span>
+                                </div>
+                                <div class="param-item param-optional">
+                                    <span class="param-name">inStock</span>
+                                    <span class="param-type">boolean</span>
+                                    <span class="param-desc">Filter for in-stock items only (default: true)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="api-section">
+                            <strong>Sample Request:</strong>
+                            <pre class="code-block">{
+  "data": {
+    "restaurantId": "rest001",
+    "inStock": true
+  }
+}</pre>
+                        </div>
+
+                        <div class="api-section">
+                            <strong>Sample Response (200 OK):</strong>
+                            <pre class="code-block">{
+  <span class="field-required">"categories"</span>: [
+    {
+      <span class="field-required">"id"</span>: "cat_1_food",
+      <span class="field-required">"name"</span>: "Burgers",
+      <span class="field-optional">"description"</span>: "Delicious handcrafted burgers",
+      <span class="field-optional">"image"</span>: "https://example.com/images/burger-category.jpg",
+      <span class="field-required">"order"</span>: 1
+    },
+    {
+      <span class="field-required">"id"</span>: "cat_2_beverages",
+      <span class="field-required">"name"</span>: "Beverages",
+      <span class="field-optional">"description"</span>: "Refreshing drinks and hot beverages",
+      <span class="field-optional">"image"</span>: "https://example.com/images/beverages-category.jpg",
+      <span class="field-required">"order"</span>: 2
+    }
+  ],
+  <span class="field-required">"menuItems"</span>: {
+    "cat_1_food": [
+      {
+        <span class="field-required">"menuItemId"</span>: "item001",
+        <span class="field-required">"categoryId"</span>: "cat_1_food",
+        <span class="field-required">"meta"</span>: {
+          <span class="field-required">"name"</span>: "Classic Cheeseburger",
+          <span class="field-optional">"description"</span>: "Juicy beef patty with melted cheddar cheese",
+          <span class="field-optional">"categoryName"</span>: "Burgers",
+          <span class="field-optional">"image"</span>: "https://example.com/images/classic-cheeseburger.jpg"
+        },
+        <span class="field-required">"priceInfo"</span>: {
+          <span class="field-required">"basePrice"</span>: 100,
+          <span class="field-optional">"discount"</span>: 10,
+          <span class="field-required">"finalPrice"</span>: 90
+        },
+        <span class="field-optional">"variants"</span>: [
+          {
+            <span class="field-required">"id"</span>: "variant_burger_size",
+            <span class="field-required">"name"</span>: "Size",
+            <span class="field-required">"meta"</span>: {
+              <span class="field-required">"name"</span>: "Burger Size",
+              <span class="field-optional">"description"</span>: "Choose your preferred burger size"
+            },
+            <span class="field-required">"options"</span>: [
+              {
+                <span class="field-required">"id"</span>: "burger_size_regular",
+                <span class="field-required">"name"</span>: "Regular",
+                <span class="field-required">"priceInfo"</span>: {
+                  <span class="field-required">"basePrice"</span>: 0,
+                  <span class="field-optional">"discount"</span>: 0,
+                  <span class="field-required">"finalPrice"</span>: 0
+                }
+              },
+              {
+                <span class="field-required">"id"</span>: "burger_size_large",
+                <span class="field-required">"name"</span>: "Large",
+                <span class="field-required">"priceInfo"</span>: {
+                  <span class="field-required">"basePrice"</span>: 20,
+                  <span class="field-optional">"discount"</span>: 0,
+                  <span class="field-required">"finalPrice"</span>: 20
+                }
+              }
+            ],
+            <span class="field-required">"isMandatory"</span>: true,
+            <span class="field-optional">"respectParentDiscount"</span>: true
+          }
+        ],
+        <span class="field-optional">"addons"</span>: [
+          {
+            <span class="field-required">"id"</span>: "addon_burger_fries",
+            <span class="field-required">"meta"</span>: {
+              <span class="field-required">"name"</span>: "French Fries",
+              <span class="field-optional">"description"</span>: "Crispy golden fries"
+            },
+            <span class="field-required">"priceInfo"</span>: {
+              <span class="field-required">"basePrice"</span>: 30,
+              <span class="field-optional">"discount"</span>: 0,
+              <span class="field-required">"finalPrice"</span>: 30
+            },
+            <span class="field-required">"isInStock"</span>: true,
+            <span class="field-optional">"isMandatory"</span>: false,
+            <span class="field-optional">"respectParentDiscount"</span>: true
+          }
+        ],
+        <span class="field-optional">"nutritionalInfo"</span>: {
+          <span class="field-optional">"calories"</span>: 650,
+          <span class="field-optional">"protein"</span>: 35,
+          <span class="field-optional">"carbs"</span>: 40,
+          <span class="field-optional">"fat"</span>: 38
+        },
+        <span class="field-optional">"allergenTags"</span>: ["dairy", "gluten"],
+        <span class="field-required">"isInStock"</span>: true,
+        <span class="field-optional">"isCustomizable"</span>: true
+      }
+    ],
+    "cat_2_beverages": [ /* ...more items... */ ]
+  },
+  <span class="field-required">"metadata"</span>: {
+    <span class="field-required">"totalCategories"</span>: 2,
+    <span class="field-required">"totalMenuItems"</span>: 3
+  }
+}</pre>
+                        </div>
+
+                        <div class="api-section">
+                            <strong>Error Responses:</strong>
+                            <div class="error-list">
+                                <div class="error-item">
+                                    <span class="error-code">400</span>
+                                    <span class="error-msg">Restaurant ID is required</span>
+                                </div>
+                                <div class="error-item">
+                                    <span class="error-code">404</span>
+                                    <span class="error-msg">Restaurant not found</span>
+                                </div>
+                                <div class="error-item">
+                                    <span class="error-code">500</span>
+                                    <span class="error-msg">Unable to fetch menu</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="api-section">
+                            <strong>Side Effects:</strong> None (read-only operation)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- getRestaurantMenu API -->
+                <div class="api-endpoint">
+                    <div class="api-header" onclick="toggleApiDetails('api-getRestaurantMenu')">
+                        <div class="api-name">
+                            <code>menu-getRestaurantMenu</code>
+                            <span class="badge-accent" style="margin-left: 10px; font-size: 10px;">Firebase Callable</span>
+                        </div>
+                        <div class="api-summary">Alternative menu fetch with ResponseBuilder wrapper</div>
+                        <div class="api-toggle">▼</div>
+                    </div>
+                    <div id="api-getRestaurantMenu" class="api-details" style="display: none;">
+                        <div class="api-section">
+                            <strong>Endpoint:</strong> <code>menu-getRestaurantMenu</code><br>
+                            <strong>Method:</strong> Firebase Callable Function<br>
+                            <strong>Module:</strong> <code>functions/menu/getRestaurantMenu.js</code>
+                        </div>
+                        
+                        <div class="api-section">
+                            <strong>Request Parameters:</strong>
+                            <div class="param-list">
+                                <div class="param-item param-required">
+                                    <span class="param-name">restaurantId</span>
+                                    <span class="param-type">string</span>
+                                    <span class="param-desc">Unique identifier of the restaurant</span>
+                                </div>
+                                <div class="param-item param-optional">
+                                    <span class="param-name">inStock</span>
+                                    <span class="param-type">boolean</span>
+                                    <span class="param-desc">Filter for in-stock items (default: false)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="api-section">
+                            <strong>Sample Response (200 OK):</strong>
+                            <pre class="code-block">{
+  <span class="field-required">"success"</span>: true,
+  <span class="field-required">"message"</span>: "Restaurant menu fetched successfully",
+  <span class="field-required">"data"</span>: {
+    <span class="field-required">"categories"</span>: [ /* same as fetchMenu */ ],
+    <span class="field-required">"menuItems"</span>: { /* same as fetchMenu */ },
+    <span class="field-required">"metadata"</span>: {
+      <span class="field-required">"totalCategories"</span>: 2,
+      <span class="field-required">"totalMenuItems"</span>: 3
+    }
+  }
+}</pre>
+                        </div>
+
+                        <div class="note">
+                            <strong>Difference from fetchMenu:</strong> This API wraps the response in ResponseBuilder format with success/message/data structure.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INTERNAL APIs -->
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-title" style="background: rgba(99, 102, 241, 0.1); padding: 10px; border-radius: 6px; border-left: 3px solid var(--accent);">
+                    🔒 INTERNAL APIs (Admin/Server-Only)
+                </div>
+
+                <!-- addMenuItem API -->
+                <div class="api-endpoint">
+                    <div class="api-header" onclick="toggleApiDetails('api-addMenuItem')">
+                        <div class="api-name">
+                            <code>menu-addMenuItem</code>
+                            <span class="badge" style="margin-left: 10px; font-size: 10px; background: rgba(220, 38, 38, 0.1); color: var(--error);">Auth Required</span>
+                        </div>
+                        <div class="api-summary">Create a new menu item</div>
+                        <div class="api-toggle">▼</div>
+                    </div>
+                    <div id="api-addMenuItem" class="api-details" style="display: none;">
+                        <div class="api-section">
+                            <strong>Endpoint:</strong> <code>menu-addMenuItem</code><br>
+                            <strong>Method:</strong> Firebase Callable Function<br>
+                            <strong>Module:</strong> <code>functions/menu/menu.js</code><br>
+                            <strong>Auth Required:</strong> Yes (Admin/Server only)
+                        </div>
+                        
+                        <div class="api-section">
+                            <strong>Request Parameters:</strong>
+                            <div class="param-list">
+                                <div class="param-item param-required">
+                                    <span class="param-name">restaurantId</span>
+                                    <span class="param-type">string</span>
+                                    <span class="param-desc">Restaurant ID</span>
+                                </div>
+                                <div class="param-item param-required">
+                                    <span class="param-name">menuItemData</span>
+                                    <span class="param-type">object</span>
+                                    <span class="param-desc">Complete menu item data</span>
+                                </div>
+                                <div style="margin-left: 20px;">
+                                    <div class="param-item param-required">
+                                        <span class="param-name">meta.name</span>
+                                        <span class="param-type">string</span>
+                                        <span class="param-desc">Item name</span>
+                                    </div>
+                                    <div class="param-item param-required">
+                                        <span class="param-name">categoryId</span>
+                                        <span class="param-type">string</span>
+                                        <span class="param-desc">Category ID</span>
+                                    </div>
+                                    <div class="param-item param-required">
+                                        <span class="param-name">priceInfo.basePrice</span>
+                                        <span class="param-type">number</span>
+                                        <span class="param-desc">Base price</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="api-section">
+                            <strong>Side Effects:</strong> Creates new document in <code>/restaurants/{rid}/menuItems/{auto-id}</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- updateMenuItem API -->
+                <div class="api-endpoint">
+                    <div class="api-header" onclick="toggleApiDetails('api-updateMenuItem')">
+                        <div class="api-name">
+                            <code>menu-updateMenuItem</code>
+                            <span class="badge" style="margin-left: 10px; font-size: 10px; background: rgba(220, 38, 38, 0.1); color: var(--error);">Auth Required</span>
+                        </div>
+                        <div class="api-summary">Update existing menu item</div>
+                        <div class="api-toggle">▼</div>
+                    </div>
+                    <div id="api-updateMenuItem" class="api-details" style="display: none;">
+                        <div class="api-section">
+                            <strong>Endpoint:</strong> <code>menu-updateMenuItem</code><br>
+                            <strong>Method:</strong> Firebase Callable Function<br>
+                            <strong>Side Effects:</strong> Updates <code>/restaurants/{rid}/menuItems/{mid}</code>, may orphan cart items with stale data
+                        </div>
+                    </div>
+                </div>
+
+                <!-- deleteMenuItem API -->
+                <div class="api-endpoint">
+                    <div class="api-header" onclick="toggleApiDetails('api-deleteMenuItem')">
+                        <div class="api-name">
+                            <code>menu-deleteMenuItem</code>
+                            <span class="badge" style="margin-left: 10px; font-size: 10px; background: rgba(220, 38, 38, 0.1); color: var(--error);">Auth Required</span>
+                        </div>
+                        <div class="api-summary">Delete menu item</div>
+                        <div class="api-toggle">▼</div>
+                    </div>
+                    <div id="api-deleteMenuItem" class="api-details" style="display: none;">
+                        <div class="api-section">
+                            <strong>Endpoint:</strong> <code>menu-deleteMenuItem</code><br>
+                            <strong>Method:</strong> Firebase Callable Function<br>
+                            <strong>⚠️ Warning:</strong> Does NOT cascade delete cart references (orphans cart items)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- updateMenuItemAvailability API -->
+                <div class="api-endpoint">
+                    <div class="api-header" onclick="toggleApiDetails('api-updateAvailability')">
+                        <div class="api-name">
+                            <code>menu-updateMenuItemAvailability</code>
+                            <span class="badge" style="margin-left: 10px; font-size: 10px; background: rgba(217, 119, 6, 0.1); color: var(--warning);">HTTP Request</span>
+                        </div>
+                        <div class="api-summary">Toggle item stock status</div>
+                        <div class="api-toggle">▼</div>
+                    </div>
+                    <div id="api-updateAvailability" class="api-details" style="display: none;">
+                        <div class="api-section">
+                            <strong>Endpoint:</strong> <code>POST /menu-updateMenuItemAvailability</code><br>
+                            <strong>Method:</strong> HTTP POST (not callable)<br>
+                            <strong>Side Effects:</strong> Updates only <code>isInStock</code> field (partial update)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FCM & TRIGGERS -->
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-title" style="background: rgba(234, 88, 12, 0.1); padding: 10px; border-radius: 6px; border-left: 3px solid var(--orange);">
+                    🔔 FCM Notifications & Triggers
+                </div>
+                <div class="note">
+                    <strong>No FCM notifications or Firestore triggers for menu operations.</strong> Menu changes do not trigger push notifications or real-time updates to consumers. Clients must manually refresh to see menu changes.
+                </div>
+            </div>
+
+            <div class="note" style="margin-top: 20px;">
+                <strong>Legend:</strong><br>
+                <span class="field-required" style="padding: 2px 4px;">Field Name</span> = Required field<br>
+                <span class="field-optional" style="padding: 2px 4px;">Field Name</span> = Optional field
+            </div>
+        </section>
+
+        <!-- ============================================
+             SECTION 9: ERROR HANDLING
+             ============================================ -->
+        <section class="section" id="errors">
+            <div class="section-title"><span class="section-icon">🚨</span> Error Handling</div>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Error Scenario</th>
+                            <th>HTTP Code</th>
+                            <th>Error Message</th>
+                            <th>User Experience</th>
+                            <th>Recovery Path</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>restaurantId missing</td>
+                            <td>400</td>
+                            <td>"Restaurant ID is required"</td>
+                            <td>Toast: "Invalid request"</td>
+                            <td>Developer error - fix API call</td>
+                        </tr>
+                        <tr>
+                            <td>Restaurant not found</td>
+                            <td>404</td>
+                            <td>"Restaurant not found"</td>
+                            <td>Error page: "Restaurant unavailable"</td>
+                            <td>Check QR code / restaurantId validity</td>
+                        </tr>
+                        <tr>
+                            <td>Category name missing</td>
+                            <td>500</td>
+                            <td>"Category name is missing"</td>
+                            <td>Toast: "Menu data error"</td>
+                            <td>Admin must fix category data</td>
+                        </tr>
+                        <tr>
+                            <td>Generic fetch failure</td>
+                            <td>500</td>
+                            <td>"Unable to fetch menu"</td>
+                            <td>Error page: "Cannot load menu"</td>
+                            <td>Retry button, check network</td>
+                        </tr>
+                        <tr>
+                            <td>Menu item not found (update/delete)</td>
+                            <td>404</td>
+                            <td>"Menu item not found"</td>
+                            <td>Toast: "Item no longer exists"</td>
+                            <td>Refresh menu list</td>
+                        </tr>
+                        <tr>
+                            <td>Missing required fields (CRUD)</td>
+                            <td>400</td>
+                            <td>"Restaurant ID and menu item data are required"</td>
+                            <td>Form validation error</td>
+                            <td>Fill all required fields</td>
+                        </tr>
+                        <tr>
+                            <td>Invalid field types</td>
+                            <td>400</td>
+                            <td>"Base price must be a number if priceInfo is provided"</td>
+                            <td>Form validation error</td>
+                            <td>Correct field type</td>
+                        </tr>
+                        <tr>
+                            <td>Empty menu (0 items)</td>
+                            <td>200</td>
+                            <td>-</td>
+                            <td>Empty state: "No items available"</td>
+                            <td>Normal - restaurant setup incomplete</td>
+                        </tr>
+                        <tr>
+                            <td>All items out of stock</td>
+                            <td>200</td>
+                            <td>-</td>
+                            <td>Empty state: "Menu unavailable"</td>
+                            <td>Normal - wait for restocking</td>
+                        </tr>
+                        <tr>
+                            <td>Orphaned variant/addon refs</td>
+                            <td>200</td>
+                            <td>-</td>
+                            <td>Silently filtered - no error shown</td>
+                            <td>Graceful degradation (may confuse admins)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="note warn">
+                <strong>Silent Failures:</strong> Missing variant/addon references are filtered without error. This prevents crashes but can hide data integrity issues.
+            </div>
+        </section>
+
+    </div>
+
+    <style>
+        /* API Section Styles */
+        .api-endpoint {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .api-header {
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            cursor: pointer;
+            transition: background 0.2s;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+        }
+
+        .api-header:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .api-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+            display: flex;
+            align-items: center;
+        }
+
+        .api-summary {
+            font-size: 12px;
+            color: var(--text-dim);
+            grid-column: 1 / 2;
+        }
+
+        .api-toggle {
+            font-size: 12px;
+            color: var(--text-muted);
+            grid-row: 1 / 3;
+            grid-column: 2 / 3;
+            display: flex;
+            align-items: center;
+        }
+
+        .api-details {
+            padding: 16px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+        }
+
+        .api-section {
+            margin: 12px 0;
+            font-size: 13px;
+        }
+
+        .api-section strong {
+            color: var(--text);
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        /* Parameter List */
+        .param-list {
+            margin: 8px 0;
+        }
+
+        .param-item {
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 4px;
+            display: grid;
+            grid-template-columns: 150px 80px 1fr;
+            gap: 12px;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .param-required {
+            background: rgba(220, 38, 38, 0.05);
+            border-left: 3px solid var(--error);
+        }
+
+        .param-optional {
+            background: rgba(99, 102, 241, 0.05);
+            border-left: 3px solid var(--accent);
+        }
+
+        .param-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .param-type {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--info);
+            background: rgba(37, 99, 235, 0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-align: center;
+        }
+
+        .param-desc {
+            color: var(--text-dim);
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            line-height: 1.6;
+            margin: 10px 0;
+            border: 1px solid #334155;
+        }
+
+        .field-required {
+            color: #fca5a5;
+            font-weight: 600;
+        }
+
+        .field-optional {
+            color: #a5b4fc;
+        }
+
+        /* Error List */
+        .error-list {
+            margin: 8px 0;
+        }
+
+        .error-item {
+            padding: 6px 12px;
+            margin: 4px 0;
+            background: rgba(220, 38, 38, 0.05);
+            border-left: 3px solid var(--error);
+            border-radius: 4px;
+            display: grid;
+            grid-template-columns: 60px 1fr;
+            gap: 12px;
+            font-size: 12px;
+        }
+
+        .error-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--error);
+        }
+
+        .error-msg {
+            color: var(--text-dim);
+        }
+    </style>
+
+    <script>
+        // Toggle API Details
+        function toggleApiDetails(id) {
+            const element = document.getElementById(id);
+            const toggle = element.previousElementSibling.querySelector('.api-toggle');
+            if (element.style.display === 'none') {
+                element.style.display = 'block';
+                toggle.textContent = '▲';
+            } else {
+                element.style.display = 'none';
+                toggle.textContent = '▼';
+            }
+        }
+
+        // Mermaid Initialization
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                fontSize: '11px',
+                primaryColor: '#6366f1',
+                primaryTextColor: '#1e293b',
+                primaryBorderColor: '#a5b4fc',
+                lineColor: '#64748b',
+                secondaryColor: '#f1f5f9',
+                tertiaryColor: '#e8f5e9',
+                background: '#f8fafc',
+                mainBkg: '#ffffff',
+                nodeBorder: '#a5b4fc',
+                clusterBkg: '#f1f5f9',
+                clusterBorder: '#cbd5e1'
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis',
+                nodeSpacing: 30,
+                rankSpacing: 40
+            },
+            stateDiagram: {
+                useMaxWidth: true
+            }
+        });
+    </script>
+</body>
+
+</html>
+
