@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plattr Pro - Menu Flow Detailed Specification</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Custom styles for important nuances */
+        .imp {
+            background: linear-gradient(90deg, rgba(234, 88, 12, 0.15) 0%, transparent 100%);
+            border-left: 4px solid #ea580c;
+            padding: 10px 14px;
+            border-radius: 0 6px 6px 0;
+            margin: 8px 0;
+            font-weight: 500;
+        }
+
+        .imp::before {
+            content: "⚡ IMP: ";
+            color: #ea580c;
+            font-weight: 700;
+        }
+
+        .flow-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin: 10px 0;
+        }
+
+        .flow-step-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--accent);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .flow-step-content {
+            padding-left: 20px;
+        }
+
+        .flow-step-content li {
+            margin: 6px 0;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .highlight-box {
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 8px;
+            padding: 14px;
+            margin: 12px 0;
+        }
+
+        .highlight-box-title {
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .status-flow {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+
+        .status-arrow {
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        /* Collapsible API Dropdown Styles */
+        .api-accordion {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .api-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border-bottom: 1px solid transparent;
+        }
+
+        .api-header:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .api-header.open {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .api-toggle {
+            font-size: 12px;
+            color: var(--text-muted);
+            transition: transform 0.2s ease;
+        }
+
+        .api-header.open .api-toggle {
+            transform: rotate(90deg);
+        }
+
+        .api-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .api-type {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .api-type-public {
+            background: rgba(5, 150, 105, 0.15);
+            color: var(--success);
+        }
+
+        .api-type-internal {
+            background: rgba(217, 119, 6, 0.15);
+            color: var(--warning);
+        }
+
+        .api-type-http {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent2);
+        }
+
+        .api-type-deprecated {
+            background: rgba(220, 38, 38, 0.15);
+            color: var(--error);
+        }
+
+        .api-desc {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-left: auto;
+        }
+
+        .api-content {
+            display: none;
+            padding: 16px;
+            background: var(--bg-secondary);
+        }
+
+        .api-content.open {
+            display: block;
+        }
+
+        .api-params,
+        .api-response {
+            margin-bottom: 14px;
+        }
+
+        .api-section-title {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .json-block {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.5;
+        }
+
+        /* Field coloring for JSON */
+        .field-mandatory {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .field-optional {
+            color: #0891b2;
+            font-style: italic;
+        }
+
+        .field-key {
+            color: var(--accent);
+        }
+
+        .field-value-string {
+            color: #ea580c;
+        }
+
+        .field-value-number {
+            color: #8b5cf6;
+        }
+
+        .field-value-bool {
+            color: #db2777;
+        }
+
+        .field-comment {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .legend-api {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 12px;
+        }
+
+        .legend-api-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-api-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+        }
+
+        /* Price calculation flow visualization */
+        .price-flow {
+            background: var(--bg-card);
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+
+        .price-flow-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            margin: 8px 0;
+            background: rgba(99, 102, 241, 0.05);
+            border-radius: 6px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .price-flow-arrow {
+            font-size: 18px;
+            color: var(--accent);
+            text-align: center;
+            padding: 4px 0;
+        }
+
+        .price-flow-formula {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent);
+            margin-left: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <span class="nav-logo">📋 Menu Flow Spec</span>
+        <a href="#overview">Overview</a>
+        <a href="#entity-schemas">Schemas</a>
+        <a href="#relationships">Relationships</a>
+        <a href="#price-calculation">Price Calc</a>
+        <a href="#variant-addon">Resolution</a>
+        <a href="#stock-management">Stock</a>
+        <a href="#auto-computed">Auto Fields</a>
+        <a href="#api-reference">API Reference</a>
+        <a href="#validation">Validation</a>
+        <a href="#nuances">Nuances</a>
+        <span style="margin-left: auto; display: flex; gap: 8px;">
+            <a href="CONSUMER_APP_FLOW.html" style="color:#6366f1;border:1px solid #6366f1;">🍽️ Consumer Flow</a>
+            <a href="order_flow_detailed_spec.html" style="color:#f97316;border:1px solid #f97316;">📦 Order Flow</a>
+        </span>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>Menu System Detailed Specification</h1>
+            <p>Complete technical breakdown of menu structure, entity relationships, price calculation, and API
+                operations</p>
+            <div class="badges">
+                <span class="badge">📋 Menu Structure</span>
+                <span class="badge">💰 Price Calculation</span>
+                <span class="badge">🔗 Entity Relationships</span>
+                <span class="badge">✅ Stock Management</span>
+            </div>
+        </div>
+
+        <!-- OVERVIEW -->
+        <section class="section" id="overview">
+            <div class="section-title"><span class="section-icon">📋</span> System Overview</div>
+            <div class="card">
+                <div class="card-title">4-Entity Model</div>
+                <ul class="bullet-list">
+                    <li class="info"><strong>Category</strong> → Groups menu items for display organization</li>
+                    <li class="info"><strong>MenuItem</strong> → Individual food/drink items with pricing</li>
+                    <li class="info"><strong>Variant</strong> → Size/type options (Small, Medium, Large)</li>
+                    <li class="info"><strong>Addon</strong> → Optional extras (Extra cheese, Sauce)</li>
+                </ul>
+                <div class="imp">Variants and Addons are <strong>reusable</strong> across multiple MenuItems. They are
+                    stored separately and <strong>referenced by ID</strong>, not embedded.</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📁 Database Storage Paths</div>
+                <pre
+                    style="background: var(--bg-secondary); padding: 14px; border-radius: 6px; font-size: 12px; overflow-x: auto;">
+restaurants/{restaurantId}/
+├── categories/{categoryId}     → Category entities
+├── menuItems/{menuItemId}      → Menu item entities  
+├── variants/{variantId}        → Variant definitions (reusable)
+└── addons/{addonId}            → Addon definitions (reusable)
+                </pre>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🔑 Key Concepts</div>
+                <ul class="bullet-list">
+                    <li class="success">MenuItems <strong>reference</strong> variants/addons by ID, not embed them</li>
+                    <li class="info">Variant enrichment merges collection data with contextual name during fetch</li>
+                    <li class="info">Categories are ordered by <code>order</code> field, not alphabetically</li>
+                    <li class="warning">Stock filtering differs between APIs (see Stock Management section)</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ENTITY SCHEMAS -->
+        <section class="section" id="entity-schemas">
+            <div class="section-title"><span class="section-icon">📄</span> Entity Schemas</div>
+
+            <div class="card">
+                <div class="card-title">📦 MenuItem Schema</div>
+                <div class="json-block">{
+                    <span class="field-mandatory">"menuItemId"</span>: <span class="field-value-string">"string"</span>,
+                    <span class="field-mandatory">"categoryId"</span>: <span class="field-value-string">"string"</span>,
+                    <span class="field-comment">// Foreign key to category</span>
+                    <span class="field-mandatory">"meta"</span>: {
+                    <span class="field-mandatory">"name"</span>: <span class="field-value-string">"string"</span>, <span
+                        class="field-comment">// Required</span>
+                    <span class="field-optional">"description"</span>: <span class="field-value-string">"string"</span>,
+                    <span class="field-optional">"categoryName"</span>: <span
+                        class="field-value-string">"string"</span>,
+                    <span class="field-optional">"image"</span>: <span class="field-value-string">"string"</span>
+                    },
+                    <span class="field-mandatory">"priceInfo"</span>: {
+                    <span class="field-mandatory">"basePrice"</span>: <span class="field-value-number">number</span>,
+                    <span class="field-comment">// Required</span>
+                    <span class="field-optional">"discount"</span>: <span class="field-value-number">number</span>,
+                    <span class="field-comment">// Percentage (0-100)</span>
+                    <span class="field-optional">"finalPrice"</span>: <span class="field-value-number">number</span>
+                    <span class="field-comment">// Calculated: basePrice * (1 - discount/100)</span>
+                    },
+                    <span class="field-optional">"variants"</span>: [{ <span class="field-comment">// Array of variant
+                        references</span>
+                    <span class="field-mandatory">"id"</span>: <span class="field-value-string">"string"</span>, <span
+                        class="field-comment">// Reference to variants collection</span>
+                    <span class="field-optional">"name"</span>: <span class="field-value-string">"string"</span> <span
+                        class="field-comment">// Display name for this context</span>
+                    }],
+                    <span class="field-optional">"addons"</span>: <span class="field-value-string">["addonId1",
+                        "addonId2"]</span>, <span class="field-comment">// Array of addon IDs</span>
+                    <span class="field-optional">"nutritionalInfo"</span>: <span
+                        class="field-value-string">object</span>,
+                    <span class="field-optional">"allergenTags"</span>: <span
+                        class="field-value-string">string[]</span>,
+                    <span class="field-mandatory">"isInStock"</span>: <span class="field-value-bool">boolean</span>,
+                    <span class="field-comment">// Default: true</span>
+                    <span class="field-optional">"isCustomizable"</span>: <span class="field-value-bool">boolean</span>,
+                    <span class="field-comment">// Auto-computed based on variants/addons</span>
+                    <span class="field-optional">"lastUpdated"</span>: <span class="field-value-string">Timestamp</span>
+                    }
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">🔀 Variant Schema</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"variantId"</span>: <span
+                            class="field-value-string">"string"</span>,
+                        <span class="field-mandatory">"meta"</span>: {
+                        <span class="field-mandatory">"name"</span>: <span class="field-value-string">"string"</span>,
+                        <span class="field-optional">"description"</span>: <span
+                            class="field-value-string">"string"</span>,
+                        <span class="field-optional">"categoryAssociatedWith"</span>: <span
+                            class="field-value-string">"string"</span>
+                        },
+                        <span class="field-mandatory">"priceInfo"</span>: {
+                        <span class="field-mandatory">"basePrice"</span>: <span
+                            class="field-value-number">number</span>,
+                        <span class="field-optional">"discount"</span>: <span class="field-value-number">number</span>,
+                        <span class="field-optional">"finalPrice"</span>: <span class="field-value-number">number</span>
+                        },
+                        <span class="field-optional">"isMandatory"</span>: <span
+                            class="field-value-bool">boolean</span>,
+                        <span class="field-optional">"respectParentDiscount"</span>: <span
+                            class="field-value-bool">boolean</span>,
+                        <span class="field-optional">"relatedMenuItems"</span>: <span
+                            class="field-value-string">string[]</span>,
+                        <span class="field-optional">"lastUpdated"</span>: <span
+                            class="field-value-string">Timestamp</span>
+                        }
+                    </div>
+                    <div class="imp"><code>isMandatory</code>: If true, customer MUST select this variant before adding
+                        to cart.</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">➕ Addon Schema</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"id"</span>: <span class="field-value-string">"string"</span>,
+                        <span class="field-mandatory">"name"</span>: <span class="field-value-string">"string"</span>,
+                        <span class="field-mandatory">"priceInfo"</span>: {
+                        <span class="field-mandatory">"basePrice"</span>: <span
+                            class="field-value-number">number</span>,
+                        <span class="field-optional">"discount"</span>: <span class="field-value-number">number</span>,
+                        <span class="field-optional">"finalPrice"</span>: <span class="field-value-number">number</span>
+                        },
+                        <span class="field-optional">"respectParentDiscount"</span>: <span
+                            class="field-value-bool">boolean</span>,
+                        <span class="field-mandatory">"isInStock"</span>: <span class="field-value-bool">boolean</span>
+                        }
+                    </div>
+                    <div class="imp"><code>respectParentDiscount</code>: If true, inherits parent MenuItem's discount.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📁 Category Schema</div>
+                <div class="json-block">{
+                    <span class="field-mandatory">"id"</span>: <span class="field-value-string">"string"</span>,
+                    <span class="field-mandatory">"name"</span>: <span class="field-value-string">"string"</span>, <span
+                        class="field-comment">// Required</span>
+                    <span class="field-mandatory">"order"</span>: <span class="field-value-number">number</span>, <span
+                        class="field-comment">// Required - display order</span>
+                    <span class="field-optional">"description"</span>: <span class="field-value-string">"string"</span>,
+                    <span class="field-optional">"image"</span>: <span class="field-value-string">"string"</span>
+                    }
+                </div>
+            </div>
+        </section>
+
+        <!-- ENTITY RELATIONSHIPS -->
+        <section class="section" id="relationships">
+            <div class="section-title"><span class="section-icon">🔗</span> Entity Relationships</div>
+            <div class="card">
+                <div class="card-title">Relationship Diagram</div>
+                <div class="diagram">
+                    <div class="mermaid">
+                        erDiagram
+                        CATEGORY ||--o{ MENUITEM : "contains"
+                        MENUITEM }o--o{ VARIANT : "references by ID"
+                        MENUITEM }o--o{ ADDON : "references by ID array"
+
+                        CATEGORY {
+                        string id PK
+                        string name
+                        number order
+                        }
+
+                        MENUITEM {
+                        string menuItemId PK
+                        string categoryId FK
+                        object meta
+                        object priceInfo
+                        array variants
+                        array addons
+                        boolean isInStock
+                        boolean isCustomizable
+                        }
+
+                        VARIANT {
+                        string variantId PK
+                        object meta
+                        object priceInfo
+                        boolean isMandatory
+                        boolean respectParentDiscount
+                        }
+
+                        ADDON {
+                        string id PK
+                        string name
+                        object priceInfo
+                        boolean isInStock
+                        boolean respectParentDiscount
+                        }
+                    </div>
+                </div>
+                <div class="imp">This is a <strong>referential</strong> model, not embedded. MenuItems store
+                    variant/addon IDs, and the full data is resolved during fetch.</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Relationship Details</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Relationship</th>
+                            <th>Cardinality</th>
+                            <th>Reference Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Category → MenuItem</td>
+                            <td><strong>1:N</strong></td>
+                            <td><code>categoryId</code> on MenuItem</td>
+                        </tr>
+                        <tr>
+                            <td>MenuItem → Variant</td>
+                            <td><strong>N:M</strong></td>
+                            <td><code>variants[].id</code> references variant collection</td>
+                        </tr>
+                        <tr>
+                            <td>MenuItem → Addon</td>
+                            <td><strong>N:M</strong></td>
+                            <td><code>addons[]</code> array of addon IDs</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- PRICE CALCULATION -->
+        <section class="section" id="price-calculation">
+            <div class="section-title"><span class="section-icon">💰</span> Price Calculation Flow (CRITICAL)</div>
+
+            <div class="card">
+                <div class="card-title">📊 priceInfo Object Structure</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>basePrice</code></td>
+                            <td>number</td>
+                            <td>Original price before any discounts</td>
+                        </tr>
+                        <tr>
+                            <td><code>discount</code></td>
+                            <td>number</td>
+                            <td>Discount <strong>percentage</strong> (0-100)</td>
+                        </tr>
+                        <tr>
+                            <td><code>finalPrice</code></td>
+                            <td>number</td>
+                            <td>Pre-calculated: <code>basePrice × (1 - discount/100)</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="imp">Discount is a <strong>percentage</strong> (0-100), NOT a currency amount.
+                    <code>finalPrice</code> is pre-calculated and stored.</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📈 Complete Price Calculation Flow</div>
+                <div class="price-flow">
+                    <div class="price-flow-step">
+                        <span>1️⃣</span>
+                        <strong>MenuItem.basePrice</strong>
+                        <span class="price-flow-formula">Apply MenuItem.discount →</span>
+                        <strong>MenuItem.finalPrice</strong>
+                    </div>
+                    <div class="price-flow-arrow">↓</div>
+                    <div class="price-flow-step">
+                        <span>2️⃣</span>
+                        <strong>+ Variant.basePrice</strong>
+                        <span class="price-flow-formula">Apply discount (own OR parent if
+                            respectParentDiscount=true)</span>
+                    </div>
+                    <div class="price-flow-arrow">↓</div>
+                    <div class="price-flow-step">
+                        <span>3️⃣</span>
+                        <strong>+ Addon.basePrice</strong>
+                        <span class="price-flow-formula">Apply discount (own OR parent if
+                            respectParentDiscount=true)</span>
+                    </div>
+                    <div class="price-flow-arrow">↓</div>
+                    <div class="price-flow-step">
+                        <span>4️⃣</span>
+                        <strong>× quantity</strong>
+                        <span class="price-flow-formula">= Cart Item Total</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🎯 respectParentDiscount Behavior</div>
+                <div class="highlight-box">
+                    <div class="highlight-box-title">How it Works</div>
+                    <ul class="bullet-list">
+                        <li class="info">When <code>respectParentDiscount = true</code>: Variant/Addon inherits the
+                            parent MenuItem's discount %</li>
+                        <li class="info">When <code>respectParentDiscount = false</code>: Uses its own discount (or 0 if
+                            not set)</li>
+                        <li class="warning">This calculation happens at <strong>cart calculation time</strong>, NOT
+                            stored in menu</li>
+                    </ul>
+                </div>
+                <div class="imp"><code>respectParentDiscount</code> is evaluated dynamically when adding to cart or
+                    calculating totals, NOT pre-computed in menu data.</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🧮 Example Calculation</div>
+                <pre style="background: var(--bg-secondary); padding: 14px; border-radius: 6px; font-size: 12px;">
+MenuItem:
+  basePrice: 200, discount: 10% → finalPrice: 180
+
+Variant (respectParentDiscount: true):
+  basePrice: 50 → applies parent's 10% → adds: 45
+
+Addon (respectParentDiscount: false):
+  basePrice: 30, own discount: 0% → adds: 30
+
+Single Item Total: 180 + 45 + 30 = 255
+With quantity 2: 255 × 2 = <strong>510</strong>
+                </pre>
+            </div>
+        </section>
+
+        <!-- VARIANT & ADDON RESOLUTION -->
+        <section class="section" id="variant-addon">
+            <div class="section-title"><span class="section-icon">🔄</span> Variant & Addon Resolution</div>
+
+            <div class="card">
+                <div class="card-title">🔀 Variant Enrichment During Fetch</div>
+                <div class="highlight-box">
+                    <div class="highlight-box-title">How Variant Resolution Works</div>
+                    <pre
+                        style="background: var(--bg-card); padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px;">
+// MenuItem stores reference: { id: "variant123", name: "Large" }
+// Variant collection has: { variantId: "variant123", priceInfo: {...}, isMandatory: true }
+
+// During fetch, these are MERGED:
+const itemVariants = (item.variants || []).map(variant =>
+  variants[variant.id] 
+    ? { ...variants[variant.id], name: variant.name }  // Merge collection data + contextual name
+    : null
+).filter(Boolean);
+                    </pre>
+                </div>
+                <ul class="bullet-list">
+                    <li class="success">Full variant data (priceInfo, isMandatory, etc.) comes from
+                        <code>variants</code> collection</li>
+                    <li class="success">Contextual <code>name</code> comes from MenuItem's variant reference</li>
+                    <li class="warning">Missing variants (invalid IDs) are filtered out silently</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="card-title">➕ Addon Resolution</div>
+                <pre style="background: var(--bg-secondary); padding: 14px; border-radius: 6px; font-size: 12px;">
+// MenuItem stores: addons: ["addon1", "addon2"]
+// Direct lookup from addons collection:
+
+const itemAddons = (item.addons || []).map(addonId => addons[addonId]).filter(Boolean);
+                </pre>
+                <div class="imp">Variants are NOT filtered by stock during fetch. Addons ARE filtered when
+                    <code>inStock=true</code>.</div>
+            </div>
+        </section>
+
+        <!-- STOCK MANAGEMENT -->
+        <section class="section" id="stock-management">
+            <div class="section-title"><span class="section-icon">✅</span> Stock Management</div>
+
+            <div class="card">
+                <div class="card-title">📊 isInStock Field</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Entity</th>
+                            <th>Has isInStock?</th>
+                            <th>Default</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>MenuItem</td>
+                            <td>✅ Yes</td>
+                            <td><code>true</code></td>
+                        </tr>
+                        <tr>
+                            <td>Addon</td>
+                            <td>✅ Yes</td>
+                            <td><code>true</code></td>
+                        </tr>
+                        <tr>
+                            <td>Variant</td>
+                            <td>❌ No</td>
+                            <td>N/A (always available)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-title">⚠️ API Stock Filtering Defaults (INVERTED)</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>API</th>
+                            <th>inStock Default</th>
+                            <th>Behavior</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>getRestaurantMenu</code></td>
+                            <td><span class="status s-error">false</span></td>
+                            <td>Returns ALL items regardless of stock</td>
+                        </tr>
+                        <tr>
+                            <td><code>fetchMenu</code></td>
+                            <td><span class="status s-active">true</span></td>
+                            <td>Returns only in-stock items</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="imp">These APIs have <strong>inverted default behaviors</strong>!
+                    <code>getRestaurantMenu</code> defaults to showing all items; <code>fetchMenu</code> defaults to
+                    in-stock only.</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🔄 Stock Validation Timing</div>
+                <div class="status-flow">
+                    <span class="status s-info">Menu Fetch</span>
+                    <span class="status-arrow">→</span>
+                    <span class="status s-pending">Cart Add</span>
+                    <span class="status-arrow">→</span>
+                    <span class="status s-active">Checkout</span>
+                </div>
+                <ul class="bullet-list">
+                    <li class="info"><strong>Menu Fetch:</strong> Filter out unavailable items from display</li>
+                    <li class="info"><strong>Cart Add:</strong> Re-validate item availability before adding</li>
+                    <li class="success"><strong>Checkout:</strong> Final stock validation before order creation</li>
+                </ul>
+                <div class="imp">Stock is validated at EVERY stage. Items can go out of stock between cart add and
+                    checkout.</div>
+            </div>
+        </section>
+
+        <!-- AUTO-COMPUTED FIELDS -->
+        <section class="section" id="auto-computed">
+            <div class="section-title"><span class="section-icon">⚙️</span> Auto-Computed Fields</div>
+
+            <div class="card">
+                <div class="card-title">🤖 isCustomizable</div>
+                <div class="highlight-box">
+                    <div class="highlight-box-title">Auto-Computation Logic</div>
+                    <pre
+                        style="background: var(--bg-card); padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 8px;">
+const isCustomizable = (menuItemData.variants && menuItemData.variants.length > 0) || 
+                       (menuItemData.addons && menuItemData.addons.length > 0);
+                    </pre>
+                </div>
+                <ul class="bullet-list">
+                    <li class="success">Set to <code>true</code> if MenuItem has ANY variants OR addons</li>
+                    <li class="warning">Recomputed on EVERY create/update operation</li>
+                    <li class="error">Never set manually – will be overwritten</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="card-title">⏰ lastUpdated</div>
+                <ul class="bullet-list">
+                    <li class="info">Set to server timestamp on every create/update</li>
+                    <li class="info">Uses <code>timestamp.serverTimestamp()</code></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- API REFERENCE -->
+        <section class="section" id="api-reference">
+            <div class="section-title"><span class="section-icon">🎯</span> API Reference</div>
+
+            <div class="legend-api">
+                <div class="legend-api-item">
+                    <span class="legend-api-color" style="background: rgba(5, 150, 105, 0.3);"></span>
+                    <span><strong class="field-mandatory">Green</strong> = Mandatory field</span>
+                </div>
+                <div class="legend-api-item">
+                    <span class="legend-api-color" style="background: rgba(8, 145, 178, 0.3);"></span>
+                    <span><strong class="field-optional">Cyan</strong> = Optional/Nullable field</span>
+                </div>
+                <div class="legend-api-item">
+                    <span class="api-type api-type-public">PUBLIC</span> = Firebase Callable
+                </div>
+                <div class="legend-api-item">
+                    <span class="api-type api-type-internal">INTERNAL</span> = Internal function
+                </div>
+                <div class="legend-api-item">
+                    <span class="api-type api-type-http">HTTP</span> = HTTP Endpoint
+                </div>
+            </div>
+
+            <!-- getRestaurantMenu API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">getRestaurantMenu</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Primary menu fetch API – default inStock=false</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"restaurantId"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">//
+                                Required</span>
+                            <span class="field-optional">"inStock"</span>: <span class="field-value-bool">false</span>
+                            <span class="field-comment">// Optional, default: false</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Sample Response</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"status"</span>: <span
+                                class="field-value-string">"success"</span>,
+                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Restaurant
+                                menu fetched successfully"</span>,
+                            <span class="field-mandatory">"data"</span>: {
+                            <span class="field-mandatory">"categories"</span>: [
+                            { <span class="field-mandatory">"id"</span>: <span class="field-value-string">"cat1"</span>,
+                            <span class="field-mandatory">"name"</span>: <span
+                                class="field-value-string">"Starters"</span>, <span
+                                class="field-mandatory">"order"</span>: <span class="field-value-number">1</span> }
+                            ],
+                            <span class="field-mandatory">"menuItems"</span>: {
+                            <span class="field-key">"cat1"</span>: [
+                            {
+                            <span class="field-mandatory">"menuItemId"</span>: <span
+                                class="field-value-string">"item1"</span>,
+                            <span class="field-mandatory">"meta"</span>: { <span class="field-mandatory">"name"</span>:
+                            <span class="field-value-string">"Spring Rolls"</span>, ... },
+                            <span class="field-mandatory">"priceInfo"</span>: { <span
+                                class="field-mandatory">"basePrice"</span>: <span class="field-value-number">150</span>,
+                            <span class="field-optional">"discount"</span>: <span class="field-value-number">10</span>,
+                            <span class="field-optional">"finalPrice"</span>: <span
+                                class="field-value-number">135</span> },
+                            <span class="field-optional">"variants"</span>: [{ <span
+                                class="field-mandatory">"id"</span>: <span class="field-value-string">"v1"</span>, <span
+                                class="field-mandatory">"name"</span>: <span class="field-value-string">"Large"</span>,
+                            <span class="field-mandatory">"priceInfo"</span>: {...}, ... }],
+                            <span class="field-optional">"addons"</span>: [{ <span class="field-mandatory">"id"</span>:
+                            <span class="field-value-string">"a1"</span>, <span class="field-mandatory">"name"</span>:
+                            <span class="field-value-string">"Extra Sauce"</span>, ... }],
+                            <span class="field-mandatory">"isInStock"</span>: <span
+                                class="field-value-bool">true</span>,
+                            <span class="field-optional">"isCustomizable"</span>: <span
+                                class="field-value-bool">true</span>
+                            }
+                            ]
+                            },
+                            <span class="field-mandatory">"metadata"</span>: { <span
+                                class="field-mandatory">"totalCategories"</span>: <span
+                                class="field-value-number">5</span>, <span
+                                class="field-mandatory">"totalMenuItems"</span>: <span
+                                class="field-value-number">42</span> }
+                            }
+                            }
+                        </div>
+                    </div>
+                    <div class="note warn">⚠️ Default <code>inStock=false</code> returns ALL items. Pass
+                        <code>inStock=true</code> to filter.</div>
+                </div>
+            </div>
+
+            <!-- fetchMenu API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">fetchMenu</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Secondary fetch API – default inStock=true</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"restaurantId"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">//
+                                Required</span>
+                            <span class="field-optional">"inStock"</span>: <span class="field-value-bool">true</span>
+                            <span class="field-comment">// Optional, default: true</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="note warn">⚠️ Uses <code>MenuValidation.validateMenuFetchInput()</code> – stricter
+                        validation. Default <code>inStock=true</code>.</div>
+                </div>
+            </div>
+
+            <!-- addMenuItem API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">addMenuItem</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Create a new menu item with auto-computed fields</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"restaurantId"</span>: <span
+                                class="field-value-string">"string"</span>,
+                            <span class="field-mandatory">"menuItemData"</span>: {
+                            <span class="field-mandatory">"meta"</span>: { <span class="field-mandatory">"name"</span>:
+                            <span class="field-value-string">"string"</span>, <span
+                                class="field-optional">"description"</span>: <span
+                                class="field-value-string">"string"</span>, ... },
+                            <span class="field-mandatory">"categoryId"</span>: <span
+                                class="field-value-string">"string"</span>,
+                            <span class="field-mandatory">"priceInfo"</span>: { <span
+                                class="field-mandatory">"basePrice"</span>: <span
+                                class="field-value-number">number</span>, <span
+                                class="field-optional">"discount"</span>: <span class="field-value-number">number</span>
+                            },
+                            <span class="field-optional">"variants"</span>: [{ <span
+                                class="field-mandatory">"id"</span>: <span class="field-value-string">"string"</span>,
+                            <span class="field-optional">"name"</span>: <span class="field-value-string">"string"</span>
+                            }],
+                            <span class="field-optional">"addons"</span>: <span class="field-value-string">["addonId1",
+                                "addonId2"]</span>,
+                            <span class="field-optional">"isInStock"</span>: <span class="field-value-bool">true</span>
+                            <span class="field-comment">// Default: true</span>
+                            }
+                            }
+                        </div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Sample Response</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"status"</span>: <span
+                                class="field-value-string">"success"</span>,
+                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Menu item
+                                added successfully"</span>,
+                            <span class="field-mandatory">"data"</span>: {
+                            <span class="field-mandatory">"menuItemId"</span>: <span
+                                class="field-value-string">"newItemId123"</span>,
+                            <span class="field-mandatory">"menuItem"</span>: { ... }
+                            }
+                            }
+                        </div>
+                    </div>
+                    <div class="note"><code>isCustomizable</code> is auto-computed based on variants/addons presence.
+                    </div>
+                </div>
+            </div>
+
+            <!-- updateMenuItem API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">updateMenuItem</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Update menu item with isCustomizable recomputation</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"restaurantId"</span>: <span
+                                class="field-value-string">"string"</span>,
+                            <span class="field-mandatory">"menuItemId"</span>: <span
+                                class="field-value-string">"string"</span>,
+                            <span class="field-mandatory">"updateData"</span>: {
+                            <span class="field-optional">"meta"</span>: { ... },
+                            <span class="field-optional">"categoryId"</span>: <span
+                                class="field-value-string">"string"</span>,
+                            <span class="field-optional">"priceInfo"</span>: { ... },
+                            <span class="field-optional">"variants"</span>: [...],
+                            <span class="field-optional">"addons"</span>: [...],
+                            <span class="field-optional">"isInStock"</span>: <span
+                                class="field-value-bool">boolean</span>
+                            }
+                            }
+                        </div>
+                    </div>
+                    <div class="note warn">⚠️ <code>isCustomizable</code> is recomputed on every update based on new
+                        variants/addons.</div>
+                </div>
+            </div>
+
+            <!-- deleteMenuItem API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">deleteMenuItem</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Delete a menu item – no cascade delete</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"restaurantId"</span>: <span
+                                class="field-value-string">"string"</span>,
+                            <span class="field-mandatory">"menuItemId"</span>: <span
+                                class="field-value-string">"string"</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="note warn">⚠️ No cascade delete – orphaned variant/addon references may remain.</div>
+                </div>
+            </div>
+
+            <!-- updateMenuItemAvailability API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">updateMenuItemAvailability</span>
+                    <span class="api-type api-type-http">HTTP</span>
+                    <span class="api-desc">Toggle isInStock flag – HTTP POST endpoint</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters (HTTP POST body)</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"restaurantId"</span>: <span
+                                class="field-value-string">"string"</span>,
+                            <span class="field-mandatory">"menuItemId"</span>: <span
+                                class="field-value-string">"string"</span>,
+                            <span class="field-mandatory">"isAvailable"</span>: <span
+                                class="field-value-bool">boolean</span> <span class="field-comment">// Must be explicit
+                                boolean</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="note warn">⚠️ <code>isAvailable</code> must be an explicit boolean, not truthy/falsy
+                        values.</div>
+                </div>
+            </div>
+
+            <!-- getAllCategories INTERNAL -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">getAllCategories</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">Fetch categories ordered by order field</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">getAllCategories</span>(restaurantRef) =>
+                            Promise&lt;Category[]&gt;
+
+                            <span class="field-comment">// Categories are ordered by 'order' field ascending</span>
+                            <span class="field-comment">// Throws error if any category is missing 'name' field</span>
+                        </div>
+                    </div>
+                    <div class="note">This is an internal function used by menu fetch operations.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VALIDATION LAYER -->
+        <section class="section" id="validation">
+            <div class="section-title"><span class="section-icon">🛡️</span> Validation Layer</div>
+
+            <div class="card">
+                <div class="card-title">MenuValidation Class Methods</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Validates</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>validateRestaurantId</code></td>
+                            <td>Non-empty restaurantId</td>
+                        </tr>
+                        <tr>
+                            <td><code>validateItemId</code></td>
+                            <td>Non-empty menuItemId</td>
+                        </tr>
+                        <tr>
+                            <td><code>validateCategoryId</code></td>
+                            <td>Non-empty categoryId</td>
+                        </tr>
+                        <tr>
+                            <td><code>validateVariantId</code></td>
+                            <td>Non-empty variantId</td>
+                        </tr>
+                        <tr>
+                            <td><code>validateCreateMenuItemInput</code></td>
+                            <td>Required: meta.name, categoryId, priceInfo.basePrice</td>
+                        </tr>
+                        <tr>
+                            <td><code>validateUpdateMenuItemInput</code></td>
+                            <td>Conditional: meta.name if meta provided, basePrice as number</td>
+                        </tr>
+                        <tr>
+                            <td><code>validateMenuFetchInput</code></td>
+                            <td>Required: data.data.restaurantId</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Error Format</div>
+                <div class="json-block">throw new functions.https.HttpsError(<span
+                        class="field-value-string">'invalid-argument'</span>, <span class="field-value-string">'Error
+                        message'</span>);</div>
+                <div class="imp">All validation errors use Firebase <code>HttpsError</code> with consistent format.
+                </div>
+            </div>
+        </section>
+
+        <!-- IMPORTANT NUANCES -->
+        <section class="section" id="nuances">
+            <div class="section-title"><span class="section-icon">📝</span> Important Nuances Summary</div>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Area</th>
+                            <th>Nuance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Stock Defaults</strong></td>
+                            <td><code>getRestaurantMenu</code>: inStock=false; <code>fetchMenu</code>: inStock=true</td>
+                        </tr>
+                        <tr>
+                            <td><strong>isCustomizable</strong></td>
+                            <td>Auto-computed; never set manually – will be overwritten</td>
+                        </tr>
+                        <tr>
+                            <td><strong>respectParentDiscount</strong></td>
+                            <td>Inherited at cart calculation time, NOT stored in menu</td>
+                        </tr>
+                        <tr>
+                            <td><strong>isMandatory</strong></td>
+                            <td>Variant MUST be selected before adding item to cart</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Category Order</strong></td>
+                            <td>Sorted by <code>order</code> field, NOT alphabetically</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Variant Resolution</strong></td>
+                            <td>Merged from collection + contextual name from MenuItem reference</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Addon Filtering</strong></td>
+                            <td>Addons ARE filtered by stock; Variants are NOT</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Input Format</strong></td>
+                            <td>Handles both <code>data.data.x</code> and <code>data.x</code> patterns</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Validation</strong></td>
+                            <td>Centralized in <code>MenuValidation</code> class</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Legacy Cart</strong></td>
+                            <td><code>creation/</code> folder contains deprecated cart functions – use
+                                <code>cart/</code> package</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- LEGACY SECTION -->
+        <section class="section" id="legacy">
+            <div class="section-title"><span class="section-icon">🗄️</span> Legacy Cart Operations (Deprecated)</div>
+
+            <div class="card">
+                <div class="card-title">⚠️ creation/ Folder</div>
+                <ul class="bullet-list">
+                    <li class="error"><code>menu_add.js</code> - Uses session-based cart storage (deprecated)</li>
+                    <li class="error"><code>menu_remove.js</code> - Uses user-based cart structure (deprecated)</li>
+                    <li class="warning">Main cart operations are in the <code>cart/</code> package</li>
+                </ul>
+                <div class="imp">These functions are marked for migration to restaurant/table-based cart structure. Do
+                    NOT use for new development.</div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Toggle API accordion
+        function toggleApi(header) {
+            header.classList.toggle('open');
+            const content = header.nextElementSibling;
+            content.classList.toggle('open');
+        }
+
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+                fontSize: '12px',
+                primaryColor: '#6366f1',
+                primaryTextColor: '#1e293b',
+                primaryBorderColor: '#e2e8f0',
+                lineColor: '#64748b',
+                secondaryColor: '#f1f5f9',
+                tertiaryColor: '#f8fafc',
+                background: '#ffffff',
+                mainBkg: '#f8fafc',
+                nodeBorder: '#e2e8f0',
+                clusterBkg: '#f1f5f9',
+                clusterBorder: '#e2e8f0'
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plattr Pro - Cart Flow Detailed Specification</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Custom styles for important nuances */
+        .imp {
+            background: linear-gradient(90deg, rgba(234, 88, 12, 0.15) 0%, transparent 100%);
+            border-left: 4px solid #ea580c;
+            padding: 10px 14px;
+            border-radius: 0 6px 6px 0;
+            margin: 8px 0;
+            font-weight: 500;
+        }
+
+        .imp::before {
+            content: "⚡ IMP: ";
+            color: #ea580c;
+            font-weight: 700;
+        }
+
+        .flow-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin: 10px 0;
+        }
+
+        .flow-step-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--accent);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .flow-step-content {
+            padding-left: 20px;
+        }
+
+        .flow-step-content li {
+            margin: 6px 0;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .highlight-box {
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 8px;
+            padding: 14px;
+            margin: 12px 0;
+        }
+
+        .highlight-box-title {
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .status-flow {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+
+        .status-arrow {
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        /* Collapsible API Dropdown Styles */
+        .api-accordion {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .api-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border-bottom: 1px solid transparent;
+        }
+
+        .api-header:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .api-header.open {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .api-toggle {
+            font-size: 12px;
+            color: var(--text-muted);
+            transition: transform 0.2s ease;
+        }
+
+        .api-header.open .api-toggle {
+            transform: rotate(90deg);
+        }
+
+        .api-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .api-type {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .api-type-public {
+            background: rgba(5, 150, 105, 0.15);
+            color: var(--success);
+        }
+
+        .api-type-internal {
+            background: rgba(217, 119, 6, 0.15);
+            color: var(--warning);
+        }
+
+        .api-type-trigger {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent2);
+        }
+
+        .api-type-fcm {
+            background: rgba(234, 88, 12, 0.15);
+            color: #ea580c;
+        }
+
+        .api-desc {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-left: auto;
+        }
+
+        .api-content {
+            display: none;
+            padding: 16px;
+            background: var(--bg-secondary);
+        }
+
+        .api-content.open {
+            display: block;
+        }
+
+        .api-params,
+        .api-response {
+            margin-bottom: 14px;
+        }
+
+        .api-section-title {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .json-block {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.5;
+        }
+
+        /* Field coloring for JSON */
+        .field-mandatory {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .field-optional {
+            color: #0891b2;
+            font-style: italic;
+        }
+
+        .field-key {
+            color: var(--accent);
+        }
+
+        .field-value-string {
+            color: #ea580c;
+        }
+
+        .field-value-number {
+            color: #8b5cf6;
+        }
+
+        .field-value-bool {
+            color: #db2777;
+        }
+
+        .field-comment {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .legend-api {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 12px;
+        }
+
+        .legend-api-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-api-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <span class="nav-logo">🛒 Cart Flow Spec</span>
+        <a href="#overview">Overview</a>
+        <a href="#cart-structure">Cart Structure</a>
+        <a href="#cart-operations">Operations</a>
+        <a href="#price-calculation">Price Calculation</a>
+        <a href="#cart-validation">Validation</a>
+        <a href="#checkout-flow">Checkout</a>
+        <a href="#api-reference">API Reference</a>
+        <a href="#constants">Constants</a>
+        <span style="margin-left: auto; display: flex; gap: 8px;">
+            <a href="CONSUMER_APP_FLOW.html" style="color:#6366f1;border:1px solid #6366f1;">🍽️ Consumer Flow</a>
+            <a href="order_flow_detailed_spec.html" style="color:#f97316;border:1px solid #f97316;">📦 Order Flow</a>
+        </span>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>Cart Flow Detailed Specification</h1>
+            <p>Complete technical breakdown of cart management, price calculation, and checkout flow</p>
+            <div class="badges">
+                <span class="badge">🛒 Cart Management</span>
+                <span class="badge">✅ Validation</span>
+                <span class="badge">💰 Price Calculation</span>
+                <span class="badge">📦 Checkout</span>
+            </div>
+        </div>
+
+        <!-- OVERVIEW -->
+        <section class="section" id="overview">
+            <div class="section-title"><span class="section-icon">📋</span> System Overview</div>
+            <div class="card">
+                <div class="card-title">Key Concepts</div>
+                <ul class="bullet-list">
+                    <li class="info">A <strong>Cart</strong> represents items a customer wants to order from a table
+                    </li>
+                    <li class="info">Carts are scoped to <code>restaurantId + tableId</code> (one cart per table)</li>
+                    <li class="info">Carts are stored at <code>restaurants/{rid}/carts/{tableId}</code></li>
+                    <li class="info">Each cart contains <strong>Cart Items</strong> (menu selections with
+                        customizations)</li>
+                    <li class="success">Carts are linked to <strong>Sessions</strong> for customer tracking</li>
+                </ul>
+                <div class="imp">Only ONE active cart per table at a time. Cart is cleared after successful checkout.
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Entity Relationships</div>
+                <pre
+                    style="background: var(--bg-secondary); padding: 14px; border-radius: 6px; font-size: 12px; overflow-x: auto;">
+┌─────────────┐      ┌──────────────┐      ┌─────────────┐
+│  CUSTOMER   │──────│   SESSION    │──────│    TABLE    │
+└─────────────┘      └──────────────┘      └─────────────┘
+                            │
+                            ▼
+┌─────────────┐      ┌──────────────┐      ┌─────────────┐
+│   CART      │◄─────│   CHECKOUT   │─────►│   ORDER     │
+└─────────────┘      └──────────────┘      └─────────────┘
+      │                                           │
+      ▼                                           ▼
+┌─────────────┐                            ┌─────────────┐
+│ CART ITEMS  │                            │   CARTS[]   │
+│ (in cart)   │                            │ (in order)  │
+└─────────────┘                            └─────────────┘
+                </pre>
+                <div class="imp">A single order can have multiple carts (from multiple checkouts in same session). Cart
+                    becomes a snapshot within the order after checkout.</div>
+            </div>
+        </section>
+
+        <!-- CART STRUCTURE -->
+        <section class="section" id="cart-structure">
+            <div class="section-title"><span class="section-icon">📄</span> Cart Data Structure</div>
+
+            <div class="card">
+                <div class="card-title">Cart Document Structure</div>
+                <pre
+                    style="background: var(--bg-secondary); padding: 14px; border-radius: 6px; font-size: 12px; overflow-x: auto;">
+{
+  "restaurantId": "abc123",       // Reference to restaurant
+  "tableId": "table-5",           // Reference to table
+  "sessionId": "session-xyz",     // Active session ID
+  "items": [CartItem],            // Array of cart items
+  "priceInfo": CartTotalPriceInfo, // Aggregated price totals
+  "lastUpdated": Timestamp        // Last modification time
+}
+                </pre>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Cart Item Structure</div>
+                <pre
+                    style="background: var(--bg-secondary); padding: 14px; border-radius: 6px; font-size: 12px; overflow-x: auto;">
+{
+  "menuItemId": "burger123",      // Reference to menu item
+  "menuItem": {...},              // Snapshot of menu item data
+  "quantity": 2,                  // Item quantity (>= 1)
+  "cartItemId": 1,                // Unique ID within cart (auto-incremented)
+  "status": "PENDING",            // Item status
+
+  "selectedVariantsDetails": [{
+    "id": "size",
+    "name": "Size",
+    "isMandatory": true,
+    "respectParentDiscount": true,
+    "selected_variant_id": "large",
+    "selected_variant_name": "Large",
+    "priceInfo": BasicPriceInfo
+  }],
+
+  "selectedAddonsDetails": [{
+    "id": "extraCheese",
+    "name": "Extra Cheese",
+    "respectParentDiscount": true,
+    "priceInfo": BasicPriceInfo
+  }],
+
+  "priceInfo": CartItemPriceInfo  // Price (item × quantity)
+}
+                </pre>
+                <div class="imp">cartItemId is auto-incremented and unique within the cart. Used for precise item
+                    targeting in remove operations.</div>
+            </div>
+
+            <div class="grid grid-3">
+                <div class="card">
+                    <div class="card-title">BasicPriceInfo</div>
+                    <p>For menu items, variants, addons</p>
+                    <pre style="background: var(--bg-secondary); padding: 10px; border-radius: 6px; font-size: 11px;">
+{
+  "basePrice": 100,
+  "finalPrice": 90,
+  "discount": 10
+}
+                    </pre>
+                </div>
+                <div class="card">
+                    <div class="card-title">CartItemPriceInfo</div>
+                    <p>For individual cart items</p>
+                    <pre style="background: var(--bg-secondary); padding: 10px; border-radius: 6px; font-size: 11px;">
+{
+  "itemBasePrice": 100,
+  "itemFinalPrice": 90,
+  "totalVariantBasePrice": 20,
+  "totalVariantFinalPrice": 18,
+  "totalAddonBasePrice": 30,
+  "totalAddonFinalPrice": 30,
+  "totalBasePrice": 300,
+  "finalPrice": 276,
+  "discount": 10,
+  "discountAmount": 24
+}
+                    </pre>
+                </div>
+                <div class="card">
+                    <div class="card-title">CartTotalPriceInfo</div>
+                    <p>For entire cart</p>
+                    <pre style="background: var(--bg-secondary); padding: 10px; border-radius: 6px; font-size: 11px;">
+{
+  "basePrice": 500,
+  "finalPrice": 450,
+  "totalVariantBasePrice": 40,
+  "totalAddonBasePrice": 60,
+  "totalDiscount": 10,
+  "totalDiscountAmount": 50
+}
+                    </pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- CART OPERATIONS -->
+        <section class="section" id="cart-operations">
+            <div class="section-title"><span class="section-icon">⚙️</span> Cart Item Operations</div>
+
+            <div class="flow-step">
+                <div class="flow-step-title">➕ Adding Items to Cart</div>
+                <div class="flow-step-content">
+                    <ul>
+                        <li><strong>Validate inputs:</strong> tableId, restaurantId, menuItemId, quantity (≥1)</li>
+                        <li><strong>Validate session</strong> if sessionId provided (active status check)</li>
+                        <li><strong>Check feature flag</strong> <code>fallbackToSameCustomConfigurationForAddItem</code>
+                        </li>
+                        <li><strong>Firestore transaction</strong> for race condition prevention</li>
+                        <li><strong>Validate stock:</strong> Item must be in stock (<code>isInStock: true</code>)</li>
+                        <li><strong>Process variants:</strong> Validate mandatory variants, fetch from Firestore</li>
+                        <li><strong>Process addons:</strong> Validate all addon IDs exist</li>
+                        <li><strong>Calculate item price</strong> via <code>calculateItemPrice()</code></li>
+                        <li><strong>Detect duplicates:</strong> Same menuItemId + variants + addons</li>
+                    </ul>
+                    <div class="imp">Stock is validated at add-to-cart AND again at checkout. Items can go out of stock
+                        between these operations.</div>
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <div class="highlight-box-title">Duplicate Detection Logic</div>
+                <ul class="bullet-list">
+                    <li class="info">If identical item exists (same menuItemId + variants + addons): <strong>increment
+                            quantity</strong></li>
+                    <li class="warning">If different config exists: Check
+                        <code>isMultipleVariantOrAddonForMenuItemsSupported</code> flag</li>
+                    <li class="success">Flag ON: Add as new item with different cartItemId</li>
+                    <li class="error">Flag OFF: Return error with existing item details</li>
+                </ul>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-step-title">➖ Removing Items from Cart</div>
+                <div class="flow-step-content">
+                    <ul>
+                        <li><strong>Locate target item:</strong> First by <code>cartItemId</code>, fallback to
+                            <code>menuItemId</code></li>
+                        <li><strong>If quantity > 1:</strong> Decrement by 1, recalculate item price</li>
+                        <li><strong>If quantity = 1:</strong> Remove item from array entirely</li>
+                        <li><strong>If no items remain:</strong> Delete entire cart document</li>
+                        <li>Recalculate cart totals via <code>calculateCartValue()</code></li>
+                    </ul>
+                    <div class="imp">cartItemId takes precedence over menuItemId for precise item matching. This
+                        disambiguates same menu item with different customizations.</div>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-step-title">📖 Retrieving Cart (getCart)</div>
+                <div class="flow-step-content">
+                    <ul>
+                        <li>Fetch cart from Firestore by tableId</li>
+                        <li><strong>Auto-heal on retrieval:</strong> Fix missing arrays, invalid quantities</li>
+                        <li><strong>Sanitize price values</strong> using price models (prevent NaN)</li>
+                        <li><strong>Recalculate totals</strong> via <code>calculateCartValue()</code></li>
+                        <li>If cart doesn't exist: Return empty cart structure (not null)</li>
+                    </ul>
+                    <div class="imp">Cart recalculation happens on every getCart call for consistency. This ensures
+                        prices are always up-to-date.</div>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-step-title">🗑️ Clearing Cart (clearCart)</div>
+                <div class="flow-step-content">
+                    <ul>
+                        <li>Fetch cart document from Firestore</li>
+                        <li>Delete entire cart document</li>
+                        <li>Returns success message</li>
+                    </ul>
+                    <div class="imp">clearCartInternal is used by checkoutCart. If cart clearing fails after order
+                        creation, order is still considered successful (logged as warning).</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PRICE CALCULATION -->
+        <section class="section" id="price-calculation">
+            <div class="section-title"><span class="section-icon">💰</span> Price Calculation System</div>
+
+            <div class="card">
+                <div class="card-title">calculateItemPrice Logic</div>
+                <div class="highlight-box">
+                    <div class="highlight-box-title">Function:
+                        <code>calculateItemPrice(menuItem, selectedVariants, selectedAddons)</code></div>
+                    <ul class="bullet-list">
+                        <li class="info">Get item base price and discount from menuItem</li>
+                        <li class="info"><strong>Process variants:</strong> Sum variant base prices</li>
+                        <li class="warning">If <code>respectParentDiscount = true</code>: Apply item discount to variant
+                        </li>
+                        <li class="info">If <code>respectParentDiscount = false</code>: Use variant's own final price
+                        </li>
+                        <li class="info"><strong>Process addons:</strong> Same logic as variants for discount
+                            inheritance</li>
+                        <li class="success">Round all values to 2 decimal places</li>
+                    </ul>
+                </div>
+                <pre
+                    style="background: var(--bg-secondary); padding: 14px; border-radius: 6px; font-size: 12px; overflow-x: auto;">
+// Calculation Formula
+totalBase = itemBase + variantBase + addonBase
+totalFinal = itemFinal + variantFinal + addonFinal
+discountAmount = totalBase - totalFinal
+
+// For quantity > 1, multiply by quantity
+finalPrice = totalFinal × quantity
+                </pre>
+                <div class="imp">respectParentDiscount flag controls whether variants/addons inherit the parent item's
+                    discount or use their own pricing.</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">calculateCartValue Logic</div>
+                <div class="highlight-box">
+                    <div class="highlight-box-title">Function: <code>calculateCartValue(cart)</code></div>
+                    <ul class="bullet-list">
+                        <li class="info">Loop through all items in cart</li>
+                        <li class="warning">Skip cancelled items (<code>status === 'cancelled'</code>)</li>
+                        <li class="info">Accumulate: basePrice, finalPrice, variant prices, addon prices</li>
+                        <li class="info"><code>totalDiscountAmount = basePrice - finalPrice</code></li>
+                        <li class="info"><code>totalDiscount = (totalDiscountAmount / basePrice) × 100</code></li>
+                    </ul>
+                </div>
+                <div class="imp">Cancelled items are excluded from totals. Invalid quantities are automatically treated
+                    as 1.</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Tax Handling</div>
+                <ul class="bullet-list">
+                    <li class="info">Check restaurant setting: <code>includeTaxInFinalPrice</code></li>
+                    <li class="warning">If <strong>true</strong>: Prices already include tax (display as-is)</li>
+                    <li class="info">If <strong>false</strong>: Tax calculated separately at checkout</li>
+                    <li class="info">Tax rate stored in restaurant document</li>
+                </ul>
+                <div class="imp">Tax calculation is handled at the order level, not in cart price calculations.</div>
+            </div>
+        </section>
+
+        <!-- CART VALIDATION -->
+        <section class="section" id="cart-validation">
+            <div class="section-title"><span class="section-icon">✅</span> Cart Validation</div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">validateCart Function</div>
+                    <ul class="bullet-list">
+                        <li class="success">Validates cart structure exists</li>
+                        <li class="success">Validates items array is non-empty</li>
+                        <li class="success">Checks price consistency for each item</li>
+                        <li class="warning">If validation fails: triggers recalculation</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-title">Stock Validation at Checkout</div>
+                    <ul class="bullet-list">
+                        <li class="success">Fetch all menu items from cart</li>
+                        <li class="success">Check <code>isInStock</code> flag for each</li>
+                        <li class="error">If any out of stock: 412 error with item names</li>
+                        <li class="info">Batch fetch for performance</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Input Validation (cartInputValidation.js)</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Function</th>
+                            <th>Required Fields</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>validateAddItemFields</code></td>
+                            <td>tableId, restaurantId, menuItemId, quantity</td>
+                            <td>quantity must be ≥ 1</td>
+                        </tr>
+                        <tr>
+                            <td><code>validateRemoveItemFields</code></td>
+                            <td>tableId, restaurantId, menuItemId</td>
+                            <td>cartItemId optional but preferred</td>
+                        </tr>
+                        <tr>
+                            <td><code>validateGetCartFields</code></td>
+                            <td>restaurantId, tableId</td>
+                            <td>sessionId optional</td>
+                        </tr>
+                        <tr>
+                            <td><code>validateCheckoutFields</code></td>
+                            <td>restaurantId, tableId</td>
+                            <td>sessionId validated separately</td>
+                        </tr>
+                        <tr>
+                            <td><code>validateCheckoutSession</code></td>
+                            <td>restaurantId, tableId, sessionId</td>
+                            <td><strong>Session MANDATORY for checkout</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="imp">Session validation is optional for cart operations but MANDATORY for checkout. Invalid
+                    session returns 401 with OTP requirements.</div>
+            </div>
+        </section>
+
+        <!-- CHECKOUT FLOW -->
+        <section class="section" id="checkout-flow">
+            <div class="section-title"><span class="section-icon">📦</span> Checkout Flow</div>
+
+            <div class="flow-step">
+                <div class="flow-step-title">🔐 1. Session Validation</div>
+                <div class="flow-step-content">
+                    <ul>
+                        <li>SessionId is <strong>mandatory</strong> for checkout</li>
+                        <li>If no sessionId → returns 401 with OTP requirements</li>
+                        <li>If session invalid/inactive → returns 401 with OTP requirements</li>
+                    </ul>
+                    <div class="imp">Checkout cannot proceed without a valid, active session. This ensures customer
+                        tracking and order attribution.</div>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-step-title">🛒 2. Cart Retrieval & Validation</div>
+                <div class="flow-step-content">
+                    <ul>
+                        <li>Fetch cart directly from Firestore</li>
+                        <li>Validate cart exists → else 412 error</li>
+                        <li>Validate cart has items → else 412 error</li>
+                        <li>Validate price consistency via <code>validateCart()</code></li>
+                        <li>If prices inconsistent → recalculate via <code>calculateCartValue()</code></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-step-title">📋 3. Stock Validation</div>
+                <div class="flow-step-content">
+                    <ul>
+                        <li>Fetch all menu items in cart from Firestore</li>
+                        <li>Check <code>isInStock</code> flag for each item</li>
+                        <li>If any items out of stock → 412 error with item names</li>
+                    </ul>
+                    <div class="imp">Stock is validated AGAIN at checkout (even if validated when adding to cart). This
+                        prevents race conditions where items go out of stock between add-to-cart and checkout.</div>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-step-title">📝 4. Order Creation via <code>createOrUpdateOrder</code></div>
+                <div class="flow-step-content">
+                    <ul>
+                        <li>Checks for existing active order for same table+session</li>
+                        <li><strong>If exists:</strong> Appends cart as new snapshot to order's <code>carts[]</code>
+                            array</li>
+                        <li><strong>If not:</strong> Creates new order with this cart</li>
+                        <li>Generates order number: <code>ORD-00001</code> format</li>
+                        <li>Sets order status to <code>IN_PROGRESS</code></li>
+                    </ul>
+                    <div class="imp">Items are stored at BOTH order level (items[]) and cart level (carts[].items[]) for
+                        different use cases.</div>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-step-title">🧹 5. Cart Clearing</div>
+                <div class="flow-step-content">
+                    <ul>
+                        <li>Calls <code>clearCartInternal()</code></li>
+                        <li>Deletes the cart document from Firestore</li>
+                        <li>Returns order details to client</li>
+                    </ul>
+                    <div class="imp">If cart clearing fails after order creation, the order is still considered
+                        successful. This prevents data loss.</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">State Machine: Cart → Order</div>
+                <div class="diagram">
+                    <div class="mermaid">
+                        stateDiagram-v2
+                        [*] --> Cart: Add Items
+                        Cart --> Validating: Checkout Click
+                        Validating --> StockCheck: Session Valid
+                        Validating --> [*]: Session Invalid (401)
+                        StockCheck --> OrderCreation: All In Stock
+                        StockCheck --> [*]: Out of Stock (412)
+                        OrderCreation --> CartClearing: Order Created
+                        CartClearing --> Success: Cart Cleared
+                        CartClearing --> Success: Clear Failed (logged)
+                        Success --> [*]
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- API REFERENCE -->
+        <section class="section" id="api-reference">
+            <div class="section-title"><span class="section-icon">🎯</span> API Reference</div>
+
+            <div class="legend-api">
+                <div class="legend-api-item">
+                    <span class="legend-api-color" style="background: rgba(5, 150, 105, 0.3);"></span>
+                    <span><strong class="field-mandatory">Green</strong> = Mandatory field</span>
+                </div>
+                <div class="legend-api-item">
+                    <span class="legend-api-color" style="background: rgba(8, 145, 178, 0.3);"></span>
+                    <span><strong class="field-optional">Cyan</strong> = Optional/Nullable field</span>
+                </div>
+                <div class="legend-api-item">
+                    <span class="api-type api-type-public">PUBLIC</span> = Firebase Callable
+                </div>
+                <div class="legend-api-item">
+                    <span class="api-type api-type-internal">INTERNAL</span> = Internal function
+                </div>
+            </div>
+
+            <!-- getCart API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">getCart</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Retrieve cart contents for a table</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"restaurantId"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">//
+                                Required</span>
+                            <span class="field-mandatory">"tableId"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">//
+                                Required</span>
+                            <span class="field-optional">"sessionId"</span>: <span
+                                class="field-value-string">"string"</span> <span class="field-comment">// Optional -
+                                validated if provided</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Sample Response</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"status"</span>: <span
+                                class="field-value-string">"success"</span>,
+                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cart
+                                retrieved successfully."</span>,
+                            <span class="field-mandatory">"data"</span>: {
+                            <span class="field-mandatory">"cart"</span>: {
+                            <span class="field-mandatory">"restaurantId"</span>: <span
+                                class="field-value-string">"restaurant_xyz"</span>,
+                            <span class="field-mandatory">"tableId"</span>: <span
+                                class="field-value-string">"table-5"</span>,
+                            <span class="field-optional">"sessionId"</span>: <span
+                                class="field-value-string">"session_123"</span>,
+                            <span class="field-mandatory">"items"</span>: [
+                            {
+                            <span class="field-mandatory">"menuItemId"</span>: <span
+                                class="field-value-string">"burger123"</span>,
+                            <span class="field-mandatory">"quantity"</span>: <span class="field-value-number">2</span>,
+                            <span class="field-mandatory">"cartItemId"</span>: <span
+                                class="field-value-number">1</span>,
+                            <span class="field-mandatory">"status"</span>: <span
+                                class="field-value-string">"PENDING"</span>,
+                            <span class="field-optional">"selectedVariantsDetails"</span>: [...],
+                            <span class="field-optional">"selectedAddonsDetails"</span>: [...],
+                            <span class="field-mandatory">"priceInfo"</span>: {...}
+                            }
+                            ],
+                            <span class="field-mandatory">"priceInfo"</span>: {
+                            <span class="field-mandatory">"basePrice"</span>: <span
+                                class="field-value-number">500</span>,
+                            <span class="field-mandatory">"finalPrice"</span>: <span
+                                class="field-value-number">450</span>,
+                            <span class="field-mandatory">"totalDiscount"</span>: <span
+                                class="field-value-number">10</span>,
+                            <span class="field-mandatory">"totalDiscountAmount"</span>: <span
+                                class="field-value-number">50</span>
+                            },
+                            <span class="field-mandatory">"lastUpdated"</span>: <span
+                                class="field-value-string">"2024-01-15T10:30:00.000Z"</span>
+                            }
+                            }
+                            }
+                        </div>
+                    </div>
+                    <div class="note">📝 Cart auto-heals on retrieval - fixes NaN values, missing fields, and
+                        recalculates totals.</div>
+                </div>
+            </div>
+
+            <!-- addItemToCart API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">addItemToCart</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Add menu item to cart with variants/addons</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"tableId"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">//
+                                Required</span>
+                            <span class="field-mandatory">"restaurantId"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">//
+                                Required</span>
+                            <span class="field-mandatory">"menuItemId"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">//
+                                Required</span>
+                            <span class="field-mandatory">"quantity"</span>: <span class="field-value-number">1</span>,
+                            <span class="field-comment">// Required, >= 1</span>
+                            <span class="field-optional">"selectedVariants"</span>: { <span class="field-comment">//
+                                Optional - map of variantId -> optionId</span>
+                            "size": "large",
+                            "spice": "medium"
+                            },
+                            <span class="field-optional">"selectedAddons"</span>: [<span
+                                class="field-value-string">"extraCheese"</span>, <span
+                                class="field-value-string">"bacon"</span>], <span class="field-comment">// Optional -
+                                array of addon IDs</span>
+                            <span class="field-optional">"sessionId"</span>: <span
+                                class="field-value-string">"string"</span> <span class="field-comment">// Optional but
+                                recommended</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Sample Response</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Item added
+                                to cart successfully."</span>,
+                            <span class="field-mandatory">"status"</span>: <span
+                                class="field-value-string">"success"</span>,
+                            <span class="field-mandatory">"data"</span>: {
+                            <span class="field-mandatory">"cart"</span>: {
+                            <span class="field-mandatory">"restaurantId"</span>: <span
+                                class="field-value-string">"restaurant123"</span>,
+                            <span class="field-mandatory">"items"</span>: [...],
+                            <span class="field-mandatory">"priceInfo"</span>: {
+                            <span class="field-mandatory">"basePrice"</span>: <span
+                                class="field-value-number">10.0</span>,
+                            <span class="field-mandatory">"finalPrice"</span>: <span
+                                class="field-value-number">17.1</span>,
+                            <span class="field-mandatory">"totalDiscount"</span>: <span
+                                class="field-value-number">10.0</span>,
+                            <span class="field-mandatory">"totalDiscountAmount"</span>: <span
+                                class="field-value-number">1.9</span>
+                            },
+                            <span class="field-mandatory">"lastUpdated"</span>: <span
+                                class="field-value-string">"2025-01-22T13:45:00.000Z"</span>
+                            }
+                            }
+                            }
+                        </div>
+                    </div>
+                    <div class="note warn">⚠️ Errors: 400 for invalid quantity, 412 for out of stock, 412 for mandatory
+                        variant not selected.</div>
+                </div>
+            </div>
+
+            <!-- removeItemFromCart API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">removeItemFromCart</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Decrement quantity or remove item from cart</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"tableId"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">//
+                                Required</span>
+                            <span class="field-mandatory">"restaurantId"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">//
+                                Required</span>
+                            <span class="field-mandatory">"menuItemId"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">// Required
+                                (fallback identifier)</span>
+                            <span class="field-optional">"cartItemId"</span>: <span class="field-value-number">1</span>
+                            <span class="field-comment">// Optional but preferred (precise identifier)</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Sample Response</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Item
+                                removed from cart successfully."</span>,
+                            <span class="field-mandatory">"status"</span>: <span
+                                class="field-value-string">"success"</span>,
+                            <span class="field-mandatory">"data"</span>: {
+                            <span class="field-mandatory">"cart"</span>: {...} <span class="field-comment">// Updated
+                                cart or null if empty</span>
+                            }
+                            }
+                        </div>
+                    </div>
+                    <div class="note">📝 If cart becomes empty, the entire cart document is deleted.</div>
+                </div>
+            </div>
+
+            <!-- checkoutCart API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">checkoutCart</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Convert cart to order and clear cart</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"restaurantId"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">//
+                                Required</span>
+                            <span class="field-mandatory">"tableId"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">//
+                                Required</span>
+                            <span class="field-mandatory">"sessionId"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">// Required
+                                (MANDATORY!)</span>
+                            <span class="field-optional">"notes"</span>: <span class="field-value-string">"No onions
+                                please"</span> <span class="field-comment">// Optional</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Sample Response</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"status"</span>: <span
+                                class="field-value-string">"success"</span>,
+                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Checkout
+                                completed successfully."</span>,
+                            <span class="field-mandatory">"data"</span>: {
+                            <span class="field-mandatory">"orderId"</span>: <span
+                                class="field-value-string">"order_abc123"</span>,
+                            <span class="field-mandatory">"orderNumber"</span>: <span
+                                class="field-value-string">"ORD-00042"</span>,
+                            <span class="field-mandatory">"orderStatus"</span>: <span
+                                class="field-value-string">"IN_PROGRESS"</span>,
+                            <span class="field-mandatory">"timestamp"</span>: <span
+                                class="field-value-string">"2024-01-15T10:30:00.000Z"</span>
+                            }
+                            }
+                        </div>
+                    </div>
+                    <div class="note warn">⚠️ Session is MANDATORY. No sessionId returns 401 with OTP requirements. Out
+                        of stock items return 412.</div>
+                </div>
+            </div>
+
+            <!-- clearCart API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">clearCart</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Delete entire cart for a table</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"tableId"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">//
+                                Required</span>
+                            <span class="field-mandatory">"restaurantId"</span>: <span
+                                class="field-value-string">"string"</span> <span class="field-comment">//
+                                Required</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Sample Response</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cart
+                                cleared successfully."</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- clearCartInternal INTERNAL -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">clearCartInternal</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">Internal function used by checkoutCart</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">clearCartInternal</span>(
+                            <span class="field-mandatory">restaurantId</span>: string,
+                            <span class="field-mandatory">tableId</span>: string
+                            ) => Promise<void>
+                        </div>
+                    </div>
+                    <div class="note">Same logic as clearCart but throws Error instead of HttpsError. Used after order
+                        creation.</div>
+                </div>
+            </div>
+
+            <!-- updateCartStatus API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">updateCartStatus</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Update status of cart within an order (kitchen workflow)</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"restaurantId"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">//
+                                Required</span>
+                            <span class="field-mandatory">"orderId"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">//
+                                Required</span>
+                            <span class="field-mandatory">"cartIndex"</span>: <span class="field-value-number">0</span>,
+                            <span class="field-comment">// Required - 0-based index in order.carts[]</span>
+                            <span class="field-mandatory">"newStatus"</span>: <span
+                                class="field-value-string">"ACCEPTED"</span>, <span class="field-comment">// Required -
+                                valid CART_STATUS</span>
+                            <span class="field-optional">"notes"</span>: <span
+                                class="field-value-string">"string"</span>, <span class="field-comment">//
+                                Optional</span>
+                            <span class="field-optional">"sessionId"</span>: <span
+                                class="field-value-string">"string"</span> <span class="field-comment">//
+                                Optional</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Sample Response</div>
+                        <div class="json-block">{
+                            <span class="field-mandatory">"success"</span>: <span class="field-value-bool">true</span>,
+                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cart
+                                status updated to ACCEPTED"</span>,
+                            <span class="field-mandatory">"data"</span>: {...} <span class="field-comment">// Updated
+                                order document</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="note warn">⚠️ Invalid transitions throw error (e.g., PENDING → READY not allowed).</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONSTANTS -->
+        <section class="section" id="constants">
+            <div class="section-title"><span class="section-icon">📝</span> Status Constants Reference</div>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">CART_ITEM_STATUS (Before Checkout)</div>
+                    <ul class="bullet-list">
+                        <li class="info"><code>PENDING</code> - Initial status for all cart items</li>
+                    </ul>
+                    <div class="imp">Cart items don't change status before checkout. Status changes happen in
+                        order.carts[] after checkout.</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">CART_STATUS (Within Order)</div>
+                    <div class="status-row">
+                        <span class="status s-pending">PENDING</span>
+                        <span class="status s-cyan">ACCEPTED</span>
+                        <span class="status s-info">PREPARING</span>
+                        <span class="status s-active">READY</span>
+                        <span class="status s-done">SERVED</span>
+                        <span class="status s-pink">RETURNED</span>
+                        <span class="status s-error">CANCELLED</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Valid Cart Status Transitions</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>From Status</th>
+                            <th>Valid Transitions To</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="status s-pending">PENDING</span></td>
+                            <td><span class="status s-cyan">ACCEPTED</span> <span
+                                    class="status s-error">CANCELLED</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-cyan">ACCEPTED</span></td>
+                            <td><span class="status s-info">PREPARING</span> <span
+                                    class="status s-error">CANCELLED</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-info">PREPARING</span></td>
+                            <td><span class="status s-active">READY</span> <span class="status s-error">CANCELLED</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-active">READY</span></td>
+                            <td><span class="status s-done">SERVED</span> <span class="status s-error">CANCELLED</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-done">SERVED</span></td>
+                            <td><span class="status s-pink">RETURNED</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-pink">RETURNED</span></td>
+                            <td><em>None (terminal)</em></td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-error">CANCELLED</span></td>
+                            <td><em>None (terminal)</em></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="imp">Transitions are strictly enforced. Invalid transitions throw an error. You cannot skip
+                    statuses (e.g., PENDING → READY is invalid).</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Feature Flags</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Flag Name</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>fallbackToSameCustomConfigurationForAddItem</code></td>
+                            <td>If enabled, reuse existing variant/addon config when adding same item (quick add)</td>
+                        </tr>
+                        <tr>
+                            <td><code>isMultipleVariantOrAddonForMenuItemsSupported</code></td>
+                            <td>If disabled, prevent same item with different customizations in cart</td>
+                        </tr>
+                        <tr>
+                            <td><code>sendServerNotifications</code></td>
+                            <td>Enable FCM notifications to servers for order updates</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Toggle API accordion
+        function toggleApi(header) {
+            header.classList.toggle('open');
+            const content = header.nextElementSibling;
+            content.classList.toggle('open');
+        }
+
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                fontSize: '11px',
+                primaryColor: '#6366f1',
+                primaryTextColor: '#e2e8f0',
+                primaryBorderColor: '#2d2d5a',
+                lineColor: '#64748b',
+                secondaryColor: '#12122a',
+                tertiaryColor: '#1a1a3a',
+                background: '#0a0a1a',
+                mainBkg: '#1a1a3a',
+                nodeBorder: '#2d2d5a',
+                clusterBkg: '#12122a',
+                clusterBorder: '#2d2d5a'
+            },
+            stateDiagram: {
+                useMaxWidth: true
+            }
+        });
+    </script>
+</body>
+
+</html>
