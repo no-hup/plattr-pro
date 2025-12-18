@@ -95,7 +95,7 @@ function calculateItemPrice(menuItem, selectedVariants = [], addonDetails = []) 
   // Step 5: Calculate Totals
   const totalBasePrice = itemBasePrice + variantBaseTotal + addonBaseTotal;
   const totalFinalPrice = itemFinalPrice + variantFinalTotal + addonFinalTotal;
-  
+
   // Ensure discount amount is never negative
   const totalDiscountAmount = Math.max(0, roundPrice(totalBasePrice - totalFinalPrice));
 
@@ -157,7 +157,7 @@ async function calculateCartValue(cart) {
 
       // Use our CartItemPriceInfo model to validate item price info
       const itemPriceInfo = new CartItemPriceInfo(item.priceInfo);
-      
+
       // Use validated values for accumulation
       basePrice += itemPriceInfo.totalBasePrice;
       finalPrice += itemPriceInfo.finalPrice;
@@ -190,7 +190,7 @@ function roundPrice(price) {
   return Math.round(price * 100) / 100;
 }
 
-module.exports = { 
+module.exports = {
   calculateCartValue,
   calculateItemPrice,
 };

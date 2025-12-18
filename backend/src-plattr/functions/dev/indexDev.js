@@ -1,7 +1,7 @@
 const functions = require('firebase-functions');
-const { db } = require('../../admin/admin');
-const environment = require('../../singleton/Environment');
-const { withCors } = require('../../utils/cors');
+const { db } = require('../admin/admin');
+const environment = require('../singleton/Environment');
+const { withCors } = require('../utils/cors');
 
 /**
  * Lists all restaurants for local development tooling.

@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutterboilerplate/auth/auth_prompt.dart';
+import 'package:flutterboilerplate/networking/response_guard_interceptor.dart';
 import 'package:flutterboilerplate/singletonGods/api_constants.dart'; // Assuming ApiConfig is here
 import 'package:flutterboilerplate/singletonGods/logger.dart'; // Assuming AppLogger is here
 
@@ -129,7 +131,10 @@ class DioClient {
       ),
     );
 
-    // Add other interceptors here if needed (e.g., for auth tokens)
+    // Add Response Guard interceptor in debug mode for LLM analysis
+    if (kDebugMode) {
+      dioInstance.interceptors.add(ResponseGuardInterceptor());
+    }
   }
 
   /// Maps a DioException to a standardized error code and message

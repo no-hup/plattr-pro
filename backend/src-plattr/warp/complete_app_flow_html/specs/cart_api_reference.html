@@ -1,43 +1,267 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cart API Reference</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <style>
-        body { padding: 0; margin: 0; background: var(--bg-primary); }
-        .api-container { padding: 16px; }
+        body {
+            padding: 0;
+            margin: 0;
+            background: var(--bg-primary);
+        }
+
+        .api-container {
+            padding: 16px;
+        }
+
         /* Collapsible API Dropdown Styles */
-        .api-accordion { border: 1px solid var(--border); border-radius: 8px; margin: 10px 0; overflow: hidden; }
-        .api-header { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--bg-card); cursor: pointer; transition: background 0.2s ease; border-bottom: 1px solid transparent; }
-        .api-header:hover { background: rgba(99, 102, 241, 0.05); }
-        .api-header.open { border-bottom: 1px solid var(--border); }
-        .api-toggle { font-size: 12px; color: var(--text-muted); transition: transform 0.2s ease; }
-        .api-header.open .api-toggle { transform: rotate(90deg); }
-        .api-name { font-weight: 600; font-size: 14px; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
-        .api-type { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 500; }
-        .api-type-public { background: rgba(5, 150, 105, 0.15); color: var(--success); }
-        .api-type-internal { background: rgba(217, 119, 6, 0.15); color: var(--warning); }
-        .api-desc { font-size: 12px; color: var(--text-dim); margin-left: auto; }
-        .api-content { display: none; padding: 16px; background: var(--bg-secondary); }
-        .api-content.open { display: block; }
-        .api-params, .api-response { margin-bottom: 14px; }
-        .api-section-title { font-weight: 600; font-size: 12px; color: var(--text); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .json-block { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; overflow-x: auto; white-space: pre; line-height: 1.5; }
-        .field-mandatory { color: #059669; font-weight: 600; }
-        .field-optional { color: #0891b2; font-style: italic; }
-        .field-value-string { color: #ea580c; }
-        .field-value-number { color: #8b5cf6; }
-        .field-value-bool { color: #db2777; }
-        .field-comment { color: var(--text-muted); font-style: italic; }
-        .legend-api { display: flex; gap: 20px; flex-wrap: wrap; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; font-size: 12px; }
-        .legend-api-item { display: flex; align-items: center; gap: 6px; }
-        .legend-api-color { width: 14px; height: 14px; border-radius: 3px; }
-        .note { padding: 10px 14px; margin: 8px 0; border-radius: 6px; font-size: 12px; background: rgba(99, 102, 241, 0.08); border-left: 3px solid var(--accent); }
-        .note.warn { background: rgba(234, 88, 12, 0.08); border-left-color: #ea580c; }
-        .status-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .api-accordion {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .api-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border-bottom: 1px solid transparent;
+        }
+
+        .api-header:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .api-header.open {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .api-toggle {
+            font-size: 12px;
+            color: var(--text-muted);
+            transition: transform 0.2s ease;
+        }
+
+        .api-header.open .api-toggle {
+            transform: rotate(90deg);
+        }
+
+        .api-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .api-type {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .api-type-public {
+            background: rgba(5, 150, 105, 0.15);
+            color: var(--success);
+        }
+
+        .api-type-internal {
+            background: rgba(217, 119, 6, 0.15);
+            color: var(--warning);
+        }
+
+        .api-desc {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-left: auto;
+        }
+
+        .api-content {
+            display: none;
+            padding: 16px;
+            background: var(--bg-secondary);
+        }
+
+        .api-content.open {
+            display: block;
+        }
+
+        .api-params,
+        .api-response {
+            margin-bottom: 14px;
+        }
+
+        .api-section-title {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .json-block {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.5;
+        }
+
+        .field-mandatory {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .field-optional {
+            color: #0891b2;
+            font-style: italic;
+        }
+
+        .field-value-string {
+            color: #ea580c;
+        }
+
+        .field-value-number {
+            color: #8b5cf6;
+        }
+
+        .field-value-bool {
+            color: #db2777;
+        }
+
+        .field-comment {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .legend-api {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 12px;
+        }
+
+        .legend-api-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-api-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+        }
+
+        .note {
+            padding: 10px 14px;
+            margin: 8px 0;
+            border-radius: 6px;
+            font-size: 12px;
+            background: rgba(99, 102, 241, 0.08);
+            border-left: 3px solid var(--accent);
+        }
+
+        .note.warn {
+            background: rgba(234, 88, 12, 0.08);
+            border-left-color: #ea580c;
+        }
+
+        .status-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* Scenario Accordion Styles */
+        .scenario-section {
+            margin-top: 16px;
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+        }
+
+        .scenario-accordion {
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 6px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+
+        .scenario-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: rgba(139, 92, 246, 0.08);
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .scenario-header:hover {
+            background: rgba(139, 92, 246, 0.15);
+        }
+
+        .scenario-header.open {
+            border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .scenario-toggle {
+            font-size: 10px;
+            color: var(--accent2);
+            transition: transform 0.2s ease;
+        }
+
+        .scenario-header.open .scenario-toggle {
+            transform: rotate(90deg);
+        }
+
+        .scenario-name {
+            font-weight: 500;
+            font-size: 13px;
+            color: var(--accent2);
+        }
+
+        .scenario-desc {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-left: auto;
+        }
+
+        .scenario-content {
+            display: none;
+        }
+
+        .scenario-content.open {
+            display: block;
+        }
+
+        .scenario-iframe {
+            width: 100%;
+            height: 400px;
+            border: none;
+            background: var(--bg-primary);
+        }
     </style>
     <script>
         function toggleApi(header) {
@@ -45,712 +269,799 @@
             const content = header.nextElementSibling;
             content.classList.toggle('open');
         }
+
+        function toggleScenario(header) {
+            header.classList.toggle('open');
+            const content = header.nextElementSibling;
+            content.classList.toggle('open');
+
+            // Lazy load iframe when first opened
+            const iframe = content.querySelector('iframe');
+            if (iframe && !iframe.src && iframe.dataset.src) {
+                iframe.src = iframe.dataset.src;
+            }
+        }
     </script>
 </head>
+
 <body>
     <div class="api-container">
-            <div class="legend-api">
-                <div class="legend-api-item">
-                    <span class="legend-api-color" style="background: rgba(5, 150, 105, 0.3);"></span>
-                    <span><strong class="field-mandatory">Green</strong> = Mandatory field</span>
-                </div>
-                <div class="legend-api-item">
-                    <span class="legend-api-color" style="background: rgba(8, 145, 178, 0.3);"></span>
-                    <span><strong class="field-optional">Cyan</strong> = Optional/Nullable field</span>
-                </div>
-                <div class="legend-api-item">
-                    <span class="api-type api-type-public">PUBLIC</span> = Firebase Callable
-                </div>
-                <div class="legend-api-item">
-                    <span class="api-type api-type-internal">INTERNAL</span> = Internal function
-                </div>
+        <div class="legend-api">
+            <div class="legend-api-item">
+                <span class="legend-api-color" style="background: rgba(5, 150, 105, 0.3);"></span>
+                <span><strong class="field-mandatory">Green</strong> = Mandatory field</span>
             </div>
+            <div class="legend-api-item">
+                <span class="legend-api-color" style="background: rgba(8, 145, 178, 0.3);"></span>
+                <span><strong class="field-optional">Cyan</strong> = Optional/Nullable field</span>
+            </div>
+            <div class="legend-api-item">
+                <span class="api-type api-type-public">PUBLIC</span> = Firebase Callable
+            </div>
+            <div class="legend-api-item">
+                <span class="api-type api-type-internal">INTERNAL</span> = Internal function
+            </div>
+        </div>
 
-            <!-- getCart API -->
-            <div class="api-accordion">
-                <div class="api-header" onclick="toggleApi(this)">
-                    <span class="api-toggle">▶</span>
-                    <span class="api-name">getCart</span>
-                    <span class="api-type api-type-public">PUBLIC</span>
-                    <span class="api-desc">Retrieve cart contents for a table</span>
-                </div>
-                <div class="api-content">
-                    <div class="api-params">
-                        <div class="api-section-title">Request Parameters</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"restaurantId"</span>: <span
-                                class="field-value-string">"rest_basic_001"</span>, <span class="field-comment">//
-                                Required</span>
-                            <span class="field-mandatory">"tableId"</span>: <span
-                                class="field-value-string">"table1"</span>, <span class="field-comment">//
-                                Required</span>
-                            <span class="field-optional">"sessionId"</span>: <span
-                                class="field-value-string">"sess_b1_001"</span> <span class="field-comment">// Optional
-                                - validated if provided</span>
-                            }
-                        </div>
-                    </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Sample Response</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"status"</span>: <span
-                                class="field-value-string">"success"</span>,
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cart
-                                retrieved successfully."</span>,
-                            <span class="field-mandatory">"data"</span>: {
-                            <span class="field-mandatory">"cart"</span>: {
-                            <span class="field-mandatory">"restaurantId"</span>: <span
-                                class="field-value-string">"rest_basic_001"</span>,
-                            <span class="field-mandatory">"tableId"</span>: <span
-                                class="field-value-string">"table1"</span>,
-                            <span class="field-optional">"sessionId"</span>: <span
-                                class="field-value-string">"sess_b1_001"</span>, <span class="field-comment">//
-                                nullable</span>
-                            <span class="field-mandatory">"items"</span>: [
-                            {
-                            <span class="field-mandatory">"cartItemId"</span>: <span
-                                class="field-value-number">1</span>, <span class="field-comment">// auto-incremented
-                                unique ID</span>
-                            <span class="field-mandatory">"menuItemId"</span>: <span
-                                class="field-value-string">"item_burger_cls"</span>,
-                            <span class="field-mandatory">"quantity"</span>: <span class="field-value-number">1</span>,
-                            <span class="field-mandatory">"status"</span>: <span
-                                class="field-value-string">"pending"</span>,
-                            <span class="field-mandatory">"menuItem"</span>: {
-                            <span class="field-mandatory">"meta"</span>: {
-                            <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Classic
-                                Burger"</span>,
-                            <span class="field-mandatory">"description"</span>: <span class="field-value-string">"Beef
-                                patty with cheddar"</span>,
-                            <span class="field-optional">"image"</span>: <span
-                                class="field-value-string">"https://example.com/burger.jpg"</span>,
-                            <span class="field-mandatory">"categoryName"</span>: <span
-                                class="field-value-string">"Food"</span>
-                            },
-                            <span class="field-mandatory">"categoryId"</span>: <span
-                                class="field-value-string">"cat_food"</span>,
-                            <span class="field-optional">"nutritionalInfo"</span>: { <span
-                                class="field-value-string">"calories"</span>: <span
-                                class="field-value-number">600</span>, ... },
-                            <span class="field-optional">"allergenTags"</span>: [<span
-                                class="field-value-string">"gluten"</span>, <span
-                                class="field-value-string">"dairy"</span>],
-                            <span class="field-mandatory">"isCustomizable"</span>: <span
-                                class="field-value-bool">true</span>,
-                            <span class="field-mandatory">"isInStock"</span>: <span class="field-value-bool">true</span>
-                            },
-                            <span class="field-optional">"selectedVariantsDetails"</span>: [
-                            {
-                            <span class="field-mandatory">"id"</span>: <span
-                                class="field-value-string">"var_size_burger"</span>,
-                            <span class="field-mandatory">"isMandatory"</span>: <span
-                                class="field-value-bool">true</span>,
-                            <span class="field-mandatory">"respectParentDiscount"</span>: <span
-                                class="field-value-bool">true</span>,
-                            <span class="field-mandatory">"selected_variant_id"</span>: <span
-                                class="field-value-string">"size_lg"</span>,
-                            <span class="field-mandatory">"selected_variant_name"</span>: <span
-                                class="field-value-string">"Large"</span>,
-                            <span class="field-mandatory">"priceInfo"</span>: {
-                            <span class="field-mandatory">"basePrice"</span>: <span
-                                class="field-value-number">20</span>,
-                            <span class="field-mandatory">"finalPrice"</span>: <span
-                                class="field-value-number">18</span>,
-                            <span class="field-mandatory">"discount"</span>: <span class="field-value-number">10</span>
-                            }
-                            }
-                            ],
-                            <span class="field-optional">"selectedAddonsDetails"</span>: [
-                            {
-                            <span class="field-mandatory">"id"</span>: <span
-                                class="field-value-string">"addon_fries"</span>,
-                            <span class="field-mandatory">"name"</span>: <span class="field-value-string">"French
-                                Fries"</span>,
-                            <span class="field-mandatory">"respectParentDiscount"</span>: <span
-                                class="field-value-bool">true</span>,
-                            <span class="field-mandatory">"priceInfo"</span>: {
-                            <span class="field-mandatory">"basePrice"</span>: <span
-                                class="field-value-number">20</span>,
-                            <span class="field-mandatory">"finalPrice"</span>: <span
-                                class="field-value-number">18</span>,
-                            <span class="field-mandatory">"discount"</span>: <span class="field-value-number">10</span>
-                            }
-                            }
-                            ],
-                            <span class="field-mandatory">"priceInfo"</span>: { <span class="field-comment">//
-                                CartItemPriceInfo</span>
-                            <span class="field-mandatory">"itemBasePrice"</span>: <span
-                                class="field-value-number">100</span>,
-                            <span class="field-mandatory">"itemFinalPrice"</span>: <span
-                                class="field-value-number">90</span>,
-                            <span class="field-mandatory">"totalVariantBasePrice"</span>: <span
-                                class="field-value-number">20</span>,
-                            <span class="field-mandatory">"totalAddonBasePrice"</span>: <span
-                                class="field-value-number">20</span>,
-                            <span class="field-mandatory">"totalBasePrice"</span>: <span
-                                class="field-value-number">140</span>,
-                            <span class="field-mandatory">"finalPrice"</span>: <span
-                                class="field-value-number">126</span>,
-                            <span class="field-mandatory">"discount"</span>: <span class="field-value-number">10</span>
-                            },
-                            <span class="field-optional">"statusUpdatedAt"</span>: <span
-                                class="field-value-string">"2024-01-15T10:30:00.000Z"</span>,
-                            <span class="field-optional">"statusUpdatedBy"</span>: <span
-                                class="field-value-string">"system"</span>
-                            }
-                            ],
-                            <span class="field-mandatory">"priceInfo"</span>: { <span class="field-comment">//
-                                CartTotalPriceInfo</span>
-                            <span class="field-mandatory">"basePrice"</span>: <span
-                                class="field-value-number">140</span>,
-                            <span class="field-mandatory">"finalPrice"</span>: <span
-                                class="field-value-number">126</span>,
-                            <span class="field-mandatory">"totalDiscount"</span>: <span
-                                class="field-value-number">10</span>,
-                            <span class="field-mandatory">"totalDiscountAmount"</span>: <span
-                                class="field-value-number">14</span>,
-                            <span class="field-mandatory">"totalVariantBasePrice"</span>: <span
-                                class="field-value-number">20</span>,
-                            <span class="field-mandatory">"totalAddonBasePrice"</span>: <span
-                                class="field-value-number">20</span>
-                            },
-                            <span class="field-mandatory">"lastUpdated"</span>: <span
-                                class="field-value-string">"2024-01-15T10:30:00.000Z"</span>
-                            }
-                            }
-                            }
-                        </div>
-                    </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Error Response (400 - Missing Required Fields)</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"code"</span>: <span
-                                class="field-value-string">"invalid-argument"</span>,
-                            <span class="field-mandatory">"message"</span>: <span
-                                class="field-value-string">"restaurantId and tableId are required."</span>
-                            }
-                        </div>
-                    </div>
-                    <div class="note">📝 Cart auto-heals on retrieval - fixes NaN values, missing fields, and
-                        recalculates totals.</div>
-                    <div class="note">📝 Empty cart returns structure with <code>items: []</code> and zeroed
-                        <code>priceInfo</code>.
-                    </div>
-                </div>
+        <!-- getCart API -->
+        <div class="api-accordion">
+            <div class="api-header" onclick="toggleApi(this)">
+                <span class="api-toggle">▶</span>
+                <span class="api-name">getCart</span>
+                <span class="api-type api-type-public">PUBLIC</span>
+                <span class="api-desc">Retrieve cart contents for a table</span>
             </div>
+            <div class="api-content">
+                <div class="api-params">
+                    <div class="api-section-title">Request Parameters</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"restaurantId"</span>: <span
+                            class="field-value-string">"rest_basic_001"</span>, <span class="field-comment">//
+                            Required</span>
+                        <span class="field-mandatory">"tableId"</span>: <span
+                            class="field-value-string">"table1"</span>, <span class="field-comment">//
+                            Required</span>
+                        <span class="field-optional">"sessionId"</span>: <span
+                            class="field-value-string">"sess_b1_001"</span> <span class="field-comment">// Optional
+                            - validated if provided</span>
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Sample Response</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"status"</span>: <span
+                            class="field-value-string">"success"</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cart
+                            retrieved successfully."</span>,
+                        <span class="field-mandatory">"data"</span>: {
+                        <span class="field-mandatory">"cart"</span>: {
+                        <span class="field-mandatory">"restaurantId"</span>: <span
+                            class="field-value-string">"rest_basic_001"</span>,
+                        <span class="field-mandatory">"tableId"</span>: <span
+                            class="field-value-string">"table1"</span>,
+                        <span class="field-optional">"sessionId"</span>: <span
+                            class="field-value-string">"sess_b1_001"</span>, <span class="field-comment">//
+                            nullable</span>
+                        <span class="field-mandatory">"items"</span>: [
+                        {
+                        <span class="field-mandatory">"cartItemId"</span>: <span class="field-value-number">1</span>,
+                        <span class="field-comment">// auto-incremented
+                            unique ID</span>
+                        <span class="field-mandatory">"menuItemId"</span>: <span
+                            class="field-value-string">"item_burger_cls"</span>,
+                        <span class="field-mandatory">"quantity"</span>: <span class="field-value-number">1</span>,
+                        <span class="field-mandatory">"status"</span>: <span
+                            class="field-value-string">"pending"</span>,
+                        <span class="field-mandatory">"menuItem"</span>: {
+                        <span class="field-mandatory">"meta"</span>: {
+                        <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Classic
+                            Burger"</span>,
+                        <span class="field-mandatory">"description"</span>: <span class="field-value-string">"Beef
+                            patty with cheddar"</span>,
+                        <span class="field-optional">"image"</span>: <span
+                            class="field-value-string">"https://example.com/burger.jpg"</span>,
+                        <span class="field-mandatory">"categoryName"</span>: <span
+                            class="field-value-string">"Food"</span>
+                        },
+                        <span class="field-mandatory">"categoryId"</span>: <span
+                            class="field-value-string">"cat_food"</span>,
+                        <span class="field-optional">"nutritionalInfo"</span>: { <span
+                            class="field-value-string">"calories"</span>: <span class="field-value-number">600</span>,
+                        ... },
+                        <span class="field-optional">"allergenTags"</span>: [<span
+                            class="field-value-string">"gluten"</span>, <span
+                            class="field-value-string">"dairy"</span>],
+                        <span class="field-mandatory">"isCustomizable"</span>: <span
+                            class="field-value-bool">true</span>,
+                        <span class="field-mandatory">"isInStock"</span>: <span class="field-value-bool">true</span>
+                        },
+                        <span class="field-optional">"selectedVariantsDetails"</span>: [
+                        {
+                        <span class="field-mandatory">"id"</span>: <span
+                            class="field-value-string">"var_size_burger"</span>,
+                        <span class="field-mandatory">"isMandatory"</span>: <span class="field-value-bool">true</span>,
+                        <span class="field-mandatory">"respectParentDiscount"</span>: <span
+                            class="field-value-bool">true</span>,
+                        <span class="field-mandatory">"selected_variant_id"</span>: <span
+                            class="field-value-string">"size_lg"</span>,
+                        <span class="field-mandatory">"selected_variant_name"</span>: <span
+                            class="field-value-string">"Large"</span>,
+                        <span class="field-mandatory">"priceInfo"</span>: {
+                        <span class="field-mandatory">"basePrice"</span>: <span class="field-value-number">20</span>,
+                        <span class="field-mandatory">"finalPrice"</span>: <span class="field-value-number">18</span>,
+                        <span class="field-mandatory">"discount"</span>: <span class="field-value-number">10</span>
+                        }
+                        }
+                        ],
+                        <span class="field-optional">"selectedAddonsDetails"</span>: [
+                        {
+                        <span class="field-mandatory">"id"</span>: <span
+                            class="field-value-string">"addon_fries"</span>,
+                        <span class="field-mandatory">"name"</span>: <span class="field-value-string">"French
+                            Fries"</span>,
+                        <span class="field-mandatory">"respectParentDiscount"</span>: <span
+                            class="field-value-bool">true</span>,
+                        <span class="field-mandatory">"priceInfo"</span>: {
+                        <span class="field-mandatory">"basePrice"</span>: <span class="field-value-number">20</span>,
+                        <span class="field-mandatory">"finalPrice"</span>: <span class="field-value-number">18</span>,
+                        <span class="field-mandatory">"discount"</span>: <span class="field-value-number">10</span>
+                        }
+                        }
+                        ],
+                        <span class="field-mandatory">"priceInfo"</span>: { <span class="field-comment">//
+                            CartItemPriceInfo</span>
+                        <span class="field-mandatory">"itemBasePrice"</span>: <span
+                            class="field-value-number">100</span>,
+                        <span class="field-mandatory">"itemFinalPrice"</span>: <span
+                            class="field-value-number">90</span>,
+                        <span class="field-mandatory">"totalVariantBasePrice"</span>: <span
+                            class="field-value-number">20</span>,
+                        <span class="field-mandatory">"totalAddonBasePrice"</span>: <span
+                            class="field-value-number">20</span>,
+                        <span class="field-mandatory">"totalBasePrice"</span>: <span
+                            class="field-value-number">140</span>,
+                        <span class="field-mandatory">"finalPrice"</span>: <span class="field-value-number">126</span>,
+                        <span class="field-mandatory">"discount"</span>: <span class="field-value-number">10</span>
+                        },
+                        <span class="field-optional">"statusUpdatedAt"</span>: <span
+                            class="field-value-string">"2024-01-15T10:30:00.000Z"</span>,
+                        <span class="field-optional">"statusUpdatedBy"</span>: <span
+                            class="field-value-string">"system"</span>
+                        }
+                        ],
+                        <span class="field-mandatory">"priceInfo"</span>: { <span class="field-comment">//
+                            CartTotalPriceInfo</span>
+                        <span class="field-mandatory">"basePrice"</span>: <span class="field-value-number">140</span>,
+                        <span class="field-mandatory">"finalPrice"</span>: <span class="field-value-number">126</span>,
+                        <span class="field-mandatory">"totalDiscount"</span>: <span
+                            class="field-value-number">10</span>,
+                        <span class="field-mandatory">"totalDiscountAmount"</span>: <span
+                            class="field-value-number">14</span>,
+                        <span class="field-mandatory">"totalVariantBasePrice"</span>: <span
+                            class="field-value-number">20</span>,
+                        <span class="field-mandatory">"totalAddonBasePrice"</span>: <span
+                            class="field-value-number">20</span>
+                        },
+                        <span class="field-mandatory">"lastUpdated"</span>: <span
+                            class="field-value-string">"2024-01-15T10:30:00.000Z"</span>
+                        }
+                        }
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Error Response (400 - Missing Required Fields)</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"code"</span>: <span
+                            class="field-value-string">"invalid-argument"</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"restaurantId
+                            and tableId are required."</span>
+                        }
+                    </div>
+                </div>
+                <div class="note">📝 Cart auto-heals on retrieval - fixes NaN values, missing fields, and
+                    recalculates totals.</div>
+                <div class="note">📝 Empty cart returns structure with <code>items: []</code> and zeroed
+                    <code>priceInfo</code>.
+                </div>
 
-            <!-- addItemToCart API -->
-            <div class="api-accordion">
-                <div class="api-header" onclick="toggleApi(this)">
-                    <span class="api-toggle">▶</span>
-                    <span class="api-name">addItemToCart</span>
-                    <span class="api-type api-type-public">PUBLIC</span>
-                    <span class="api-desc">Add menu item to cart with variants/addons</span>
-                </div>
-                <div class="api-content">
-                    <div class="api-params">
-                        <div class="api-section-title">Request Parameters</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"tableId"</span>: <span
-                                class="field-value-string">"table1"</span>, <span class="field-comment">//
-                                Required</span>
-                            <span class="field-mandatory">"restaurantId"</span>: <span
-                                class="field-value-string">"rest_basic_001"</span>, <span class="field-comment">//
-                                Required</span>
-                            <span class="field-mandatory">"menuItemId"</span>: <span
-                                class="field-value-string">"item_burger_cls"</span>, <span class="field-comment">//
-                                Required</span>
-                            <span class="field-mandatory">"quantity"</span>: <span class="field-value-number">1</span>,
-                            <span class="field-comment">// Required, >= 1</span>
-                            <span class="field-optional">"selectedVariants"</span>: { <span class="field-comment">//
-                                Optional - map of variantId -> optionId</span>
-                            "var_size_burger": "size_lg"
-                            },
-                            <span class="field-optional">"selectedAddons"</span>: [<span
-                                class="field-value-string">"addon_fries"</span>], <span class="field-comment">//
-                                Optional - array of addon IDs</span>
-                            <span class="field-optional">"sessionId"</span>: <span
-                                class="field-value-string">"sess_b1_001"</span> <span class="field-comment">// Optional
-                                but recommended</span>
-                            }
-                        </div>
-                    </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Sample Response (Success)</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"status"</span>: <span
-                                class="field-value-string">"success"</span>,
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Item added
-                                to cart successfully."</span>,
-                            <span class="field-mandatory">"data"</span>: {
-                            <span class="field-mandatory">"cart"</span>: {
-                            <span class="field-mandatory">"restaurantId"</span>: <span
-                                class="field-value-string">"rest_basic_001"</span>,
-                            <span class="field-mandatory">"tableId"</span>: <span
-                                class="field-value-string">"table1"</span>,
-                            <span class="field-optional">"sessionId"</span>: <span
-                                class="field-value-string">"sess_b1_001"</span>,
-                            <span class="field-mandatory">"items"</span>: [
-                            {
-                            <span class="field-mandatory">"cartItemId"</span>: <span
-                                class="field-value-number">1</span>,
-                            <span class="field-mandatory">"menuItemId"</span>: <span
-                                class="field-value-string">"item_burger_cls"</span>,
-                            <span class="field-mandatory">"quantity"</span>: <span class="field-value-number">1</span>,
-                            <span class="field-mandatory">"status"</span>: <span
-                                class="field-value-string">"PENDING"</span>,
-                            <span class="field-mandatory">"menuItem"</span>: { ... }, <span class="field-comment">//
-                                Menu item snapshot</span>
-                            <span class="field-optional">"selectedVariantsDetails"</span>: [ ... ],
-                            <span class="field-optional">"selectedAddonsDetails"</span>: [ ... ],
-                            <span class="field-mandatory">"priceInfo"</span>: {
-                            <span class="field-mandatory">"itemBasePrice"</span>: <span
-                                class="field-value-number">100</span>,
-                            <span class="field-mandatory">"itemFinalPrice"</span>: <span
-                                class="field-value-number">90</span>,
-                            <span class="field-mandatory">"totalVariantBasePrice"</span>: <span
-                                class="field-value-number">20</span>,
-                            <span class="field-mandatory">"totalAddonBasePrice"</span>: <span
-                                class="field-value-number">20</span>,
-                            <span class="field-mandatory">"totalBasePrice"</span>: <span
-                                class="field-value-number">140</span>,
-                            <span class="field-mandatory">"finalPrice"</span>: <span
-                                class="field-value-number">126</span>,
-                            <span class="field-mandatory">"discount"</span>: <span class="field-value-number">10</span>
-                            }
-                            }
-                            ],
-                            <span class="field-mandatory">"priceInfo"</span>: {
-                            <span class="field-mandatory">"basePrice"</span>: <span
-                                class="field-value-number">140</span>,
-                            <span class="field-mandatory">"finalPrice"</span>: <span
-                                class="field-value-number">126</span>,
-                            <span class="field-mandatory">"totalDiscount"</span>: <span
-                                class="field-value-number">10</span>,
-                            <span class="field-mandatory">"totalDiscountAmount"</span>: <span
-                                class="field-value-number">14</span>
-                            },
-                            <span class="field-mandatory">"lastUpdated"</span>: <span
-                                class="field-value-string">"2024-01-15T10:30:00.000Z"</span>
-                            }
-                            }
-                            }
-                        </div>
-                    </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Error Response (400 - Invalid Quantity)</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"code"</span>: <span
-                                class="field-value-string">"invalid-argument"</span>,
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Quantity
-                                must be greater than 0."</span>
-                            }
-                        </div>
-                    </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Error Response (400 - Mandatory Variant Missing)</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"code"</span>: <span
-                                class="field-value-string">"invalid-argument"</span>,
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Mandatory
-                                variant 'Size' must be selected."</span>,
-                            <span class="field-optional">"details"</span>: {
-                            <span class="field-mandatory">"variantId"</span>: <span
-                                class="field-value-string">"var_size_burger"</span>
-                            }
-                            }
-                        </div>
-                    </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Error Response (412 - Item Out of Stock)</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"code"</span>: <span
-                                class="field-value-string">"failed-precondition"</span>,
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"This item
-                                is currently out of stock"</span>
-                            }
-                        </div>
-                    </div>
-                    <div class="note">📝 If identical item exists (same menuItemId + variants + addons), quantity is
-                        incremented instead of creating new item.</div>
-                </div>
-            </div>
+                <!-- Scenarios Section -->
+                <div class="scenario-section">
+                    <div class="api-section-title">📋 Scenarios</div>
 
-            <!-- removeItemFromCart API -->
-            <div class="api-accordion">
-                <div class="api-header" onclick="toggleApi(this)">
-                    <span class="api-toggle">▶</span>
-                    <span class="api-name">removeItemFromCart</span>
-                    <span class="api-type api-type-public">PUBLIC</span>
-                    <span class="api-desc">Decrement quantity or remove item from cart</span>
-                </div>
-                <div class="api-content">
-                    <div class="api-params">
-                        <div class="api-section-title">Request Parameters</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"tableId"</span>: <span
-                                class="field-value-string">"table1"</span>, <span class="field-comment">//
-                                Required</span>
-                            <span class="field-mandatory">"restaurantId"</span>: <span
-                                class="field-value-string">"rest_basic_001"</span>, <span class="field-comment">//
-                                Required</span>
-                            <span class="field-mandatory">"menuItemId"</span>: <span
-                                class="field-value-string">"item_burger_cls"</span>, <span class="field-comment">//
-                                Required (fallback identifier)</span>
-                            <span class="field-optional">"cartItemId"</span>: <span class="field-value-number">1</span>
-                            <span class="field-comment">// Optional but preferred (precise identifier)</span>
-                            }
+                    <div class="scenario-accordion">
+                        <div class="scenario-header" onclick="toggleScenario(this)">
+                            <span class="scenario-toggle">▶</span>
+                            <span class="scenario-name">Populated Cart</span>
+                            <span class="scenario-desc">Cart with multiple items</span>
+                        </div>
+                        <div class="scenario-content">
+                            <iframe class="scenario-iframe"
+                                data-src="../../../../backend-overview/scenarios/cart-fetchCart/non-empty.html"
+                                title="Populated Cart Scenario"></iframe>
                         </div>
                     </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Sample Response (Quantity Decremented)</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"status"</span>: <span
-                                class="field-value-string">"success"</span>,
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Item
-                                removed from cart successfully."</span>,
-                            <span class="field-mandatory">"data"</span>: {
-                            <span class="field-mandatory">"cart"</span>: {
-                            <span class="field-mandatory">"restaurantId"</span>: <span
-                                class="field-value-string">"rest_basic_001"</span>,
-                            <span class="field-mandatory">"tableId"</span>: <span
-                                class="field-value-string">"table1"</span>,
-                            <span class="field-mandatory">"items"</span>: [ <span class="field-comment">// Updated items
-                                array</span>
-                            {
-                            <span class="field-mandatory">"cartItemId"</span>: <span
-                                class="field-value-number">1</span>,
-                            <span class="field-mandatory">"menuItemId"</span>: <span
-                                class="field-value-string">"item_burger_cls"</span>,
-                            <span class="field-mandatory">"quantity"</span>: <span class="field-value-number">1</span>,
-                            <span class="field-comment">// Decremented from 2</span>
-                            <span class="field-mandatory">"priceInfo"</span>: { ... } <span class="field-comment">//
-                                Recalculated</span>
-                            }
-                            ],
-                            <span class="field-mandatory">"priceInfo"</span>: {
-                            <span class="field-mandatory">"basePrice"</span>: <span
-                                class="field-value-number">140</span>,
-                            <span class="field-mandatory">"finalPrice"</span>: <span
-                                class="field-value-number">126</span>,
-                            <span class="field-mandatory">"totalDiscount"</span>: <span
-                                class="field-value-number">10</span>,
-                            <span class="field-mandatory">"totalDiscountAmount"</span>: <span
-                                class="field-value-number">14</span>
-                            },
-                            <span class="field-mandatory">"lastUpdated"</span>: <span
-                                class="field-value-string">"2024-01-15T10:35:00.000Z"</span>
-                            }
-                            }
-                            }
-                        </div>
-                    </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Error Response (404 - Cart Not Found)</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"code"</span>: <span
-                                class="field-value-string">"not-found"</span>,
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cart not
-                                found for the table."</span>
-                            }
-                        </div>
-                    </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Error Response (404 - Item Not Found)</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"code"</span>: <span
-                                class="field-value-string">"not-found"</span>,
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Item not
-                                found in cart."</span>
-                            }
-                        </div>
-                    </div>
-                    <div class="note">📝 If cart becomes empty, the entire cart document is deleted and returns empty
-                        <code>items: []</code> with zeroed <code>priceInfo</code>.
-                    </div>
-                    <div class="note">📝 <code>cartItemId</code> takes precedence over <code>menuItemId</code> for
-                        precise item matching (disambiguates same menu item with different customizations).</div>
-                </div>
-            </div>
 
-            <!-- checkoutCart API -->
-            <div class="api-accordion">
-                <div class="api-header" onclick="toggleApi(this)">
-                    <span class="api-toggle">▶</span>
-                    <span class="api-name">checkoutCart</span>
-                    <span class="api-type api-type-public">PUBLIC</span>
-                    <span class="api-desc">Convert cart to order and clear cart</span>
-                </div>
-                <div class="api-content">
-                    <div class="api-params">
-                        <div class="api-section-title">Request Parameters</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"restaurantId"</span>: <span
-                                class="field-value-string">"rest_basic_001"</span>, <span class="field-comment">//
-                                Required</span>
-                            <span class="field-mandatory">"tableId"</span>: <span
-                                class="field-value-string">"table1"</span>, <span class="field-comment">//
-                                Required</span>
-                            <span class="field-mandatory">"sessionId"</span>: <span
-                                class="field-value-string">"sess_b1_001"</span>, <span class="field-comment">// Required
-                                (MANDATORY!)</span>
-                            <span class="field-optional">"notes"</span>: <span class="field-value-string">"No onions
-                                please"</span> <span class="field-comment">// Optional - special instructions</span>
-                            }
+                    <div class="scenario-accordion">
+                        <div class="scenario-header" onclick="toggleScenario(this)">
+                            <span class="scenario-toggle">▶</span>
+                            <span class="scenario-name">Empty Cart</span>
+                            <span class="scenario-desc">Cart with zero items</span>
+                        </div>
+                        <div class="scenario-content">
+                            <iframe class="scenario-iframe"
+                                data-src="../../../../backend-overview/scenarios/cart-fetchCart/empty.html"
+                                title="Empty Cart Scenario"></iframe>
                         </div>
                     </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Sample Response (Success)</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"status"</span>: <span
-                                class="field-value-string">"success"</span>,
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Checkout
-                                completed successfully."</span>,
-                            <span class="field-mandatory">"data"</span>: {
-                            <span class="field-mandatory">"orderId"</span>: <span
-                                class="field-value-string">"order_b1_001"</span>, <span class="field-comment">//
-                                Firestore document ID</span>
-                            <span class="field-mandatory">"orderNumber"</span>: <span
-                                class="field-value-string">"ORD-00001"</span>, <span class="field-comment">//
-                                Human-readable order number</span>
-                            <span class="field-mandatory">"orderStatus"</span>: <span
-                                class="field-value-string">"IN_PROGRESS"</span>, <span class="field-comment">// New
-                                orders start IN_PROGRESS</span>
-                            <span class="field-mandatory">"timestamp"</span>: <span
-                                class="field-value-string">"2024-01-15T10:30:00.000Z"</span>
-                            }
-                            }
-                        </div>
-                    </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Error Response (401 - Session Required)</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"code"</span>: <span
-                                class="field-value-string">"unauthenticated"</span>,
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"OTP
-                                validation required for checkout"</span>,
-                            <span class="field-mandatory">"details"</span>: {
-                            <span class="field-mandatory">"requiresOTP"</span>: <span
-                                class="field-value-bool">true</span>,
-                            <span class="field-mandatory">"tableId"</span>: <span
-                                class="field-value-string">"table1"</span>
-                            }
-                            }
-                        </div>
-                    </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Error Response (412 - Out of Stock)</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"code"</span>: <span
-                                class="field-value-string">"failed-precondition"</span>,
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cannot
-                                checkout. The following items are out of stock: Classic Burger"</span>
-                            }
-                        </div>
-                    </div>
-                    <div class="note warn">⚠️ Session is MANDATORY. No sessionId returns 401 with OTP requirements.
-                    </div>
-                    <div class="note">📝 Cart is cleared after successful checkout. If cart clearing fails after order
-                        creation, order is still considered successful.</div>
-                    <div class="note">📝 If active order exists for same table+session, cart is appended to existing
-                        order (multi-cart support).</div>
                 </div>
             </div>
+        </div>
 
-            <!-- clearCart API -->
-            <div class="api-accordion">
-                <div class="api-header" onclick="toggleApi(this)">
-                    <span class="api-toggle">▶</span>
-                    <span class="api-name">clearCart</span>
-                    <span class="api-type api-type-public">PUBLIC</span>
-                    <span class="api-desc">Delete entire cart for a table</span>
-                </div>
-                <div class="api-content">
-                    <div class="api-params">
-                        <div class="api-section-title">Request Parameters</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"tableId"</span>: <span
-                                class="field-value-string">"table1"</span>, <span class="field-comment">//
-                                Required</span>
-                            <span class="field-mandatory">"restaurantId"</span>: <span
-                                class="field-value-string">"rest_basic_001"</span> <span class="field-comment">//
-                                Required</span>
-                            }
-                        </div>
-                    </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Sample Response</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cart
-                                cleared successfully."</span>
-                            }
-                        </div>
-                    </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Error Response (404 - Cart Not Found)</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"code"</span>: <span
-                                class="field-value-string">"not-found"</span>,
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cart not
-                                found for the table."</span>
-                            }
-                        </div>
-                    </div>
-                    <div class="note">📝 Deletes entire cart document.</div>
-                </div>
+        <!-- addItemToCart API -->
+        <div class="api-accordion">
+            <div class="api-header" onclick="toggleApi(this)">
+                <span class="api-toggle">▶</span>
+                <span class="api-name">addItemToCart</span>
+                <span class="api-type api-type-public">PUBLIC</span>
+                <span class="api-desc">Add menu item to cart with variants/addons</span>
             </div>
+            <div class="api-content">
+                <div class="api-params">
+                    <div class="api-section-title">Request Parameters</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"tableId"</span>: <span
+                            class="field-value-string">"table1"</span>, <span class="field-comment">//
+                            Required</span>
+                        <span class="field-mandatory">"restaurantId"</span>: <span
+                            class="field-value-string">"rest_basic_001"</span>, <span class="field-comment">//
+                            Required</span>
+                        <span class="field-mandatory">"menuItemId"</span>: <span
+                            class="field-value-string">"item_burger_cls"</span>, <span class="field-comment">//
+                            Required</span>
+                        <span class="field-mandatory">"quantity"</span>: <span class="field-value-number">1</span>,
+                        <span class="field-comment">// Required, >= 1</span>
+                        <span class="field-optional">"selectedVariants"</span>: { <span class="field-comment">//
+                            Optional - map of variantId -> optionId</span>
+                        "var_size_burger": "size_lg"
+                        },
+                        <span class="field-optional">"selectedAddons"</span>: [<span
+                            class="field-value-string">"addon_fries"</span>], <span class="field-comment">//
+                            Optional - array of addon IDs</span>
+                        <span class="field-optional">"sessionId"</span>: <span
+                            class="field-value-string">"sess_b1_001"</span> <span class="field-comment">// Optional
+                            but recommended</span>
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Sample Response (Success)</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"status"</span>: <span
+                            class="field-value-string">"success"</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Item added
+                            to cart successfully."</span>,
+                        <span class="field-mandatory">"data"</span>: {
+                        <span class="field-mandatory">"cart"</span>: {
+                        <span class="field-mandatory">"restaurantId"</span>: <span
+                            class="field-value-string">"rest_basic_001"</span>,
+                        <span class="field-mandatory">"tableId"</span>: <span
+                            class="field-value-string">"table1"</span>,
+                        <span class="field-optional">"sessionId"</span>: <span
+                            class="field-value-string">"sess_b1_001"</span>,
+                        <span class="field-mandatory">"items"</span>: [
+                        {
+                        <span class="field-mandatory">"cartItemId"</span>: <span class="field-value-number">1</span>,
+                        <span class="field-mandatory">"menuItemId"</span>: <span
+                            class="field-value-string">"item_burger_cls"</span>,
+                        <span class="field-mandatory">"quantity"</span>: <span class="field-value-number">1</span>,
+                        <span class="field-mandatory">"status"</span>: <span
+                            class="field-value-string">"PENDING"</span>,
+                        <span class="field-mandatory">"menuItem"</span>: { ... }, <span class="field-comment">//
+                            Menu item snapshot</span>
+                        <span class="field-optional">"selectedVariantsDetails"</span>: [ ... ],
+                        <span class="field-optional">"selectedAddonsDetails"</span>: [ ... ],
+                        <span class="field-mandatory">"priceInfo"</span>: {
+                        <span class="field-mandatory">"itemBasePrice"</span>: <span
+                            class="field-value-number">100</span>,
+                        <span class="field-mandatory">"itemFinalPrice"</span>: <span
+                            class="field-value-number">90</span>,
+                        <span class="field-mandatory">"totalVariantBasePrice"</span>: <span
+                            class="field-value-number">20</span>,
+                        <span class="field-mandatory">"totalAddonBasePrice"</span>: <span
+                            class="field-value-number">20</span>,
+                        <span class="field-mandatory">"totalBasePrice"</span>: <span
+                            class="field-value-number">140</span>,
+                        <span class="field-mandatory">"finalPrice"</span>: <span class="field-value-number">126</span>,
+                        <span class="field-mandatory">"discount"</span>: <span class="field-value-number">10</span>
+                        }
+                        }
+                        ],
+                        <span class="field-mandatory">"priceInfo"</span>: {
+                        <span class="field-mandatory">"basePrice"</span>: <span class="field-value-number">140</span>,
+                        <span class="field-mandatory">"finalPrice"</span>: <span class="field-value-number">126</span>,
+                        <span class="field-mandatory">"totalDiscount"</span>: <span
+                            class="field-value-number">10</span>,
+                        <span class="field-mandatory">"totalDiscountAmount"</span>: <span
+                            class="field-value-number">14</span>
+                        },
+                        <span class="field-mandatory">"lastUpdated"</span>: <span
+                            class="field-value-string">"2024-01-15T10:30:00.000Z"</span>
+                        }
+                        }
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Error Response (400 - Invalid Quantity)</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"code"</span>: <span
+                            class="field-value-string">"invalid-argument"</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Quantity
+                            must be greater than 0."</span>
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Error Response (400 - Mandatory Variant Missing)</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"code"</span>: <span
+                            class="field-value-string">"invalid-argument"</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Mandatory
+                            variant 'Size' must be selected."</span>,
+                        <span class="field-optional">"details"</span>: {
+                        <span class="field-mandatory">"variantId"</span>: <span
+                            class="field-value-string">"var_size_burger"</span>
+                        }
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Error Response (412 - Item Out of Stock)</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"code"</span>: <span
+                            class="field-value-string">"failed-precondition"</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"This item
+                            is currently out of stock"</span>
+                        }
+                    </div>
+                </div>
+                <div class="note">📝 If identical item exists (same menuItemId + variants + addons), quantity is
+                    incremented instead of creating new item.</div>
 
-            <!-- clearCartInternal INTERNAL -->
-            <div class="api-accordion">
-                <div class="api-header" onclick="toggleApi(this)">
-                    <span class="api-toggle">▶</span>
-                    <span class="api-name">clearCartInternal</span>
-                    <span class="api-type api-type-internal">INTERNAL</span>
-                    <span class="api-desc">Internal function used by checkoutCart</span>
-                </div>
-                <div class="api-content">
-                    <div class="api-params">
-                        <div class="api-section-title">Function Signature</div>
-                        <div class="json-block"><span class="field-key">clearCartInternal</span>(
-                            <span class="field-mandatory">restaurantId</span>: string,
-                            <span class="field-mandatory">tableId</span>: string
-                            ) => Promise<void>
-                        </div>
-                    </div>
-                    <div class="note">Same logic as clearCart but throws Error instead of HttpsError. Used after order
-                        creation.</div>
-                </div>
-            </div>
+                <!-- Scenarios Section -->
+                <div class="scenario-section">
+                    <div class="api-section-title">📋 Scenarios</div>
 
-            <!-- updateCartStatus API -->
-            <div class="api-accordion">
-                <div class="api-header" onclick="toggleApi(this)">
-                    <span class="api-toggle">▶</span>
-                    <span class="api-name">updateCartStatus</span>
-                    <span class="api-type api-type-public">PUBLIC</span>
-                    <span class="api-desc">Update status of cart within an order (kitchen workflow)</span>
-                </div>
-                <div class="api-content">
-                    <div class="api-params">
-                        <div class="api-section-title">Request Parameters</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"restaurantId"</span>: <span
-                                class="field-value-string">"rest_basic_001"</span>, <span class="field-comment">//
-                                Required</span>
-                            <span class="field-mandatory">"orderId"</span>: <span
-                                class="field-value-string">"order_b1_001"</span>, <span class="field-comment">//
-                                Required</span>
-                            <span class="field-mandatory">"cartIndex"</span>: <span class="field-value-number">0</span>,
-                            <span class="field-comment">// Required - 0-based index in order.carts[]</span>
-                            <span class="field-mandatory">"newStatus"</span>: <span
-                                class="field-value-string">"ACCEPTED"</span>, <span class="field-comment">// Required -
-                                valid CART_STATUS</span>
-                            <span class="field-optional">"notes"</span>: <span class="field-value-string">"Kitchen
-                                acknowledged"</span>, <span class="field-comment">// Optional - status change
-                                notes</span>
-                            <span class="field-optional">"sessionId"</span>: <span
-                                class="field-value-string">"sess_b1_001"</span> <span class="field-comment">// Optional
-                                - validated if provided</span>
-                            }
+                    <div class="scenario-accordion">
+                        <div class="scenario-header" onclick="toggleScenario(this)">
+                            <span class="scenario-toggle">▶</span>
+                            <span class="scenario-name">New Configuration</span>
+                            <span class="scenario-desc">Adding a brand new item to cart</span>
                         </div>
-                        <div class="api-section-title" style="margin-top: 12px;">Valid newStatus Values</div>
-                        <div class="status-row">
-                            <span class="status s-pending">PENDING</span>
-                            <span class="status s-cyan">ACCEPTED</span>
-                            <span class="status s-info">PREPARING</span>
-                            <span class="status s-active">READY</span>
-                            <span class="status s-done">SERVED</span>
-                            <span class="status s-pink">RETURNED</span>
-                            <span class="status s-error">CANCELLED</span>
+                        <div class="scenario-content">
+                            <iframe class="scenario-iframe"
+                                data-src="../../../../backend-overview/scenarios/cart-addItemToCart/new-config.html"
+                                title="New Config Scenario"></iframe>
                         </div>
                     </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Sample Response (Success)</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"success"</span>: <span class="field-value-bool">true</span>,
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cart
-                                status updated to ACCEPTED"</span>,
-                            <span class="field-mandatory">"data"</span>: {
-                            <span class="field-mandatory">"id"</span>: <span
-                                class="field-value-string">"order_b1_001"</span>,
-                            <span class="field-mandatory">"restaurantId"</span>: <span
-                                class="field-value-string">"rest_basic_001"</span>,
-                            <span class="field-mandatory">"tableId"</span>: <span
-                                class="field-value-string">"table1"</span>,
-                            <span class="field-mandatory">"orderStatus"</span>: <span
-                                class="field-value-string">"IN_PROGRESS"</span>,
-                            <span class="field-mandatory">"carts"</span>: [
-                            {
-                            <span class="field-mandatory">"status"</span>: <span
-                                class="field-value-string">"ACCEPTED"</span>,
-                            <span class="field-mandatory">"statusHistory"</span>: [
-                            {
-                            <span class="field-mandatory">"status"</span>: <span
-                                class="field-value-string">"PENDING"</span>,
-                            <span class="field-mandatory">"timestamp"</span>: <span
-                                class="field-value-string">"2024-01-15T10:30:00.000Z"</span>,
-                            <span class="field-mandatory">"userId"</span>: <span
-                                class="field-value-string">"system"</span>
-                            },
-                            {
-                            <span class="field-mandatory">"status"</span>: <span
-                                class="field-value-string">"ACCEPTED"</span>,
-                            <span class="field-mandatory">"timestamp"</span>: <span
-                                class="field-value-string">"2024-01-15T10:32:00.000Z"</span>,
-                            <span class="field-mandatory">"userId"</span>: <span
-                                class="field-value-string">"server_bob"</span>,
-                            <span class="field-optional">"notes"</span>: <span class="field-value-string">"Kitchen
-                                acknowledged"</span>
-                            }
-                            ],
-                            <span class="field-optional">"assignedTo"</span>: <span
-                                class="field-value-string">"server_bob"</span>, <span class="field-comment">// Set when
-                                ACCEPTED</span>
-                            <span class="field-mandatory">"items"</span>: [ ... ]
-                            }
-                            ],
-                            <span class="field-mandatory">"updatedAt"</span>: <span
-                                class="field-value-string">"2024-01-15T10:32:00.000Z"</span>
-                            }
-                            }
+
+                    <div class="scenario-accordion">
+                        <div class="scenario-header" onclick="toggleScenario(this)">
+                            <span class="scenario-toggle">▶</span>
+                            <span class="scenario-name">Quantity Increment</span>
+                            <span class="scenario-desc">Identical item already exists, quantity increases</span>
+                        </div>
+                        <div class="scenario-content">
+                            <iframe class="scenario-iframe"
+                                data-src="../../../../backend-overview/scenarios/cart-addItemToCart/increment-quantity.html"
+                                title="Increment Quantity Scenario"></iframe>
                         </div>
                     </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Error Response (400 - Invalid Status Transition)</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"code"</span>: <span
-                                class="field-value-string">"internal"</span>,
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Invalid
-                                status transition from PENDING to READY"</span>
-                            }
-                        </div>
-                    </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Error Response (404 - Order/Cart Not Found)</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"code"</span>: <span
-                                class="field-value-string">"internal"</span>,
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cart at
-                                index 0 not found in order order_b1_001"</span>
-                            }
-                        </div>
-                    </div>
-                    <div class="api-response">
-                        <div class="api-section-title">Error Response (412 - Invalid Session)</div>
-                        <div class="json-block">{
-                            <span class="field-mandatory">"code"</span>: <span
-                                class="field-value-string">"failed-precondition"</span>,
-                            <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Invalid or
-                                inactive session"</span>
-                            }
-                        </div>
-                    </div>
-                    <div class="note">📝 When status becomes ACCEPTED, <code>assignedTo</code> is set to the userId
-                        making the change.</div>
-                    <div class="note">📝 Every status change appends to <code>statusHistory[]</code> with timestamp and
-                        userId.</div>
                 </div>
             </div>
+        </div>
+
+        <!-- removeItemFromCart API -->
+        <div class="api-accordion">
+            <div class="api-header" onclick="toggleApi(this)">
+                <span class="api-toggle">▶</span>
+                <span class="api-name">removeItemFromCart</span>
+                <span class="api-type api-type-public">PUBLIC</span>
+                <span class="api-desc">Decrement quantity or remove item from cart</span>
+            </div>
+            <div class="api-content">
+                <div class="api-params">
+                    <div class="api-section-title">Request Parameters</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"tableId"</span>: <span
+                            class="field-value-string">"table1"</span>, <span class="field-comment">//
+                            Required</span>
+                        <span class="field-mandatory">"restaurantId"</span>: <span
+                            class="field-value-string">"rest_basic_001"</span>, <span class="field-comment">//
+                            Required</span>
+                        <span class="field-mandatory">"menuItemId"</span>: <span
+                            class="field-value-string">"item_burger_cls"</span>, <span class="field-comment">//
+                            Required (fallback identifier)</span>
+                        <span class="field-optional">"cartItemId"</span>: <span class="field-value-number">1</span>
+                        <span class="field-comment">// Optional but preferred (precise identifier)</span>
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Sample Response (Quantity Decremented)</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"status"</span>: <span
+                            class="field-value-string">"success"</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Item
+                            removed from cart successfully."</span>,
+                        <span class="field-mandatory">"data"</span>: {
+                        <span class="field-mandatory">"cart"</span>: {
+                        <span class="field-mandatory">"restaurantId"</span>: <span
+                            class="field-value-string">"rest_basic_001"</span>,
+                        <span class="field-mandatory">"tableId"</span>: <span
+                            class="field-value-string">"table1"</span>,
+                        <span class="field-mandatory">"items"</span>: [ <span class="field-comment">// Updated items
+                            array</span>
+                        {
+                        <span class="field-mandatory">"cartItemId"</span>: <span class="field-value-number">1</span>,
+                        <span class="field-mandatory">"menuItemId"</span>: <span
+                            class="field-value-string">"item_burger_cls"</span>,
+                        <span class="field-mandatory">"quantity"</span>: <span class="field-value-number">1</span>,
+                        <span class="field-comment">// Decremented from 2</span>
+                        <span class="field-mandatory">"priceInfo"</span>: { ... } <span class="field-comment">//
+                            Recalculated</span>
+                        }
+                        ],
+                        <span class="field-mandatory">"priceInfo"</span>: {
+                        <span class="field-mandatory">"basePrice"</span>: <span class="field-value-number">140</span>,
+                        <span class="field-mandatory">"finalPrice"</span>: <span class="field-value-number">126</span>,
+                        <span class="field-mandatory">"totalDiscount"</span>: <span
+                            class="field-value-number">10</span>,
+                        <span class="field-mandatory">"totalDiscountAmount"</span>: <span
+                            class="field-value-number">14</span>
+                        },
+                        <span class="field-mandatory">"lastUpdated"</span>: <span
+                            class="field-value-string">"2024-01-15T10:35:00.000Z"</span>
+                        }
+                        }
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Error Response (404 - Cart Not Found)</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"code"</span>: <span
+                            class="field-value-string">"not-found"</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cart not
+                            found for the table."</span>
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Error Response (404 - Item Not Found)</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"code"</span>: <span
+                            class="field-value-string">"not-found"</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Item not
+                            found in cart."</span>
+                        }
+                    </div>
+                </div>
+                <div class="note">📝 If cart becomes empty, the entire cart document is deleted and returns empty
+                    <code>items: []</code> with zeroed <code>priceInfo</code>.
+                </div>
+                <div class="note">📝 <code>cartItemId</code> takes precedence over <code>menuItemId</code> for
+                    precise item matching (disambiguates same menu item with different customizations).</div>
+            </div>
+        </div>
+
+        <!-- checkoutCart API -->
+        <div class="api-accordion">
+            <div class="api-header" onclick="toggleApi(this)">
+                <span class="api-toggle">▶</span>
+                <span class="api-name">checkoutCart</span>
+                <span class="api-type api-type-public">PUBLIC</span>
+                <span class="api-desc">Convert cart to order and clear cart</span>
+            </div>
+            <div class="api-content">
+                <div class="api-params">
+                    <div class="api-section-title">Request Parameters</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"restaurantId"</span>: <span
+                            class="field-value-string">"rest_basic_001"</span>, <span class="field-comment">//
+                            Required</span>
+                        <span class="field-mandatory">"tableId"</span>: <span
+                            class="field-value-string">"table1"</span>, <span class="field-comment">//
+                            Required</span>
+                        <span class="field-mandatory">"sessionId"</span>: <span
+                            class="field-value-string">"sess_b1_001"</span>, <span class="field-comment">// Required
+                            (MANDATORY!)</span>
+                        <span class="field-optional">"notes"</span>: <span class="field-value-string">"No onions
+                            please"</span> <span class="field-comment">// Optional - special instructions</span>
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Sample Response (Success)</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"status"</span>: <span
+                            class="field-value-string">"success"</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Checkout
+                            completed successfully."</span>,
+                        <span class="field-mandatory">"data"</span>: {
+                        <span class="field-mandatory">"orderId"</span>: <span
+                            class="field-value-string">"order_b1_001"</span>, <span class="field-comment">//
+                            Firestore document ID</span>
+                        <span class="field-mandatory">"orderNumber"</span>: <span
+                            class="field-value-string">"ORD-00001"</span>, <span class="field-comment">//
+                            Human-readable order number</span>
+                        <span class="field-mandatory">"orderStatus"</span>: <span
+                            class="field-value-string">"IN_PROGRESS"</span>, <span class="field-comment">// New
+                            orders start IN_PROGRESS</span>
+                        <span class="field-mandatory">"timestamp"</span>: <span
+                            class="field-value-string">"2024-01-15T10:30:00.000Z"</span>
+                        }
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Error Response (401 - Session Required)</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"code"</span>: <span
+                            class="field-value-string">"unauthenticated"</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"OTP
+                            validation required for checkout"</span>,
+                        <span class="field-mandatory">"details"</span>: {
+                        <span class="field-mandatory">"requiresOTP"</span>: <span class="field-value-bool">true</span>,
+                        <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"table1"</span>
+                        }
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Error Response (412 - Out of Stock)</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"code"</span>: <span
+                            class="field-value-string">"failed-precondition"</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cannot
+                            checkout. The following items are out of stock: Classic Burger"</span>
+                        }
+                    </div>
+                </div>
+                <div class="note warn">⚠️ Session is MANDATORY. No sessionId returns 401 with OTP requirements.
+                </div>
+                <div class="note">📝 Cart is cleared after successful checkout. If cart clearing fails after order
+                    creation, order is still considered successful.</div>
+                <div class="note">📝 If active order exists for same table+session, cart is appended to existing
+                    order (multi-cart support).</div>
+
+                <!-- Scenarios Section -->
+                <div class="scenario-section">
+                    <div class="api-section-title">📋 Scenarios</div>
+
+                    <div class="scenario-accordion">
+                        <div class="scenario-header" onclick="toggleScenario(this)">
+                            <span class="scenario-toggle">▶</span>
+                            <span class="scenario-name">Successful Checkout</span>
+                            <span class="scenario-desc">New order created successfully</span>
+                        </div>
+                        <div class="scenario-content">
+                            <iframe class="scenario-iframe"
+                                data-src="../../../../backend-overview/scenarios/cart-checkoutCart/success.html"
+                                title="Success Scenario"></iframe>
+                        </div>
+                    </div>
+
+                    <div class="scenario-accordion">
+                        <div class="scenario-header" onclick="toggleScenario(this)">
+                            <span class="scenario-toggle">▶</span>
+                            <span class="scenario-name">Price Mismatch Error</span>
+                            <span class="scenario-desc">expectedTotal doesn't match server calculation</span>
+                        </div>
+                        <div class="scenario-content">
+                            <iframe class="scenario-iframe"
+                                data-src="../../../../backend-overview/scenarios/cart-checkoutCart/price-mismatch.html"
+                                title="Price Mismatch Scenario"></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- clearCart API -->
+        <div class="api-accordion">
+            <div class="api-header" onclick="toggleApi(this)">
+                <span class="api-toggle">▶</span>
+                <span class="api-name">clearCart</span>
+                <span class="api-type api-type-public">PUBLIC</span>
+                <span class="api-desc">Delete entire cart for a table</span>
+            </div>
+            <div class="api-content">
+                <div class="api-params">
+                    <div class="api-section-title">Request Parameters</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"tableId"</span>: <span
+                            class="field-value-string">"table1"</span>, <span class="field-comment">//
+                            Required</span>
+                        <span class="field-mandatory">"restaurantId"</span>: <span
+                            class="field-value-string">"rest_basic_001"</span> <span class="field-comment">//
+                            Required</span>
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Sample Response</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cart
+                            cleared successfully."</span>
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Error Response (404 - Cart Not Found)</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"code"</span>: <span
+                            class="field-value-string">"not-found"</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cart not
+                            found for the table."</span>
+                        }
+                    </div>
+                </div>
+                <div class="note">📝 Deletes entire cart document.</div>
+            </div>
+        </div>
+
+        <!-- clearCartInternal INTERNAL -->
+        <div class="api-accordion">
+            <div class="api-header" onclick="toggleApi(this)">
+                <span class="api-toggle">▶</span>
+                <span class="api-name">clearCartInternal</span>
+                <span class="api-type api-type-internal">INTERNAL</span>
+                <span class="api-desc">Internal function used by checkoutCart</span>
+            </div>
+            <div class="api-content">
+                <div class="api-params">
+                    <div class="api-section-title">Function Signature</div>
+                    <div class="json-block"><span class="field-key">clearCartInternal</span>(
+                        <span class="field-mandatory">restaurantId</span>: string,
+                        <span class="field-mandatory">tableId</span>: string
+                        ) => Promise<void>
+                    </div>
+                </div>
+                <div class="note">Same logic as clearCart but throws Error instead of HttpsError. Used after order
+                    creation.</div>
+            </div>
+        </div>
+
+        <!-- updateCartStatus API -->
+        <div class="api-accordion">
+            <div class="api-header" onclick="toggleApi(this)">
+                <span class="api-toggle">▶</span>
+                <span class="api-name">updateCartStatus</span>
+                <span class="api-type api-type-public">PUBLIC</span>
+                <span class="api-desc">Update status of cart within an order (kitchen workflow)</span>
+            </div>
+            <div class="api-content">
+                <div class="api-params">
+                    <div class="api-section-title">Request Parameters</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"restaurantId"</span>: <span
+                            class="field-value-string">"rest_basic_001"</span>, <span class="field-comment">//
+                            Required</span>
+                        <span class="field-mandatory">"orderId"</span>: <span
+                            class="field-value-string">"order_b1_001"</span>, <span class="field-comment">//
+                            Required</span>
+                        <span class="field-mandatory">"cartIndex"</span>: <span class="field-value-number">0</span>,
+                        <span class="field-comment">// Required - 0-based index in order.carts[]</span>
+                        <span class="field-mandatory">"newStatus"</span>: <span
+                            class="field-value-string">"ACCEPTED"</span>, <span class="field-comment">// Required -
+                            valid CART_STATUS</span>
+                        <span class="field-optional">"notes"</span>: <span class="field-value-string">"Kitchen
+                            acknowledged"</span>, <span class="field-comment">// Optional - status change
+                            notes</span>
+                        <span class="field-optional">"sessionId"</span>: <span
+                            class="field-value-string">"sess_b1_001"</span> <span class="field-comment">// Optional
+                            - validated if provided</span>
+                        }
+                    </div>
+                    <div class="api-section-title" style="margin-top: 12px;">Valid newStatus Values</div>
+                    <div class="status-row">
+                        <span class="status s-pending">PENDING</span>
+                        <span class="status s-cyan">ACCEPTED</span>
+                        <span class="status s-info">PREPARING</span>
+                        <span class="status s-active">READY</span>
+                        <span class="status s-done">SERVED</span>
+                        <span class="status s-pink">RETURNED</span>
+                        <span class="status s-error">CANCELLED</span>
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Sample Response (Success)</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"success"</span>: <span class="field-value-bool">true</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cart
+                            status updated to ACCEPTED"</span>,
+                        <span class="field-mandatory">"data"</span>: {
+                        <span class="field-mandatory">"id"</span>: <span
+                            class="field-value-string">"order_b1_001"</span>,
+                        <span class="field-mandatory">"restaurantId"</span>: <span
+                            class="field-value-string">"rest_basic_001"</span>,
+                        <span class="field-mandatory">"tableId"</span>: <span
+                            class="field-value-string">"table1"</span>,
+                        <span class="field-mandatory">"orderStatus"</span>: <span
+                            class="field-value-string">"IN_PROGRESS"</span>,
+                        <span class="field-mandatory">"carts"</span>: [
+                        {
+                        <span class="field-mandatory">"status"</span>: <span
+                            class="field-value-string">"ACCEPTED"</span>,
+                        <span class="field-mandatory">"statusHistory"</span>: [
+                        {
+                        <span class="field-mandatory">"status"</span>: <span
+                            class="field-value-string">"PENDING"</span>,
+                        <span class="field-mandatory">"timestamp"</span>: <span
+                            class="field-value-string">"2024-01-15T10:30:00.000Z"</span>,
+                        <span class="field-mandatory">"userId"</span>: <span class="field-value-string">"system"</span>
+                        },
+                        {
+                        <span class="field-mandatory">"status"</span>: <span
+                            class="field-value-string">"ACCEPTED"</span>,
+                        <span class="field-mandatory">"timestamp"</span>: <span
+                            class="field-value-string">"2024-01-15T10:32:00.000Z"</span>,
+                        <span class="field-mandatory">"userId"</span>: <span
+                            class="field-value-string">"server_bob"</span>,
+                        <span class="field-optional">"notes"</span>: <span class="field-value-string">"Kitchen
+                            acknowledged"</span>
+                        }
+                        ],
+                        <span class="field-optional">"assignedTo"</span>: <span
+                            class="field-value-string">"server_bob"</span>, <span class="field-comment">// Set when
+                            ACCEPTED</span>
+                        <span class="field-mandatory">"items"</span>: [ ... ]
+                        }
+                        ],
+                        <span class="field-mandatory">"updatedAt"</span>: <span
+                            class="field-value-string">"2024-01-15T10:32:00.000Z"</span>
+                        }
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Error Response (400 - Invalid Status Transition)</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"code"</span>: <span class="field-value-string">"internal"</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Invalid
+                            status transition from PENDING to READY"</span>
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Error Response (404 - Order/Cart Not Found)</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"code"</span>: <span class="field-value-string">"internal"</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Cart at
+                            index 0 not found in order order_b1_001"</span>
+                        }
+                    </div>
+                </div>
+                <div class="api-response">
+                    <div class="api-section-title">Error Response (412 - Invalid Session)</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"code"</span>: <span
+                            class="field-value-string">"failed-precondition"</span>,
+                        <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Invalid or
+                            inactive session"</span>
+                        }
+                    </div>
+                </div>
+                <div class="note">📝 When status becomes ACCEPTED, <code>assignedTo</code> is set to the userId
+                    making the change.</div>
+                <div class="note">📝 Every status change appends to <code>statusHistory[]</code> with timestamp and
+                    userId.</div>
+            </div>
+        </div>
     </div>
 </body>
+
 </html>
