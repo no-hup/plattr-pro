@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plattr Pro - Menu API Reference</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Custom styles for important nuances */
+        .imp {
+            background: linear-gradient(90deg, rgba(234, 88, 12, 0.15) 0%, transparent 100%);
+            border-left: 4px solid #ea580c;
+            padding: 10px 14px;
+            border-radius: 0 6px 6px 0;
+            margin: 8px 0;
+            font-weight: 500;
+        }
+
+        .imp::before {
+            content: "⚡ IMP: ";
+            color: #ea580c;
+            font-weight: 700;
+        }
+
+        .highlight-box {
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 8px;
+            padding: 14px;
+            margin: 12px 0;
+        }
+
+        .highlight-box-title {
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        /* Collapsible API Dropdown Styles */
+        .api-accordion {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .api-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border-bottom: 1px solid transparent;
+        }
+
+        .api-header:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .api-header.open {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .api-toggle {
+            font-size: 12px;
+            color: var(--text-muted);
+            transition: transform 0.2s ease;
+        }
+
+        .api-header.open .api-toggle {
+            transform: rotate(90deg);
+        }
+
+        .api-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .api-type {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .api-type-public {
+            background: rgba(5, 150, 105, 0.15);
+            color: var(--success);
+        }
+
+        .api-type-internal {
+            background: rgba(217, 119, 6, 0.15);
+            color: var(--warning);
+        }
+
+        .api-type-http {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent2);
+        }
+
+        .api-type-deprecated {
+            background: rgba(220, 38, 38, 0.15);
+            color: var(--error);
+        }
+
+        .api-desc {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-left: auto;
+        }
+
+        .api-content {
+            display: none;
+            padding: 16px;
+            background: var(--bg-secondary);
+        }
+
+        .api-content.open {
+            display: block;
+        }
+
+        .api-params,
+        .api-response {
+            margin-bottom: 14px;
+        }
+
+        .api-section-title {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .json-block {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.5;
+        }
+
+        /* Field coloring for JSON */
+        .field-mandatory {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .field-optional {
+            color: #0891b2;
+            font-style: italic;
+        }
+
+        .field-key {
+            color: var(--accent);
+        }
+
+        .field-value-string {
+            color: #ea580c;
+        }
+
+        .field-value-number {
+            color: #8b5cf6;
+        }
+
+        .field-value-bool {
+            color: #db2777;
+        }
+
+        .field-comment {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .legend-api {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 12px;
+        }
+
+        .legend-api-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-api-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin-bottom: 16px;
+        }
+
+        .back-link:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--accent);
+        }
+
+        .toc {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .toc-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+
+        .toc-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 8px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .toc-list a {
+            display: block;
+            padding: 6px 10px;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 12px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .toc-list a:hover {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--accent);
+        }
+
+        .toc-list code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+        }
+
+        .section-divider {
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+            margin: 32px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <span class="nav-logo">📖 Menu API Reference</span>
+        <a href="#fetch-apis">Fetch APIs</a>
+        <a href="#crud-apis">CRUD APIs</a>
+        <a href="#stock-apis">Stock APIs</a>
+        <a href="#internal-functions">Internal</a>
+        <a href="#error-codes">Errors</a>
+        <span style="margin-left: auto; display: flex; gap: 8px;">
+            <a href="menu_flow_detailed_spec.html" style="color:#6366f1;border:1px solid #6366f1;">📋 Menu Flow Spec</a>
+            <a href="order_flow_detailed_spec.html" style="color:#f97316;border:1px solid #f97316;">📦 Order Flow</a>
+        </span>
+    </nav>
+
+    <div class="container">
+        <a href="menu_flow_detailed_spec.html" class="back-link">
+            ← Back to Menu Flow Specification
+        </a>
+
+        <div class="header">
+            <h1>Menu API Reference</h1>
+            <p>Comprehensive documentation for all menu-related APIs with request parameters and sample JSON responses</p>
+            <div class="badges">
+                <span class="badge">📖 Request/Response</span>
+                <span class="badge">🎨 Color-Coded Fields</span>
+                <span class="badge">⚡ Important Notes</span>
+            </div>
+        </div>
+
+        <!-- TABLE OF CONTENTS -->
+        <div class="toc">
+            <div class="toc-title">📑 Quick Navigation</div>
+            <ul class="toc-list">
+                <li><a href="#getRestaurantMenu"><code>getRestaurantMenu</code> - Primary fetch</a></li>
+                <li><a href="#fetchMenu"><code>fetchMenu</code> - Secondary fetch</a></li>
+                <li><a href="#addMenuItem"><code>addMenuItem</code> - Create item</a></li>
+                <li><a href="#updateMenuItem"><code>updateMenuItem</code> - Update item</a></li>
+                <li><a href="#deleteMenuItem"><code>deleteMenuItem</code> - Delete item</a></li>
+                <li><a href="#updateMenuItemAvailability"><code>updateMenuItemAvailability</code> - Stock toggle</a></li>
+                <li><a href="#getAllMenuItems"><code>getAllMenuItems</code> - Internal</a></li>
+                <li><a href="#getMenuItemById"><code>getMenuItemById</code> - Internal</a></li>
+                <li><a href="#getAllCategories"><code>getAllCategories</code> - Internal</a></li>
+            </ul>
+        </div>
+
+        <!-- LEGEND -->
+        <div class="legend-api">
+            <div class="legend-api-item">
+                <span class="legend-api-color" style="background: rgba(5, 150, 105, 0.3);"></span>
+                <span><strong class="field-mandatory">Green</strong> = Mandatory field</span>
+            </div>
+            <div class="legend-api-item">
+                <span class="legend-api-color" style="background: rgba(8, 145, 178, 0.3);"></span>
+                <span><strong class="field-optional">Cyan</strong> = Optional/Nullable field</span>
+            </div>
+            <div class="legend-api-item">
+                <span class="api-type api-type-public">PUBLIC</span> = Firebase Callable
+            </div>
+            <div class="legend-api-item">
+                <span class="api-type api-type-internal">INTERNAL</span> = Internal function
+            </div>
+            <div class="legend-api-item">
+                <span class="api-type api-type-http">HTTP</span> = HTTP Endpoint
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- MENU FETCH APIs -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section class="section" id="fetch-apis">
+            <div class="section-title"><span class="section-icon">📖</span> Menu Fetch APIs</div>
+
+            <!-- getRestaurantMenu API -->
+            <div class="api-accordion" id="getRestaurantMenu">
+                <div class="api-header open" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">getRestaurantMenu</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Primary menu fetch API – default inStock=false (returns ALL items)</span>
+                </div>
+                <div class="api-content open">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"rest_basic_001"</span>,     <span class="field-comment">// Required - Restaurant document ID</span>
+  <span class="field-optional">"inStock"</span>: <span class="field-value-bool">false</span>                         <span class="field-comment">// Optional, default: false (returns ALL items)</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Sample Response (Success)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Restaurant menu fetched successfully"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"categories"</span>: [
+      {
+        <span class="field-mandatory">"id"</span>: <span class="field-value-string">"cat_food"</span>,
+        <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Food"</span>,
+        <span class="field-mandatory">"order"</span>: <span class="field-value-number">1</span>,
+        <span class="field-optional">"description"</span>: <span class="field-value-string">"All-time favourites"</span>,
+        <span class="field-optional">"image"</span>: <span class="field-value-string">"https://example.com/images/cat-food.jpg"</span>
+      },
+      {
+        <span class="field-mandatory">"id"</span>: <span class="field-value-string">"cat_bev"</span>,
+        <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Beverages"</span>,
+        <span class="field-mandatory">"order"</span>: <span class="field-value-number">2</span>,
+        <span class="field-optional">"description"</span>: <span class="field-value-string">"Drinks"</span>,
+        <span class="field-optional">"image"</span>: <span class="field-value-string">"https://example.com/images/cat-bev.jpg"</span>
+      }
+    ],
+    <span class="field-mandatory">"menuItems"</span>: {
+      <span class="field-key">"cat_food"</span>: [
+        {
+          <span class="field-mandatory">"menuItemId"</span>: <span class="field-value-string">"item_burger_cls"</span>,
+          <span class="field-mandatory">"categoryId"</span>: <span class="field-value-string">"cat_food"</span>,
+          <span class="field-mandatory">"meta"</span>: {
+            <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Classic Burger"</span>,
+            <span class="field-optional">"description"</span>: <span class="field-value-string">"Beef patty with cheddar"</span>,
+            <span class="field-optional">"categoryName"</span>: <span class="field-value-string">"Food"</span>,
+            <span class="field-optional">"image"</span>: <span class="field-value-string">"https://example.com/images/burger-classic.jpg"</span>
+          },
+          <span class="field-mandatory">"priceInfo"</span>: {
+            <span class="field-mandatory">"basePrice"</span>: <span class="field-value-number">100</span>,
+            <span class="field-optional">"discount"</span>: <span class="field-value-number">10</span>,              <span class="field-comment">// Percentage (0-100)</span>
+            <span class="field-optional">"finalPrice"</span>: <span class="field-value-number">90</span>              <span class="field-comment">// basePrice * (1 - discount/100)</span>
+          },
+          <span class="field-optional">"variants"</span>: [                                        <span class="field-comment">// Enriched from variants collection</span>
+            {
+              <span class="field-mandatory">"id"</span>: <span class="field-value-string">"var_size_burger"</span>,
+              <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Size"</span>,            <span class="field-comment">// Contextual name from MenuItem ref</span>
+              <span class="field-mandatory">"meta"</span>: {
+                <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Burger Size"</span>,
+                <span class="field-optional">"description"</span>: <span class="field-value-string">"Choose size"</span>,
+                <span class="field-optional">"categoryAssociatedWith"</span>: [<span class="field-value-string">"cat_food"</span>]
+              },
+              <span class="field-optional">"options"</span>: [
+                {
+                  <span class="field-mandatory">"id"</span>: <span class="field-value-string">"size_reg"</span>,
+                  <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Regular"</span>,
+                  <span class="field-mandatory">"priceInfo"</span>: { <span class="field-value-string">"basePrice"</span>: <span class="field-value-number">0</span>, <span class="field-value-string">"finalPrice"</span>: <span class="field-value-number">0</span>, <span class="field-value-string">"discount"</span>: <span class="field-value-number">0</span> }
+                },
+                {
+                  <span class="field-mandatory">"id"</span>: <span class="field-value-string">"size_lg"</span>,
+                  <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Large"</span>,
+                  <span class="field-mandatory">"priceInfo"</span>: { <span class="field-value-string">"basePrice"</span>: <span class="field-value-number">20</span>, <span class="field-value-string">"finalPrice"</span>: <span class="field-value-number">18</span>, <span class="field-value-string">"discount"</span>: <span class="field-value-number">10</span> }
+                }
+              ],
+              <span class="field-optional">"isMandatory"</span>: <span class="field-value-bool">true</span>,           <span class="field-comment">// Customer MUST select before add-to-cart</span>
+              <span class="field-optional">"respectParentDiscount"</span>: <span class="field-value-bool">true</span>  <span class="field-comment">// Inherits parent item discount</span>
+            }
+          ],
+          <span class="field-optional">"addons"</span>: [                                          <span class="field-comment">// Enriched from addons collection</span>
+            {
+              <span class="field-mandatory">"id"</span>: <span class="field-value-string">"addon_fries"</span>,
+              <span class="field-mandatory">"name"</span>: <span class="field-value-string">"French Fries"</span>,
+              <span class="field-mandatory">"priceInfo"</span>: {
+                <span class="field-mandatory">"basePrice"</span>: <span class="field-value-number">20</span>,
+                <span class="field-optional">"discount"</span>: <span class="field-value-number">0</span>,
+                <span class="field-optional">"finalPrice"</span>: <span class="field-value-number">20</span>
+              },
+              <span class="field-optional">"respectParentDiscount"</span>: <span class="field-value-bool">true</span>,
+              <span class="field-mandatory">"isInStock"</span>: <span class="field-value-bool">true</span>
+            }
+          ],
+          <span class="field-optional">"nutritionalInfo"</span>: {
+            <span class="field-optional">"calories"</span>: <span class="field-value-number">600</span>,
+            <span class="field-optional">"protein"</span>: <span class="field-value-number">30</span>,
+            <span class="field-optional">"carbs"</span>: <span class="field-value-number">40</span>,
+            <span class="field-optional">"fat"</span>: <span class="field-value-number">30</span>
+          },
+          <span class="field-optional">"allergenTags"</span>: [<span class="field-value-string">"gluten"</span>, <span class="field-value-string">"dairy"</span>],
+          <span class="field-mandatory">"isInStock"</span>: <span class="field-value-bool">true</span>,
+          <span class="field-optional">"isCustomizable"</span>: <span class="field-value-bool">true</span>              <span class="field-comment">// Auto-computed: has variants OR addons</span>
+        }
+      ],
+      <span class="field-key">"cat_bev"</span>: [
+        {
+          <span class="field-mandatory">"menuItemId"</span>: <span class="field-value-string">"item_tea"</span>,
+          <span class="field-mandatory">"categoryId"</span>: <span class="field-value-string">"cat_bev"</span>,
+          <span class="field-mandatory">"meta"</span>: {
+            <span class="field-mandatory">"name"</span>: <span class="field-value-string">"House Tea"</span>,
+            <span class="field-optional">"description"</span>: <span class="field-value-string">"Simple and warm"</span>,
+            <span class="field-optional">"categoryName"</span>: <span class="field-value-string">"Beverages"</span>,
+            <span class="field-optional">"image"</span>: <span class="field-value-string">"https://example.com/images/tea.jpg"</span>
+          },
+          <span class="field-mandatory">"priceInfo"</span>: { <span class="field-mandatory">"basePrice"</span>: <span class="field-value-number">20</span>, <span class="field-optional">"discount"</span>: <span class="field-value-number">0</span>, <span class="field-optional">"finalPrice"</span>: <span class="field-value-number">20</span> },
+          <span class="field-optional">"variants"</span>: [],
+          <span class="field-optional">"addons"</span>: [],
+          <span class="field-mandatory">"isInStock"</span>: <span class="field-value-bool">true</span>,
+          <span class="field-optional">"isCustomizable"</span>: <span class="field-value-bool">false</span>
+        }
+      ]
+    },
+    <span class="field-mandatory">"metadata"</span>: {
+      <span class="field-mandatory">"totalCategories"</span>: <span class="field-value-number">2</span>,
+      <span class="field-mandatory">"totalMenuItems"</span>: <span class="field-value-number">2</span>
+    }
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (400 - Missing Restaurant ID)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"error"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Restaurant ID is required"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"code"</span>: <span class="field-value-string">"invalid-argument"</span>,
+    <span class="field-mandatory">"httpCode"</span>: <span class="field-value-number">400</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (404 - Restaurant Not Found)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"error"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Restaurant not found"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"code"</span>: <span class="field-value-string">"not-found"</span>,
+    <span class="field-mandatory">"httpCode"</span>: <span class="field-value-number">404</span>,
+    <span class="field-optional">"restaurantId"</span>: <span class="field-value-string">"invalid_rest_id"</span>
+  }
+}</div>
+                    </div>
+                    <div class="imp">Default <code>inStock=false</code> returns ALL items regardless of stock status. Pass <code>inStock=true</code> to filter to only available items.</div>
+                    <div class="highlight-box" style="margin-top: 12px;">
+                        <div class="highlight-box-title">Input Format Handling</div>
+                        <p style="font-size: 12px; margin: 0;">Supports both <code>data.data.restaurantId</code> (standard callable format) and <code>data.restaurantId</code> (direct object format).</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- fetchMenu API -->
+            <div class="api-accordion" id="fetchMenu">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">fetchMenu</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Secondary fetch API – default inStock=true (returns ONLY in-stock items)</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"rest_basic_001"</span>,     <span class="field-comment">// Required - Restaurant document ID</span>
+  <span class="field-optional">"inStock"</span>: <span class="field-value-bool">true</span>                          <span class="field-comment">// Optional, default: true (filters to in-stock only)</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Sample Response (Success)</div>
+                        <div class="json-block"><span class="field-comment">// Same structure as getRestaurantMenu, but only includes:</span>
+<span class="field-comment">// - Menu items where isInStock === true</span>
+<span class="field-comment">// - Addons where isInStock === true</span>
+<span class="field-comment">// - Variants are NOT filtered (always included)</span>
+{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Restaurant menu fetched successfully"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"categories"</span>: [...],
+    <span class="field-mandatory">"menuItems"</span>: { ... },    <span class="field-comment">// Only in-stock items</span>
+    <span class="field-mandatory">"metadata"</span>: { ... }
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (400 - Invalid Request Format)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"error"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Invalid request data"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"code"</span>: <span class="field-value-string">"invalid-argument"</span>,
+    <span class="field-mandatory">"httpCode"</span>: <span class="field-value-number">400</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (400 - Missing Restaurant ID)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"error"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Restaurant ID is required"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"code"</span>: <span class="field-value-string">"invalid-argument"</span>,
+    <span class="field-mandatory">"httpCode"</span>: <span class="field-value-number">400</span>
+  }
+}</div>
+                    </div>
+                    <div class="imp">Uses <code>MenuValidation.validateMenuFetchInput()</code> – stricter validation requiring <code>data.data.restaurantId</code> format. Default <code>inStock=true</code> (INVERTED from getRestaurantMenu).</div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="section-divider">
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- MENU ITEM CRUD APIs -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section class="section" id="crud-apis">
+            <div class="section-title"><span class="section-icon">✏️</span> Menu Item CRUD APIs</div>
+
+            <!-- addMenuItem API -->
+            <div class="api-accordion" id="addMenuItem">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">addMenuItem</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Create a new menu item with auto-computed fields</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"rest_basic_001"</span>,
+  <span class="field-mandatory">"menuItemData"</span>: {
+    <span class="field-mandatory">"meta"</span>: {
+      <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Veggie Wrap"</span>,             <span class="field-comment">// Required</span>
+      <span class="field-optional">"description"</span>: <span class="field-value-string">"Fresh vegetables in a wrap"</span>,
+      <span class="field-optional">"categoryName"</span>: <span class="field-value-string">"Food"</span>,
+      <span class="field-optional">"image"</span>: <span class="field-value-string">"https://example.com/wrap.jpg"</span>
+    },
+    <span class="field-mandatory">"categoryId"</span>: <span class="field-value-string">"cat_food"</span>,            <span class="field-comment">// Required - Must exist in categories</span>
+    <span class="field-mandatory">"priceInfo"</span>: {
+      <span class="field-mandatory">"basePrice"</span>: <span class="field-value-number">85</span>,                   <span class="field-comment">// Required - number</span>
+      <span class="field-optional">"discount"</span>: <span class="field-value-number">0</span>,                       <span class="field-comment">// Optional - percentage (0-100)</span>
+      <span class="field-optional">"finalPrice"</span>: <span class="field-value-number">85</span>                     <span class="field-comment">// Optional - auto-calculated if not provided</span>
+    },
+    <span class="field-optional">"variants"</span>: [                                          <span class="field-comment">// Optional - array of variant references</span>
+      {
+        <span class="field-mandatory">"id"</span>: <span class="field-value-string">"var_size_burger"</span>,           <span class="field-comment">// Reference to variants collection</span>
+        <span class="field-optional">"name"</span>: <span class="field-value-string">"Size"</span>                       <span class="field-comment">// Contextual display name</span>
+      }
+    ],
+    <span class="field-optional">"addons"</span>: [<span class="field-value-string">"addon_fries"</span>],              <span class="field-comment">// Optional - array of addon IDs</span>
+    <span class="field-optional">"nutritionalInfo"</span>: {
+      <span class="field-optional">"calories"</span>: <span class="field-value-number">350</span>,
+      <span class="field-optional">"protein"</span>: <span class="field-value-number">12</span>,
+      <span class="field-optional">"carbs"</span>: <span class="field-value-number">45</span>,
+      <span class="field-optional">"fat"</span>: <span class="field-value-number">10</span>
+    },
+    <span class="field-optional">"allergenTags"</span>: [<span class="field-value-string">"gluten"</span>],
+    <span class="field-optional">"isInStock"</span>: <span class="field-value-bool">true</span>                        <span class="field-comment">// Optional - Default: true</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Sample Response (Success)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Menu item added successfully"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"menuItemId"</span>: <span class="field-value-string">"AbC123XyZ456"</span>,          <span class="field-comment">// Firestore auto-generated ID</span>
+    <span class="field-mandatory">"menuItem"</span>: {
+      <span class="field-mandatory">"id"</span>: <span class="field-value-string">"AbC123XyZ456"</span>,
+      <span class="field-mandatory">"meta"</span>: { <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Veggie Wrap"</span>, ... },
+      <span class="field-mandatory">"categoryId"</span>: <span class="field-value-string">"cat_food"</span>,
+      <span class="field-mandatory">"priceInfo"</span>: { ... },
+      <span class="field-optional">"variants"</span>: [...],
+      <span class="field-optional">"addons"</span>: [...],
+      <span class="field-mandatory">"isInStock"</span>: <span class="field-value-bool">true</span>,
+      <span class="field-mandatory">"isCustomizable"</span>: <span class="field-value-bool">true</span>,                 <span class="field-comment">// Auto-computed</span>
+      <span class="field-mandatory">"lastUpdated"</span>: { <span class="field-value-string">"_seconds"</span>: <span class="field-value-number">1678901234</span>, ... }
+    }
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (400 - Missing Required Fields)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"error"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Restaurant ID and menu item data are required"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"code"</span>: <span class="field-value-string">"invalid-argument"</span>,
+    <span class="field-mandatory">"httpCode"</span>: <span class="field-value-number">400</span>,
+    <span class="field-optional">"hasRestaurantId"</span>: <span class="field-value-bool">false</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (400 - Invalid Menu Item Data)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"error"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Menu item data is missing required fields"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"code"</span>: <span class="field-value-string">"invalid-argument"</span>,
+    <span class="field-mandatory">"httpCode"</span>: <span class="field-value-number">400</span>,
+    <span class="field-optional">"restaurantId"</span>: <span class="field-value-string">"rest_basic_001"</span>
+  }
+}</div>
+                    </div>
+                    <div class="highlight-box" style="margin-top: 12px;">
+                        <div class="highlight-box-title">Auto-Computed Fields</div>
+                        <ul style="font-size: 12px; margin: 0; padding-left: 16px;">
+                            <li><code>isCustomizable</code>: Set to <code>true</code> if variants OR addons are provided</li>
+                            <li><code>lastUpdated</code>: Set to server timestamp</li>
+                            <li><code>isInStock</code>: Defaults to <code>true</code> if not provided</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- updateMenuItem API -->
+            <div class="api-accordion" id="updateMenuItem">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">updateMenuItem</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Update menu item with isCustomizable recomputation</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"rest_basic_001"</span>,
+  <span class="field-mandatory">"menuItemId"</span>: <span class="field-value-string">"item_burger_cls"</span>,
+  <span class="field-mandatory">"updateData"</span>: {                                       <span class="field-comment">// All fields optional - only include what to update</span>
+    <span class="field-optional">"meta"</span>: {
+      <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Updated Burger"</span>,         <span class="field-comment">// Required IF meta is provided</span>
+      <span class="field-optional">"description"</span>: <span class="field-value-string">"New description"</span>,
+      <span class="field-optional">"categoryName"</span>: <span class="field-value-string">"Food"</span>,
+      <span class="field-optional">"image"</span>: <span class="field-value-string">"https://example.com/new.jpg"</span>
+    },
+    <span class="field-optional">"categoryId"</span>: <span class="field-value-string">"cat_food"</span>,
+    <span class="field-optional">"priceInfo"</span>: {
+      <span class="field-mandatory">"basePrice"</span>: <span class="field-value-number">120</span>,                 <span class="field-comment">// Required IF priceInfo is provided (must be number)</span>
+      <span class="field-optional">"discount"</span>: <span class="field-value-number">15</span>,
+      <span class="field-optional">"finalPrice"</span>: <span class="field-value-number">102</span>
+    },
+    <span class="field-optional">"variants"</span>: [...],                                    <span class="field-comment">// Replace entire variants array</span>
+    <span class="field-optional">"addons"</span>: [...],                                      <span class="field-comment">// Replace entire addons array</span>
+    <span class="field-optional">"nutritionalInfo"</span>: { ... },
+    <span class="field-optional">"allergenTags"</span>: [...],
+    <span class="field-optional">"isInStock"</span>: <span class="field-value-bool">false</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Sample Response (Success)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Menu item updated successfully"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"menuItemId"</span>: <span class="field-value-string">"item_burger_cls"</span>,
+    <span class="field-mandatory">"menuItem"</span>: {
+      <span class="field-comment">// Full updated menu item object...</span>
+      <span class="field-mandatory">"isCustomizable"</span>: <span class="field-value-bool">true</span>,               <span class="field-comment">// Recomputed based on new variants/addons</span>
+      <span class="field-mandatory">"lastUpdated"</span>: { <span class="field-value-string">"_seconds"</span>: <span class="field-value-number">1678902345</span>, ... }
+    }
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (400 - Missing Required Fields)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"error"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Restaurant ID, menu item ID and update data are required"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"code"</span>: <span class="field-value-string">"invalid-argument"</span>,
+    <span class="field-mandatory">"httpCode"</span>: <span class="field-value-number">400</span>,
+    <span class="field-optional">"hasRestaurantId"</span>: <span class="field-value-bool">true</span>,
+    <span class="field-optional">"hasMenuItemId"</span>: <span class="field-value-bool">false</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (404 - Menu Item Not Found)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"error"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Menu item not found"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"code"</span>: <span class="field-value-string">"not-found"</span>,
+    <span class="field-mandatory">"httpCode"</span>: <span class="field-value-number">404</span>,
+    <span class="field-optional">"restaurantId"</span>: <span class="field-value-string">"rest_basic_001"</span>,
+    <span class="field-optional">"menuItemId"</span>: <span class="field-value-string">"nonexistent_id"</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (400 - Invalid Update Data)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"error"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Base price must be a number if priceInfo is provided"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"code"</span>: <span class="field-value-string">"invalid-argument"</span>,
+    <span class="field-mandatory">"httpCode"</span>: <span class="field-value-number">400</span>
+  }
+}</div>
+                    </div>
+                    <div class="imp"><code>isCustomizable</code> is RECOMPUTED on every update. If you remove all variants/addons, it will become <code>false</code>.</div>
+                </div>
+            </div>
+
+            <!-- deleteMenuItem API -->
+            <div class="api-accordion" id="deleteMenuItem">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">deleteMenuItem</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Delete a menu item – NO cascade delete</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"rest_basic_001"</span>,
+  <span class="field-mandatory">"menuItemId"</span>: <span class="field-value-string">"item_burger_cls"</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Sample Response (Success)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Menu item deleted successfully"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"menuItemId"</span>: <span class="field-value-string">"item_burger_cls"</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (400 - Missing Required Fields)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"error"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Restaurant ID and menu item ID are required"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"code"</span>: <span class="field-value-string">"invalid-argument"</span>,
+    <span class="field-mandatory">"httpCode"</span>: <span class="field-value-number">400</span>,
+    <span class="field-optional">"hasRestaurantId"</span>: <span class="field-value-bool">true</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (404 - Menu Item Not Found)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"error"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Menu item not found"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"code"</span>: <span class="field-value-string">"not-found"</span>,
+    <span class="field-mandatory">"httpCode"</span>: <span class="field-value-number">404</span>,
+    <span class="field-optional">"restaurantId"</span>: <span class="field-value-string">"rest_basic_001"</span>,
+    <span class="field-optional">"menuItemId"</span>: <span class="field-value-string">"nonexistent_id"</span>
+  }
+}</div>
+                    </div>
+                    <div class="imp">NO cascade delete – orphaned variant/addon references may remain. Variants and addons that were associated with this item are NOT deleted.</div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="section-divider">
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- STOCK MANAGEMENT APIs -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section class="section" id="stock-apis">
+            <div class="section-title"><span class="section-icon">📦</span> Stock Management APIs</div>
+
+            <!-- updateMenuItemAvailability API -->
+            <div class="api-accordion" id="updateMenuItemAvailability">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">updateMenuItemAvailability</span>
+                    <span class="api-type api-type-http">HTTP POST</span>
+                    <span class="api-desc">Toggle isInStock flag – Quick stock toggle endpoint</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters (HTTP POST Body)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"rest_basic_001"</span>,
+  <span class="field-mandatory">"menuItemId"</span>: <span class="field-value-string">"item_burger_cls"</span>,
+  <span class="field-mandatory">"isAvailable"</span>: <span class="field-value-bool">false</span>                    <span class="field-comment">// MUST be explicit boolean (not truthy/falsy)</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Sample Response (Success - HTTP 200)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Menu item availability updated successfully"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"menuItemId"</span>: <span class="field-value-string">"item_burger_cls"</span>,
+    <span class="field-mandatory">"isAvailable"</span>: <span class="field-value-bool">false</span>,
+    <span class="field-mandatory">"menuItem"</span>: {
+      <span class="field-mandatory">"id"</span>: <span class="field-value-string">"item_burger_cls"</span>,
+      <span class="field-mandatory">"meta"</span>: { ... },
+      <span class="field-mandatory">"isInStock"</span>: <span class="field-value-bool">false</span>,                   <span class="field-comment">// Updated value</span>
+      <span class="field-mandatory">"lastUpdated"</span>: { ... }                             <span class="field-comment">// Updated timestamp</span>
+    }
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (HTTP 400 - Invalid Request)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"error"</span>,
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"invalid_argument"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Restaurant ID, menu item ID, and availability status (boolean) are required"</span>,
+  <span class="field-optional">"data"</span>: {
+    <span class="field-optional">"restaurantId"</span>: <span class="field-value-string">"rest_basic_001"</span>,
+    <span class="field-optional">"menuItemId"</span>: <span class="field-value-string">"item_burger_cls"</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (HTTP 404 - Menu Item Not Found)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"error"</span>,
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"not_found"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Menu item not found"</span>,
+  <span class="field-optional">"data"</span>: {
+    <span class="field-optional">"restaurantId"</span>: <span class="field-value-string">"rest_basic_001"</span>,
+    <span class="field-optional">"menuItemId"</span>: <span class="field-value-string">"nonexistent_id"</span>
+  }
+}</div>
+                    </div>
+                    <div class="imp"><code>isAvailable</code> MUST be an explicit boolean value (<code>true</code> or <code>false</code>). Truthy/falsy values like <code>"true"</code>, <code>1</code>, <code>""</code> will be rejected.</div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="section-divider">
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- INTERNAL FUNCTIONS -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section class="section" id="internal-functions">
+            <div class="section-title"><span class="section-icon">🔧</span> Internal Functions (Not Directly Callable)</div>
+
+            <!-- getAllMenuItems INTERNAL -->
+            <div class="api-accordion" id="getAllMenuItems">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">getAllMenuItems</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">Fetch all menu items for a restaurant</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">getAllMenuItems</span>(<span class="field-mandatory">restaurantId</span>: string): Promise&lt;MenuItem[]&gt;
+
+<span class="field-comment">// Returns array of all menu items</span>
+<span class="field-comment">// Each item includes: { id, menuItemId, categoryId, meta, priceInfo, ... }</span></div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Throws (invalid-argument)</div>
+                        <div class="json-block"><span class="field-comment">// Thrown when restaurantId is missing or empty</span>
+throw new functions.https.HttpsError(
+  <span class="field-value-string">'invalid-argument'</span>,
+  <span class="field-value-string">'Restaurant ID is required'</span>
+);</div>
+                    </div>
+                    <div class="note">Used internally by menu fetch operations. Validates restaurantId via <code>MenuValidation.validateRestaurantId()</code>.</div>
+                </div>
+            </div>
+
+            <!-- getMenuItemById INTERNAL -->
+            <div class="api-accordion" id="getMenuItemById">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">getMenuItemById</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">Fetch single menu item by ID</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">getMenuItemById</span>(
+  <span class="field-mandatory">restaurantId</span>: string,
+  <span class="field-mandatory">menuItemId</span>: string
+): Promise&lt;MenuItem&gt;
+
+<span class="field-comment">// Throws Error('Menu item not found') if document doesn't exist</span></div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Throws (Error)</div>
+                        <div class="json-block"><span class="field-comment">// Thrown when menu item document doesn't exist</span>
+throw new Error(<span class="field-value-string">'Menu item not found'</span>);
+
+<span class="field-comment">// Also validates via MenuValidation:</span>
+throw new functions.https.HttpsError(
+  <span class="field-value-string">'invalid-argument'</span>,
+  <span class="field-value-string">'Restaurant ID is required'</span>  <span class="field-comment">// or 'Item ID is required'</span>
+);</div>
+                    </div>
+                    <div class="note">Used by CRUD operations to fetch item details after create/update.</div>
+                </div>
+            </div>
+
+            <!-- getMenuItemsByCategory INTERNAL -->
+            <div class="api-accordion" id="getMenuItemsByCategory">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">getMenuItemsByCategory</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">Fetch menu items filtered by category</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">getMenuItemsByCategory</span>(
+  <span class="field-mandatory">restaurantId</span>: string,
+  <span class="field-mandatory">categoryId</span>: string
+): Promise&lt;MenuItem[]&gt;
+
+<span class="field-comment">// Uses Firestore query: where('categoryId', '==', categoryId)</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- getAllCategories INTERNAL -->
+            <div class="api-accordion" id="getAllCategories">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">getAllCategories</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">Fetch categories ordered by order field</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">getAllCategories</span>(<span class="field-mandatory">restaurantRef</span>: DocumentReference): Promise&lt;Category[]&gt;
+
+<span class="field-comment">// Categories are ordered by 'order' field ascending</span>
+<span class="field-comment">// Throws error if any category is missing 'name' field</span>
+<span class="field-comment">// Returns: [{ id, name, order, description?, image? }]</span></div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Throws (Error)</div>
+                        <div class="json-block"><span class="field-comment">// Thrown if any category document is missing the 'name' field</span>
+throw new Error(<span class="field-value-string">'Category name is missing'</span>);</div>
+                    </div>
+                    <div class="note warn">⚠️ Critical validation: Categories MUST have a <code>name</code> field or the function throws.</div>
+                </div>
+            </div>
+
+            <!-- updateMenuItemStock INTERNAL -->
+            <div class="api-accordion" id="updateMenuItemStock">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">updateMenuItemStock</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">Update isInStock field for a menu item</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">updateMenuItemStock</span>(
+  <span class="field-mandatory">restaurantId</span>: string,
+  <span class="field-mandatory">menuItemId</span>: string,
+  <span class="field-mandatory">isInStock</span>: boolean
+): Promise&lt;boolean&gt;
+
+<span class="field-comment">// Updates: { isInStock, lastUpdated: serverTimestamp() }</span>
+<span class="field-comment">// Throws Error('isInStock must be a boolean') if type check fails</span></div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Throws (Error)</div>
+                        <div class="json-block"><span class="field-comment">// Thrown when isInStock is not a boolean type</span>
+throw new Error(<span class="field-value-string">'isInStock must be a boolean'</span>);
+
+<span class="field-comment">// Also validates via MenuValidation:</span>
+throw new functions.https.HttpsError(
+  <span class="field-value-string">'invalid-argument'</span>,
+  <span class="field-value-string">'Restaurant ID is required'</span>  <span class="field-comment">// or 'Item ID is required'</span>
+);</div>
+                    </div>
+                    <div class="note">Used by <code>updateMenuItemAvailability</code> HTTP endpoint. Also directly callable from other backend functions.</div>
+                </div>
+            </div>
+
+            <!-- getAllMenuItemsInStock INTERNAL -->
+            <div class="api-accordion" id="getAllMenuItemsInStock">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">getAllMenuItemsInStock</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">Fetch only in-stock menu items</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">getAllMenuItemsInStock</span>(<span class="field-mandatory">restaurantId</span>: string): Promise&lt;MenuItem[]&gt;
+
+<span class="field-comment">// Uses Firestore query: where('isInStock', '==', true)</span>
+<span class="field-comment">// Returns only menu items with isInStock === true</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- getFullMenu INTERNAL -->
+            <div class="api-accordion" id="getFullMenu">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">getFullMenu</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">Fetch categories + menu items (non-organized)</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">getFullMenu</span>(): Promise&lt;{
+  <span class="field-mandatory">categories</span>: Category[],
+  <span class="field-mandatory">menuItems</span>: MenuItem[]
+}&gt;
+
+<span class="field-comment">// Fetches categories and menu items in parallel via Promise.all</span>
+<span class="field-comment">// Note: menuItems is a flat array, NOT organized by category</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- searchMenu INTERNAL -->
+            <div class="api-accordion" id="searchMenu">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">searchMenu</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">Search menu items by name prefix</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">searchMenu</span>(<span class="field-mandatory">query</span>: string): Promise&lt;MenuItem[]&gt;
+
+<span class="field-comment">// Uses Firestore range query on meta.name field</span>
+<span class="field-comment">// where('meta.name', '>=', query)</span>
+<span class="field-comment">// where('meta.name', '<=', query + '\uf8ff')</span></div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Throws (Error)</div>
+                        <div class="json-block"><span class="field-comment">// Thrown when query is empty or falsy</span>
+throw new Error(<span class="field-value-string">'Search query is required'</span>);</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- getPopularItems INTERNAL -->
+            <div class="api-accordion" id="getPopularItems">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">getPopularItems</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">Fetch most popular menu items</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">getPopularItems</span>(<span class="field-optional">limit</span>: number = <span class="field-value-number">10</span>): Promise&lt;MenuItem[]&gt;
+
+<span class="field-comment">// Assumes 'popularity' field exists on menu items</span>
+<span class="field-comment">// orderBy('popularity', 'desc').limit(limit)</span></div>
+                    </div>
+                    <div class="note warn">⚠️ Requires a <code>popularity</code> field on menu item documents. May fail if field doesn't exist.</div>
+                </div>
+            </div>
+
+            <!-- getSpecialOffers INTERNAL -->
+            <div class="api-accordion" id="getSpecialOffers">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">getSpecialOffers</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">Fetch items with active discounts</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">getSpecialOffers</span>(): Promise&lt;MenuItem[]&gt;
+
+<span class="field-comment">// where('priceInfo.discount', '>', 0)</span>
+<span class="field-comment">// Returns all menu items with any discount applied</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="section-divider">
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- ERROR CODES -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section class="section" id="error-codes">
+            <div class="section-title"><span class="section-icon">⚠️</span> Common Error Codes</div>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Error Code</th>
+                            <th>HTTP Status</th>
+                            <th>Scenario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>invalid-argument</code></td>
+                            <td>400</td>
+                            <td>Missing required fields, invalid field types, validation failures</td>
+                        </tr>
+                        <tr>
+                            <td><code>not-found</code></td>
+                            <td>404</td>
+                            <td>Restaurant or MenuItem document doesn't exist</td>
+                        </tr>
+                        <tr>
+                            <td><code>unauthenticated</code></td>
+                            <td>401</td>
+                            <td>Authentication required but missing (for protected endpoints)</td>
+                        </tr>
+                        <tr>
+                            <td><code>permission-denied</code></td>
+                            <td>403</td>
+                            <td>User lacks permission for this operation</td>
+                        </tr>
+                        <tr>
+                            <td><code>internal</code></td>
+                            <td>500</td>
+                            <td>Database errors, unexpected exceptions</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card" style="margin-top: 16px;">
+                <div class="card-title">Error Response Format</div>
+                <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"error"</span>,
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"invalid-argument"</span>,           <span class="field-comment">// Error code</span>
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Human-readable error message"</span>,
+  <span class="field-optional">"details"</span>: {                                           <span class="field-comment">// Optional - additional context</span>
+    <span class="field-optional">"restaurantId"</span>: <span class="field-value-string">"..."</span>,
+    <span class="field-optional">"menuItemId"</span>: <span class="field-value-string">"..."</span>,
+    <span class="field-optional">"stage"</span>: <span class="field-value-string">"..."</span>                        <span class="field-comment">// Processing stage where error occurred</span>
+  }
+}</div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // Toggle API accordion
+        function toggleApi(header) {
+            header.classList.toggle('open');
+            const content = header.nextElementSibling;
+            content.classList.toggle('open');
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // Open the accordion if clicking on TOC link
+                    const accordion = target.closest('.api-accordion');
+                    if (accordion) {
+                        const header = accordion.querySelector('.api-header');
+                        if (!header.classList.contains('open')) {
+                            header.classList.add('open');
+                            header.nextElementSibling.classList.add('open');
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
+

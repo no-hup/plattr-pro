@@ -18,9 +18,10 @@ You supervise changes made by other LLM agents. Review `git status` (added/modif
 ## Output Requirement
 
 **Save all review output to a new file:**
-- Location: `agent_workspace/reviews/`
+- **Absolute Path:** `/Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/supervisor/`
 - Naming: `MM-DD_<feature-or-change-summary>.md`
 - Example: `01-15_cart-tax-calculation-fix.md`
+- ⚠️ **CRITICAL:** Use the exact path above. Do NOT create new `agent_workspace` folders.
 
 ---
 
@@ -90,3 +91,22 @@ Ensure temp files left in the changes are deleted. Check for:
 ## Action Items
 1. <actionable fix if any>
 ```
+
+---
+
+## Self-Learning (Rule Updates)
+
+When the user corrects your output or points out something unexpected, **update THIS rule file** with a concise sample under the section below. This makes the rule self-improving.
+
+### How to Add Learnings
+1. Add a new entry under "Learned Corrections" below
+2. Format: `❌ Wrong → ✅ Correct (context)`
+3. Keep it to 1-2 lines max
+
+---
+
+## Learned Corrections
+
+❌ Flagged old TODOs as issues → ✅ Ignore pre-existing TODOs; only flag TODOs introduced in the current changeset (old TODOs are intentionally deferred)
+
+<!-- Add more corrections here as you receive feedback -->

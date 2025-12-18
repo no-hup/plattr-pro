@@ -9,7 +9,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../styles.css">
     <style>
         /* Custom styles for important nuances */
         .imp {
@@ -301,7 +301,7 @@
         <a href="#validation">Validation</a>
         <a href="#nuances">Nuances</a>
         <span style="margin-left: auto; display: flex; gap: 8px;">
-            <a href="CONSUMER_APP_FLOW.html" style="color:#6366f1;border:1px solid #6366f1;">🍽️ Consumer Flow</a>
+            <a href="../CONSUMER_APP_FLOW.html" style="color:#6366f1;border:1px solid #6366f1;">🍽️ Consumer Flow</a>
             <a href="order_flow_detailed_spec.html" style="color:#f97316;border:1px solid #f97316;">📦 Order Flow</a>
         </span>
     </nav>
@@ -588,7 +588,8 @@ restaurants/{restaurantId}/
                     </tbody>
                 </table>
                 <div class="imp">Discount is a <strong>percentage</strong> (0-100), NOT a currency amount.
-                    <code>finalPrice</code> is pre-calculated and stored.</div>
+                    <code>finalPrice</code> is pre-calculated and stored.
+                </div>
             </div>
 
             <div class="card">
@@ -681,7 +682,8 @@ const itemVariants = (item.variants || []).map(variant =>
                 </div>
                 <ul class="bullet-list">
                     <li class="success">Full variant data (priceInfo, isMandatory, etc.) comes from
-                        <code>variants</code> collection</li>
+                        <code>variants</code> collection
+                    </li>
                     <li class="success">Contextual <code>name</code> comes from MenuItem's variant reference</li>
                     <li class="warning">Missing variants (invalid IDs) are filtered out silently</li>
                 </ul>
@@ -696,7 +698,8 @@ const itemVariants = (item.variants || []).map(variant =>
 const itemAddons = (item.addons || []).map(addonId => addons[addonId]).filter(Boolean);
                 </pre>
                 <div class="imp">Variants are NOT filtered by stock during fetch. Addons ARE filtered when
-                    <code>inStock=true</code>.</div>
+                    <code>inStock=true</code>.
+                </div>
             </div>
         </section>
 
@@ -759,7 +762,8 @@ const itemAddons = (item.addons || []).map(addonId => addons[addonId]).filter(Bo
                 </table>
                 <div class="imp">These APIs have <strong>inverted default behaviors</strong>!
                     <code>getRestaurantMenu</code> defaults to showing all items; <code>fetchMenu</code> defaults to
-                    in-stock only.</div>
+                    in-stock only.
+                </div>
             </div>
 
             <div class="card">
@@ -814,6 +818,18 @@ const isCustomizable = (menuItemData.variants && menuItemData.variants.length > 
         <!-- API REFERENCE -->
         <section class="section" id="api-reference">
             <div class="section-title"><span class="section-icon">🎯</span> API Reference</div>
+
+            <div class="card">
+                <div class="card-title">📚 Complete API Documentation</div>
+                <p>For comprehensive API documentation with request parameters, sample JSON responses, and field
+                    specifications, see the dedicated API Reference page:</p>
+                <div style="margin-top: 16px; text-align: center;">
+                    <a href="menu_api_reference.html"
+                        style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">
+                        📖 View Full Menu API Reference →
+                    </a>
+                </div>
+            </div>
 
             <div class="legend-api">
                 <div class="legend-api-item">
@@ -905,7 +921,8 @@ const isCustomizable = (menuItemData.variants && menuItemData.variants.length > 
                         </div>
                     </div>
                     <div class="note warn">⚠️ Default <code>inStock=false</code> returns ALL items. Pass
-                        <code>inStock=true</code> to filter.</div>
+                        <code>inStock=true</code> to filter.
+                    </div>
                 </div>
             </div>
 
@@ -1207,7 +1224,8 @@ const isCustomizable = (menuItemData.variants && menuItemData.variants.length > 
                         <tr>
                             <td><strong>Legacy Cart</strong></td>
                             <td><code>creation/</code> folder contains deprecated cart functions – use
-                                <code>cart/</code> package</td>
+                                <code>cart/</code> package
+                            </td>
                         </tr>
                     </tbody>
                 </table>

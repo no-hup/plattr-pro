@@ -1,18 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>cart-addItemToCart · Merge Item</title>
   <style>
-    body { font-family: 'JetBrains Mono', monospace; margin: 24px; }
-    pre { background: #161b22; color: #c9d1d9; padding: 16px; border-radius: 8px; overflow-x: auto; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      margin: 0;
+      padding: 2rem;
+      line-height: 1.5;
+    }
+
+    pre {
+      background: #020617;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    code {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    h1 {
+      margin-top: 0;
+    }
   </style>
 </head>
-<body>
-  <h1>cart-addItemToCart</h1>
-  <p><strong>Scenario:</strong> Identical configuration already exists; quantity increments instead of creating a new row.</p>
 
-  <h2>Request</h2>
+<body>
+  <h1>cart-addItemToCart · Merge Item</h1>
+  <p><strong>Scenario:</strong> Identical configuration already exists; quantity increments instead of creating a new
+    row.</p>
+
+  <h2>Sample Request</h2>
   <pre><code>{
   "data": {
     "restaurantId": "rest001",
@@ -25,17 +50,60 @@
   }
 }</code></pre>
 
-  <h2>Response</h2>
+  <h2>Sample Response</h2>
   <pre><code>{
   "status": "success",
-  "message": "Quantity updated",
+  "message": "Item added to cart successfully.",
   "data": {
-    "cartItemId": 7,
-    "quantity": 3,
-    "merge": true,
-    "priceInfo": {
-      "finalPrice": 594,
-      "totalDiscountAmount": 66
+    "cart": {
+      "restaurantId": "rest001",
+      "items": [
+        {
+          "menuItemId": "item_classic_burger",
+          "menuItem": {
+            "meta": { "name": "Classic Burger", "description": "Juicy beef patty" },
+            "priceInfo": { "basePrice": 180, "discount": 10, "finalPrice": 162 }
+          },
+          "selectedVariantsDetails": [
+            {
+              "id": "variant_size",
+              "selected_variant_id": "large",
+              "selected_variant_name": "Large",
+              "priceInfo": { "basePrice": 20, "finalPrice": 18, "discount": 10 }
+            }
+          ],
+          "selectedAddonsDetails": [
+            {
+              "id": "addon_fries",
+              "name": "French Fries",
+              "priceInfo": { "basePrice": 40, "finalPrice": 40, "discount": 0 },
+              "respectParentDiscount": true
+            }
+          ],
+          "quantity": 3,
+          "priceInfo": {
+            "itemBasePrice": 180,
+            "itemVariantBasePrice": 20,
+            "itemAddonBasePrice": 40,
+            "itemFinalPrice": 216,
+            "discount": 10,
+            "totalBasePrice": 720,
+            "totalVariantBasePrice": 60,
+            "totalAddonBasePrice": 120,
+            "finalPrice": 648
+          },
+          "cartItemId": 1
+        }
+      ],
+      "priceInfo": {
+        "basePrice": 720,
+        "finalPrice": 648,
+        "totalDiscount": 10,
+        "totalDiscountAmount": 72,
+        "totalAddonBasePrice": 120,
+        "totalVariantBasePrice": 60
+      },
+      "lastUpdated": "2025-11-14T10:20:15Z"
     }
   }
 }</code></pre>
@@ -43,7 +111,8 @@
   <h2>Notes</h2>
   <ul>
     <li>Matching logic compares menu item + variant + addons arrays.</li>
-    <li>Enables consistent UI behavior during optimistic updates.</li>
+    <li>Returns the entire <code>cart</code> object with updated quantities.</li>
   </ul>
 </body>
+
 </html>

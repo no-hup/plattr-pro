@@ -1,18 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>cart-addItemToCart · New Item</title>
   <style>
-    body { font-family: 'JetBrains Mono', monospace; margin: 24px; }
-    pre { background: #0d1117; color: #c9d1d9; padding: 16px; border-radius: 8px; overflow-x: auto; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      margin: 0;
+      padding: 2rem;
+      line-height: 1.5;
+    }
+
+    pre {
+      background: #020617;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    code {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    h1 {
+      margin-top: 0;
+    }
   </style>
 </head>
+
 <body>
-  <h1>cart-addItemToCart</h1>
+  <h1>cart-addItemToCart · New Item</h1>
   <p><strong>Scenario:</strong> Customer adds a brand-new configuration to the cart.</p>
 
-  <h2>Request</h2>
+  <h2>Sample Request</h2>
   <pre><code>{
   "data": {
     "restaurantId": "rest001",
@@ -25,27 +49,72 @@
   }
 }</code></pre>
 
-  <h2>Response</h2>
+  <h2>Sample Response</h2>
   <pre><code>{
   "status": "success",
-  "message": "Item added to cart",
+  "message": "Item added to cart successfully.",
   "data": {
-    "cartItemId": 7,
-    "priceInfo": {
-      "itemBasePrice": 180,
-      "totalAddonBasePrice": 40,
-      "discount": 10,
-      "finalPrice": 198
-    },
-    "quantity": 1,
-    "merge": false
+    "cart": {
+      "restaurantId": "rest001",
+      "items": [
+        {
+          "menuItemId": "item_classic_burger",
+          "menuItem": {
+            "meta": { "name": "Classic Burger", "description": "Juicy beef patty" },
+            "priceInfo": { "basePrice": 180, "discount": 10, "finalPrice": 162 }
+          },
+          "selectedVariantsDetails": [
+            {
+              "id": "variant_size",
+              "selected_variant_id": "large",
+              "selected_variant_name": "Large",
+              "priceInfo": { "basePrice": 20, "finalPrice": 18, "discount": 10 }
+            }
+          ],
+          "selectedAddonsDetails": [
+            {
+              "id": "addon_fries",
+              "name": "French Fries",
+              "priceInfo": { "basePrice": 40, "finalPrice": 40, "discount": 0 },
+              "respectParentDiscount": true
+            }
+          ],
+          "quantity": 1,
+          "priceInfo": {
+            "itemBasePrice": 180,
+            "itemVariantBasePrice": 20,
+            "itemAddonBasePrice": 40,
+            "itemFinalPrice": 216,
+            "discount": 10,
+            "totalBasePrice": 240,
+            "totalVariantBasePrice": 20,
+            "totalAddonBasePrice": 40,
+            "finalPrice": 216
+          },
+          "cartItemId": 1
+        }
+      ],
+      "priceInfo": {
+        "basePrice": 240,
+        "finalPrice": 216,
+        "totalDiscount": 10,
+        "totalDiscountAmount": 24,
+        "totalAddonBasePrice": 40,
+        "totalVariantBasePrice": 20
+      },
+      "lastUpdated": "2025-11-14T10:18:22Z"
+    }
   }
 }</code></pre>
 
   <h2>Notes</h2>
   <ul>
-    <li>Triggers downstream cart enrichment when <code>cart-fetchCart</code> runs.</li>
+    <li>Returns the entire <code>cart</code> object, not just the added item.</li>
     <li>All price math is server-side using the same helpers as checkout.</li>
   </ul>
 </body>
+
 </html>
+</code></pre>
+</CodeContent>
+<parameter name="EmptyFile">false

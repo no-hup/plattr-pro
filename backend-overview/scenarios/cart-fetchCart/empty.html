@@ -1,42 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>cart-fetchCart · Empty Cart</title>
-    <style>
-      body { font-family: 'Inter', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 2rem; line-height: 1.5; }
-      pre { background: #020617; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid rgba(148, 163, 184, 0.3); }
-      code { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-      h1 { margin-top: 0; }
-    </style>
-  </head>
-  <body>
-    <h1>cart-fetchCart · Empty Cart</h1>
-    <p>Graceful empty payload with zero totals instead of <code>null</code> cart references.</p>
 
-    <h2>Sample Request</h2>
-    <pre><code>{
+<head>
+  <meta charset="UTF-8" />
+  <title>cart-fetchCart · Empty Cart</title>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      margin: 0;
+      padding: 2rem;
+      line-height: 1.5;
+    }
+
+    pre {
+      background: #020617;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    code {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>cart-fetchCart · Empty Cart</h1>
+  <p>Graceful empty payload with zero totals instead of <code>null</code> cart references.</p>
+
+  <h2>Sample Request</h2>
+  <pre><code>{
   "data": {
     "restaurantId": "rest001",
     "tableId": "table002"
   }
 }</code></pre>
 
-    <h2>Sample Response</h2>
-    <pre><code>{
+  <h2>Sample Response</h2>
+  <pre><code>{
   "status": "success",
-  "message": "Cart fetched",
+  "message": "Cart retrieved successfully.",
   "data": {
     "cart": {
+      "restaurantId": "rest001",
       "tableId": "table002",
       "items": [],
-      "priceSummary": {
-        "subtotal": 0,
-        "discountTotal": 0,
-        "finalPrice": 0
-      }
+      "priceInfo": {
+        "basePrice": 0,
+        "finalPrice": 0,
+        "totalDiscount": 0,
+        "totalDiscountAmount": 0,
+        "totalAddonBasePrice": 0,
+        "totalVariantBasePrice": 0
+      },
+      "lastUpdated": "2024-01-01T09:00:00Z"
     }
   }
 }</code></pre>
-  </body>
+</body>
+
 </html>

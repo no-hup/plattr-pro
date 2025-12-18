@@ -1,18 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>cart-fetchCart · Populated Cart</title>
   <style>
-    body { font-family: 'IBM Plex Mono', monospace; margin: 24px; }
-    pre { background: #111; color: #f8fafc; padding: 16px; border-radius: 8px; overflow-x: auto; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      margin: 0;
+      padding: 2rem;
+      line-height: 1.5;
+    }
+
+    pre {
+      background: #020617;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    code {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    h1 {
+      margin-top: 0;
+    }
   </style>
 </head>
+
 <body>
-  <h1>cart-fetchCart</h1>
+  <h1>cart-fetchCart · Populated Cart</h1>
   <p><strong>Scenario:</strong> Cart contains multiple items with variants and addons.</p>
 
-  <h2>Request</h2>
+  <h2>Sample Request</h2>
   <pre><code>{
   "data": {
     "restaurantId": "rest001",
@@ -20,46 +44,92 @@
   }
 }</code></pre>
 
-  <h2>Response</h2>
+  <h2>Sample Response</h2>
   <pre><code>{
   "status": "success",
-  "message": "Cart fetched",
+  "message": "Cart retrieved successfully.",
   "data": {
-    "items": [
-      {
-        "cartItemId": 7,
-        "menuItemId": "item_classic_burger",
-        "quantity": 3,
-        "selectedVariantsDetails": [ ... ],
-        "selectedAddonsDetails": [ ... ],
-        "priceInfo": {
-          "itemBasePrice": 180,
-          "totalAddonBasePrice": 120,
-          "finalPrice": 594
+    "cart": {
+      "restaurantId": "rest001",
+      "tableId": "table009",
+      "items": [
+        {
+          "menuItemId": "item_classic_burger",
+          "menuItem": {
+            "meta": { "name": "Classic Burger", "description": "Juicy beef patty" },
+            "priceInfo": { "basePrice": 180, "discount": 10, "finalPrice": 162 }
+          },
+          "selectedVariantsDetails": [
+            {
+              "id": "variant_size",
+              "selected_variant_id": "large",
+              "selected_variant_name": "Large",
+              "priceInfo": { "basePrice": 20, "finalPrice": 18, "discount": 10 }
+            }
+          ],
+          "selectedAddonsDetails": [
+            {
+              "id": "addon_fries",
+              "name": "French Fries",
+              "priceInfo": { "basePrice": 40, "finalPrice": 40, "discount": 0 },
+              "respectParentDiscount": true
+            }
+          ],
+          "quantity": 3,
+          "priceInfo": {
+            "itemBasePrice": 180,
+            "itemVariantBasePrice": 20,
+            "itemAddonBasePrice": 40,
+            "itemFinalPrice": 216,
+            "discount": 10,
+            "totalBasePrice": 720,
+            "totalVariantBasePrice": 60,
+            "totalAddonBasePrice": 120,
+            "finalPrice": 594
+          },
+          "cartItemId": 7
+        },
+        {
+          "menuItemId": "item_chai_latte",
+          "menuItem": {
+            "meta": { "name": "Chai Latte", "description": "Spiced tea with milk" },
+            "priceInfo": { "basePrice": 80, "discount": 0, "finalPrice": 80 }
+          },
+          "selectedVariantsDetails": [],
+          "selectedAddonsDetails": [],
+          "quantity": 2,
+          "priceInfo": {
+            "itemBasePrice": 80,
+            "itemVariantBasePrice": 0,
+            "itemAddonBasePrice": 0,
+            "itemFinalPrice": 80,
+            "discount": 0,
+            "totalBasePrice": 160,
+            "totalVariantBasePrice": 0,
+            "totalAddonBasePrice": 0,
+            "finalPrice": 160
+          },
+          "cartItemId": 11
         }
+      ],
+      "priceInfo": {
+        "basePrice": 880,
+        "finalPrice": 754,
+        "totalDiscount": 10,
+        "totalDiscountAmount": 126,
+        "totalAddonBasePrice": 120,
+        "totalVariantBasePrice": 60
       },
-      {
-        "cartItemId": 11,
-        "menuItemId": "item_chai_latte",
-        "quantity": 2,
-        "priceInfo": {
-          "itemBasePrice": 160,
-          "finalPrice": 320
-        }
-      }
-    ],
-    "priceSummary": {
-      "subtotal": 914,
-      "discount": 66,
-      "finalPrice": 848
+      "lastUpdated": "2025-11-14T10:30:00Z"
     }
   }
 }</code></pre>
 
   <h2>Notes</h2>
   <ul>
-    <li>Used by both the cart screen and the order-review drawer.</li>
+    <li>Returns <code>data.cart</code> object with <code>items</code> array and <code>priceInfo</code>.</li>
     <li>Includes repaired data from menu collection so clients stay stateless.</li>
   </ul>
 </body>
+
 </html>
