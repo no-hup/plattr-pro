@@ -1,46 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>cart-checkoutCart · Append Order</title>
   <style>
-    body { font-family: 'Space Mono', monospace; margin: 24px; }
-    pre { background: #111826; color: #f8fafc; padding: 16px; border-radius: 8px; overflow-x: auto; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      margin: 0;
+      padding: 2rem;
+      line-height: 1.5;
+    }
+
+    pre {
+      background: #020617;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    code {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    h1 {
+      margin-top: 0;
+    }
   </style>
 </head>
+
 <body>
-  <h1>cart-checkoutCart</h1>
+  <h1>cart-checkoutCart · Append Order</h1>
   <p><strong>Scenario:</strong> Adds items to an active order (same session still seated).</p>
 
-  <h2>Request</h2>
+  <h2>Sample Request</h2>
   <pre><code>{
   "data": {
     "restaurantId": "rest001",
     "tableId": "table009",
     "sessionId": "sess_table009_primary",
-    "notes": "Dessert round",
-    "expectedTotal": 312,
-    "appendToActiveOrder": true
+    "notes": "Dessert round"
   }
 }</code></pre>
 
-  <h2>Response</h2>
+  <h2>Sample Response</h2>
   <pre><code>{
   "status": "success",
-  "message": "Items appended",
+  "message": "Checkout completed successfully.",
   "data": {
     "orderId": "order_20251114_001",
+    "orderNumber": "ORD-458",
     "orderStatus": "active",
-    "addedCartId": "cart_table009_2025_11_14_round2",
     "timestamp": "2025-11-14T10:34:02Z"
   }
-}
-</code></pre>
+}</code></pre>
 
   <h2>Notes</h2>
   <ul>
-    <li>Uses existing order document and creates an additional cart entry inside <code>orders/{orderId}.carts</code>.</li>
+    <li>Uses existing order document and creates an additional cart entry inside <code>orders/{orderId}.carts</code>.
+    </li>
     <li>Kitchen notifications only reference the new cart payload.</li>
   </ul>
 </body>
+
 </html>

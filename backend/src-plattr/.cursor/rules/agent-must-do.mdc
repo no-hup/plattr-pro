@@ -121,8 +121,28 @@ Before marking any task as complete, the agent MUST:
 
 ## Quick Reference
 
-| Folder | Purpose | Naming Convention |
-|--------|---------|-------------------|
-| `agent_workspace/progress/` | Session work logs | `MM-DD_<module>_<feature-or-change>.md` |
-| `agent_workspace/learnings/` | Mistake corrections & nuances | `MM-DD_<module>_<mistake-or-nuance>.md` |
-| `agent_workspace/reviews/` | Supervisor reviews | `MM-DD_<feature-or-change-summary>.md` |
+⚠️ **CRITICAL:** Always use the absolute paths below. Do NOT create new `agent_workspace` folders.
+
+| Folder | Absolute Path | Naming Convention |
+|--------|---------------|-------------------|
+| Progress | `/Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/progress/` | `MM-DD_<module>_<feature-or-change>.md` |
+| Learnings | `/Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/learnings/` | `MM-DD_<module>_<mistake-or-nuance>.md` |
+| Supervisor | `/Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/supervisor/` | `MM-DD_<feature-or-change-summary>.md` |
+| BE-FE Supervisor | `/Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/supervisor_befe_data_model/` | `MM-DD_<api-name>_<change-type>.md` |
+
+---
+
+## Self-Learning (Rule Updates)
+
+When the user corrects your output or points out something unexpected, **update THIS rule file** with a concise sample under the section below. This makes the rule self-improving.
+
+### How to Add Learnings
+1. Add a new entry under "Learned Corrections" below
+2. Format: `❌ Wrong → ✅ Correct (context)`
+3. Keep it to 1-2 lines max
+
+---
+
+## Learned Corrections
+
+<!-- Add corrections here as you receive feedback -->

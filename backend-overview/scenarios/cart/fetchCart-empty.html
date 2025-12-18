@@ -1,18 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>cart-fetchCart · Empty Cart</title>
   <style>
-    body { font-family: 'IBM Plex Mono', monospace; margin: 24px; }
-    pre { background: #1b1f23; color: #f0f6fc; padding: 16px; border-radius: 8px; overflow-x: auto; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      margin: 0;
+      padding: 2rem;
+      line-height: 1.5;
+    }
+
+    pre {
+      background: #020617;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    code {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    h1 {
+      margin-top: 0;
+    }
   </style>
 </head>
+
 <body>
-  <h1>cart-fetchCart</h1>
+  <h1>cart-fetchCart · Empty Cart</h1>
   <p><strong>Scenario:</strong> Table cart exists but contains zero items after cleanup.</p>
 
-  <h2>Request</h2>
+  <h2>Sample Request</h2>
   <pre><code>{
   "data": {
     "restaurantId": "rest001",
@@ -20,16 +44,24 @@
   }
 }</code></pre>
 
-  <h2>Response</h2>
+  <h2>Sample Response</h2>
   <pre><code>{
   "status": "success",
-  "message": "Cart fetched",
+  "message": "Cart retrieved successfully.",
   "data": {
-    "items": [],
-    "priceSummary": {
-      "subtotal": 0,
-      "discount": 0,
-      "finalPrice": 0
+    "cart": {
+      "restaurantId": "rest001",
+      "tableId": "table010",
+      "items": [],
+      "priceInfo": {
+        "basePrice": 0,
+        "finalPrice": 0,
+        "totalDiscount": 0,
+        "totalDiscountAmount": 0,
+        "totalAddonBasePrice": 0,
+        "totalVariantBasePrice": 0
+      },
+      "lastUpdated": "2025-11-14T09:00:00Z"
     }
   }
 }</code></pre>
@@ -40,4 +72,5 @@
     <li>Cart document stays around for auditability until TTL clears it.</li>
   </ul>
 </body>
+
 </html>
