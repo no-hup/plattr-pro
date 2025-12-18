@@ -63,7 +63,7 @@ list_sessions() {
     
     echo ""
     echo "Active Sessions:"
-    for f in "$OUTPUT_DIR"/session_*.json 2>/dev/null; do
+    for f in "$OUTPUT_DIR"/session_*.json; do
         if [ -f "$f" ]; then
             filename=$(basename "$f")
             size=$(wc -c < "$f" | tr -d ' ')
@@ -76,7 +76,7 @@ list_sessions() {
     echo ""
     if [ -d "$ARCHIVE_DIR" ] && [ -n "$(ls -A $ARCHIVE_DIR 2>/dev/null)" ]; then
         echo "Archived Sessions:"
-        for f in "$ARCHIVE_DIR"/*.json 2>/dev/null; do
+        for f in "$ARCHIVE_DIR"/*.json; do
             if [ -f "$f" ]; then
                 filename=$(basename "$f")
                 echo "  - $filename"

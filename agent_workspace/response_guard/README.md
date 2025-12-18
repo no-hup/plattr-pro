@@ -126,7 +126,32 @@ cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/response_guard
 ./scripts/generate_context.sh    # Generate LLM context
 ```
 
+## Firebase Emulator Logs (Backend)
+
+Capture backend logs alongside Flutter logs for complete visibility:
+
+```bash
+# Option 1: Start emulator with log capture
+./scripts/capture_firebase_logs.sh
+
+# Option 2: Capture from already running emulator
+./scripts/capture_firebase_logs.sh --capture-only
+
+# Check if emulator is running
+./scripts/capture_firebase_logs.sh --check
+
+# View status
+./scripts/capture_firebase_logs.sh --status
+```
+
+The script filters out noise (startup messages, UI logs) and keeps:
+- ✅ Function execution start/end
+- ✅ Errors and warnings
+- ✅ HTTP requests/responses
+- ✅ Console.log from your functions
+
 ## Session Management
+
 
 ```bash
 ./scripts/capture_logs.sh --help      # Show all commands
@@ -134,6 +159,15 @@ cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/response_guard
 ./scripts/capture_logs.sh --archive   # Archive and start fresh  
 ./scripts/capture_logs.sh --list      # List all sessions
 ./scripts/capture_logs.sh --status    # Show current session status
+```
+
+## Flutter Web Logs
+
+For Flutter web, we wrap the terminal to capture [ResponseGuard] logs:
+
+```bash
+./scripts/capture_flutter_web.sh       # Run Flutter web with log capture
+./scripts/capture_flutter_web.sh --status  # Check captured logs
 ```
 
 ## Package Structure
@@ -146,10 +180,12 @@ response_guard/
 │   └── log_patterns.json        # Patterns to filter/capture
 ├── scripts/
 │   ├── capture_logs.sh          # Capture Flutter logs (mobile)
+│   ├── capture_firebase_logs.sh # Capture Firebase emulator logs
 │   ├── generate_context.sh      # Generate LLM-ready output
 │   └── extract_contracts.py     # Parse HTML specs
 ├── output/                      # Session logs (gitignored)
-│   ├── session_*.json           # Timestamped session files
+│   ├── session_*.json           # Flutter session files
+│   ├── firebase_*.json          # Firebase session files
 │   ├── latest_session.json      # Symlink to current session
 │   ├── llm_context.md           # Token-optimized LLM input
 │   └── archive/                 # Old sessions
@@ -157,6 +193,7 @@ response_guard/
 │   └── extracted_contracts.json # Auto-parsed from specs
 └── llm_instructions.md          # Instructions for supervisor LLM
 ```
+
 
 ## For LLM Supervisor
 

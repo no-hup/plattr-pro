@@ -32,11 +32,18 @@ echo -e "${GREEN}📝 Response Guard - Generate LLM Context${NC}"
 echo "=========================================="
 
 # Determine which log file to use
+FLUTTER_WEB_LOG="$OUTPUT_DIR/latest_flutter_web.json"
+
 if [ -f "$LATEST_LINK" ]; then
     # Use the symlinked latest session
     ACTIVE_LOG="$LATEST_LINK"
     SESSION_ID=$(cat "$SESSION_META" 2>/dev/null | grep -o '"currentSessionId": "[^"]*"' | cut -d'"' -f4 || echo "unknown")
     echo -e "Using session: ${CYAN}$SESSION_ID${NC}"
+elif [ -f "$FLUTTER_WEB_LOG" ]; then
+    # Use Flutter web logs
+    ACTIVE_LOG="$FLUTTER_WEB_LOG"
+    SESSION_ID=$(cat "$SESSION_META" 2>/dev/null | grep -o '"flutterWebSessionId": "[^"]*"' | cut -d'"' -f4 || echo "flutter_web")
+    echo -e "Using Flutter web session: ${CYAN}$SESSION_ID${NC}"
 elif [ -f "$LOG_FILE" ]; then
     # Fallback to legacy file
     ACTIVE_LOG="$LOG_FILE"
@@ -44,9 +51,10 @@ elif [ -f "$LOG_FILE" ]; then
     echo -e "${YELLOW}Using legacy log file (no session ID)${NC}"
 else
     echo -e "${RED}Error: No logs found.${NC}"
-    echo "Run ./capture_logs.sh first to capture logs"
+    echo "Run ./capture_logs.sh or ./capture_flutter_web.sh first to capture logs"
     exit 1
 fi
+
 
 # Count log entries
 LOG_COUNT=$(wc -l < "$ACTIVE_LOG" | tr -d ' ')
@@ -134,7 +142,48 @@ if [ "$ERROR_COUNT" -eq 0 ]; then
     echo "✅ No anomalies detected in this session." >> "$CONTEXT_FILE"
 fi
 
+# Add Firebase logs section if they exist
+FIREBASE_LOG="$OUTPUT_DIR/firebase_logs.json"
+if [ -f "$FIREBASE_LOG" ] && [ -s "$FIREBASE_LOG" ]; then
+    cat >> "$CONTEXT_FILE" << 'EOF'
+
+## 🔥 Firebase Backend Logs
+
+EOF
+    
+    FIREBASE_COUNT=0
+    while IFS= read -r line; do
+        log_type=$(echo "$line" | grep -o '"type": "[^"]*"' | cut -d'"' -f4 2>/dev/null || echo "")
+        priority=$(echo "$line" | grep -o '"priority": "[^"]*"' | cut -d'"' -f4 2>/dev/null || echo "")
+        log_content=$(echo "$line" | grep -o '"log": "[^"]*"' | cut -d'"' -f4 2>/dev/null | head -c 200 || echo "")
+        
+        if [ -n "$log_type" ]; then
+            FIREBASE_COUNT=$((FIREBASE_COUNT + 1))
+            
+            case "$log_type" in
+                function_start) icon="▶️" ;;
+                function_end) icon="⏹️" ;;
+                error) icon="❌" ;;
+                warning) icon="⚠️" ;;
+                http_request) icon="📨" ;;
+                http_response) icon="📩" ;;
+                *) icon="📝" ;;
+            esac
+            
+            echo "- $icon **$log_type** ($priority): \`$log_content\`" >> "$CONTEXT_FILE"
+        fi
+    done < "$FIREBASE_LOG"
+    
+    if [ "$FIREBASE_COUNT" -eq 0 ]; then
+        echo "No Firebase logs captured in this session." >> "$CONTEXT_FILE"
+    else
+        echo "" >> "$CONTEXT_FILE"
+        echo "_${FIREBASE_COUNT} Firebase log entries captured._" >> "$CONTEXT_FILE"
+    fi
+fi
+
 # Add recommendations section
+
 cat >> "$CONTEXT_FILE" << 'EOF'
 
 ## Recommended Next Steps
