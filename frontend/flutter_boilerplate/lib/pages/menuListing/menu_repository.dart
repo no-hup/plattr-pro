@@ -6,6 +6,7 @@ import 'package:flutterboilerplate/pages/menuListing/models/cart_operation_respo
 import 'package:flutterboilerplate/pages/menuListing/response_parser.dart';
 import 'package:flutterboilerplate/singletonGods/api_constants.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+import 'package:flutterboilerplate/networking/response_guard_interceptor.dart';
 
 class MenuRepository {
   factory MenuRepository() => _instance;
@@ -15,7 +16,7 @@ class MenuRepository {
     connectTimeout: const Duration(seconds: 5),
     receiveTimeout: const Duration(seconds: 3),
     validateStatus: (status) => true,
-  ));
+  ))..interceptors.add(ResponseGuardInterceptor());
   static final MenuRepository _instance = MenuRepository._internal();  
   final Dio _dio;
 
