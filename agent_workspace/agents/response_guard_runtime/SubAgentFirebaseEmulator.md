@@ -20,7 +20,7 @@ Your job is to:
 
 ```
 Backend Directory:     /Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr
-Response Guard:        /Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/response_guard
+Response Guard:        /Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/agents/response_guard_runtime
 Service Account:       backend/src-plattr/secure_stuff/service-account.json
 Mock Data:             backend/src-plattr/functions/mock/mockDataV2.json
 Firebase Config:       backend/src-plattr/firebase.json
@@ -49,7 +49,7 @@ lsof -t -i:8080 -i:5002 -i:4001 | xargs kill -9 2>/dev/null || true
 
 **Option A: Using Response Guard script (Recommended)**
 ```bash
-cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/response_guard
+cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/agents/response_guard_runtime
 ./scripts/capture_firebase_logs.sh
 ```
 
@@ -99,7 +99,7 @@ curl -X POST http://127.0.0.1:5002/rms-app-dd875/us-central1/dev-listRestaurants
 If you started manually in Step 3B, capture logs separately:
 
 ```bash
-cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/response_guard
+cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/agents/response_guard_runtime
 ./scripts/capture_firebase_logs.sh --capture-only
 ```
 
@@ -112,7 +112,7 @@ Report success when ALL of these are true:
 - [ ] Firestore emulator responding on `http://127.0.0.1:8080`
 - [ ] Mock data imported (5 restaurants visible)
 - [ ] `dev-listRestaurants` returns valid JSON
-- [ ] Logs being captured to `response_guard/output/firebase_logs.json`
+- [ ] Logs being captured to `agents/response_guard_runtime/output/firebase_logs.json`
 
 ---
 
@@ -149,7 +149,7 @@ When done, report to main agent:
 - **Functions Endpoint**: http://127.0.0.1:5002/rms-app-dd875/us-central1/
 - **Firestore Endpoint**: http://127.0.0.1:8080
 - **Mock Data**: Imported (5 restaurants)
-- **Log Capture**: Active → response_guard/output/firebase_logs.json
+- **Log Capture**: Active → agents/response_guard_runtime/output/firebase_logs.json
 - **Emulator UI**: http://127.0.0.1:4001
 
 Ready for API testing.
@@ -168,6 +168,6 @@ To stop the emulator cleanly:
 ## 📚 Reference Files
 
 For more details, see:
-- `agent_workspace/firebase_emulator_tips.md` - Comprehensive tips
-- `agent_workspace/response_guard/README.md` - Response Guard docs
+- `agent_workspace/agents/response_guard_runtime/firebase_emulator_tips.md` - Comprehensive tips
+- `agent_workspace/agents/response_guard_runtime/README.md` - Response Guard docs
 - `backend/src-plattr/package.json` - npm scripts available

@@ -89,7 +89,7 @@ class ResponseGuardInterceptor extends Interceptor {
 // Add only in debug mode
 if (kDebugMode) {
   dio.interceptors.add(ResponseGuardInterceptor(
-    logPath: '/Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/response_guard/output/flutter_logs.json'
+    logPath: '/Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/agents/response_guard_runtime/output/flutter_logs.json'
   ));
 }
 ```
@@ -119,7 +119,7 @@ cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/frontend/src-platter-apps/apps/p
 flutter run -d <emulator_id>
 
 # 4. Run Response Guard
-cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/response_guard
+cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/agents/response_guard_runtime
 ./scripts/capture_logs.sh        # Interactive capture
 # ... use the app, trigger API calls ...
 # Ctrl+C to stop
