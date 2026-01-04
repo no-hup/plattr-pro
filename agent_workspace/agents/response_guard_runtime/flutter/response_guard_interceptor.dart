@@ -17,7 +17,7 @@ import 'package:flutter/foundation.dart';
 /// ```
 class ResponseGuardInterceptor extends Interceptor {
   /// Path where logs will be written
-  /// Default: ~/Desktop/dev/plattr-pro/agent_workspace/response_guard/output/flutter_logs.json
+  /// Default: ~/Desktop/dev/plattr-pro/agent_workspace/agents/response_guard_runtime/output/flutter_logs.json
   final String logPath;
   
   /// Maximum characters to capture from response body
@@ -27,7 +27,7 @@ class ResponseGuardInterceptor extends Interceptor {
   final bool logRequestBody;
   
   ResponseGuardInterceptor({
-    this.logPath = '/Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/response_guard/output/flutter_logs.json',
+    this.logPath = '/Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/agents/response_guard_runtime/output/flutter_logs.json',
     this.maxResponseLength = 500,
     this.logRequestBody = false,
   });
