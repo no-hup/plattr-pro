@@ -38,12 +38,12 @@ function createOTPObject() {
  */
 function isOTPValid(otpObject) {
   if (!otpObject?.expiresAt) return false;
-  
+
   const expiryDate = timestamp.safeToDate(otpObject.expiresAt);
-  
+
   // If we couldn't parse the expiry date, it's invalid
   if (!expiryDate) return false;
-  
+
   return new Date() < expiryDate;
 }
 

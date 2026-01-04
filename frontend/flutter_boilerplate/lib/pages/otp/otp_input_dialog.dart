@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutterboilerplate/config/otp_config.dart';
 import 'package:flutterboilerplate/models/api_response.dart'; // Import ApiResponse
 import 'package:flutterboilerplate/singletonGods/logger.dart';
 
@@ -14,7 +15,7 @@ import 'otp_repository.dart'; // Import OTP repository
 class OtpInputDialog extends StatefulWidget {
   /// Optional message to display above the input fields.
   final String? message;
-  /// The number of digits expected for the OTP. Defaults to 6.
+  /// The number of digits expected for the OTP. Defaults to [OtpConfig.otpLength].
   final int otpDigits;
   /// If true, the dialog uses [OtpRepository] to validate the OTP.
   /// Requires `restaurantId` and `tableId` to be provided.
@@ -50,7 +51,7 @@ class OtpInputDialog extends StatefulWidget {
   const OtpInputDialog({
     super.key,
     this.message,
-    this.otpDigits = 6,
+    this.otpDigits = OtpConfig.otpLength,
     this.handleOtpApi = false,
     this.requireName = false,
     this.requirePhoneNumber = false,

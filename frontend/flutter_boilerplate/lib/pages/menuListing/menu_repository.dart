@@ -1,22 +1,17 @@
 import 'package:dio/dio.dart';
 import 'package:flutterboilerplate/models/api_response.dart';
+import 'package:flutterboilerplate/networking/dio_client.dart';
 import 'package:flutterboilerplate/pages/menuListing/add_cart_response.dart' as legacy;
 import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_operation_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/response_parser.dart';
 import 'package:flutterboilerplate/singletonGods/api_constants.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
-import 'package:flutterboilerplate/networking/response_guard_interceptor.dart';
 
 class MenuRepository {
   factory MenuRepository() => _instance;
   
-  MenuRepository._internal() : _dio = Dio(BaseOptions(
-    baseUrl: ApiConfig.baseUrl,
-    connectTimeout: const Duration(seconds: 5),
-    receiveTimeout: const Duration(seconds: 3),
-    validateStatus: (status) => true,
-  ))..interceptors.add(ResponseGuardInterceptor());
+  MenuRepository._internal() : _dio = DioClient().dio;
   static final MenuRepository _instance = MenuRepository._internal();  
   final Dio _dio;
 

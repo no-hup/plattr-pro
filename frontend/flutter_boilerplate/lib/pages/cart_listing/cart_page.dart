@@ -3,6 +3,8 @@ import 'package:flutterboilerplate/pages/cart_listing/cart_listing_state.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_item.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_price_info.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+import 'package:flutterboilerplate/widgets/price_display.dart';
+import 'package:flutterboilerplate/widgets/quantity_selector.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -299,42 +301,12 @@ class CartItemTile extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
 
-                // Price display
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (showBasePriceStrikethrough)
-                          Text(
-                            '₹${basePrice.toStringAsFixed(2)}',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              decoration: TextDecoration.lineThrough,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        if (showBasePriceStrikethrough)
-                          const SizedBox(width: 4),
-                        Text(
-                          '₹${finalPrice.toStringAsFixed(2)}',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    // Show discount if applicable
-                    if (discount > 0) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        '(-₹${discount.toStringAsFixed(2)})',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.error,
-                        ),
-                      ),
-                    ],
-                  ],
+                // Price display - using centralized PriceDisplay widget
+                PriceDisplay(
+                  finalPrice: finalPrice,
+                  basePrice: showBasePriceStrikethrough ? basePrice : null,
+                  discountAmount: discount > 0 ? discount : null,
+                  size: PriceDisplaySize.medium,
                 ),
               ],
             ),
@@ -574,7 +546,36 @@ class CartItemTile extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                   ),
                 ),
-                _buildQuantityControls(context),
+                // Quantity Control - using centralized QuantitySelector
+                QuantitySelector(
+                  quantity: item.quantity,
+                  onDecrement: context.watch<CartListingState>().isUpdatingCart || item.quantity <= 1
+                      ? null
+                      : () {
+                          AppLogger.log(
+                              '🛒 CART: Decreasing quantity for ${item.menuItemId}');
+                          context.read<CartListingState>().updateCartItem(
+                                item,
+                                false,
+                                tableId: tableId,
+                                restaurantId: restaurantId,
+                              );
+                        },
+                  onIncrement: context.watch<CartListingState>().isUpdatingCart
+                      ? null
+                      : () {
+                          AppLogger.log(
+                              '🛒 CART: Increasing quantity for ${item.menuItemId}');
+                          context.read<CartListingState>().updateCartItem(
+                                item,
+                                true,
+                                tableId: tableId,
+                                restaurantId: restaurantId,
+                              );
+                        },
+                  isEnabled: !context.watch<CartListingState>().isUpdatingCart,
+                  minQuantity: 1,
+                ),
               ],
             ),
           ],
