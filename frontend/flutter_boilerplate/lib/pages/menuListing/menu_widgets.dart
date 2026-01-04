@@ -4,6 +4,9 @@ import 'package:flutterboilerplate/pages/menuListing/mennu_bottomsheet.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_state.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+import 'package:flutterboilerplate/widgets/price_display.dart';
+import 'package:flutterboilerplate/widgets/quantity_selector.dart';
+import 'package:flutterboilerplate/widgets/status_badge.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -118,81 +121,29 @@ class _MenuItemDetails extends StatelessWidget {
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 8),
-        _PriceInfo(item: item),
+        PriceDisplay(
+          finalPrice: item.priceInfo.finalPrice.toDouble(),
+          basePrice: item.priceInfo.discount > 0
+              ? item.priceInfo.basePrice.toDouble()
+              : null,
+          size: PriceDisplaySize.medium,
+          crossAxisAlignment: CrossAxisAlignment.start,
+        ),
         if (item.isCustomizable) ...[
           const SizedBox(height: 4),
-          _CustomizableIndicator(),
+          StatusBadge.customizable(),
         ],
         if (!item.isInStock) ...[
           const SizedBox(height: 4),
-          _OutOfStockIndicator(),
+          StatusBadge.outOfStock(),
         ],
       ],
     );
   }
 }
 
-class _PriceInfo extends StatelessWidget {
-  const _PriceInfo({required this.item});
-
-  final MenuItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          'Price: ₹${item.priceInfo.finalPrice}',
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-        if (item.priceInfo.discount > 0) ...[
-          const SizedBox(width: 8),
-          Text(
-            '₹${item.priceInfo.basePrice}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  decoration: TextDecoration.lineThrough,
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _CustomizableIndicator extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(
-          Icons.edit_outlined,
-          size: 16,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        const SizedBox(width: 4),
-        Text(
-          'Customizable',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-        ),
-      ],
-    );
-  }
-}
-
-class _OutOfStockIndicator extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      'Out of Stock',
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.error,
-          ),
-    );
-  }
-}
+// Note: _PriceInfo, _CustomizableIndicator, and _OutOfStockIndicator have been
+// replaced with centralized widgets: PriceDisplay and StatusBadge.
 
 class _QuantityControl extends StatelessWidget {
   const _QuantityControl({
@@ -218,29 +169,19 @@ class _QuantityControl extends StatelessWidget {
             onPressed: null,
             child: Text('Add'),
           )
-        else if (quantity > 0) ...[
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.remove),
-                onPressed: () => context.read<MenuState>().updateCartItem(
-                      item,
-                      false,
-                      tableId: tableId,
-                      restaurantId: restaurantId,
-                    ),
-              ),
-              Text(
-                '$quantity',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: onAddToCart,
-              ),
-            ],
-          ),
-        ] else
+        else if (quantity > 0)
+          QuantitySelector(
+            quantity: quantity,
+            onDecrement: () => context.read<MenuState>().updateCartItem(
+                  item,
+                  false,
+                  tableId: tableId,
+                  restaurantId: restaurantId,
+                ),
+            onIncrement: onAddToCart,
+            compact: true,
+          )
+        else
           ElevatedButton(
             onPressed: onAddToCart,
             child: const Text('Add'),
