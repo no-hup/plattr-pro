@@ -6,7 +6,7 @@ exports.fetchMenu = functions.https.onCall(async (data, context) => {
   // Validate input parameters
   const validatedData = MenuValidation.validateMenuFetchInput(data);
   const { restaurantId, inStock } = validatedData;
-  console.log("poopoo " + restaurantId +"  "+  inStock);
+  console.log("poopoo " + restaurantId + "  " + inStock);
 
   try {
     const restaurantRef = db.collection('restaurants').doc(restaurantId);

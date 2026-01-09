@@ -76,7 +76,7 @@ const timestamp = require('../utils/timestamp');
 async function getAllMenuItems(restaurantId) {
   try {
     MenuValidation.validateRestaurantId(restaurantId);
-    
+
     const menuItemsSnapshot = await db.collection('restaurants').doc(restaurantId)
       .collection('menuItems').get();
     return menuItemsSnapshot.docs.map(doc => ({
@@ -97,7 +97,7 @@ async function getMenuItemById(restaurantId, menuItemId) {
   try {
     MenuValidation.validateRestaurantId(restaurantId);
     MenuValidation.validateItemId(menuItemId);
-    
+
     const menuItemDoc = await db.collection('restaurants').doc(restaurantId)
       .collection('menuItems').doc(menuItemId).get();
     if (!menuItemDoc.exists) {
@@ -129,9 +129,9 @@ async function createMenuItem(restaurantId, menuItemData) {
   try {
     MenuValidation.validateRestaurantId(restaurantId);
     MenuValidation.validateCreateMenuItemInput(menuItemData);
-    
-    const isCustomizable = (menuItemData.variants && menuItemData.variants.length > 0) || 
-                           (menuItemData.addons && menuItemData.addons.length > 0);
+
+    const isCustomizable = (menuItemData.variants && menuItemData.variants.length > 0) ||
+      (menuItemData.addons && menuItemData.addons.length > 0);
     const newMenuItemRef = await db.collection('restaurants').doc(restaurantId)
       .collection('menuItems').add({
         ...menuItemData,
@@ -162,9 +162,9 @@ async function updateMenuItem(restaurantId, menuItemId, updateData) {
     MenuValidation.validateRestaurantId(restaurantId);
     MenuValidation.validateItemId(menuItemId);
     MenuValidation.validateUpdateMenuItemInput(updateData);
-    
-    const isCustomizable = (updateData.variants && updateData.variants.length > 0) || 
-                           (updateData.addons && updateData.addons.length > 0);
+
+    const isCustomizable = (updateData.variants && updateData.variants.length > 0) ||
+      (updateData.addons && updateData.addons.length > 0);
     await db.collection('restaurants').doc(restaurantId)
       .collection('menuItems').doc(menuItemId).update({
         ...updateData,
@@ -186,7 +186,7 @@ async function deleteMenuItem(restaurantId, menuItemId) {
   try {
     MenuValidation.validateRestaurantId(restaurantId);
     MenuValidation.validateItemId(menuItemId);
-    
+
     await db.collection('restaurants').doc(restaurantId)
       .collection('menuItems').doc(menuItemId).delete();
     return true;
@@ -204,7 +204,7 @@ async function getMenuItemsByCategory(restaurantId, categoryId) {
   try {
     MenuValidation.validateRestaurantId(restaurantId);
     MenuValidation.validateCategoryId(categoryId);
-    
+
     const menuItemsSnapshot = await db.collection('restaurants').doc(restaurantId)
       .collection('menuItems')
       .where('categoryId', '==', categoryId)
@@ -227,11 +227,11 @@ async function updateMenuItemStock(restaurantId, menuItemId, isInStock) {
   try {
     MenuValidation.validateRestaurantId(restaurantId);
     MenuValidation.validateItemId(menuItemId);
-    
+
     if (typeof isInStock !== 'boolean') {
       throw new Error('isInStock must be a boolean');
     }
-    
+
     await db.collection('restaurants').doc(restaurantId)
       .collection('menuItems').doc(menuItemId).update({
         isInStock: isInStock,
@@ -251,7 +251,7 @@ async function updateMenuItemStock(restaurantId, menuItemId, isInStock) {
 async function getAllMenuItemsInStock(restaurantId) {
   try {
     MenuValidation.validateRestaurantId(restaurantId);
-    
+
     const menuItemsSnapshot = await db.collection('restaurants').doc(restaurantId)
       .collection('menuItems')
       .where('isInStock', '==', true)
