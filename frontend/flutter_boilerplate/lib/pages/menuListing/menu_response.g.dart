@@ -6,6 +6,18 @@ part of 'menu_response.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+_$SubcategoryImpl _$$SubcategoryImplFromJson(Map<String, dynamic> json) =>
+    _$SubcategoryImpl(
+      name: json['name'] as String,
+      order: (json['order'] as num?)?.toInt() ?? 0,
+    );
+
+Map<String, dynamic> _$$SubcategoryImplToJson(_$SubcategoryImpl instance) =>
+    <String, dynamic>{
+      'name': instance.name,
+      'order': instance.order,
+    };
+
 _$MenuMetadataImpl _$$MenuMetadataImplFromJson(Map<String, dynamic> json) =>
     _$MenuMetadataImpl(
       totalCategories: (json['totalCategories'] as num).toInt(),
@@ -40,6 +52,8 @@ _$MenuItemImpl _$$MenuItemImplFromJson(Map<String, dynamic> json) =>
     _$MenuItemImpl(
       id: json['menuItemId'] as String,
       categoryId: json['categoryId'] as String,
+      subcategoryName: json['subcategoryName'] as String?,
+      subcategoryOrder: (json['subcategoryOrder'] as num?)?.toInt() ?? 0,
       meta: MenuItemMeta.fromJson(json['meta'] as Map<String, dynamic>),
       priceInfo: PriceInfo.fromJson(json['priceInfo'] as Map<String, dynamic>),
       isInStock: json['isInStock'] as bool,
@@ -67,6 +81,8 @@ Map<String, dynamic> _$$MenuItemImplToJson(_$MenuItemImpl instance) =>
     <String, dynamic>{
       'menuItemId': instance.id,
       'categoryId': instance.categoryId,
+      'subcategoryName': instance.subcategoryName,
+      'subcategoryOrder': instance.subcategoryOrder,
       'meta': instance.meta,
       'priceInfo': instance.priceInfo,
       'isInStock': instance.isInStock,
