@@ -1,12 +1,28 @@
 const functions = require('firebase-functions');
 const { admin, db } = require('../admin/admin');
 const MenuValidation = require('./menuValidation');
+const {
+  fetchActiveMenu,
+  fetchSubcategories,
+  filterCategoriesByMenu,
+  filterItemsByMenu,
+  organizeMenuWithSubcategories
+} = require('./menuHelpers');
 
+/**
+ * fetchMenu - Fetches menu data with multi-menu hierarchy support
+ * 
+ * New Response Structure:
+ * - activeMenu: { menuId, name, isDefault }
+ * - categories: array with nested subcategories
+ * - menuItems: grouped by subcategoryId (or categoryId as fallback)
+ * - metadata: includes totalSubcategories and activeMenuId
+ */
 exports.fetchMenu = functions.https.onCall(async (data, context) => {
   // Validate input parameters
   const validatedData = MenuValidation.validateMenuFetchInput(data);
   const { restaurantId, inStock } = validatedData;
-  console.log("poopoo " + restaurantId + "  " + inStock);
+  console.log("fetchMenu called for restaurant: " + restaurantId + ", inStock: " + inStock);
 
   try {
     const restaurantRef = db.collection('restaurants').doc(restaurantId);
@@ -16,20 +32,52 @@ exports.fetchMenu = functions.https.onCall(async (data, context) => {
       throw new functions.https.HttpsError('not-found', 'Restaurant not found');
     }
 
-    const [categories, menuItems, variants, addons] = await Promise.all([
+    // Fetch all data in parallel
+    const [activeMenu, categories, subcategories, menuItems, variants, addons] = await Promise.all([
+      fetchActiveMenu(restaurantRef),
       fetchCategories(restaurantRef),
+      fetchSubcategories(restaurantRef),
       fetchMenuItems(restaurantRef, inStock),
       fetchVariants(restaurantRef),
       fetchInStockAddons(restaurantRef, inStock)
     ]);
 
-    const organizedMenu = organizeMenu(categories, menuItems, variants, addons);
-    organizedMenu.metadata = {
-      totalCategories: categories.length,
-      totalMenuItems: menuItems.length
+    // Filter categories based on active menu (if menu exists and has categoryIds)
+    const filteredCategories = filterCategoriesByMenu(categories, activeMenu);
+
+    // Filter menu items based on active menu (Approach B)
+    const filteredMenuItems = filterItemsByMenu(menuItems, activeMenu);
+
+    // Organize the menu with subcategory support
+    const organizedMenu = organizeMenuWithSubcategories(
+      filteredCategories,
+      subcategories,
+      filteredMenuItems,
+      variants,
+      addons
+    );
+
+    // Build response
+    const response = {
+      ...organizedMenu,
+      metadata: {
+        totalCategories: filteredCategories.length,
+        totalSubcategories: subcategories.length,
+        totalMenuItems: menuItems.length,
+        activeMenuId: activeMenu ? activeMenu.menuId : null
+      }
     };
 
-    return organizedMenu;
+    // Add activeMenu info if available
+    if (activeMenu) {
+      response.activeMenu = {
+        menuId: activeMenu.menuId,
+        name: activeMenu.name,
+        isDefault: activeMenu.isDefault || false
+      };
+    }
+
+    return response;
 
   } catch (error) {
     console.error('Error fetching menu:', error);
@@ -37,18 +85,33 @@ exports.fetchMenu = functions.https.onCall(async (data, context) => {
   }
 });
 
+/**
+ * Fetch all categories ordered by order field
+ */
 async function fetchCategories(restaurantRef) {
-  const categoriesSnapshot = await restaurantRef.collection('categories').orderBy('order').get();
-  return categoriesSnapshot.docs.map(doc => {
-    const data = doc.data();
-    if (!data.name) throw new Error('Category name is missing');
-    return { id: doc.id, ...data };
-  });
+  try {
+    const categoriesSnapshot = await restaurantRef.collection('categories').orderBy('order').get();
+    return categoriesSnapshot.docs.map(doc => {
+      const data = doc.data();
+      if (!data.name) {
+        console.warn(`[fetchMenu] Category ${doc.id} has no name - skipping`);
+        return null;
+      }
+      return { id: doc.id, ...data };
+    }).filter(Boolean);
+  } catch (error) {
+    console.error('[fetchMenu][fetchCategories] Error:', error);
+    throw error;
+  }
 }
 
+/**
+ * Fetch menu items, optionally filtered by stock status
+ * Note: Only filters when inStock === true (explicit opt-in)
+ */
 async function fetchMenuItems(restaurantRef, inStock) {
   let query = restaurantRef.collection('menuItems');
-  if (inStock !== false) {
+  if (inStock === true) {
     query = query.where('isInStock', '==', true);
   }
   const menuItemsSnapshot = await query.get();
@@ -58,6 +121,9 @@ async function fetchMenuItems(restaurantRef, inStock) {
   }));
 }
 
+/**
+ * Fetch all variants
+ */
 async function fetchVariants(restaurantRef) {
   const variantsSnapshot = await restaurantRef.collection('variants').get();
   return variantsSnapshot.docs.reduce((acc, doc) => {
@@ -66,9 +132,13 @@ async function fetchVariants(restaurantRef) {
   }, {});
 }
 
+/**
+ * Fetch addons, optionally filtered by stock status
+ * Note: Only filters when inStock === true (explicit opt-in)
+ */
 async function fetchInStockAddons(restaurantRef, inStock) {
   let query = restaurantRef.collection('addons');
-  if (inStock !== false) {
+  if (inStock === true) {
     query = query.where('isInStock', '==', true);
   }
   const addonsSnapshot = await query.get();
@@ -76,31 +146,4 @@ async function fetchInStockAddons(restaurantRef, inStock) {
     acc[doc.id] = { id: doc.id, ...doc.data() };
     return acc;
   }, {});
-}
-
-function organizeMenu(categories, menuItems, variants, addons) {
-  const organizedMenu = {
-    categories,
-    menuItems: {}
-  };
-
-  menuItems.forEach(item => {
-    if (!organizedMenu.menuItems[item.categoryId]) {
-      organizedMenu.menuItems[item.categoryId] = [];
-    }
-
-    const itemVariants = (item.variants || []).map(variant =>
-      variants[variant.id] ? { ...variants[variant.id], name: variant.name } : null
-    ).filter(Boolean);
-
-    const itemAddons = (item.addons || []).map(addonId => addons[addonId]).filter(Boolean);
-
-    organizedMenu.menuItems[item.categoryId].push({
-      ...item,
-      variants: itemVariants,
-      addons: itemAddons
-    });
-  });
-
-  return organizedMenu;
 }

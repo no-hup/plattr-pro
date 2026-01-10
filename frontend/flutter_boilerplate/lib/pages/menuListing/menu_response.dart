@@ -38,11 +38,41 @@ class MenuResponse with _$MenuResponse {
   }
 }
 
+/// 🆕 NEW MODEL: ActiveMenu - represents the currently active menu
+@freezed
+class ActiveMenu with _$ActiveMenu {
+  factory ActiveMenu({
+    required String menuId,
+    required String name,
+    @Default(false) bool isDefault,
+  }) = _ActiveMenu;
+
+  factory ActiveMenu.fromJson(Map<String, dynamic> json) =>
+      _$ActiveMenuFromJson(json);
+}
+
+/// 🆕 NEW MODEL: Subcategory - represents a subcategory within a category
+@freezed
+class Subcategory with _$Subcategory {
+  factory Subcategory({
+    required String id,
+    required String name,
+    String? description,
+    String? image,
+    String? parentCategoryId, // Made optional for backward compatibility with legacy data
+    @Default(0) int order,
+  }) = _Subcategory;
+
+  factory Subcategory.fromJson(Map<String, dynamic> json) =>
+      _$SubcategoryFromJson(json);
+}
+
 @freezed
 class MenuData with _$MenuData {
   factory MenuData({
+    ActiveMenu? activeMenu, // 🆕 NEW - nullable for backward compatibility
     required List<Category> categories,
-    required Map<String, List<MenuItem>> menuItems,
+    required Map<String, List<MenuItem>> menuItems, // Key is now subcategoryId (or categoryId as fallback)
     required MenuMetadata metadata,
   }) = _MenuData;
 
@@ -50,10 +80,19 @@ class MenuData with _$MenuData {
     try {
       // Sanitize the JSON to handle potential type mismatches and null values
       final sanitizedJson = <String, dynamic>{
+        'activeMenu': json['activeMenu'] as Map<String, dynamic>?,
         'categories': json['categories'] as List<dynamic>? ?? [],
         'menuItems': json['menuItems'] as Map<String, dynamic>? ?? {},
         'metadata': json['metadata'] as Map<String, dynamic>? ?? {},
       };
+
+      // Parse activeMenu if present
+      ActiveMenu? activeMenu;
+      if (sanitizedJson['activeMenu'] != null) {
+        activeMenu = ActiveMenu.fromJson(
+          sanitizedJson['activeMenu'] as Map<String, dynamic>,
+        );
+      }
 
       // Parse categories list
       final categories = (sanitizedJson['categories'] as List<dynamic>)
@@ -61,7 +100,7 @@ class MenuData with _$MenuData {
           .map(Category.fromJson)
           .toList();
 
-      // Parse menuItems map
+      // Parse menuItems map (grouped by subcategoryId or categoryId)
       final rawMenuItems = sanitizedJson['menuItems'] as Map<String, dynamic>;
       final parsedMenuItems = <String, List<MenuItem>>{};
       for (final entry in rawMenuItems.entries) {
@@ -82,6 +121,7 @@ class MenuData with _$MenuData {
       );
 
       return MenuData(
+        activeMenu: activeMenu,
         categories: categories,
         menuItems: parsedMenuItems,
         metadata: metadata,
@@ -104,7 +144,9 @@ class MenuData with _$MenuData {
 class MenuMetadata with _$MenuMetadata {
   factory MenuMetadata({
     required int totalCategories,
+    @Default(0) int totalSubcategories, // 🆕 NEW
     required int totalMenuItems,
+    String? activeMenuId, // 🆕 NEW - nullable for backward compatibility
   }) = _MenuMetadata;
 
   factory MenuMetadata.fromJson(Map<String, dynamic> json) =>
@@ -119,6 +161,7 @@ class Category with _$Category {
     required String description,
     required int order,
     String? image,
+    @Default([]) List<Subcategory> subcategories, // 🆕 NEW - nested subcategories
   }) = _Category;
 
   factory Category.fromJson(Map<String, dynamic> json) =>
@@ -130,6 +173,8 @@ class MenuItem with _$MenuItem {
   factory MenuItem({
     @JsonKey(name: 'menuItemId') required String id,
     required String categoryId,
+    String? primarySubcategoryId, // 🆕 NEW - the "home" subcategory
+    @Default([]) List<String> subcategoryIds, // 🆕 NEW - all subcategories (supports cross-listing)
     required MenuItemMeta meta,
     required PriceInfo priceInfo,
     required bool isInStock,
@@ -151,6 +196,7 @@ class MenuItemMeta with _$MenuItemMeta {
     required String name,
     required String description,
     required String categoryName,
+    String? primarySubcategoryName, // 🆕 NEW - nullable for backward compatibility
     String? image,
   }) = _MenuItemMeta;
 

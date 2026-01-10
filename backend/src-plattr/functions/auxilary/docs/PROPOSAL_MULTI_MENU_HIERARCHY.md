@@ -17,6 +17,22 @@ Instead of just grouping items under categories, we introduce a **Menu** layer t
    - Example: "Pizzas", "Burgers", "Signature Cocktails".
 4. **MenuItem** (Content Layer): The actual item.
 
+### Cross-Listing Support (Best Sellers / Trending)
+
+Items can belong to **multiple subcategories** via `subcategoryIds` array. This enables:
+
+| Subcategory | Items |
+|-------------|-------|
+| Best Sellers | Zinger Burger, Farmhouse Pizza, Tiramisu |
+| Burgers | Zinger Burger, Classic Cheese, BBQ Bacon |
+| Pizzas | Farmhouse Pizza, Margherita, Pepperoni |
+| Desserts | Tiramisu, Cheesecake, Brownie |
+
+The same "Zinger Burger" appears in both **Best Sellers** and **Burgers** tabs.
+
+- `primarySubcategoryId`: The "home" subcategory (Burgers)
+- `subcategoryIds`: All subcategories including virtual ones (["subcat_burgers", "subcat_bestsellers"])
+
 ---
 
 ## 2. Implementation Approach: Full Normalization
@@ -81,11 +97,12 @@ restaurants/{restaurantId}/
 |-------|------|--------|-------------|
 | `menuItemId` | string | ✅ EXISTING | Unique identifier |
 | `categoryId` | string | ✅ EXISTING | FK to category |
-| `subcategoryId` | string | 🆕 NEW | FK to subcategory (nullable during migration) |
+| `subcategoryIds` | string[] | 🆕 NEW | Array of subcategory IDs item belongs to (supports cross-listing) |
+| `primarySubcategoryId` | string | 🆕 NEW | The "home" subcategory for this item |
 | `meta.name` | string | ✅ EXISTING | Item name |
 | `meta.description` | string | ✅ EXISTING | Description |
 | `meta.categoryName` | string | ✅ EXISTING | Denormalized category name |
-| `meta.subcategoryName` | string | 🆕 NEW | Denormalized subcategory name (nullable) |
+| `meta.primarySubcategoryName` | string | 🆕 NEW | Denormalized primary subcategory name (nullable) |
 | `meta.image` | string | ✅ EXISTING | Image URL |
 | `priceInfo.basePrice` | number | ✅ EXISTING | Base price |
 | `priceInfo.discount` | number | ✅ EXISTING | Discount percentage |
@@ -97,6 +114,11 @@ restaurants/{restaurantId}/
 | `isInStock` | boolean | ✅ EXISTING | Stock status |
 | `isCustomizable` | boolean | ✅ EXISTING | Has variants/addons |
 | `lastUpdated` | timestamp | ✅ EXISTING | Last modification time |
+
+**Note on IDs:** Categories, subcategories, and menus all use **document IDs** (not names) as their unique identifiers, consistent with the existing category implementation. The `name` field is for display purposes only and should not be used as an identifier.
+
+**Data Integrity Rule:** `primarySubcategoryId` must always be included in the `subcategoryIds` array.
+**Admin Responsibility:** It is assumed that the admin will manually configure the hierarchy correctly (e.g., ensuring "Best Sellers" has the correct `parentCategoryId` and items are linked properly). Complex auto-resolution logic is not required.
 
 ---
 
@@ -135,15 +157,23 @@ restaurants/{restaurantId}/
     "description": "Main food items",
     "image": "https://example.com/food.jpg",
     "order": 1,
-    "subcategoryIds": ["subcat_burgers", "subcat_pizzas", "subcat_salads"]
+    "subcategoryIds": ["subcat_bestsellers", "subcat_burgers", "subcat_pizzas", "subcat_salads"]
   }
 }
 ```
-**Changes:** Added `subcategoryIds` field.
+**Changes:** Added `subcategoryIds` field (array defines display order in UI tabs).
 
 ### 4.3 Sample Subcategory Documents (NEW)
 ```json
 {
+  "subcat_bestsellers": {
+    "id": "subcat_bestsellers",
+    "name": "Best Sellers",
+    "description": "Our most popular items",
+    "image": "https://example.com/bestsellers.jpg",
+    "parentCategoryId": "cat_food",
+    "order": 0
+  },
   "subcat_burgers": {
     "id": "subcat_burgers",
     "name": "Burgers",
@@ -163,19 +193,22 @@ restaurants/{restaurantId}/
 }
 ```
 
+> **Note:** "Best Sellers" is a regular subcategory - items are cross-listed into it via `subcategoryIds` array on the menuItem.
+
 ### 4.4 Sample MenuItem Document (MODIFIED)
 ```json
 {
   "item001": {
     "menuItemId": "item001",
     "categoryId": "cat_food",
-    "subcategoryId": "subcat_burgers",
+    "primarySubcategoryId": "subcat_burgers",
+    "subcategoryIds": ["subcat_burgers", "subcat_bestsellers"],
     "meta": {
-      "name": "Classic Cheeseburger",
-      "description": "Juicy beef patty with melted cheddar",
+      "name": "Zinger Burger",
+      "description": "Crispy fried chicken with spicy mayo",
       "categoryName": "Food",
-      "subcategoryName": "Burgers",
-      "image": "https://example.com/cheeseburger.jpg"
+      "primarySubcategoryName": "Burgers",
+      "image": "https://example.com/zinger-burger.jpg"
     },
     "priceInfo": {
       "basePrice": 100,
@@ -189,7 +222,10 @@ restaurants/{restaurantId}/
   }
 }
 ```
-**Changes:** Added `subcategoryId` and `meta.subcategoryName` fields.
+**Changes:** 
+- Added `primarySubcategoryId` - the "home" subcategory
+- Added `subcategoryIds` array - all subcategories this item appears in (supports Best Sellers, Trending, etc.)
+- Renamed `meta.subcategoryName` to `meta.primarySubcategoryName`
 
 ---
 
@@ -255,21 +291,36 @@ restaurants/{restaurantId}/
       "name": "Food",
       "order": 1,
       "subcategories": [
+        { "id": "subcat_bestsellers", "name": "Best Sellers", "order": 0 },
         { "id": "subcat_burgers", "name": "Burgers", "order": 1 },
         { "id": "subcat_pizzas", "name": "Pizzas", "order": 2 }
       ]
     }
   ],
   "menuItems": {
+    "subcat_bestsellers": [
+      {
+        "menuItemId": "item001",
+        "categoryId": "cat_food",
+        "primarySubcategoryId": "subcat_burgers",
+        "subcategoryIds": ["subcat_burgers", "subcat_bestsellers"],
+        "meta": {
+          "name": "Zinger Burger",
+          "categoryName": "Food",
+          "primarySubcategoryName": "Burgers"
+        }
+      }
+    ],
     "subcat_burgers": [
       {
         "menuItemId": "item001",
         "categoryId": "cat_food",
-        "subcategoryId": "subcat_burgers",
+        "primarySubcategoryId": "subcat_burgers",
+        "subcategoryIds": ["subcat_burgers", "subcat_bestsellers"],
         "meta": {
-          "name": "Classic Cheeseburger",
+          "name": "Zinger Burger",
           "categoryName": "Food",
-          "subcategoryName": "Burgers"
+          "primarySubcategoryName": "Burgers"
         }
       }
     ]
@@ -283,6 +334,8 @@ restaurants/{restaurantId}/
 }
 ```
 
+> **Note:** Same item (`item001`) appears in both `subcat_bestsellers` and `subcat_burgers` because its `subcategoryIds` array contains both. The `primarySubcategoryId` indicates its "home" subcategory.
+
 #### Response Field Changes Summary
 
 | Field | Status | Notes |
@@ -293,10 +346,13 @@ restaurants/{restaurantId}/
 | `activeMenu.isDefault` | 🆕 NEW | Whether fallback menu was used |
 | `categories[].subcategories` | 🆕 NEW | Array of subcategory objects |
 | `menuItems` key | 🔄 CHANGED | Key changes from `categoryId` to `subcategoryId` |
-| `menuItems[].subcategoryId` | 🆕 NEW | FK to subcategory |
-| `menuItems[].meta.subcategoryName` | 🆕 NEW | Denormalized subcategory name |
+| `menuItems[].primarySubcategoryId` | 🆕 NEW | The "home" subcategory for this item |
+| `menuItems[].subcategoryIds` | 🆕 NEW | All subcategories this item belongs to |
+| `menuItems[].meta.primarySubcategoryName` | 🆕 NEW | Denormalized primary subcategory name |
 | `metadata.totalSubcategories` | 🆕 NEW | Count of subcategories |
 | `metadata.activeMenuId` | 🆕 NEW | ID of active menu |
+
+> **Cross-listing behavior:** An item with `subcategoryIds: ["subcat_burgers", "subcat_bestsellers"]` will appear in BOTH the "Burgers" tab and the "Best Sellers" tab. The full item object is duplicated under each subcategory key for frontend simplicity.
 
 ---
 
@@ -370,7 +426,8 @@ class MenuItem with _$MenuItem {
   factory MenuItem({
     @JsonKey(name: 'menuItemId') required String id, // ✅ EXISTING
     required String categoryId,      // ✅ EXISTING
-    String? subcategoryId,           // 🆕 NEW (nullable for backward compat)
+    String? primarySubcategoryId,    // 🆕 NEW - the "home" subcategory
+    @Default([]) List<String> subcategoryIds, // 🆕 NEW - all subcategories (for cross-listing)
     required MenuItemMeta meta,      // ✅ EXISTING
     required PriceInfo priceInfo,    // ✅ EXISTING
     required bool isInStock,         // ✅ EXISTING
@@ -395,7 +452,7 @@ class MenuItemMeta with _$MenuItemMeta {
     required String name,            // ✅ EXISTING
     required String description,     // ✅ EXISTING
     required String categoryName,    // ✅ EXISTING
-    String? subcategoryName,         // 🆕 NEW (nullable for backward compat)
+    String? primarySubcategoryName,  // 🆕 NEW (nullable for backward compat)
     String? image,                   // ✅ EXISTING
   }) = _MenuItemMeta;
 
@@ -441,8 +498,8 @@ class MenuMetadata with _$MenuMetadata {
 - [ ] Create `menus` collection with one default menu (`isActive: true`, `isDefault: true`)
 - [ ] Create `subcategories` collection
 - [ ] Add `subcategoryIds: []` to existing categories
-- [ ] Add `subcategoryId: null` and `meta.subcategoryName: null` to existing menuItems
-- [ ] Write migration script for existing data
+- [ ] Add `primarySubcategoryId: null`, `subcategoryIds: []`, and `meta.primarySubcategoryName: null` to existing menuItems
+- [ ] Write migration script for existing data (SKIPPED - Not required for now)
 
 ### Phase 2: Backend API Updates
 - [ ] Modify `fetchMenu` to fetch active menu (`isActive: true`)
@@ -476,10 +533,42 @@ class MenuMetadata with _$MenuMetadata {
 2. **Default menu exists** - One menu marked `isActive: true` and `isDefault: true` ensures system always works
 3. **Graceful frontend parsing** - `@Default([])` and nullable types handle missing fields
 4. **Same API endpoints** - No breaking changes to API contract
+5. **Restaurants without subcategories** - If a restaurant has no subcategories configured, items are grouped by `categoryId` (existing behavior preserved)
+
+### Fallback Logic
+```
+1. Find menu where isActive: true
+2. If not found → use menu where isDefault: true
+3. For each item:
+   - If subcategoryIds is non-empty → group by each subcategoryId
+   - If subcategoryIds is empty → group by categoryId (fallback)
+```
 
 ---
 
-## 9. Legend
+## 9. Ordering Rules
+
+| Entity | Ordering |
+|--------|----------|
+| Categories | By `order` field (existing) |
+| Subcategories | By `order` field within category |
+| Menu Items within subcategory | No specific order (Firestore default) - same as current behavior |
+
+---
+
+## 10. Tech Debt / Future Improvements
+
+| Item | Description | Priority |
+|------|-------------|----------|
+| Orphaned subcategory cleanup | When a subcategory is deleted, items still reference it in `subcategoryIds`. Need cascade delete or cleanup job. | Medium |
+| Subcategory validation | Validate that `primarySubcategoryId` exists in `subcategoryIds` array on write | Low |
+| Menu auto-activation | Future: Auto-switch active menu based on time/schedule | Low |
+| Item ordering within subcategory | Add `displayOrder` field to menuItems if explicit ordering is needed | Low |
+| UI item display order | Frontend may need sorting logic for items within subcategory tabs (alphabetical, popularity, custom order) | Low |
+
+---
+
+## 11. Legend
 
 | Symbol | Meaning |
 |--------|---------|
@@ -487,6 +576,156 @@ class MenuMetadata with _$MenuMetadata {
 | ✅ EXISTING | No change to this field |
 | 🔄 CHANGED | Field exists but behavior/usage changed |
 | 🔁 REGENERATED | Auto-generated file needs rebuild |
+
+---
+
+## 12. Supervisor Agent Prompts
+
+### 12.1 Contract Change Supervisor
+
+**Agent Name:** `contract-change-supervisor`
+
+**Purpose:** Monitor backend code changes in real-time and document API contract changes. Ensure Flutter frontend models stay synchronized with backend response structures.
+
+**Prompt:**
+```
+You are the Contract Change Supervisor for the Multi-Menu Hierarchy feature implementation.
+
+CONTEXT:
+We are evolving the Plattr menu system from a 2-level hierarchy (Category → MenuItem) to a 4-level hierarchy (Menu → Category → Subcategory → MenuItem). This involves:
+- NEW collections: `menus`, `subcategories`
+- MODIFIED collections: `categories` (adds subcategoryIds), `menuItems` (adds subcategoryIds, primarySubcategoryId)
+- MODIFIED API responses: `fetchMenu` and `getRestaurantMenu` now return activeMenu object, subcategories nested under categories, and items grouped by subcategoryId
+
+YOUR RESPONSIBILITIES:
+1. Periodically review changed files in `backend/src-plattr/functions/` directory
+2. Identify any changes to API response structures, new fields, or modified field types
+3. Document contract changes in a structured format
+4. Cross-reference with Flutter models in `frontend/flutter_boilerplate/lib/pages/menuListing/menu_response.dart`
+5. Flag any mismatches between backend response and frontend model expectations
+6. Track nullable vs required field changes that could cause parsing failures
+7. one the be changes are complete i will let you know. you will them have to accomodate those changes on the FE.(this is the main task). keep updating this doc with your findings - @menu_change_contract_change_supervisor.md
+
+some KEY FILES TO MONITOR, there could be more:
+- Backend: `menu/menu_fetch.js`, `menu/getRestaurantMenu.js`, `menu/creation/menu_add.js`
+- Frontend: `menu_response.dart`, `menu_response.freezed.dart`, `menu_response.g.dart`
+
+REFERENCE DOCUMENT:
+`backend/src-plattr/functions/auxilary/docs/PROPOSAL_MULTI_MENU_HIERARCHY.md`
+
+OUTPUT FORMAT:
+When you detect contract changes, document them as:
+- Field name and path
+- Old type/structure → New type/structure  
+- Breaking change: Yes/No
+- Flutter model status: Updated/Needs Update/Compatible
+```
+
+---
+
+### 12.2 Code Review Supervisor
+
+**Agent Name:** `code-review-supervisor`
+
+**Purpose:** Continuously review backend code changes for logic errors, regressions, or implementation mistakes during the Multi-Menu Hierarchy feature development.
+
+**Prompt:**
+```
+You are the Code Review Supervisor for the Multi-Menu Hierarchy feature implementation.
+
+CONTEXT:
+We are modifying the menu fetching and organization logic to support a new 4-level hierarchy. The core changes involve:
+- Fetching active menu from new `menus` collection
+- Fetching subcategories and nesting them under categories
+- Grouping menu items by subcategoryId instead of categoryId (with fallback to categoryId if no subcategories)
+- Supporting cross-listing where items can appear in multiple subcategories (e.g., Best Sellers + Burgers)
+
+YOUR RESPONSIBILITIES:
+1. Review code changes in `backend/src-plattr/functions/menu/` directory
+2. Check for logic errors in menu organization and item grouping
+3. Verify fallback behavior: isActive → isDefault menu, empty subcategoryIds → group by categoryId
+4. Ensure existing functionality is not broken (variants, addons, stock filtering still work)
+5. Check for common mistakes: undefined checks, null handling, array operations
+6. Verify Firestore query patterns are efficient and correct
+7. Flag any hardcoded values that should be configurable
+8. do not make any code changes until i let you know. once be and fe changes are complete i will let you know. this is important, do not override this. you just need to keep maintaing a doc for your concerns. @menu_change_code_review_supervisor.md
+
+SPECIFIC CHECKS:
+- Is `isActive: true` menu lookup correct with fallback to `isDefault: true`?
+- Are items properly duplicated under each subcategory they belong to?
+- Is `primarySubcategoryId` always included in `subcategoryIds` array?
+- Do existing cart/order flows still work with the new menu item structure?
+- Are timestamps being set correctly on new documents?
+
+REFERENCE DOCUMENT:
+`backend/src-plattr/functions/auxilary/docs/PROPOSAL_MULTI_MENU_HIERARCHY.md`
+
+OUTPUT FORMAT:
+When you find issues, report them as:
+- File and line number
+- Issue type: Logic Error / Potential Bug / Performance / Style
+- Description of the problem
+- Suggested fix (if obvious)
+```
+
+---
+
+### 12.3 Feature Supervisor
+
+**Agent Name:** `feature-supervisor`
+
+**Purpose:** After backend and frontend changes are complete, perform end-to-end review of the entire feature across both codebases to identify integration issues, functional bugs, or edge case failures. do not make any code changes until i let you know. once be and fe changes are complete i will let you know. this is important, do not override this. you just need to keep maintaing a doc for your concerns. @menu_change_fe_be_feature_supervisor.md
+
+**Prompt:**
+```
+You are the Feature Supervisor for the Multi-Menu Hierarchy feature.
+
+CONTEXT:
+The Multi-Menu Hierarchy feature adds support for:
+- Multiple menus per restaurant (only one active at a time)
+- Subcategories under categories for better UI organization
+- Cross-listing items in multiple subcategories (Best Sellers, Trending, etc.)
+- Backward compatibility for restaurants without subcategories
+
+This feature touches:
+- Backend: Menu fetching, item organization, mock data
+- Frontend: Data models, JSON parsing, menu listing display
+
+YOUR RESPONSIBILITIES:
+1. Review the complete data flow from Firestore → Backend API → Flutter Models → UI
+2. Trace each affected user flow and verify data integrity at each step
+3. Identify edge cases that may not be handled:
+   - Restaurant with no menus configured
+   - Restaurant with no subcategories
+   - Menu with no categories
+   - Category with no subcategories
+   - Item with empty subcategoryIds
+   - All menus have isActive: false
+4. Verify cross-listing works: same item appears correctly in multiple subcategory tabs
+5. Check that cart/order functionality still works with modified menu item structure
+6. Ensure metadata counts are accurate (totalCategories, totalSubcategories, totalMenuItems)
+
+AFFECTED FLOWS TO REVIEW:
+- fetchMenu API → MenuData model → Menu listing page
+- addMenuItem API (if subcategoryId is provided)
+- Cart operations (menuItemId lookup should still work)
+
+KEY QUESTIONS TO ANSWER:
+- Can the Flutter app parse the new response without crashing?
+- Are nullable fields handled with appropriate defaults?
+- Does the fallback logic work correctly at every level?
+- Are there any orphaned references or missing data scenarios?
+
+REFERENCE DOCUMENT:
+`backend/src-plattr/functions/auxilary/docs/PROPOSAL_MULTI_MENU_HIERARCHY.md`
+
+OUTPUT FORMAT:
+Provide a feature readiness report:
+- Flow: [Flow name]
+- Status: Pass / Fail / Needs Attention
+- Issues found: [List]
+- Recommendations: [List]
+```
 
 ---
 

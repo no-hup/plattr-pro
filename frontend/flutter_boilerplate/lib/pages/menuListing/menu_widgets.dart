@@ -194,7 +194,7 @@ class _QuantityControl extends StatelessWidget {
 class CategorySection extends StatelessWidget {
   const CategorySection({
     required this.category,
-    required this.items,
+    required this.menuItemsMap, // Changed: now receives the full map
     required this.itemQuantities,
     required this.onQuantityChanged,
     required this.tableId,
@@ -203,7 +203,7 @@ class CategorySection extends StatelessWidget {
   });
 
   final Category category;
-  final List<MenuItem> items;
+  final Map<String, List<MenuItem>> menuItemsMap; // Full menuItems map keyed by subcategoryId or categoryId
   final Map<String, int> itemQuantities;
   final Function(String itemId, bool increment) onQuantityChanged;
   final String tableId;
@@ -214,34 +214,74 @@ class CategorySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Category Header
         Padding(
           padding: const EdgeInsets.all(16),
           child: Text(
             category.name,
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const ClampingScrollPhysics(),
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            final item = items[index];
-            return MenuItemCard(
-              item: item,
-              quantity: itemQuantities[item.id] ?? 0,
-              onQuantityChanged: (increment) {
-                onQuantityChanged(item.id, increment);
-              },
-              tableId: tableId,
-              restaurantId: restaurantId,
-            );
-          },
-        ),
+        // If category has subcategories, show subcategory sections
+        // Otherwise show items directly under category (legacy mode)
+        if (category.subcategories.isNotEmpty)
+          ..._buildSubcategorySections(context)
+        else
+          _buildItemsList(menuItemsMap[category.id] ?? []),
       ],
     );
   }
+
+  /// Build subcategory sections with headers
+  List<Widget> _buildSubcategorySections(BuildContext context) {
+    final sections = <Widget>[];
+    
+    for (final subcat in category.subcategories) {
+      final subcatItems = menuItemsMap[subcat.id] ?? [];
+      if (subcatItems.isEmpty) continue; // Skip empty subcategories
+      
+      sections.add(
+        Padding(
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 4),
+          child: Text(
+            subcat.name,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+      sections.add(_buildItemsList(subcatItems));
+    }
+    
+    return sections;
+  }
+
+  /// Build a list of menu item cards
+  Widget _buildItemsList(List<MenuItem> items) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const ClampingScrollPhysics(),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return MenuItemCard(
+          item: item,
+          quantity: itemQuantities[item.id] ?? 0,
+          onQuantityChanged: (increment) {
+            onQuantityChanged(item.id, increment);
+          },
+          tableId: tableId,
+          restaurantId: restaurantId,
+        );
+      },
+    );
+  }
 }
+
 
 class MenuErrorView extends StatelessWidget {
   const MenuErrorView({

@@ -8,8 +8,8 @@ class Environment {
     this._isEmulator = this._detectEmulator();
     this._logEnvironment(); // Log at startup for debugging
     this._projectId = 'rms-app-dd875'; // Your Firebase project ID
-    this._serviceAccountPath = '/Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr/secure_stuff/service-account.json';
-    
+    this._serviceAccountPath = '/Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr/functions/secure_stuff/service-account.json';
+
     // List of trigger functions that should not be deployed to production
     this._restrictedTriggers = [
       'onOrderPlaced',
@@ -23,9 +23,9 @@ class Environment {
    * @returns {boolean} True if running in emulator
    */
   _detectEmulator() {
-    return process.env.NODE_ENV === 'development' || 
-           process.env.FUNCTIONS_EMULATOR === 'true' ||
-           !!process.env.FIRESTORE_EMULATOR_HOST;
+    return process.env.NODE_ENV === 'development' ||
+      process.env.FUNCTIONS_EMULATOR === 'true' ||
+      !!process.env.FIRESTORE_EMULATOR_HOST;
   }
 
   // Add logging for debugging
@@ -89,7 +89,7 @@ class Environment {
         ignoreUndefinedProperties: true
       };
     }
-    
+
     return {
       ignoreUndefinedProperties: true
     };
@@ -112,9 +112,9 @@ class Environment {
         process.env.NODE_ENV = 'development';
       }
     }
-    
+
     // Always set service account path
-    process.env.GOOGLE_APPLICATION_CREDENTIALS = this._serviceAccountPath;
+    // process.env.GOOGLE_APPLICATION_CREDENTIALS = this._serviceAccountPath;
   }
 
   /**
