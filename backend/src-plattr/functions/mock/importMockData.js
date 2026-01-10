@@ -72,8 +72,8 @@ async function importData() {
         await restaurantRef.set(transformedInfo, { merge: true });
         console.log(`Restaurant ${restaurantId} info imported successfully`);
 
-        // Import sub-collections
-        const subCollections = ['menuItems', 'categories', 'variants', 'tables', 'servers', 'orders', 'addons', 'kitchens', 'sessions', 'carts'];
+        // Import sub-collections (menus and subcategories added for multi-menu hierarchy)
+        const subCollections = ['menus', 'subcategories', 'menuItems', 'categories', 'variants', 'tables', 'servers', 'orders', 'addons', 'kitchens', 'sessions', 'carts'];
         
         for (const subCollection of subCollections) {
           if (restaurantData[subCollection]) {

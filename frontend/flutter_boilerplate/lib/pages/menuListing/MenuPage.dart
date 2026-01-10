@@ -101,19 +101,32 @@ class MenuPageContent extends StatelessWidget {
                       separatorBuilder: (context, index) => const Divider(),
                       itemBuilder: (context, index) {
                         final category = menuData.categories[index];
-                        final items = menuData.menuItems[category.id] ?? [];
+                        
+                        // Collect all items for this category (for quantity tracking)
+                        final allCategoryItems = _getAllItemsForCategory(
+                          category, 
+                          menuData.menuItems
+                        );
 
                         return CategorySection(
                           category: category,
-                          items: items,
+                          menuItemsMap: menuData.menuItems, // Pass full map
                           tableId: tableId,
                           restaurantId: restaurantId,
-                          itemQuantities: _getItemQuantities(menuState, items),
+                          itemQuantities: _getItemQuantities(menuState, allCategoryItems),
                           onQuantityChanged: (itemId, increment) {
-                            final item = items.firstWhere(
-                                (item) => item.id == itemId);
-                            menuState.updateCartItem(item, increment,
-                                tableId: tableId, restaurantId: restaurantId);
+                            // Find item in any subcategory or category
+                            MenuItem? item;
+                            for (final i in allCategoryItems) {
+                              if (i.id == itemId) {
+                                item = i;
+                                break;
+                              }
+                            }
+                            if (item != null) {
+                              menuState.updateCartItem(item, increment,
+                                  tableId: tableId, restaurantId: restaurantId);
+                            }
                           },
                         );
                       },
@@ -133,5 +146,26 @@ class MenuPageContent extends StatelessWidget {
       items.map((item) => MapEntry(
           item.id, menuState.getItemQuantity(item.id))),
     );
+  }
+
+  /// Collect all items for a category (deduped by item id)
+  /// If category has subcategories, aggregates from all subcategory IDs
+  /// Otherwise falls back to category ID for legacy restaurants
+  List<MenuItem> _getAllItemsForCategory(
+    Category category,
+    Map<String, List<MenuItem>> menuItems,
+  ) {
+    if (category.subcategories.isNotEmpty) {
+      final itemMap = <String, MenuItem>{};
+      for (final subcat in category.subcategories) {
+        final subcatItems = menuItems[subcat.id] ?? [];
+        for (final item in subcatItems) {
+          itemMap[item.id] = item;
+        }
+      }
+      return itemMap.values.toList();
+    } else {
+      return menuItems[category.id] ?? [];
+    }
   }
 }

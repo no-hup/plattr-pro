@@ -40,7 +40,8 @@ async function importData() {
         const restaurantRef = db.collection('restaurants').doc(restaurantId);
         await restaurantRef.set(transformedInfo, { merge: true });
 
-        const subCollections = ['menuItems', 'categories', 'variants', 'tables', 'servers', 'orders', 'addons', 'kitchens', 'sessions', 'carts'];
+        // menus and subcategories added for multi-menu hierarchy support
+        const subCollections = ['menus', 'subcategories', 'menuItems', 'categories', 'variants', 'tables', 'servers', 'orders', 'addons', 'kitchens', 'sessions', 'carts'];
         for (const subCollection of subCollections) {
           if (!restaurantData[subCollection]) continue;
           const subCollectionRef = restaurantRef.collection(subCollection);
