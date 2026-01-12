@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart' show ChangeNotifier, Color, Colors;
-import 'package:flutterboilerplate/models/api_response_freezed.dart';
 import 'package:flutterboilerplate/pages/checkout_order_flow/models/order_models.dart';
 import 'package:flutterboilerplate/pages/checkout_order_flow/order_repository.dart';
 import 'package:flutterboilerplate/session/session_provider.dart';

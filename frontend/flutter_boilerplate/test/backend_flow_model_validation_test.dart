@@ -69,7 +69,7 @@ void main() {
             expect(menuResponse.result, isA<MenuData>());
             expect(menuResponse.result.categories, isA<List<Category>>());
             expect(menuResponse.result.menuItems,
-                isA<Map<String, List<MenuItem>>>());
+                isA<Map<String, List<MenuItem>>>(),);
           },
           returnsNormally,
           reason: 'MenuResponse should parse successfully',
@@ -248,7 +248,7 @@ void main() {
             // Validate the structure matches expectations
             expect(menuResponse.result.categories, isA<List<Category>>());
             expect(menuResponse.result.menuItems,
-                isA<Map<String, List<MenuItem>>>());
+                isA<Map<String, List<MenuItem>>>(),);
             expect(menuResponse.result.metadata, isA<MenuMetadata>());
 
             // Test that categories have required fields
@@ -312,7 +312,7 @@ void main() {
         // This will catch if the menu API response structure changes
         expect(response, containsPair('categories', isA<List>()));
         expect(
-            response, containsPair('menuItems', isA<Map<String, dynamic>>()));
+            response, containsPair('menuItems', isA<Map<String, dynamic>>()),);
 
         // Test that the model can still parse it
         expect(

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
 
 /// Standard footer panel showing price summary rows and a primary action.
 class PriceSummaryPanel extends StatelessWidget {
   const PriceSummaryPanel({
-    super.key,
-    required this.summaryRows,
+    required this.summaryRows, super.key,
     this.primaryAction,
-    this.padding = const EdgeInsets.all(16),
+    this.padding = AppSpacing.pagePadding,
     this.backgroundColor,
     this.elevation = 4,
   });
@@ -33,10 +33,10 @@ class PriceSummaryPanel extends StatelessWidget {
             children: [
               ...summaryRows,
               if (primaryAction != null) ...[
-                const SizedBox(height: 16),
+                AppSpacing.verticalLG,
                 SizedBox(
                   width: double.infinity,
-                  child: primaryAction!,
+                  child: primaryAction,
                 ),
               ],
             ],

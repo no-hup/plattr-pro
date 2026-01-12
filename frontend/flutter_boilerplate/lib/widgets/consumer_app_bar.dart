@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 /// Reusable AppBar that keeps the consumer app navigation actions consistent.
 class ConsumerAppBar extends StatelessWidget implements PreferredSizeWidget {
   const ConsumerAppBar({
-    super.key,
-    required this.title,
+    required this.title, super.key,
     this.onOrdersTap,
     this.onMenuTap,
     this.onCartTap,

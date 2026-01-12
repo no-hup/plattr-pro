@@ -3,6 +3,7 @@ import 'package:flutterboilerplate/pages/cart_listing/cart_listing_state.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_item.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_price_info.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
 import 'package:flutterboilerplate/widgets/price_display.dart';
 import 'package:flutterboilerplate/widgets/quantity_selector.dart';
 import 'package:go_router/go_router.dart';
@@ -31,7 +32,7 @@ class _CartPageState extends State<CartPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AppLogger.log(
-          '🛒 CART: Initializing cart page for table ${widget.tableId}');
+          '🛒 CART: Initializing cart page for table ${widget.tableId}',);
       context.read<CartListingState>().fetchCart(
             tableId: widget.tableId,
             restaurantId: widget.restaurantId,
@@ -107,21 +108,21 @@ class _CartPageState extends State<CartPage> {
             size: 64,
             color: Theme.of(context).colorScheme.error,
           ),
-          const SizedBox(height: 16),
+          AppSpacing.verticalLG,
           Text(
             'Oops! Something went wrong',
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 8),
+          AppSpacing.verticalSM,
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
             child: Text(
               error,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
-          const SizedBox(height: 24),
+          AppSpacing.verticalXL,
           ElevatedButton(
             onPressed: () {
               AppLogger.log('🛒 CART: Retrying cart fetch');
@@ -147,17 +148,17 @@ class _CartPageState extends State<CartPage> {
             size: 64,
             color: Theme.of(context).colorScheme.outline,
           ),
-          const SizedBox(height: 16),
+          AppSpacing.verticalLG,
           Text(
             'Your cart is empty',
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 8),
+          AppSpacing.verticalSM,
           Text(
             'Add items from the menu to get started',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
-          const SizedBox(height: 24),
+          AppSpacing.verticalXL,
           ElevatedButton(
             onPressed: () {
               AppLogger.log('🛒 CART: Navigate to menu from empty cart');
@@ -186,7 +187,7 @@ class CartItemsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.pagePadding,
       itemCount: items.length,
       separatorBuilder: (context, index) => const Divider(),
       itemBuilder: (context, index) {
@@ -223,12 +224,12 @@ class CartItemTile extends StatelessWidget {
     // Enhanced detailed logging for debugging
     AppLogger.log('💲 CART_TILE: Building tile for item ${item.menuItemId}');
     AppLogger.log(
-        '💲 CART_TILE: - name: ${item.name ?? "null"} (from ${item.name == null && hasMenuItem ? "menu" : "cart"})');
+        '💲 CART_TILE: - name: ${item.name ?? "null"} (from ${item.name == null && hasMenuItem ? "menu" : "cart"})',);
     AppLogger.log(
-        '💲 CART_TILE: - menuItem found: ${hasMenuItem ? "yes" : "no"}');
+        '💲 CART_TILE: - menuItem found: ${hasMenuItem ? "yes" : "no"}',);
     AppLogger.log('💲 CART_TILE: - quantity: ${item.quantity}');
     AppLogger.log(
-        '💲 CART_TILE: - priceInfo present: ${item.priceInfo != null ? "yes" : "null"}');
+        '💲 CART_TILE: - priceInfo present: ${item.priceInfo != null ? "yes" : "null"}',);
 
     final isUsingMenuDataForDisplay =
         (item.name == null || item.name!.isEmpty) && hasMenuItem ||
@@ -236,25 +237,25 @@ class CartItemTile extends StatelessWidget {
 
     if (isUsingMenuDataForDisplay) {
       AppLogger.log(
-          '💲 CART_TILE: Using menu data to supplement missing cart item data');
+          '💲 CART_TILE: Using menu data to supplement missing cart item data',);
     }
 
     if (item.priceInfo != null) {
       AppLogger.log(
-          '💲 CART_TILE: - itemBasePrice: ${item.priceInfo?.itemBasePrice}');
+          '💲 CART_TILE: - itemBasePrice: ${item.priceInfo?.itemBasePrice}',);
       AppLogger.log(
-          '💲 CART_TILE: - itemFinalPrice: ${item.priceInfo?.itemFinalPrice}');
+          '💲 CART_TILE: - itemFinalPrice: ${item.priceInfo?.itemFinalPrice}',);
       AppLogger.log(
-          '💲 CART_TILE: - finalPrice: ${item.priceInfo?.finalPrice}');
+          '💲 CART_TILE: - finalPrice: ${item.priceInfo?.finalPrice}',);
     } else if (hasMenuItem) {
       AppLogger.log(
-          '💲 CART_TILE: - Fallback to menuItem price: ${menuItem.priceInfo.basePrice}');
+          '💲 CART_TILE: - Fallback to menuItem price: ${menuItem.priceInfo.basePrice}',);
     }
 
     AppLogger.log(
-        '💲 CART_TILE: - selectedVariants count: ${item.selectedVariants.length}');
+        '💲 CART_TILE: - selectedVariants count: ${item.selectedVariants.length}',);
     AppLogger.log(
-        '💲 CART_TILE: - selectedAddons count: ${item.selectedAddons.length}');
+        '💲 CART_TILE: - selectedAddons count: ${item.selectedAddons.length}',);
 
     // Get pricing information with robust fallbacks
     final basePrice = item.priceInfo?.itemBasePrice.toDouble() ??
@@ -283,7 +284,7 @@ class CartItemTile extends StatelessWidget {
       elevation: 2,
       margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: AppSpacing.pagePadding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -306,7 +307,6 @@ class CartItemTile extends StatelessWidget {
                   finalPrice: finalPrice,
                   basePrice: showBasePriceStrikethrough ? basePrice : null,
                   discountAmount: discount > 0 ? discount : null,
-                  size: PriceDisplaySize.medium,
                 ),
               ],
             ),
@@ -527,7 +527,7 @@ class CartItemTile extends StatelessWidget {
                       ? null
                       : () {
                           AppLogger.log(
-                              '🛒 CART: Removing item ${item.menuItemId} from cart');
+                              '🛒 CART: Removing item ${item.menuItemId} from cart',);
                           if (item.quantity <= 1) {
                             _showRemoveConfirmation(context);
                           } else {
@@ -553,7 +553,7 @@ class CartItemTile extends StatelessWidget {
                       ? null
                       : () {
                           AppLogger.log(
-                              '🛒 CART: Decreasing quantity for ${item.menuItemId}');
+                              '🛒 CART: Decreasing quantity for ${item.menuItemId}',);
                           context.read<CartListingState>().updateCartItem(
                                 item,
                                 false,
@@ -565,7 +565,7 @@ class CartItemTile extends StatelessWidget {
                       ? null
                       : () {
                           AppLogger.log(
-                              '🛒 CART: Increasing quantity for ${item.menuItemId}');
+                              '🛒 CART: Increasing quantity for ${item.menuItemId}',);
                           context.read<CartListingState>().updateCartItem(
                                 item,
                                 true,
@@ -591,7 +591,7 @@ class CartItemTile extends StatelessWidget {
       builder: (context) => AlertDialog(
         title: const Text('Remove Item'),
         content: const Text(
-            'Are you sure you want to remove this item from your cart?'),
+            'Are you sure you want to remove this item from your cart?',),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -631,7 +631,7 @@ class CartItemTile extends StatelessWidget {
               ? null
               : () {
                   AppLogger.log(
-                      '🛒 CART: Decreasing quantity for ${item.menuItemId}');
+                      '🛒 CART: Decreasing quantity for ${item.menuItemId}',);
                   context.read<CartListingState>().updateCartItem(
                         item,
                         false,
@@ -665,7 +665,7 @@ class CartItemTile extends StatelessWidget {
               ? null
               : () {
                   AppLogger.log(
-                      '🛒 CART: Increasing quantity for ${item.menuItemId}');
+                      '🛒 CART: Increasing quantity for ${item.menuItemId}',);
                   context.read<CartListingState>().updateCartItem(
                         item,
                         true,
@@ -707,8 +707,7 @@ class CartItemTile extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 12,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
           color: textColor ??
               (isFromMenu
                   ? Theme.of(context)
@@ -742,7 +741,7 @@ class CartPriceSummary extends StatelessWidget {
     // If priceInfo is null, use default values
     if (priceInfo == null) {
       AppLogger.log(
-          '💰 CART_SUMMARY: No priceInfo available, showing empty state');
+          '💰 CART_SUMMARY: No priceInfo available, showing empty state',);
       return const SizedBox.shrink();
     }
 
@@ -751,7 +750,7 @@ class CartPriceSummary extends StatelessWidget {
     AppLogger.log('💰 CART_SUMMARY: - basePrice: ${priceInfo!.basePrice}');
     AppLogger.log('💰 CART_SUMMARY: - finalPrice: ${priceInfo!.finalPrice}');
     AppLogger.log(
-        '💰 CART_SUMMARY: - totalDiscountAmount: ${priceInfo!.totalDiscountAmount}');
+        '💰 CART_SUMMARY: - totalDiscountAmount: ${priceInfo!.totalDiscountAmount}',);
 
     // Get values directly from priceInfo with safe fallbacks
     final basePrice = priceInfo!.basePrice?.toDouble() ?? 0.0;
@@ -769,12 +768,12 @@ class CartPriceSummary extends StatelessWidget {
     // Hide the summary if both prices are zero or cart has no items
     if (finalPrice <= 0 || hasNoItems) {
       AppLogger.log(
-          '💰 CART_SUMMARY: Hiding summary because prices are zero or cart is empty');
+          '💰 CART_SUMMARY: Hiding summary because prices are zero or cart is empty',);
       return const SizedBox.shrink();
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.pagePadding,
       decoration: BoxDecoration(
         color: theme.cardColor,
         boxShadow: [
@@ -825,7 +824,7 @@ class CartPriceSummary extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 16),
+            AppSpacing.verticalLG,
 
             SizedBox(
               width: double.infinity,
@@ -862,7 +861,7 @@ class CartPriceSummary extends StatelessWidget {
 
                             // Navigate to orders page to show order history
                             AppLogger.log(
-                                '🛒 CART: Checkout successful, navigating to orders page');
+                                '🛒 CART: Checkout successful, navigating to orders page',);
                             context.go('/r/$restaurantId/t/$tableId/orders');
                           }
                         } else {

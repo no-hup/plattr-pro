@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 /// Primary button used across key flows (checkout, retry, etc.).
 class PrimaryActionButton extends StatelessWidget {
   const PrimaryActionButton({
-    super.key,
-    required this.label,
-    required this.onPressed,
+    required this.label, required this.onPressed, super.key,
     this.isLoading = false,
     this.expand = true,
   });

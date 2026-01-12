@@ -10,12 +10,12 @@ class OtpResponseParser {
   /// Parses the success response (typically HTTP 200).
   /// Handles both standard success and the 'ask_primary_customer' case.
   static ApiResponse<OtpValidationResponse> parseSuccessResponse(
-      Map<String, dynamic> jsonResponse) {
+      Map<String, dynamic> jsonResponse,) {
     try {
       AppLogger.log('OTP Parser: Parsing success response: $jsonResponse');
 
       // Extract the result field if it exists
-      final Map<String, dynamic> resultData = jsonResponse.containsKey('result') 
+      final resultData = jsonResponse.containsKey('result') 
           ? jsonResponse['result'] as Map<String, dynamic>
           : jsonResponse;
       

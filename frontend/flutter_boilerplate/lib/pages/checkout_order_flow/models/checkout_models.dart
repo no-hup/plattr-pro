@@ -61,7 +61,7 @@ class CheckoutApiParser {
     } else {
       AppLogger.log('❌ CheckoutApiParser: Unknown response structure: $json');
       // Neither 'result' nor 'error' key found
-      return CheckoutError(
+      return const CheckoutError(
         code: 'unknown_response',
         message: 'Received unknown response structure from checkout API.',
       );

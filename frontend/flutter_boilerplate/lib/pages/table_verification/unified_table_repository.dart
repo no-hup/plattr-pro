@@ -42,7 +42,7 @@ class UnifiedTableRepository {
 
       // Make API request with timeout handling
       AppLogger.log(
-          '🔐 UNIFIED VALIDATE: Using endpoint: ${ApiConfig.validateTableEndpointProd}');
+          '🔐 UNIFIED VALIDATE: Using endpoint: ${ApiConfig.validateTableEndpointProd}',);
 
       final response = await _dio
           .post<Map<String, dynamic>>(
@@ -64,7 +64,7 @@ class UnifiedTableRepository {
 
       // Log the response for debugging
       AppLogger.log(
-          '🔐 UNIFIED VALIDATE: Received response with status: ${response.statusCode}');
+          '🔐 UNIFIED VALIDATE: Received response with status: ${response.statusCode}',);
       AppLogger.log('🔐 UNIFIED VALIDATE: Response data: ${response.data}');
 
       // Process response using UnifiedResponseParser
@@ -106,7 +106,7 @@ class UnifiedTableRepository {
 
       // Make API request
       AppLogger.log(
-          '🔐 UNIFIED OTP: Using endpoint: ${ApiConfig.validateOtpEndpointProd}');
+          '🔐 UNIFIED OTP: Using endpoint: ${ApiConfig.validateOtpEndpointProd}',);
 
       final response = await _dio
           .post<Map<String, dynamic>>(
@@ -116,7 +116,7 @@ class UnifiedTableRepository {
           .timeout(const Duration(seconds: 15));
 
       AppLogger.log(
-          '🔐 UNIFIED OTP: Received response with status: ${response.statusCode}');
+          '🔐 UNIFIED OTP: Received response with status: ${response.statusCode}',);
       AppLogger.log('🔐 UNIFIED OTP: Response data: ${response.data}');
 
       // Process response using UnifiedResponseParser
@@ -148,7 +148,7 @@ class UnifiedTableRepository {
 
       // Make API request
       AppLogger.log(
-          '🔐 UNIFIED STATUS: Using endpoint: ${ApiConfig.checkTableStatusEndpointProd}');
+          '🔐 UNIFIED STATUS: Using endpoint: ${ApiConfig.checkTableStatusEndpointProd}',);
 
       final response = await _dio
           .post<Map<String, dynamic>>(
@@ -158,7 +158,7 @@ class UnifiedTableRepository {
           .timeout(const Duration(seconds: 15));
 
       AppLogger.log(
-          '🔐 UNIFIED STATUS: Received response with status: ${response.statusCode}');
+          '🔐 UNIFIED STATUS: Received response with status: ${response.statusCode}',);
       AppLogger.log('🔐 UNIFIED STATUS: Response data: ${response.data}');
 
       // Process response using UnifiedResponseParser
@@ -190,7 +190,7 @@ class UnifiedTableRepository {
 
       // Make API request
       AppLogger.log(
-          '🔐 UNIFIED LIST: Using endpoint: ${ApiConfig.getTablesForRestaurantEndpointProd}');
+          '🔐 UNIFIED LIST: Using endpoint: ${ApiConfig.getTablesForRestaurantEndpointProd}',);
 
       final response = await _dio
           .post<Map<String, dynamic>>(
@@ -200,7 +200,7 @@ class UnifiedTableRepository {
           .timeout(const Duration(seconds: 15));
 
       AppLogger.log(
-          '🔐 UNIFIED LIST: Received response with status: ${response.statusCode}');
+          '🔐 UNIFIED LIST: Received response with status: ${response.statusCode}',);
       AppLogger.log('🔐 UNIFIED LIST: Response data: ${response.data}');
 
       // Process response using UnifiedResponseParser
@@ -232,7 +232,7 @@ class UnifiedTableRepository {
 
       // Make API request
       AppLogger.log(
-          '🔐 UNIFIED DETAILS: Using endpoint: ${ApiConfig.getTableDetailsEndpointProd}');
+          '🔐 UNIFIED DETAILS: Using endpoint: ${ApiConfig.getTableDetailsEndpointProd}',);
 
       final response = await _dio
           .post<Map<String, dynamic>>(
@@ -242,7 +242,7 @@ class UnifiedTableRepository {
           .timeout(const Duration(seconds: 15));
 
       AppLogger.log(
-          '🔐 UNIFIED DETAILS: Received response with status: ${response.statusCode}');
+          '🔐 UNIFIED DETAILS: Received response with status: ${response.statusCode}',);
       AppLogger.log('🔐 UNIFIED DETAILS: Response data: ${response.data}');
 
       // Process response using UnifiedResponseParser
@@ -266,16 +266,16 @@ class UnifiedTableRepository {
     final hasSession = sessionId != null && sessionId.isNotEmpty;
 
     AppLogger.log(
-        '📦 UNIFIED VALIDATION: Preparing payload for table validation request');
+        '📦 UNIFIED VALIDATION: Preparing payload for table validation request',);
     AppLogger.log(
-        '📦 UNIFIED VALIDATION: Restaurant ID: $restaurantId, Table ID: $tableId');
+        '📦 UNIFIED VALIDATION: Restaurant ID: $restaurantId, Table ID: $tableId',);
 
     if (hasSession) {
       AppLogger.log(
-          '📦 UNIFIED VALIDATION: Including sessionId in request: $sessionId');
+          '📦 UNIFIED VALIDATION: Including sessionId in request: $sessionId',);
     } else {
       AppLogger.log(
-          '📦 UNIFIED VALIDATION: No sessionId available for request');
+          '📦 UNIFIED VALIDATION: No sessionId available for request',);
     }
 
     final payload = {
@@ -291,7 +291,7 @@ class UnifiedTableRepository {
     };
 
     AppLogger.log(
-        '📦 UNIFIED VALIDATION: Request payload prepared: ${payload['data']}');
+        '📦 UNIFIED VALIDATION: Request payload prepared: ${payload['data']}',);
     return payload;
   }
 
@@ -301,7 +301,7 @@ class UnifiedTableRepository {
       AppLogger.log('❌ Invalid response format: ${response.data.runtimeType}');
       return UnifiedResponseParser.parse<TableValidationData>(
         {
-          'result': {'status': 'error', 'message': 'Invalid response format'}
+          'result': {'status': 'error', 'message': 'Invalid response format'},
         },
         dataParser: (data) =>
             throw const UnifiedResponseException('Invalid response format'),
@@ -323,8 +323,8 @@ class UnifiedTableRepository {
         {
           'result': {
             'status': 'error',
-            'message': 'Failed to parse response: $e'
-          }
+            'message': 'Failed to parse response: $e',
+          },
         },
         dataParser: (data) => throw UnifiedResponseException('Parse error: $e'),
       );
@@ -335,10 +335,10 @@ class UnifiedTableRepository {
   OtpValidationResponse _processOtpResponse(Response<dynamic> response) {
     if (response.data is! Map<String, dynamic>) {
       AppLogger.log(
-          '❌ Invalid OTP response format: ${response.data.runtimeType}');
+          '❌ Invalid OTP response format: ${response.data.runtimeType}',);
       return UnifiedResponseParser.parse<OtpValidationData>(
         {
-          'result': {'status': 'error', 'message': 'Invalid response format'}
+          'result': {'status': 'error', 'message': 'Invalid response format'},
         },
         dataParser: (data) =>
             throw const UnifiedResponseException('Invalid response format'),
@@ -360,8 +360,8 @@ class UnifiedTableRepository {
         {
           'result': {
             'status': 'error',
-            'message': 'Failed to parse response: $e'
-          }
+            'message': 'Failed to parse response: $e',
+          },
         },
         dataParser: (data) => throw UnifiedResponseException('Parse error: $e'),
       );
@@ -372,10 +372,10 @@ class UnifiedTableRepository {
   TableStatusResponse _processTableStatusResponse(Response<dynamic> response) {
     if (response.data is! Map<String, dynamic>) {
       AppLogger.log(
-          '❌ Invalid table status response format: ${response.data.runtimeType}');
+          '❌ Invalid table status response format: ${response.data.runtimeType}',);
       return UnifiedResponseParser.parse<TableStatusData>(
         {
-          'result': {'status': 'error', 'message': 'Invalid response format'}
+          'result': {'status': 'error', 'message': 'Invalid response format'},
         },
         dataParser: (data) =>
             throw const UnifiedResponseException('Invalid response format'),
@@ -397,8 +397,8 @@ class UnifiedTableRepository {
         {
           'result': {
             'status': 'error',
-            'message': 'Failed to parse response: $e'
-          }
+            'message': 'Failed to parse response: $e',
+          },
         },
         dataParser: (data) => throw UnifiedResponseException('Parse error: $e'),
       );
@@ -409,10 +409,10 @@ class UnifiedTableRepository {
   TableListResponse _processTableListResponse(Response<dynamic> response) {
     if (response.data is! Map<String, dynamic>) {
       AppLogger.log(
-          '❌ Invalid table list response format: ${response.data.runtimeType}');
+          '❌ Invalid table list response format: ${response.data.runtimeType}',);
       return UnifiedResponseParser.parse<TableListData>(
         {
-          'result': {'status': 'error', 'message': 'Invalid response format'}
+          'result': {'status': 'error', 'message': 'Invalid response format'},
         },
         dataParser: (data) =>
             throw const UnifiedResponseException('Invalid response format'),
@@ -434,8 +434,8 @@ class UnifiedTableRepository {
         {
           'result': {
             'status': 'error',
-            'message': 'Failed to parse response: $e'
-          }
+            'message': 'Failed to parse response: $e',
+          },
         },
         dataParser: (data) => throw UnifiedResponseException('Parse error: $e'),
       );
@@ -444,13 +444,13 @@ class UnifiedTableRepository {
 
   /// Processes unified table details response
   TableDetailsResponse _processTableDetailsResponse(
-      Response<dynamic> response) {
+      Response<dynamic> response,) {
     if (response.data is! Map<String, dynamic>) {
       AppLogger.log(
-          '❌ Invalid table details response format: ${response.data.runtimeType}');
+          '❌ Invalid table details response format: ${response.data.runtimeType}',);
       return UnifiedResponseParser.parse<TableDetailsData>(
         {
-          'result': {'status': 'error', 'message': 'Invalid response format'}
+          'result': {'status': 'error', 'message': 'Invalid response format'},
         },
         dataParser: (data) =>
             throw const UnifiedResponseException('Invalid response format'),
@@ -472,8 +472,8 @@ class UnifiedTableRepository {
         {
           'result': {
             'status': 'error',
-            'message': 'Failed to parse response: $e'
-          }
+            'message': 'Failed to parse response: $e',
+          },
         },
         dataParser: (data) => throw UnifiedResponseException('Parse error: $e'),
       );

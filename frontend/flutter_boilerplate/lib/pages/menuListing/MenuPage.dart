@@ -6,8 +6,8 @@ import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_state.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_widgets.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
-import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class MenuPage extends StatelessWidget {
   const MenuPage({
@@ -105,7 +105,7 @@ class MenuPageContent extends StatelessWidget {
                         // Collect all items for this category (for quantity tracking)
                         final allCategoryItems = _getAllItemsForCategory(
                           category, 
-                          menuData.menuItems
+                          menuData.menuItems,
                         );
 
                         return CategorySection(
@@ -125,7 +125,7 @@ class MenuPageContent extends StatelessWidget {
                             }
                             if (item != null) {
                               menuState.updateCartItem(item, increment,
-                                  tableId: tableId, restaurantId: restaurantId);
+                                  tableId: tableId, restaurantId: restaurantId,);
                             }
                           },
                         );
@@ -134,17 +134,17 @@ class MenuPageContent extends StatelessWidget {
                   ),
                 ],
               ),
-              FloatingCartWidget(),
-            ]));
+              const FloatingCartWidget(),
+            ],),);
       },
     );
   }
 
   Map<String, int> _getItemQuantities(
-      MenuState menuState, List<MenuItem> items) {
+      MenuState menuState, List<MenuItem> items,) {
     return Map.fromEntries(
       items.map((item) => MapEntry(
-          item.id, menuState.getItemQuantity(item.id))),
+          item.id, menuState.getItemQuantity(item.id),),),
     );
   }
 

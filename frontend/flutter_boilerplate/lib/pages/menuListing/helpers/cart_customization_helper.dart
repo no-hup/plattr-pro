@@ -1,9 +1,6 @@
-import 'package:flutterboilerplate/pages/menuListing/models/cart.dart';
-import 'package:flutterboilerplate/pages/menuListing/models/cart_item.dart';
-import 'package:flutterboilerplate/pages/menuListing/models/variant_selection.dart';
-import 'package:flutterboilerplate/pages/menuListing/models/addon_selection.dart';
-import 'package:flutterboilerplate/singletonGods/logger.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
+import 'package:flutterboilerplate/pages/menuListing/models/cart.dart';
+import 'package:flutterboilerplate/singletonGods/logger.dart';
 
 /// Helper class for handling cart item customization logic
 class CartCustomizationHelper {
@@ -42,7 +39,7 @@ class CartCustomizationHelper {
         AppLogger.log('📦 CUSTOMIZATION: Extracting variants from existingItem.selectedVariants');
         variants = {
           for (final variantSelection in existingItem.selectedVariants)
-            variantSelection.variantId: variantSelection.optionId
+            variantSelection.variantId: variantSelection.optionId,
         };
       } else {
         variants = null;
@@ -88,7 +85,7 @@ class CartCustomizationHelper {
     Map<String, String>? providedVariants,
     List<String>? providedAddons,
   }) {
-    final String menuItemId = menuItem.id;
+    final menuItemId = menuItem.id;
 
     // If customization is explicitly provided, use it
     if (providedVariants != null || providedAddons != null) {
@@ -103,8 +100,8 @@ class CartCustomizationHelper {
     }
 
     // Check if item has variants or addons defined in its menu definition
-    final hasVariants = menuItem.variants?.isNotEmpty ?? false;
-    final hasAddons = menuItem.addons?.isNotEmpty ?? false;
+    final hasVariants = menuItem.variants.isNotEmpty ?? false;
+    final hasAddons = menuItem.addons.isNotEmpty ?? false;
 
     if (!hasVariants && !hasAddons) {
       AppLogger.log('📦 CUSTOMIZATION: Item $menuItemId has no variants or addons defined');

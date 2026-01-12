@@ -34,7 +34,7 @@ class FirestoreTimestampConverter implements JsonConverter<DateTime, Object> {
     // Convert to Firestore Timestamp format
     return {
       '_seconds': object.millisecondsSinceEpoch ~/ 1000,
-      '_nanoseconds': 0
+      '_nanoseconds': 0,
     };
   }
 } 

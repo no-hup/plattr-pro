@@ -1,10 +1,9 @@
+import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
+import 'package:flutterboilerplate/pages/menuListing/models/addon_selection.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_item.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_item_price_info.dart';
-import 'package:flutterboilerplate/pages/menuListing/models/variant_selection.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/variant_option.dart' as model;
-import 'package:flutterboilerplate/pages/menuListing/models/addon_selection.dart';
-import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
-import 'package:flutterboilerplate/pages/menuListing/timestamp.dart';
+import 'package:flutterboilerplate/pages/menuListing/models/variant_selection.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
 
 /// Helper class to sanitize and safely parse cart data
@@ -16,7 +15,7 @@ class CartHelper {
       AppLogger.log('🔄 CART_HELPER: Parsing cart item with keys: ${json.keys.toList()}');
       
       // Handle required fields with safe null checks
-      final String menuItemId = _safelyGetValue(json, ['menuItemId', 'itemId', 'id'], '') ?? '';
+      final menuItemId = _safelyGetValue(json, ['menuItemId', 'itemId', 'id'], '') ?? '';
       AppLogger.log('🔄 CART_HELPER: Resolved menuItemId: $menuItemId');
       
       if (menuItemId.isEmpty) {
@@ -25,7 +24,7 @@ class CartHelper {
       }
       
       // Handle quantities safely
-      int quantity = 1;
+      var quantity = 1;
       if (json.containsKey('quantity')) {
         quantity = _parseIntValue(json['quantity']) ?? 1;
       } else if (json.containsKey('qty')) {
@@ -34,28 +33,26 @@ class CartHelper {
       AppLogger.log('🔄 CART_HELPER: Resolved quantity: $quantity');
       
       // Parse price info first to detect and log pricing issues
-      final CartItemPriceInfo? priceInfo = _parsePriceInfo(json);
+      final priceInfo = _parsePriceInfo(json);
       if (priceInfo != null) {
-        AppLogger.log('🔄 CART_HELPER: Successfully parsed priceInfo - ' +
-          'basePrice: ${priceInfo.itemBasePrice}, ' +
-          'finalPrice: ${priceInfo.finalPrice}');
+        AppLogger.log('🔄 CART_HELPER: Successfully parsed priceInfo - ' 'basePrice: ${priceInfo.itemBasePrice}, ' 'finalPrice: ${priceInfo.finalPrice}',);
       } else {
         AppLogger.log('⚠️ CART_HELPER: No priceInfo available or parsing failed');
       }
       
       // Parse variants and addons
-      final List<VariantSelection> variants = _parseVariantSelections(json);
+      final variants = _parseVariantSelections(json);
       AppLogger.log('🔄 CART_HELPER: Parsed variants: ${variants.length} entries');
       
-      final List<AddonSelection> addons = _parseAddonSelections(json);
+      final addons = _parseAddonSelections(json);
       AppLogger.log('🔄 CART_HELPER: Parsed addons: ${addons.length} items');
       
       // Add legacy item price and total price if available
-      double? itemPrice = _parseDoubleValue(json['itemPrice'] ?? json['price'] ?? json['unitPrice']);
-      double? totalPrice = _parseDoubleValue(json['totalPrice'] ?? json['total']);
+      final itemPrice = _parseDoubleValue(json['itemPrice'] ?? json['price'] ?? json['unitPrice']);
+      final totalPrice = _parseDoubleValue(json['totalPrice'] ?? json['total']);
       
       // Create a sanitized cart item
-      final CartItem result = CartItem(
+      final result = CartItem(
         menuItemId: menuItemId,
         quantity: quantity,
         name: _safelyGetValue(json, ['name', 'itemName', 'title'], null),
@@ -71,7 +68,7 @@ class CartHelper {
       AppLogger.log('✅ CART_HELPER: Successfully parsed cart item: ${result.menuItemId}, qty: ${result.quantity}');
       
       // Check if the parsed item is "valid" for display
-      bool isValid = result.name != null && result.name!.isNotEmpty && result.priceInfo != null;
+      final isValid = result.name != null && result.name!.isNotEmpty && result.priceInfo != null;
       if (!isValid) {
         AppLogger.log('⚠️ CART_HELPER: Created item is missing essential data (name or price), needs menu data supplement');
       }
@@ -82,7 +79,7 @@ class CartHelper {
       
       // Create a fallback minimal cart item to avoid errors
       try {
-        final String menuItemId = json['menuItemId']?.toString() ?? 
+        final menuItemId = json['menuItemId']?.toString() ?? 
                                  json['itemId']?.toString() ?? 
                                  json['id']?.toString() ?? '';
         AppLogger.log('🔄 CART_HELPER: Creating fallback item with ID: $menuItemId');
@@ -94,7 +91,7 @@ class CartHelper {
       } catch (fallbackError) {
         AppLogger.log('❌ CART_HELPER: Even fallback creation failed: $fallbackError');
         // Ultimate fallback with empty values
-        return CartItem(
+        return const CartItem(
           menuItemId: '',
           quantity: 1,
         );
@@ -108,7 +105,7 @@ class CartHelper {
     
     try {
       // Create a new price info if needed
-      CartItemPriceInfo priceInfo = item.priceInfo ?? CartItemPriceInfo(
+      final priceInfo = item.priceInfo ?? CartItemPriceInfo(
         itemBasePrice: menuItem.priceInfo.basePrice ?? 0,
         itemFinalPrice: menuItem.priceInfo.finalPrice ?? 0,
         finalPrice: (menuItem.priceInfo.finalPrice ?? 0) * (item.quantity),
@@ -127,8 +124,8 @@ class CartHelper {
         priceInfo: priceInfo,
         selectedVariants: item.selectedVariants,
         selectedAddons: item.selectedAddons,
-        itemPrice: item.itemPrice ?? menuItem.priceInfo.basePrice?.toDouble(),
-        totalPrice: item.totalPrice ?? (menuItem.priceInfo.finalPrice?.toDouble() ?? 0) * item.quantity,
+        itemPrice: item.itemPrice ?? menuItem.priceInfo.basePrice.toDouble(),
+        totalPrice: item.totalPrice ?? (menuItem.priceInfo.finalPrice.toDouble() ?? 0) * item.quantity,
       );
       
       AppLogger.log('✅ CART_HELPER: Successfully repaired cart item with menu data');
@@ -142,12 +139,12 @@ class CartHelper {
   
   /// Parse variant selections from different formats
   static List<VariantSelection> _parseVariantSelections(Map<String, dynamic> json) {
-    List<VariantSelection> variants = [];
+    final variants = <VariantSelection>[];
     
     try {
       if (json.containsKey('selectedVariantsDetails') && json['selectedVariantsDetails'] is List) {
         final variantsList = json['selectedVariantsDetails'] as List;
-        for (var item in variantsList) {
+        for (final item in variantsList) {
           if (item is Map<String, dynamic>) {
             final optionId = item['selected_variant_id'] as String? ?? '';
             final optionName = item['selected_variant_name'] as String? ?? '';
@@ -164,15 +161,15 @@ class CartHelper {
                 name: optionName,
                 price: optionPrice,
               ),
-            ));
+            ),);
           }
         }
         AppLogger.log('🔄 CART_HELPER: Parsed ${variants.length} variant selections');
       }
       // Handle old format (Map<String, String>)
       else if (json.containsKey('selectedVariants') && json['selectedVariants'] is Map) {
-        final Map<dynamic, dynamic> variantsMap = json['selectedVariants'] as Map;
-        for (var entry in variantsMap.entries) {
+        final variantsMap = json['selectedVariants'] as Map;
+        for (final entry in variantsMap.entries) {
           final variantId = entry.key.toString();
           final optionId = entry.value.toString();
           
@@ -185,7 +182,7 @@ class CartHelper {
               name: optionId, // Default name to ID if no better info available
               price: 0, // No price info in this format
             ),
-          ));
+          ),);
         }
         AppLogger.log('🔄 CART_HELPER: Parsed ${variants.length} legacy variant selections');
       }
@@ -198,12 +195,12 @@ class CartHelper {
   
   /// Parse addon selections from different formats
   static List<AddonSelection> _parseAddonSelections(Map<String, dynamic> json) {
-    List<AddonSelection> addons = [];
+    final addons = <AddonSelection>[];
     
     try {
       if (json.containsKey('selectedAddonsDetails') && json['selectedAddonsDetails'] is List) {
         final addonsList = json['selectedAddonsDetails'] as List;
-        for (var item in addonsList) {
+        for (final item in addonsList) {
           if (item is Map<String, dynamic>) {
             final priceInfo = item['priceInfo'] as Map<String, dynamic>? ?? {};
             final addonPrice = priceInfo['itemFinalPrice'] as num? ?? 
@@ -213,20 +210,20 @@ class CartHelper {
               addonId: item['id'] as String? ?? '',
               name: item['name'] as String? ?? '',
               price: addonPrice,
-            ));
+            ),);
           }
         }
         AppLogger.log('🔄 CART_HELPER: Parsed ${addons.length} addon selections');
       }
       // Handle old format (List<String>)
       else if (json.containsKey('selectedAddons') && json['selectedAddons'] is List) {
-        final List<dynamic> addonsList = json['selectedAddons'] as List;
-        for (var addonId in addonsList) {
+        final addonsList = json['selectedAddons'] as List;
+        for (final addonId in addonsList) {
           addons.add(AddonSelection(
             addonId: addonId.toString(),
             name: addonId.toString(), // Default name to ID if no better info available
             price: 0, // No price info in this format
-          ));
+          ),);
         }
         AppLogger.log('🔄 CART_HELPER: Parsed ${addons.length} legacy addon selections');
       }
@@ -250,9 +247,9 @@ class CartHelper {
       } catch (e) {
         AppLogger.log('⚠️ CART_HELPER: Error parsing priceInfo object: $e');
         // Create a fallback price info based on itemPrice and totalPrice
-        double? basePrice = _parseDoubleValue(json['itemPrice'] ?? json['price'] ?? json['unitPrice']);
-        double? totalPrice = _parseDoubleValue(json['totalPrice'] ?? json['total']);
-        int quantity = _parseIntValue(json['quantity'] ?? json['qty']) ?? 1;
+        final basePrice = _parseDoubleValue(json['itemPrice'] ?? json['price'] ?? json['unitPrice']);
+        var totalPrice = _parseDoubleValue(json['totalPrice'] ?? json['total']);
+        final quantity = _parseIntValue(json['quantity'] ?? json['qty']) ?? 1;
         
         AppLogger.log('🔄 CART_HELPER: Creating fallback priceInfo with basePrice: $basePrice, qty: $quantity');
         
@@ -273,9 +270,9 @@ class CartHelper {
       AppLogger.log('⚠️ CART_HELPER: No priceInfo field in JSON');
       
       // Try to create a price info object from direct price fields
-      double? basePrice = _parseDoubleValue(json['itemPrice'] ?? json['price'] ?? json['unitPrice']);
-      double? totalPrice = _parseDoubleValue(json['totalPrice'] ?? json['total']);
-      int quantity = _parseIntValue(json['quantity'] ?? json['qty']) ?? 1;
+      final basePrice = _parseDoubleValue(json['itemPrice'] ?? json['price'] ?? json['unitPrice']);
+      var totalPrice = _parseDoubleValue(json['totalPrice'] ?? json['total']);
+      final quantity = _parseIntValue(json['quantity'] ?? json['qty']) ?? 1;
       
       if (basePrice != null) {
         AppLogger.log('🔄 CART_HELPER: Creating priceInfo from direct price fields');

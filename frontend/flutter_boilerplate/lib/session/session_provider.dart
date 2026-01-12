@@ -166,7 +166,7 @@ class SessionProvider extends ChangeNotifier {
     );
     _storageService.saveSession(_state);
     AppLogger.log(
-        '🔐 SessionProvider: Session set from OTP (sessionId=$sessionId)');
+        '🔐 SessionProvider: Session set from OTP (sessionId=$sessionId)',);
     notifyListeners();
   }
 }

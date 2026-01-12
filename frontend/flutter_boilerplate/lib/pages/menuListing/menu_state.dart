@@ -248,19 +248,11 @@ class MenuState extends ChangeNotifier {
   }) {
     // With Freezed models, we need to create new instances rather than modifying existing ones
     final currentItems = _cart?.items.toList() ?? <CartItem>[];
-    List<CartItem> updatedItems = List<CartItem>.from(currentItems);
+    final updatedItems = List<CartItem>.from(currentItems);
     
     // Create default price info
-    final defaultPriceInfo = CartItemPriceInfo(
-      itemBasePrice: 0,
-      itemVariantBasePrice: 0,
-      itemAddonBasePrice: 0,
-      itemFinalPrice: 0,
-      discount: 0,
-      totalBasePrice: 0,
-      totalVariantBasePrice: 0,
-      totalAddonBasePrice: 0,
-      finalPrice: 0,
+    const defaultPriceInfo = CartItemPriceInfo(
+      
     );
     
     // Determine how to find the item index based on provided customizations
@@ -286,7 +278,7 @@ class MenuState extends ChangeNotifier {
       itemIndex = currentItems.indexWhere((item) => 
         item.menuItemId == itemId && 
         _customizationsMatch(item.selectedVariants, selectedVariants) &&
-        _customizationsMatch(item.selectedAddons, selectedAddons)
+        _customizationsMatch(item.selectedAddons, selectedAddons),
       );
       
       AppLogger.log('🔍 CART: Finding item by full equality with variants/addons, found: ${itemIndex != -1}');
@@ -310,7 +302,7 @@ class MenuState extends ChangeNotifier {
           selectedVariants: selectedVariants,
           selectedAddons: selectedAddons,
           priceInfo: defaultPriceInfo,
-        ));
+        ),);
       }
     } else {
       if (itemIndex != -1) {
@@ -353,12 +345,7 @@ class MenuState extends ChangeNotifier {
       tableId: tableId,
       items: items,
       priceInfo: CartPriceInfo(
-        basePrice: 0,
-        finalPrice: 0,
-        totalDiscount: 0,
-        totalDiscountAmount: 0,
-        totalAddonBasePrice: 0,
-        totalVariantBasePrice: 0,
+        
       ),
     );
   }
@@ -410,7 +397,7 @@ class MenuState extends ChangeNotifier {
 
   Future<void> fetchCart({
     required String tableId, 
-    required String restaurantId
+    required String restaurantId,
   }) async {
     try {
       AppLogger.log('🛒 CART: Fetching cart data for table $tableId at restaurant $restaurantId');
@@ -436,47 +423,27 @@ class MenuState extends ChangeNotifier {
           if (response.data!.data != null) {
             // Check what we got for cart
             final cartData = response.data!.data!.cart;
-            AppLogger.log('📦 CART: Cart data type: ${cartData?.runtimeType}');
+            AppLogger.log('📦 CART: Cart data type: ${cartData.runtimeType}');
             
             // Handle different type scenarios
             Cart? cart;
-            if (cartData is Cart) {
-              // If it's already a Cart, use it directly
-              cart = cartData;
-            } else {
-              // Try to serialize any other type
-              try {
-                // First log what we actually got
-                AppLogger.log('📦 CART: Attempting to create Cart from type: ${cartData.runtimeType}');
-                
-                // Create a default cart if nothing else works
-                if (cartData == null) {
-                  AppLogger.log('⚠️ CART: Cart data is null, creating empty cart');
-                  cart = _createNewCart(restaurantId, tableId, []);
-                }
-              } catch (e) {
-                AppLogger.log('❌ CART: Error creating Cart: $e');
-              }
-            }
-            
+            // If it's already a Cart, use it directly
+            cart = cartData;
+                      
             // Proceed if we have a valid cart
-            if (cart != null) {
-              AppLogger.log('📦 CART: Cart object type: ${cart.runtimeType}');
-              AppLogger.log('📦 CART: Cart items count: ${cart.items.length}');
-              
-              // Update the cart
-              _cart = cart;
-              
-              // Update menu quantities with the new cart
-              _updateMenuQuantities();
-              
-              // Notify listeners that cart data has been updated
-              notifyListeners();
-              AppLogger.log('✅ CART: Successfully updated cart with ${_cart!.items.length} items');
-            } else {
-              AppLogger.log('⚠️ CART: Unable to get valid cart from response');
-            }
-          } else {
+            AppLogger.log('📦 CART: Cart object type: ${cart.runtimeType}');
+            AppLogger.log('📦 CART: Cart items count: ${cart.items.length}');
+            
+            // Update the cart
+            _cart = cart;
+            
+            // Update menu quantities with the new cart
+            _updateMenuQuantities();
+            
+            // Notify listeners that cart data has been updated
+            notifyListeners();
+            AppLogger.log('✅ CART: Successfully updated cart with ${_cart!.items.length} items');
+                    } else {
             AppLogger.log('⚠️ CART: Response.data!.data is null');
           }
         } else {
@@ -546,17 +513,8 @@ class MenuState extends ChangeNotifier {
             (item) => item.menuItemId == itemId,
             orElse: () => CartItem(
               menuItemId: itemId,
-              quantity: 0,
-              priceInfo: CartItemPriceInfo(
-                itemBasePrice: 0,
-                itemVariantBasePrice: 0,
-                itemAddonBasePrice: 0,
-                itemFinalPrice: 0,
-                discount: 0,
-                totalBasePrice: 0,
-                totalVariantBasePrice: 0,
-                totalAddonBasePrice: 0,
-                finalPrice: 0,
+              priceInfo: const CartItemPriceInfo(
+                
               ),
             ),
           );
@@ -569,8 +527,8 @@ class MenuState extends ChangeNotifier {
 
   bool needsCustomization(MenuItem item) =>
       item.isCustomizable &&
-      ((item.variants?.isNotEmpty ?? false) ||
-          (item.addons?.isNotEmpty ?? false));
+      ((item.variants.isNotEmpty ?? false) ||
+          (item.addons.isNotEmpty ?? false));
 
   CartItem? getStoredCustomization(String itemId) {
     if (_cart == null || _cart!.items.isEmpty) {

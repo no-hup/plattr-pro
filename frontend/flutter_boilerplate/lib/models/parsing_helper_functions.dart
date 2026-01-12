@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 /// Safely parses an integer from dynamic input (String, int, double).
 /// Returns null if parsing fails or input is null.

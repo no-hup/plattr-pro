@@ -4,6 +4,7 @@ import 'package:flutterboilerplate/pages/menuListing/mennu_bottomsheet.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_state.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
 import 'package:flutterboilerplate/widgets/price_display.dart';
 import 'package:flutterboilerplate/widgets/quantity_selector.dart';
 import 'package:flutterboilerplate/widgets/status_badge.dart';
@@ -79,9 +80,9 @@ class MenuItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: AppSpacing.pagePadding,
         child: Row(
           children: [
             Expanded(
@@ -115,26 +116,25 @@ class _MenuItemDetails extends StatelessWidget {
           item.meta.name,
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        const SizedBox(height: 4),
+        AppSpacing.verticalXS,
         Text(
           item.meta.description,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
-        const SizedBox(height: 8),
+        AppSpacing.verticalSM,
         PriceDisplay(
           finalPrice: item.priceInfo.finalPrice.toDouble(),
           basePrice: item.priceInfo.discount > 0
               ? item.priceInfo.basePrice.toDouble()
               : null,
-          size: PriceDisplaySize.medium,
           crossAxisAlignment: CrossAxisAlignment.start,
         ),
         if (item.isCustomizable) ...[
-          const SizedBox(height: 4),
+          AppSpacing.verticalXS,
           StatusBadge.customizable(),
         ],
         if (!item.isInStock) ...[
-          const SizedBox(height: 4),
+          AppSpacing.verticalXS,
           StatusBadge.outOfStock(),
         ],
       ],
@@ -216,7 +216,7 @@ class CategorySection extends StatelessWidget {
       children: [
         // Category Header
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: AppSpacing.pagePadding,
           child: Text(
             category.name,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -244,7 +244,7 @@ class CategorySection extends StatelessWidget {
       
       sections.add(
         Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 4),
+          padding: const EdgeInsets.only(left: AppSpacing.lg, right: AppSpacing.lg, top: AppSpacing.sm, bottom: AppSpacing.xs),
           child: Text(
             subcat.name,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -297,7 +297,7 @@ class MenuErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: AppSpacing.pagePadding,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -305,9 +305,9 @@ class MenuErrorView extends StatelessWidget {
               'Error',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const SizedBox(height: 8),
+            AppSpacing.verticalSM,
             Text(error, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
+            AppSpacing.verticalLG,
             ElevatedButton(
               onPressed: onRetry,
               child: const Text('Retry'),
@@ -355,81 +355,84 @@ class FloatingCartWidget extends StatelessWidget {
         final basePrice = cartPriceInfo?.basePrice ?? 0;
 
         return Positioned(
-          bottom: 16,
-          left: 16,
-          right: 16,
-          child: Material(
-            elevation: 8,
-            borderRadius: BorderRadius.circular(8),
-            color: Theme.of(context).colorScheme.primaryContainer,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '$totalItems ${totalItems == 1 ? 'item' : 'items'}',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onPrimaryContainer,
-                                ),
-                      ),
-                      // Only show base price if it's non-zero and different from final price
-                      if (cartPriceInfo != null &&
-                          basePrice > 0 &&
-                          basePrice != finalPrice)
+          bottom: AppSpacing.lg,
+          left: AppSpacing.lg,
+          right: AppSpacing.lg,
+          child: SafeArea(
+            bottom: true,
+            child: Material(
+              elevation: 8,
+              borderRadius: AppSizing.borderRadiusSM,
+              color: Theme.of(context).colorScheme.primaryContainer,
+              child: Padding(
+                padding: AppSpacing.pagePadding,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                         Text(
-                          '₹${basePrice.toStringAsFixed(2)}',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    decoration: TextDecoration.lineThrough,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimaryContainer
-                                        .withOpacity(0.7),
-                                  ),
-                        ),
-                      // Only show final price if it's non-zero
-                      if (finalPrice > 0)
-                        Text(
-                          '₹${finalPrice.toStringAsFixed(2)}',
+                          '$totalItems ${totalItems == 1 ? 'item' : 'items'}',
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
                                     color: Theme.of(context)
                                         .colorScheme
                                         .onPrimaryContainer,
-                                    fontWeight: FontWeight.bold,
                                   ),
                         ),
-                    ],
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      final rid = cart.restaurantId ?? '';
-                      final tid = cart.tableId ?? '';
-                      if (rid.isNotEmpty && tid.isNotEmpty) {
-                        context.go('/r/$rid/t/$tid/cart');
-                      } else {
-                        AppLogger.log(
-                          '🛒 MENU: Cannot navigate to cart - missing ids (r="$rid", t="$tid")',
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Theme.of(context).colorScheme.onPrimaryContainer,
-                      foregroundColor:
-                          Theme.of(context).colorScheme.primaryContainer,
+                        // Only show base price if it's non-zero and different from final price
+                        if (cartPriceInfo != null &&
+                            basePrice > 0 &&
+                            basePrice != finalPrice)
+                          Text(
+                            '₹${basePrice.toStringAsFixed(2)}',
+                            style:
+                                Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      decoration: TextDecoration.lineThrough,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimaryContainer
+                                          .withOpacity(0.7),
+                                    ),
+                          ),
+                        // Only show final price if it's non-zero
+                        if (finalPrice > 0)
+                          Text(
+                            '₹${finalPrice.toStringAsFixed(2)}',
+                            style:
+                                Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimaryContainer,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                          ),
+                      ],
                     ),
-                    child: const Text('View Cart'),
-                  ),
-                ],
+                    ElevatedButton(
+                      onPressed: () {
+                        final rid = cart.restaurantId ?? '';
+                        final tid = cart.tableId ?? '';
+                        if (rid.isNotEmpty && tid.isNotEmpty) {
+                          context.go('/r/$rid/t/$tid/cart');
+                        } else {
+                          AppLogger.log(
+                            '🛒 MENU: Cannot navigate to cart - missing ids (r="$rid", t="$tid")',
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Theme.of(context).colorScheme.onPrimaryContainer,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.primaryContainer,
+                      ),
+                      child: const Text('View Cart'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

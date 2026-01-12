@@ -31,9 +31,6 @@ class CartOperationResult {
 
 // Legacy classes for backward compatibility - to be removed after refactoring is complete
 class AddToCartResponse {
-  final String message;
-  final String status;
-  final CartData data;
 
   AddToCartResponse({
     required this.message,
@@ -49,16 +46,19 @@ class AddToCartResponse {
       data: CartData.fromJson(result['data'] as Map<String, dynamic>),
     );
   }
+  final String message;
+  final String status;
+  final CartData data;
 }
 
 class CartData {
-  final Cart cart;
 
   CartData({required this.cart});
 
   factory CartData.fromJson(Map<String, dynamic> json) => CartData(
         cart: Cart.fromJson(json['cart'] as Map<String, dynamic>),
       );
+  final Cart cart;
 }
 
 class CartOperationResponse {
@@ -87,8 +87,8 @@ class CartOperationResponse {
     }
     // Case 3: Response indicates empty cart (special API return formats)
     else if (json.containsKey('message') && 
-             (json['message']?.toString().toLowerCase().contains('empty') == true ||
-              json['message']?.toString().toLowerCase().contains('no items') == true)) {
+             ((json['message']?.toString().toLowerCase().contains('empty') ?? false) ||
+              (json['message']?.toString().toLowerCase().contains('no items') ?? false))) {
       AppLogger.log('📦 Response indicates empty cart');
       // Create a data field with an empty cart structure
       dataField = {
@@ -96,7 +96,7 @@ class CartOperationResponse {
           'restaurantId': json['restaurantId'] ?? '',
           'tableId': json['tableId'] ?? '',
           'items': [],
-        }
+        },
       };
     }
     // Case 4: Look for nested cart in any field
@@ -118,7 +118,7 @@ class CartOperationResponse {
             'restaurantId': '',
             'tableId': '',
             'items': [],
-          }
+          },
         };
       }
     }
@@ -138,16 +138,9 @@ class CartOperationResponse {
     AppLogger.log('⚠️ Creating default CartResponseData');
     return CartResponseData(
       cart: Cart(
-        restaurantId: '',
-        tableId: '',
         items: [],
         priceInfo: CartPriceInfo(
-          basePrice: 0,
-          finalPrice: 0,
-          totalDiscount: 0,
-          totalDiscountAmount: 0,
-          totalAddonBasePrice: 0,
-          totalVariantBasePrice: 0,
+          
         ),
       ),
     );
@@ -174,8 +167,8 @@ class CartResponseDataLegacy {
         AppLogger.log('🔍 Found direct items array, attempting to parse');
         try {
           directItems = (json['items'] as List)
-              .where((item) => item is Map<String, dynamic>)
-              .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+              .whereType<Map<String, dynamic>>()
+              .map(CartItem.fromJson)
               .toList();
           AppLogger.log('✅ Successfully parsed ${directItems.length} direct items');
         } catch (e) {
@@ -191,8 +184,8 @@ class CartResponseDataLegacy {
             AppLogger.log('🔍 Found items array in alternate field: $possibleKey');
             try {
               directItems = (json[possibleKey] as List)
-                  .where((item) => item is Map<String, dynamic>)
-                  .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+                  .whereType<Map<String, dynamic>>()
+                  .map(CartItem.fromJson)
                   .toList();
               AppLogger.log('✅ Successfully parsed ${directItems.length} items from $possibleKey');
               break;
@@ -208,7 +201,7 @@ class CartResponseDataLegacy {
         AppLogger.log('⚠️ CartResponseData missing cart key, keys available: ${json.keys.toList()}');
         
         // Try to find a cart-like object in the response
-        dynamic cartData = null;
+        dynamic cartData;
         for (final key in json.keys) {
           if (json[key] is Map<String, dynamic> && (json[key] as Map<String, dynamic>).containsKey('items')) {
             AppLogger.log('🔍 Found potential cart object in key: $key');
@@ -276,16 +269,9 @@ class CartResponseDataLegacy {
       // Return a safe default value
       return CartResponseDataLegacy(
         cart: Cart(
-          restaurantId: '',
-          tableId: '',
           items: [],
           priceInfo: CartPriceInfo(
-            basePrice: 0,
-            finalPrice: 0,
-            totalDiscount: 0,
-            totalDiscountAmount: 0,
-            totalAddonBasePrice: 0,
-            totalVariantBasePrice: 0,
+            
           ),
         ),
       );
@@ -303,12 +289,7 @@ class CartResponseDataLegacy {
     }
     
     return CartPriceInfo(
-      basePrice: 0,
-      finalPrice: 0,
-      totalDiscount: 0,
-      totalDiscountAmount: 0,
-      totalAddonBasePrice: 0,
-      totalVariantBasePrice: 0,
+      
     );
   }
 
@@ -328,11 +309,11 @@ class CartResponseLegacy {
         message: json['message'] as String?, // Updated for type casting
         data: json['data'] != null
             ? Cart.fromJson(
-                json['data'] as Map<String, dynamic>) // Added type casting
+                json['data'] as Map<String, dynamic>,) // Added type casting
             : null,
         priceInfo: json['priceInfo'] != null
             ? CartPriceInfo.fromJson(
-                json['priceInfo'] as Map<String, dynamic>) // Added type casting
+                json['priceInfo'] as Map<String, dynamic>,) // Added type casting
             : null,
       );
   final bool success;
@@ -342,10 +323,6 @@ class CartResponseLegacy {
 }
 
 class CartLegacy {
-  final String restaurantId;
-  final String tableId;
-  final List<CartItem> items;
-  final CartPriceInfo? priceInfo;
 
   CartLegacy({
     required this.restaurantId,
@@ -358,15 +335,15 @@ class CartLegacy {
     AppLogger.log('🔍 Cart.fromJson - keys: ${json.keys.toList()}');
     
     // Handle 'items' field with more robust logic
-    List<CartItem> parsedItems = [];
+    var parsedItems = <CartItem>[];
     
     // Case 1: Standard case - items is a list
     if (json.containsKey('items') && json['items'] is List) {
       AppLogger.log('📦 Found standard items list with ${(json['items'] as List).length} items');
       try {
         parsedItems = (json['items'] as List)
-            .where((item) => item is Map<String, dynamic>) // Filter valid items
-            .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+            .whereType<Map<String, dynamic>>() // Filter valid items
+            .map(CartItem.fromJson)
             .toList();
         AppLogger.log('✅ Successfully parsed ${parsedItems.length} items');
       } catch (e) {
@@ -412,12 +389,7 @@ class CartLegacy {
     
     // Create default priceInfo if none exists
     priceInfo ??= CartPriceInfo(
-      basePrice: 0,
-      finalPrice: 0,
-      totalDiscount: 0,
-      totalDiscountAmount: 0,
-      totalAddonBasePrice: 0,
-      totalVariantBasePrice: 0,
+      
     );
     
     return CartLegacy(
@@ -427,6 +399,10 @@ class CartLegacy {
       priceInfo: priceInfo,
     );
   }
+  final String restaurantId;
+  final String tableId;
+  final List<CartItem> items;
+  final CartPriceInfo? priceInfo;
 
   CartLegacy copyWith({
     List<CartItem>? items,
@@ -441,13 +417,6 @@ class CartLegacy {
 }
 
 class CartItemLegacy {
-  final String menuItemId;
-  final int quantity;
-  final Map<String, String>? selectedVariants;
-  final List<String>? selectedAddons;
-  final double? itemPrice;
-  final double? totalPrice;
-  final CartItemPriceInfo? priceInfo;
 
   CartItemLegacy({
     required this.menuItemId,
@@ -464,7 +433,7 @@ class CartItemLegacy {
       AppLogger.log('🔍 Parsing CartItem with keys: ${json.keys.toList()}');
       
       // Check which type of ID is used by the API
-      String itemId = '';
+      var itemId = '';
       if (json.containsKey('menuItemId')) {
         itemId = json['menuItemId'].toString();
       } else if (json.containsKey('itemId')) {
@@ -474,7 +443,7 @@ class CartItemLegacy {
       }
       
       // Check how quantity is represented
-      int quantity = 1; // Default to 1 if not found
+      var quantity = 1; // Default to 1 if not found
       if (json.containsKey('quantity')) {
         if (json['quantity'] is int) {
           quantity = json['quantity'] as int;
@@ -596,6 +565,13 @@ class CartItemLegacy {
       );
     }
   }
+  final String menuItemId;
+  final int quantity;
+  final Map<String, String>? selectedVariants;
+  final List<String>? selectedAddons;
+  final double? itemPrice;
+  final double? totalPrice;
+  final CartItemPriceInfo? priceInfo;
   
   // Helper to parse double values from various formats
   static double? _parseDoubleValue(dynamic value) {
@@ -637,11 +613,11 @@ class CartItemLegacy {
         (other.selectedVariants == null && selectedVariants == null ||
             other.selectedVariants != null && selectedVariants != null &&
             const MapEquality<String, String>().equals(
-                other.selectedVariants!, selectedVariants!)) &&
+                other.selectedVariants, selectedVariants,)) &&
         (other.selectedAddons == null && selectedAddons == null ||
             other.selectedAddons != null && selectedAddons != null &&
             const ListEquality<String>().equals(
-                other.selectedAddons!, selectedAddons!)) &&
+                other.selectedAddons, selectedAddons,)) &&
         other.itemPrice == itemPrice &&
         other.totalPrice == totalPrice;
   }
@@ -650,11 +626,11 @@ class CartItemLegacy {
   int get hashCode {
     final selectedVariantsHash = selectedVariants == null
         ? 0
-        : const MapEquality<String, String>().hash(selectedVariants!);
+        : const MapEquality<String, String>().hash(selectedVariants);
         
     final selectedAddonsHash = selectedAddons == null
         ? 0
-        : const ListEquality<String>().hash(selectedAddons!);
+        : const ListEquality<String>().hash(selectedAddons);
         
     return Object.hash(
       menuItemId,
@@ -668,9 +644,6 @@ class CartItemLegacy {
 }
 
 class PriceInfoLegacy {
-  final double basePrice;
-  final double discount;
-  final double finalPrice;
 
   PriceInfoLegacy({
     required this.basePrice,
@@ -683,16 +656,13 @@ class PriceInfoLegacy {
         discount: (json['discount'] as num).toDouble(),
         finalPrice: (json['finalPrice'] as num).toDouble(),
       );
+  final double basePrice;
+  final double discount;
+  final double finalPrice;
 }
 
 // Request models for cart operations
 class AddToCartRequest {
-  final String tableId;
-  final String restaurantId;
-  final String menuItemId;
-  final int quantity;
-  final Map<String, String>? selectedVariants;
-  final List<String>? selectedAddons;
 
   AddToCartRequest({
     required this.tableId,
@@ -702,6 +672,12 @@ class AddToCartRequest {
     this.selectedVariants,
     this.selectedAddons,
   });
+  final String tableId;
+  final String restaurantId;
+  final String menuItemId;
+  final int quantity;
+  final Map<String, String>? selectedVariants;
+  final List<String>? selectedAddons;
 
   Map<String, dynamic> toJson() => {
         'tableId': tableId,
@@ -716,12 +692,6 @@ class AddToCartRequest {
 }
 
 class RemoveFromCartRequest {
-  final String tableId;
-  final String restaurantId;
-  final String menuItemId;
-  final int quantity;
-  final Map<String, String>? selectedVariants;
-  final List<String>? selectedAddons;
 
   RemoveFromCartRequest({
     required this.tableId,
@@ -731,6 +701,12 @@ class RemoveFromCartRequest {
     this.selectedVariants,
     this.selectedAddons,
   });
+  final String tableId;
+  final String restaurantId;
+  final String menuItemId;
+  final int quantity;
+  final Map<String, String>? selectedVariants;
+  final List<String>? selectedAddons;
 
   Map<String, dynamic> toJson() => {
         'tableId': tableId,

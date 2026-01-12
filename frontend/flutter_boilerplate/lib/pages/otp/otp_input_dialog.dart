@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutterboilerplate/config/otp_config.dart';
-import 'package:flutterboilerplate/models/api_response.dart'; // Import ApiResponse
+// Import ApiResponse
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
 
 import 'models/otp_models.dart'; // Import OTP models
 import 'otp_details.dart';
@@ -13,6 +14,30 @@ import 'otp_repository.dart'; // Import OTP repository
 /// Can either handle the API call internally using [OtpRepository] or provide
 /// the collected data back via a callback.
 class OtpInputDialog extends StatefulWidget {
+
+  const OtpInputDialog({
+    super.key,
+    this.message,
+    this.otpDigits = OtpConfig.otpLength,
+    this.handleOtpApi = false,
+    this.requireName = false,
+    this.requirePhoneNumber = false,
+    // Parameters for handleOtpApi = true
+    this.restaurantId,
+    this.tableId,
+    this.onOtpSuccess,
+    this.onOtpFailed,
+    // Parameters for handleOtpApi = false
+    this.onOtpSubmitted,
+    // General
+    this.onCancel,
+  }) : assert(
+          handleOtpApi
+              ? (restaurantId != null && tableId != null && onOtpSuccess != null && onOtpFailed != null && onOtpSubmitted == null)
+              : (onOtpSubmitted != null && restaurantId == null && tableId == null && onOtpSuccess == null && onOtpFailed == null),
+          'When `handleOtpApi` is true, `restaurantId`, `tableId`, `onOtpSuccess`, and `onOtpFailed` must be provided. '
+          'When `handleOtpApi` is false, `onOtpSubmitted` must be provided and others must be null.',
+        );
   /// Optional message to display above the input fields.
   final String? message;
   /// The number of digits expected for the OTP. Defaults to [OtpConfig.otpLength].
@@ -47,30 +72,6 @@ class OtpInputDialog extends StatefulWidget {
 
   /// Callback function triggered when the user cancels the dialog.
   final VoidCallback? onCancel;
-
-  const OtpInputDialog({
-    super.key,
-    this.message,
-    this.otpDigits = OtpConfig.otpLength,
-    this.handleOtpApi = false,
-    this.requireName = false,
-    this.requirePhoneNumber = false,
-    // Parameters for handleOtpApi = true
-    this.restaurantId,
-    this.tableId,
-    this.onOtpSuccess,
-    this.onOtpFailed,
-    // Parameters for handleOtpApi = false
-    this.onOtpSubmitted,
-    // General
-    this.onCancel,
-  }) : assert(
-          handleOtpApi
-              ? (restaurantId != null && tableId != null && onOtpSuccess != null && onOtpFailed != null && onOtpSubmitted == null)
-              : (onOtpSubmitted != null && restaurantId == null && tableId == null && onOtpSuccess == null && onOtpFailed == null),
-          'When `handleOtpApi` is true, `restaurantId`, `tableId`, `onOtpSuccess`, and `onOtpFailed` must be provided. '
-          'When `handleOtpApi` is false, `onOtpSubmitted` must be provided and others must be null.',
-        );
 
 
   @override
@@ -131,7 +132,7 @@ class _OtpInputDialogState extends State<OtpInputDialog> {
 
       try {
         AppLogger.log('OTP Dialog: Calling OtpRepository.validateOtp...');
-        final ApiResponse<OtpValidationResponse> response =
+        final response =
             await _otpRepository.validateOtp(request);
 
         if (response.success && response.data != null) {
@@ -178,7 +179,7 @@ class _OtpInputDialogState extends State<OtpInputDialog> {
               children: [
                 if (widget.message != null) ...[
                   Text(widget.message!),
-                  const SizedBox(height: 16),
+                  AppSpacing.verticalLG,
                 ],
 
                 // --- Optional Name Field ---
@@ -197,7 +198,7 @@ class _OtpInputDialogState extends State<OtpInputDialog> {
                     },
                     textInputAction: TextInputAction.next, // Improve keyboard navigation
                   ),
-                  const SizedBox(height: 16),
+                  AppSpacing.verticalLG,
                 ],
 
                 // --- Optional Phone Field ---
@@ -222,7 +223,7 @@ class _OtpInputDialogState extends State<OtpInputDialog> {
                     },
                     textInputAction: widget.requireName ? TextInputAction.next : TextInputAction.done, // Adjust based on fields
                   ),
-                  const SizedBox(height: 16),
+                  AppSpacing.verticalLG,
                  ],
 
                 // --- OTP Field (Mandatory) ---
@@ -238,7 +239,7 @@ class _OtpInputDialogState extends State<OtpInputDialog> {
                     labelText: 'OTP Code',
                     hintText: 'Enter ${widget.otpDigits}-digit code',
                     border: const OutlineInputBorder(),
-                    counterText: "", // Hide the default counter
+                    counterText: '', // Hide the default counter
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {

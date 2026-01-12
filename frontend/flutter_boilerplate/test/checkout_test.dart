@@ -10,7 +10,7 @@ void main() {
 }
 
 class CheckoutTestApp extends StatelessWidget {
-  const CheckoutTestApp({Key? key}) : super(key: key);
+  const CheckoutTestApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +26,7 @@ class CheckoutTestApp extends StatelessWidget {
 }
 
 class CheckoutTest extends StatefulWidget {
-  const CheckoutTest({Key? key}) : super(key: key);
+  const CheckoutTest({super.key});
 
   @override
   State<CheckoutTest> createState() => _CheckoutTestState();
@@ -59,10 +59,10 @@ class _CheckoutTestState extends State<CheckoutTest> {
           setState(() {
             _result = 'SUCCESS!\n'
                 'Message: $message\n'
-                'Order ID: ${data.data?.orderId}\n'
-                'Order Number: ${data.data?.orderNumber}\n'
-                'Order Status: ${data.data?.orderStatus}\n'
-                'Timestamp: ${data.data?.timestamp}';
+                'Order ID: ${data.data.orderId}\n'
+                'Order Number: ${data.data.orderNumber}\n'
+                'Order Status: ${data.data.orderStatus}\n'
+                'Timestamp: ${data.data.timestamp}';
           });
         },
         error: (message, errorCode, errorDetails) {
@@ -71,7 +71,7 @@ class _CheckoutTestState extends State<CheckoutTest> {
             _result = 'ERROR!\n'
                 'Message: $message\n'
                 'Error Code: $errorCode\n'
-                'Details: ${errorDetails.toString()}';
+                'Details: $errorDetails';
           });
         },
       );
@@ -91,7 +91,7 @@ class _CheckoutTestState extends State<CheckoutTest> {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

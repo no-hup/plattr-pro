@@ -19,7 +19,7 @@ void main() async {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     },
-  ));
+  ),);
   
   // Test both endpoints
   await testOrderEndpoint(dio);
@@ -42,7 +42,7 @@ Future<void> testOrderEndpoint(Dio dio) async {
         'restaurantId': 'rest001',
         'tableId': 'table001',
         'sessionId': 'session001',
-      }
+      },
     };
     
     print('Request data: ${jsonEncode(requestData)}');
@@ -75,7 +75,7 @@ Future<void> testCheckoutEndpoint(Dio dio) async {
         'tableId': 'table001',
         'sessionId': 'session001',
         'notes': 'Direct API test',
-      }
+      },
     };
     
     print('Request data: ${jsonEncode(requestData)}');

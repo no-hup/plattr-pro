@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutterboilerplate/pages/checkout_order_flow/models/order_models.dart';
 import 'package:flutterboilerplate/pages/checkout_order_flow/order_listing_state.dart';
-import 'package:flutterboilerplate/pages/menuListing/models/cart.dart';
-import 'package:flutterboilerplate/pages/menuListing/models/cart_item.dart';
 import 'package:flutterboilerplate/singletonGods/featureFlags.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class OrderListingPage extends StatefulWidget {
   const OrderListingPage({
-    super.key,
-    required this.restaurantId,
-    required this.tableId,
+    required this.restaurantId, required this.tableId, super.key,
     this.orderId,
   });
 
@@ -119,21 +116,21 @@ class _OrderListingPageState extends State<OrderListingPage> {
             size: 64,
             color: Theme.of(context).colorScheme.error,
           ),
-          const SizedBox(height: 16),
+          AppSpacing.verticalLG,
           Text(
             'Oops! Something went wrong',
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 8),
+          AppSpacing.verticalSM,
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
             child: Text(
               error,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
-          const SizedBox(height: 24),
+          AppSpacing.verticalXL,
           ElevatedButton(
             onPressed: () {
               AppLogger.log('📋 ORDER: Retrying order fetch');
@@ -159,17 +156,17 @@ class _OrderListingPageState extends State<OrderListingPage> {
             size: 64,
             color: Theme.of(context).colorScheme.outline,
           ),
-          const SizedBox(height: 16),
+          AppSpacing.verticalLG,
           Text(
             'No orders found',
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 8),
+          AppSpacing.verticalSM,
           Text(
-            'You haven\'t placed any orders yet',
+            "You haven't placed any orders yet",
             style: Theme.of(context).textTheme.bodyMedium,
           ),
-          const SizedBox(height: 24),
+          AppSpacing.verticalXL,
           ElevatedButton(
             onPressed: () {
               AppLogger.log('📋 ORDER: Navigate to menu from empty orders');
@@ -207,11 +204,11 @@ class _OrderListingPageState extends State<OrderListingPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Choose how orders are displayed:',
-                        style: TextStyle(fontSize: 14),
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
-                      const SizedBox(height: 16),
+                        AppSpacing.verticalLG,
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -260,11 +257,7 @@ class _OrderListingPageState extends State<OrderListingPage> {
 
 class OrderDetailsView extends StatelessWidget {
   const OrderDetailsView({
-    super.key,
-    required this.orderData,
-    required this.orderStatusText,
-    required this.orderStatusColor,
-    required this.formattedDate,
+    required this.orderData, required this.orderStatusText, required this.orderStatusColor, required this.formattedDate, super.key,
   });
 
   final OrderData orderData;
@@ -277,7 +270,7 @@ class OrderDetailsView extends StatelessWidget {
     final theme = Theme.of(context);
     // Feature flag to determine how to display order items
     final featureFlags = FeatureFlags();
-    final bool showCartBreakup = featureFlags.showCartLevelBreakupForOrder;
+    final showCartBreakup = featureFlags.showCartLevelBreakupForOrder;
     
     // Log the feature flag state for debugging
     AppLogger.log('📋 ORDERS: Using cart level breakup: $showCartBreakup');
@@ -310,7 +303,7 @@ class OrderDetailsView extends StatelessWidget {
     final theme = Theme.of(context);
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.pagePadding,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         boxShadow: [
@@ -336,17 +329,17 @@ class OrderDetailsView extends StatelessWidget {
               Chip(
                 label: Text(
                   orderStatusText,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 backgroundColor: orderStatusColor,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+                AppSpacing.verticalSM,
           Text(
             'Placed on $formattedDate',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -354,14 +347,14 @@ class OrderDetailsView extends StatelessWidget {
             ),
           ),
           if (orderData.notes.isNotEmpty) ...[
-            const SizedBox(height: 16),
+            AppSpacing.verticalLG,
             Text(
               'Notes:',
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 4),
+            AppSpacing.verticalXS,
             Text(
               orderData.notes,
               style: theme.textTheme.bodyMedium,
@@ -376,7 +369,7 @@ class OrderDetailsView extends StatelessWidget {
     final theme = Theme.of(context);
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.pagePadding,
       decoration: BoxDecoration(
         color: theme.cardColor,
         boxShadow: [
@@ -419,8 +412,7 @@ class OrderDetailsView extends StatelessWidget {
 /// Displays a list of order items
 class OrderItemsList extends StatelessWidget {
   const OrderItemsList({
-    super.key,
-    required this.items,
+    required this.items, super.key,
   });
 
   final List<OrderItem> items;
@@ -428,8 +420,8 @@ class OrderItemsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(16.0),
+      return Padding(
+        padding: AppSpacing.pagePadding,
         child: Center(
           child: Text('No items in this order'),
         ),
@@ -437,7 +429,7 @@ class OrderItemsList extends StatelessWidget {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.pagePadding,
       // Use shrinkWrap and physics when used inside another scrollable widget (like in CartHistoryCard)
       shrinkWrap: true,
       physics: const ClampingScrollPhysics(),
@@ -453,8 +445,7 @@ class OrderItemsList extends StatelessWidget {
 
 class OrderItemTile extends StatelessWidget {
   const OrderItemTile({
-    super.key,
-    required this.item,
+    required this.item, super.key,
   });
 
   final OrderItem item;
@@ -479,7 +470,7 @@ class OrderItemTile extends StatelessWidget {
       elevation: 1,
       margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: AppSpacing.pagePadding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -489,7 +480,7 @@ class OrderItemTile extends StatelessWidget {
               children: [
                 // Quantity indicator
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(4),
@@ -502,7 +493,7 @@ class OrderItemTile extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                AppSpacing.horizontalMD,
                 
                 // Item name and details
                 Expanded(
@@ -543,9 +534,9 @@ class OrderItemTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 12),
+        AppSpacing.verticalMD,
         const Divider(height: 1),
-        const SizedBox(height: 8),
+        AppSpacing.verticalSM,
         Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: Text(
@@ -566,7 +557,7 @@ class OrderItemTile extends StatelessWidget {
                   size: 16,
                   color: theme.colorScheme.primary,
                 ),
-                const SizedBox(width: 8),
+                AppSpacing.horizontalSM,
                 Expanded(
                   child: Text(
                     variant.selected_variant_name,
@@ -581,7 +572,7 @@ class OrderItemTile extends StatelessWidget {
               ],
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -594,9 +585,9 @@ class OrderItemTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 12),
+        AppSpacing.verticalMD,
         if (item.variants.isEmpty) const Divider(height: 1),
-        const SizedBox(height: 8),
+        AppSpacing.verticalSM,
         Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: Text(
@@ -617,7 +608,7 @@ class OrderItemTile extends StatelessWidget {
                   size: 16,
                   color: theme.colorScheme.secondary,
                 ),
-                const SizedBox(width: 8),
+                AppSpacing.horizontalSM,
                 Expanded(
                   child: Text(
                     addon.name,
@@ -634,7 +625,7 @@ class OrderItemTile extends StatelessWidget {
               ],
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -642,12 +633,11 @@ class OrderItemTile extends StatelessWidget {
 
 /// Widget to display a list of carts from the order history
 class CartHistoryList extends StatelessWidget {
-  final List<CartHistoryItem> carts;
 
   const CartHistoryList({
-    super.key,
-    required this.carts,
+    required this.carts, super.key,
   });
+  final List<CartHistoryItem> carts;
 
   @override
   Widget build(BuildContext context) {
@@ -660,7 +650,7 @@ class CartHistoryList extends StatelessWidget {
     AppLogger.log('📋 CART_LIST: Building cart history list with ${carts.length} carts');
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.pagePadding,
       itemCount: carts.length,
       itemBuilder: (context, index) {
         final cart = carts[index];
@@ -673,9 +663,7 @@ class CartHistoryList extends StatelessWidget {
 /// Widget to display a single cart from the order history
 class CartHistoryCard extends StatelessWidget {
   const CartHistoryCard({
-    super.key,
-    required this.cart,
-    required this.index,
+    required this.cart, required this.index, super.key,
   });
 
   final CartHistoryItem cart;
@@ -690,16 +678,16 @@ class CartHistoryCard extends StatelessWidget {
         : 'Unknown time';
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       elevation: 2,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Cart header with checkout time
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: AppSpacing.pagePadding,
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceVariant,
+              color: theme.colorScheme.surfaceContainerHighest,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
@@ -720,13 +708,13 @@ class CartHistoryCard extends StatelessWidget {
                     Chip(
                       label: Text(
                         cart.status,
-                        style: TextStyle(
+                        style: theme.textTheme.labelSmall?.copyWith(
                           color: Colors.white,
-                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                       backgroundColor: _getStatusColor(cart.status),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                     ),
                   ],
                 ),
@@ -746,7 +734,7 @@ class CartHistoryCard extends StatelessWidget {
           
           // Cart summary
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: AppSpacing.pagePadding,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

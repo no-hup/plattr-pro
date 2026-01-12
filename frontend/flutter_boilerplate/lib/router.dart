@@ -55,7 +55,7 @@ GoRouter appRouter() => GoRouter(
             final tableId = state.pathParameters['tableId'];
 
             AppLogger.i(
-                '🔐 ROUTER: Table Verification page\n📝 PARAMS: restaurantId=$restaurantId, tableId=$tableId');
+                '🔐 ROUTER: Table Verification page\n📝 PARAMS: restaurantId=$restaurantId, tableId=$tableId',);
 
             if (restaurantId == null || tableId == null) {
               return const HomePage();
@@ -79,7 +79,7 @@ GoRouter appRouter() => GoRouter(
             final from = state.uri.queryParameters['from'];
 
             AppLogger.i(
-                '🔐 ROUTER: Table Verification page (direct)\n📝 PARAMS: restaurantId=$restaurantId, tableId=$tableId\n📍 FROM: $from');
+                '🔐 ROUTER: Table Verification page (direct)\n📝 PARAMS: restaurantId=$restaurantId, tableId=$tableId\n📍 FROM: $from',);
 
             if (restaurantId == null || tableId == null) {
               return const HomePage();
@@ -104,7 +104,7 @@ GoRouter appRouter() => GoRouter(
             final tableId = state.pathParameters['tableId'];
 
             AppLogger.i(
-                '🍽️ ROUTER: Menu page\n📝 PARAMS: restaurantId=$restaurantId, tableId=$tableId');
+                '🍽️ ROUTER: Menu page\n📝 PARAMS: restaurantId=$restaurantId, tableId=$tableId',);
 
             if (restaurantId == null || tableId == null) {
               return const HomePage();
@@ -124,7 +124,7 @@ GoRouter appRouter() => GoRouter(
             final tableId = state.pathParameters['tableId'];
 
             AppLogger.i(
-                '🛒 ROUTER: Cart page\n📝 PARAMS: restaurantId=$restaurantId, tableId=$tableId');
+                '🛒 ROUTER: Cart page\n📝 PARAMS: restaurantId=$restaurantId, tableId=$tableId',);
 
             if (restaurantId == null || tableId == null) {
               return const HomePage();
@@ -144,7 +144,7 @@ GoRouter appRouter() => GoRouter(
             final tableId = state.pathParameters['tableId'];
 
             AppLogger.i(
-                '📜 ROUTER: Orders History page\n📝 PARAMS: restaurantId=$restaurantId, tableId=$tableId');
+                '📜 ROUTER: Orders History page\n📝 PARAMS: restaurantId=$restaurantId, tableId=$tableId',);
 
             if (restaurantId == null || tableId == null) {
               return const HomePage();
@@ -165,7 +165,7 @@ GoRouter appRouter() => GoRouter(
             final orderId = state.pathParameters['orderId'];
 
             AppLogger.i(
-                '📜 ROUTER: Order Details page\n📝 PARAMS: restaurantId=$restaurantId, tableId=$tableId, orderId=$orderId');
+                '📜 ROUTER: Order Details page\n📝 PARAMS: restaurantId=$restaurantId, tableId=$tableId, orderId=$orderId',);
 
             if (restaurantId == null || tableId == null || orderId == null) {
               return const HomePage();

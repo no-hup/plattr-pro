@@ -80,14 +80,14 @@ class OrderRepository {
           try {
             // Parse the content within the "result" key
             AppLogger.log(
-                '📦 ORDER REPO: Attempting to parse response data structure');
+                '📦 ORDER REPO: Attempting to parse response data structure',);
             final resultMap = decodedBody['result'] as Map<String, dynamic>;
             AppLogger.log(
-                '📦 ORDER REPO: Result structure - keys: ${resultMap.keys.toList()}');
+                '📦 ORDER REPO: Result structure - keys: ${resultMap.keys.toList()}',);
 
             if (resultMap.containsKey('data')) {
               AppLogger.log(
-                  '📦 ORDER REPO: Data structure - keys: ${(resultMap['data'] as Map<String, dynamic>?)?.keys.toList() ?? 'null'}');
+                  '📦 ORDER REPO: Data structure - keys: ${(resultMap['data'] as Map<String, dynamic>?)?.keys.toList() ?? 'null'}',);
             }
 
             final orderResponse = OrderResponse.fromJson(resultMap);
@@ -100,7 +100,7 @@ class OrderRepository {
             );
           } catch (e, s) {
             AppLogger.log(
-                '❌ Failed to parse OrderResponse from result block: $e');
+                '❌ Failed to parse OrderResponse from result block: $e',);
             AppLogger.log('❌ Stack trace: $s');
             AppLogger.log('❌ Result data: ${decodedBody['result']}');
             return ApiResponseFreezed.error(
@@ -109,7 +109,7 @@ class OrderRepository {
               errorDetails: {
                 'result_block': decodedBody['result'],
                 'error': e.toString(),
-                'stack': s.toString()
+                'stack': s.toString(),
               },
             );
           }
@@ -128,7 +128,7 @@ class OrderRepository {
             );
           } catch (e, s) {
             AppLogger.log(
-                '❌ Failed to parse OrderResponse from top-level success: $e');
+                '❌ Failed to parse OrderResponse from top-level success: $e',);
             AppLogger.log('❌ Stack trace: $s');
             return ApiResponseFreezed.error(
               message: 'Failed to process successful response data.',
@@ -136,7 +136,7 @@ class OrderRepository {
               errorDetails: {
                 'body': decodedBody,
                 'error': e.toString(),
-                'stack': s.toString()
+                'stack': s.toString(),
               },
             );
           }
@@ -144,7 +144,7 @@ class OrderRepository {
         // Check if the 200 OK response contains an "error" structure
         else if (decodedBody.containsKey('error')) {
           AppLogger.log(
-              '⚠️ Fetch Order API returned application error within 200 OK response.');
+              '⚠️ Fetch Order API returned application error within 200 OK response.',);
           final errorMessage = decodedBody['error']['message'] as String? ??
               'Unknown error occurred';
           final errorCode =
@@ -159,7 +159,7 @@ class OrderRepository {
         // Handle other unexpected 200 OK structures
         else {
           AppLogger.log(
-              '⚠️ Unexpected 200 OK response structure: $decodedBody');
+              '⚠️ Unexpected 200 OK response structure: $decodedBody',);
           return ApiResponseFreezed.error(
             message: 'Received unexpected success response format from server.',
             errorCode: 'unexpected_format',
@@ -169,7 +169,7 @@ class OrderRepository {
       } else {
         // Handle non-200 status codes (e.g., 4xx, 5xx)
         AppLogger.log(
-            '❌ Fetch Order failed with HTTP Status: ${response.statusCode}, Body: ${response.data}');
+            '❌ Fetch Order failed with HTTP Status: ${response.statusCode}, Body: ${response.data}',);
 
         // Extract error message if possible
         var errorMessage = 'An error occurred while fetching order.';
@@ -200,7 +200,7 @@ class OrderRepository {
           errorDetails = {
             'raw_body': rawResponse.length > 200
                 ? '${rawResponse.substring(0, 200)}...'
-                : rawResponse
+                : rawResponse,
           };
         }
 
@@ -221,7 +221,7 @@ class OrderRepository {
         errorCode: errorCode,
         errorDetails: {
           'dioError': e.message?.toString() ?? 'No error message',
-          'stacktrace': s.toString()
+          'stacktrace': s.toString(),
         },
       );
     } catch (e, s) {

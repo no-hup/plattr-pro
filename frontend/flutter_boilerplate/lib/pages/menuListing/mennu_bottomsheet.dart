@@ -1,6 +1,7 @@
 // File: menu_customization_sheet.dart
 import 'package:flutter/material.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
 
 class MenuCustomizationSheet extends StatefulWidget {
   const MenuCustomizationSheet({
@@ -50,12 +51,11 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (widget.item.variants.isNotEmpty) ...[
-                    const Padding(
-                      padding: EdgeInsets.all(16.0),
+                    Padding(
+                      padding: AppSpacing.pagePadding,
                       child: Text(
                         'Variants',
-                        style: TextStyle(
-                          fontSize: 18,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -63,12 +63,11 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
                     ..._buildVariantSelections(),
                   ],
                   if (widget.item.addons.isNotEmpty) ...[
-                    const Padding(
-                      padding: EdgeInsets.all(16.0),
+                    Padding(
+                      padding: AppSpacing.pagePadding,
                       child: Text(
                         'Add Ons',
-                        style: TextStyle(
-                          fontSize: 18,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -87,22 +86,21 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(16.0),
+      padding: AppSpacing.pagePadding,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: AppSizing.bottomSheetRadius,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             widget.item.meta.name,
-            style: const TextStyle(
-              fontSize: 20,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 4),
+            AppSpacing.verticalXS,
           Text(
             widget.item.meta.description,
             style: Theme.of(context).textTheme.bodyMedium,
@@ -115,7 +113,7 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
   List<Widget> _buildVariantSelections() {
     return widget.item.variants.map((variant) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        padding: AppSpacing.listItemPadding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -135,7 +133,7 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
                   ),
               ],
             ),
-            const SizedBox(height: 8),
+            AppSpacing.verticalSM,
             ...variant.options.map((option) {
               return RadioListTile<String>(
                 title: Text(option.name),
@@ -149,7 +147,7 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
                   });
                 },
               );
-            }).toList(),
+            }),
           ],
         ),
       );
@@ -164,7 +162,7 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
         value: _selectedAddons.contains(addon.id),
         onChanged: (selected) {
           setState(() {
-            if (selected == true) {
+            if (selected ?? false) {
               _selectedAddons.add(addon.id);
             } else {
               _selectedAddons.remove(addon.id);
@@ -177,7 +175,7 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
 
   Widget _buildFooter() {
     return Container(
-      padding: const EdgeInsets.all(16.0),
+      padding: AppSpacing.pagePadding,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
@@ -193,7 +191,7 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          const SizedBox(width: 16),
+          AppSpacing.horizontalLG,
           ElevatedButton(
             onPressed: _canConfirm
                 ? () {
