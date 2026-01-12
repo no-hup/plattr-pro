@@ -70,10 +70,10 @@ class Subcategory with _$Subcategory {
 @freezed
 class MenuData with _$MenuData {
   factory MenuData({
-    ActiveMenu? activeMenu, // 🆕 NEW - nullable for backward compatibility
     required List<Category> categories,
-    required Map<String, List<MenuItem>> menuItems, // Key is now subcategoryId (or categoryId as fallback)
+    required Map<String, List<MenuItem>> menuItems,
     required MenuMetadata metadata,
+    ActiveMenu? activeMenu,
   }) = _MenuData;
 
   factory MenuData.fromJson(Map<String, dynamic> json) {
@@ -144,9 +144,9 @@ class MenuData with _$MenuData {
 class MenuMetadata with _$MenuMetadata {
   factory MenuMetadata({
     required int totalCategories,
-    @Default(0) int totalSubcategories, // 🆕 NEW
     required int totalMenuItems,
-    String? activeMenuId, // 🆕 NEW - nullable for backward compatibility
+    @Default(0) int totalSubcategories,
+    String? activeMenuId,
   }) = _MenuMetadata;
 
   factory MenuMetadata.fromJson(Map<String, dynamic> json) =>
@@ -173,12 +173,12 @@ class MenuItem with _$MenuItem {
   factory MenuItem({
     @JsonKey(name: 'menuItemId') required String id,
     required String categoryId,
-    String? primarySubcategoryId, // 🆕 NEW - the "home" subcategory
-    @Default([]) List<String> subcategoryIds, // 🆕 NEW - all subcategories (supports cross-listing)
     required MenuItemMeta meta,
     required PriceInfo priceInfo,
     required bool isInStock,
     required bool isCustomizable,
+    String? primarySubcategoryId,
+    @Default([]) List<String> subcategoryIds,
     @Default([]) List<Variant> variants,
     @Default([]) List<Addon> addons,
     NutritionalInfo? nutritionalInfo,

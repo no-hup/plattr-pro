@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
 
 /// A flexible badge widget for status indicators.
 ///
@@ -6,8 +7,7 @@ import 'package:flutter/material.dart';
 /// Provides factory constructors for common use cases.
 class StatusBadge extends StatelessWidget {
   const StatusBadge({
-    super.key,
-    required this.label,
+    required this.label, super.key,
     this.icon,
     this.backgroundColor,
     this.foregroundColor,
@@ -20,8 +20,6 @@ class StatusBadge extends StatelessWidget {
       key: key,
       label: 'Out of Stock',
       icon: Icons.block,
-      backgroundColor: null, // Will use theme error colors
-      foregroundColor: null, // Will use theme error colors
     );
   }
 
@@ -31,29 +29,23 @@ class StatusBadge extends StatelessWidget {
       key: key,
       label: 'Customizable',
       icon: Icons.edit_outlined,
-      backgroundColor: null, // Will use theme primary colors
-      foregroundColor: null, // Will use theme primary colors
     );
   }
 
   /// Creates a discount badge showing the percentage or amount off.
   factory StatusBadge.discount({
-    Key? key,
-    required String text,
+    required String text, Key? key,
   }) {
     return StatusBadge(
       key: key,
       label: text,
       icon: Icons.local_offer_outlined,
-      backgroundColor: null, // Will use theme tertiary colors
-      foregroundColor: null, // Will use theme tertiary colors
     );
   }
 
   /// Creates a custom badge with specified properties.
   factory StatusBadge.custom({
-    Key? key,
-    required String label,
+    required String label, Key? key,
     IconData? icon,
     Color? backgroundColor,
     Color? foregroundColor,
@@ -110,7 +102,7 @@ class StatusBadge extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(12),
@@ -124,7 +116,7 @@ class StatusBadge extends StatelessWidget {
               size: iconSize,
               color: fgColor,
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: AppSpacing.xs),
           ],
           Text(
             label,

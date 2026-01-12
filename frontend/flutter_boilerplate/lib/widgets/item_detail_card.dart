@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
 
 /// Shared card layout for menu, cart, and order items.
 ///
@@ -7,8 +8,7 @@ import 'package:flutter/material.dart';
 /// trailing column, and metadata sections.
 class ItemDetailCard extends StatelessWidget {
   const ItemDetailCard({
-    super.key,
-    required this.title,
+    required this.title, super.key,
     this.leading,
     this.subtitle,
     this.description,
@@ -16,7 +16,7 @@ class ItemDetailCard extends StatelessWidget {
     this.additionalContent = const <Widget>[],
     this.metadata = const <Widget>[],
     this.margin = EdgeInsets.zero,
-    this.padding = const EdgeInsets.all(16),
+    this.padding = AppSpacing.pagePadding,
     this.elevation = 1,
     this.backgroundColor,
   });
@@ -40,12 +40,12 @@ class ItemDetailCard extends StatelessWidget {
     final contentColumnChildren = <Widget>[title];
 
     if (subtitle != null) {
-      contentColumnChildren.add(const SizedBox(height: 4));
+      contentColumnChildren.add(AppSpacing.verticalXS);
       contentColumnChildren.add(subtitle!);
     }
 
     if (description != null) {
-      contentColumnChildren.add(const SizedBox(height: 8));
+      contentColumnChildren.add(AppSpacing.verticalSM);
       contentColumnChildren.add(description!);
     }
 
@@ -59,7 +59,7 @@ class ItemDetailCard extends StatelessWidget {
         children: [
           if (leading != null) ...[
             leading!,
-            const SizedBox(width: 12),
+            AppSpacing.horizontalMD,
           ],
           Expanded(
             child: Column(
@@ -68,7 +68,7 @@ class ItemDetailCard extends StatelessWidget {
             ),
           ),
           if (trailing != null) ...[
-            const SizedBox(width: 12),
+            AppSpacing.horizontalMD,
             Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
 
 /// Size variants for the price display.
 enum PriceDisplaySize { small, medium, large }
@@ -9,8 +10,7 @@ enum PriceDisplaySize { small, medium, large }
 /// across menu, cart, and order pages.
 class PriceDisplay extends StatelessWidget {
   const PriceDisplay({
-    super.key,
-    required this.finalPrice,
+    required this.finalPrice, super.key,
     this.basePrice,
     this.discountAmount,
     this.currencySymbol = '₹',
@@ -65,7 +65,6 @@ class PriceDisplay extends StatelessWidget {
         discountStyle = textTheme.labelSmall?.copyWith(
           color: theme.colorScheme.error,
         );
-        break;
       case PriceDisplaySize.medium:
         finalPriceStyle = textTheme.titleMedium?.copyWith(
           fontWeight: FontWeight.bold,
@@ -77,7 +76,6 @@ class PriceDisplay extends StatelessWidget {
         discountStyle = textTheme.bodySmall?.copyWith(
           color: theme.colorScheme.error,
         );
-        break;
       case PriceDisplaySize.large:
         finalPriceStyle = textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.bold,
@@ -89,7 +87,6 @@ class PriceDisplay extends StatelessWidget {
         discountStyle = textTheme.bodyMedium?.copyWith(
           color: theme.colorScheme.error,
         );
-        break;
     }
 
     return Column(
@@ -105,7 +102,7 @@ class PriceDisplay extends StatelessWidget {
                 '$currencySymbol${basePrice!.toStringAsFixed(2)}',
                 style: basePriceStyle,
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSpacing.xs),
             ],
             Text(
               '$currencySymbol${finalPrice.toStringAsFixed(2)}',
@@ -116,7 +113,7 @@ class PriceDisplay extends StatelessWidget {
 
         // Discount amount if provided
         if (discountAmount != null && discountAmount! > 0) ...[
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSpacing.xxs),
           Text(
             '(-$currencySymbol${discountAmount!.toStringAsFixed(2)})',
             style: discountStyle,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutterboilerplate/home/home_state.dart';
 import 'package:flutterboilerplate/home/models/restaurant_summary.dart';
 import 'package:flutterboilerplate/pages/app_routes.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
 import 'package:flutterboilerplate/widgets/page_state_view.dart';
 import 'package:flutterboilerplate/widgets/primary_action_button.dart';
 import 'package:go_router/go_router.dart';
@@ -59,9 +60,9 @@ class _HomePageState extends State<HomePage> {
           return RefreshIndicator(
             onRefresh: state.retry,
             child: ListView.separated(
-              padding: const EdgeInsets.all(16),
+              padding: AppSpacing.pagePadding,
               itemCount: state.restaurants.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 16),
+              separatorBuilder: (_, __) => AppSpacing.verticalLG,
               itemBuilder: (context, index) {
                 final restaurant = state.restaurants[index];
                 return _RestaurantCard(restaurant: restaurant);
@@ -86,7 +87,7 @@ class _RestaurantCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: AppSpacing.pagePadding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -95,23 +96,23 @@ class _RestaurantCard extends StatelessWidget {
               style: theme.textTheme.titleLarge,
             ),
             if (restaurant.address.isNotEmpty) ...[
-              const SizedBox(height: 4),
+              AppSpacing.verticalXS,
               Text(
                 restaurant.address,
                 style: theme.textTheme.bodyMedium,
               ),
             ],
             if (restaurant.phone.isNotEmpty) ...[
-              const SizedBox(height: 2),
+              AppSpacing.verticalXXS,
               Text(
                 restaurant.phone,
                 style: theme.textTheme.bodySmall,
               ),
             ],
-            const SizedBox(height: 12),
+            AppSpacing.verticalMD,
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
               children: [
                 for (final table in restaurant.tables)
                   ElevatedButton(

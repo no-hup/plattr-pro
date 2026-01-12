@@ -291,7 +291,7 @@ void main() {
         expect(menuResponse.result, isA<MenuData>());
         expect(menuResponse.result.categories, isA<List<Category>>());
         expect(
-            menuResponse.result.menuItems, isA<Map<String, List<MenuItem>>>());
+            menuResponse.result.menuItems, isA<Map<String, List<MenuItem>>>(),);
         expect(menuResponse.result.metadata, isA<MenuMetadata>());
 
         // Test specific menu structure
@@ -331,7 +331,7 @@ void main() {
         expect(menuResponse.result, isA<MenuData>());
         expect(menuResponse.result.categories, isA<List<Category>>());
         expect(
-            menuResponse.result.menuItems, isA<Map<String, List<MenuItem>>>());
+            menuResponse.result.menuItems, isA<Map<String, List<MenuItem>>>(),);
       });
 
       test(
@@ -509,7 +509,7 @@ void main() {
 
         // Should not throw parsing exceptions
         expect(
-            () => TableValidationResponse.fromJson(response), returnsNormally);
+            () => TableValidationResponse.fromJson(response), returnsNormally,);
 
         final tableValidationResponse =
             TableValidationResponse.fromJson(response);
@@ -555,7 +555,7 @@ void main() {
         );
 
         expect(successApiResponse,
-            isA<ApiResponseFreezed<TableValidationResponse>>());
+            isA<ApiResponseFreezed<TableValidationResponse>>(),);
         successApiResponse.when(
           success: (data, message) {
             expect(data, isA<TableValidationResponse>());
@@ -580,7 +580,7 @@ void main() {
         );
 
         expect(errorApiResponse,
-            isA<ApiResponseFreezed<TableValidationResponse>>());
+            isA<ApiResponseFreezed<TableValidationResponse>>(),);
         errorApiResponse.when(
           success: (data, message) => fail('Expected error response'),
           error: (message, errorCode, errorDetails) {

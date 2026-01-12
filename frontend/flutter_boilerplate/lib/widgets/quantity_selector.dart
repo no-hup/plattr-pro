@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
 
 /// A compact quantity selector with increment/decrement buttons.
 ///
@@ -6,10 +7,7 @@ import 'package:flutter/material.dart';
 /// Respects the app theme for colors and styling.
 class QuantitySelector extends StatelessWidget {
   const QuantitySelector({
-    super.key,
-    required this.quantity,
-    required this.onIncrement,
-    required this.onDecrement,
+    required this.quantity, required this.onIncrement, required this.onDecrement, super.key,
     this.isEnabled = true,
     this.compact = false,
     this.minQuantity = 0,
@@ -66,7 +64,7 @@ class QuantitySelector extends StatelessWidget {
 
         // Quantity display
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 12),
+          padding: EdgeInsets.symmetric(horizontal: compact ? AppSpacing.sm : AppSpacing.md),
           child: Text(
             '$quantity',
             style: compact

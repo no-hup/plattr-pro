@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
 
 /// A simple centered state view used for loading, error, and empty states.
 ///
@@ -11,8 +12,8 @@ class PageStateView extends StatelessWidget {
     this.title,
     this.message,
     this.primaryAction,
-    this.spacing = 16,
-    this.padding = const EdgeInsets.symmetric(horizontal: 32),
+    this.spacing = AppSpacing.lg,
+    this.padding = const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
   });
 
   /// Shorthand for a loading indicator with an optional message.
@@ -43,9 +44,8 @@ class PageStateView extends StatelessWidget {
 
   /// Shorthand for an empty state view.
   factory PageStateView.empty({
-    Key? key,
+    required String title, Key? key,
     Widget? icon,
-    required String title,
     String? message,
     Widget? primaryAction,
   }) {

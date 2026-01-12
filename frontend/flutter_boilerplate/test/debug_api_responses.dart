@@ -41,11 +41,11 @@ void main() async {
 }
 
 Future<Map<String, dynamic>> _makeRequest(
-    String functionName, Map<String, dynamic> data) async {
+    String functionName, Map<String, dynamic> data,) async {
   final client = HttpClient();
   try {
     final request = await client.postUrl(Uri.parse(
-        'http://127.0.0.1:5002/rms-app-dd875/us-central1/$functionName'));
+        'http://127.0.0.1:5002/rms-app-dd875/us-central1/$functionName',),);
     request.headers.set('Content-Type', 'application/json');
     request.write(jsonEncode(data));
 

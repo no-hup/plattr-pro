@@ -13,3 +13,13 @@ linter:
   rules:
     public_member_api_docs: false
     always_use_package_imports: false # TODO(You): Remove line, needed for the template
+    # Design Token System - Best Practices
+    # These rules encourage consistent theming and use of design tokens
+    prefer_const_constructors: true  # Use const SizedBox/Padding where possible
+    prefer_const_literals_to_create_immutables: true
+    use_colored_box: true  # ColoredBox is more efficient than Container with just color
+    sized_box_for_whitespace: true  # Use SizedBox instead of Container for whitespace
+    use_decorated_box: true  # DecoratedBox is more efficient than Container with just decoration
+    # Additional style rules for maintainability
+    sort_child_properties_last: true
+    use_full_hex_values_for_flutter_colors: true

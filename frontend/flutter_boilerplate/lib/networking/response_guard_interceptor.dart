@@ -27,7 +27,7 @@ class ResponseGuardInterceptor extends Interceptor {
 
   /// Get logs as JSON string (for copying)
   static String getLogsAsJson() {
-    return logs.map((e) => jsonEncode(e)).join('\n');
+    return logs.map(jsonEncode).join('\n');
   }
 
   /// Print all logs summary

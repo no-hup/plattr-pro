@@ -26,7 +26,7 @@ class TableRepository {
     return validateTableAndLocation(
       restaurantId: restaurantId, 
       tableId: tableId, 
-      userLocation: const UserLocation(latitude: 0.0, longitude: 0.0)
+      userLocation: const UserLocation(latitude: 0, longitude: 0),
     );
   }
 
@@ -118,7 +118,7 @@ class TableRepository {
           'longitude': userLocation.longitude,
         },
         if (hasSession) 'sessionId': sessionId,
-      }
+      },
     };
     
     AppLogger.log('📦 VALIDATION: Request payload prepared: ${payload['data']}');
@@ -160,7 +160,7 @@ class TableRepository {
               final validationResponse = TableResponseParser.parseFromJson({
                 'status': 'auth_required',
                 'message': details['authMessage'] ?? errorData['message'] ?? 'Authentication required',
-                'data': details
+                'data': details,
               });
               return ApiResponse.success(validationResponse.copyWith(requiresOtp: true));
             } catch (e) {
@@ -168,7 +168,7 @@ class TableRepository {
               return ApiResponse.error(
                 'Authentication required',
                 errorCode: 'unauthenticated',
-                errorDetails: details
+                errorDetails: details,
               );
             }
           }
@@ -176,15 +176,15 @@ class TableRepository {
         
         // For other error cases, return the error with details
         final message = errorData['message']?.toString() ?? 'Unknown error';
-        final status = errorData['status']?.toString()?.toLowerCase() ?? 
-                      errorData['code']?.toString()?.toLowerCase() ?? 
+        final status = errorData['status']?.toString().toLowerCase() ?? 
+                      errorData['code']?.toString().toLowerCase() ?? 
                       TableErrorCodes.fromHttpStatus(statusCode);
                       
         AppLogger.log('❌ Returning error response - Message: $message, Status: $status');
         return ApiResponse.error(
           message,
           errorCode: status,
-          errorDetails: details
+          errorDetails: details,
         );
       }
     }
@@ -284,13 +284,13 @@ class TableRepository {
         AppLogger.log('🔍 Processing error response - Status: $statusCode, Data: $responseData');
         
         // Handle both error formats (direct error object or wrapped in response)
-        final Map<String, dynamic>? errorData = responseData is Map<String, dynamic> 
+        final errorData = responseData is Map<String, dynamic> 
             ? (responseData['error'] as Map<String, dynamic>? ?? responseData)
             : null;
             
         if (errorData != null) {
           final code = errorData['code']?.toString() ?? 
-                      errorData['status']?.toString()?.toLowerCase() ?? 
+                      errorData['status']?.toString().toLowerCase() ?? 
                       'unauthenticated';
                       
           final message = errorData['message']?.toString() ?? 

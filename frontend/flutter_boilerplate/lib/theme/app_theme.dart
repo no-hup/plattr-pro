@@ -1,81 +1,266 @@
 import 'package:flutter/material.dart';
 
+import 'app_sizing.dart';
+import 'app_spacing.dart';
+import 'app_typography.dart';
+
+/// App-wide theme configuration
+/// Uses mobile-optimized typography from AppTypography
 class AppTheme {
-  // Light Theme
+  // Prevent instantiation
+  AppTheme._();
+
+  // Brand colors
+  static const Color _primaryColor = Colors.cyan;
+  static const Color _primaryColorDark = Colors.cyan;
+  static const Color _secondaryColor = Colors.cyanAccent;
+
+  /// Light Theme - Mobile optimized
   static ThemeData lightTheme = ThemeData(
+    useMaterial3: true,
     brightness: Brightness.light,
-    primaryColor: Colors.cyan, // Cyan for primary theme color
-    canvasColor: Colors.white, // White background for light theme
-    scaffoldBackgroundColor: Colors.white, // Background for screen content
+    primaryColor: _primaryColor,
+    canvasColor: Colors.white,
+    scaffoldBackgroundColor: Colors.white,
     colorScheme: const ColorScheme.light(
-      primary: Colors.cyan, // Primary color (replacing accentColor)
-      secondary: Colors.cyanAccent, // Secondary color
+      primary: _primaryColor,
+      secondary: _secondaryColor,
     ),
-    textTheme: const TextTheme(
-      titleLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black),
-      titleMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: Colors.black),
-      bodyLarge: TextStyle(fontSize: 14, color: Colors.black),
-      bodyMedium: TextStyle(fontSize: 12, color: Colors.black87),
-      labelLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+
+    // Mobile-optimized typography (reduced from desktop sizes)
+    textTheme: AppTypography.mobileTextTheme.apply(
+      bodyColor: Colors.black,
+      displayColor: Colors.black,
     ),
+
+    // Button theme with mobile-friendly sizing
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        foregroundColor: Colors.white, backgroundColor: Colors.cyan, // Text color for elevated button
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20), // Padding for buttons
+        foregroundColor: Colors.white,
+        backgroundColor: _primaryColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppSizing.borderRadiusSM,
+        ),
+        padding: AppSpacing.buttonPadding,
+        minimumSize: const Size(88, AppSizing.buttonHeightMD),
       ),
     ),
+
+    // Text button theme
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: _primaryColor,
+        padding: AppSpacing.buttonPadding,
+        minimumSize: const Size(64, AppSizing.buttonHeightMD),
+      ),
+    ),
+
+    // Outlined button theme
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: _primaryColor,
+        side: const BorderSide(color: _primaryColor),
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppSizing.borderRadiusSM,
+        ),
+        padding: AppSpacing.buttonPadding,
+        minimumSize: const Size(88, AppSizing.buttonHeightMD),
+      ),
+    ),
+
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: Colors.cyan,
+      backgroundColor: _primaryColor,
+      foregroundColor: Colors.white,
     ),
-    appBarTheme: const AppBarTheme(
-      color: Colors.cyan, // AppBar with cyan background
-      elevation: 4,
-      titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
-    ),
-    inputDecorationTheme: const InputDecorationTheme(
-      border: OutlineInputBorder(),
-      focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.cyan),
+
+    // AppBar with mobile-optimized title size
+    appBarTheme: AppBarTheme(
+      backgroundColor: _primaryColor,
+      elevation: 0,
+      centerTitle: true,
+      titleTextStyle: AppTypography.mobileTextTheme.titleLarge?.copyWith(
+        color: Colors.white,
+        fontWeight: FontWeight.w600,
       ),
+      iconTheme: const IconThemeData(
+        color: Colors.white,
+        size: AppSizing.iconMD,
+      ),
+    ),
+
+    // Input decoration with proper sizing
+    inputDecorationTheme: const InputDecorationTheme(
+      border: OutlineInputBorder(
+        borderRadius: AppSizing.borderRadiusSM,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: AppSizing.borderRadiusSM,
+        borderSide: BorderSide(color: _primaryColor, width: 2),
+      ),
+      contentPadding: AppSpacing.inputPadding,
+      isDense: true,
+    ),
+
+    // Card theme
+    cardTheme: const CardThemeData(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppSizing.borderRadiusMD,
+      ),
+      margin: EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+    ),
+
+    // Bottom sheet theme
+    bottomSheetTheme: const BottomSheetThemeData(
+      shape: RoundedRectangleBorder(
+        borderRadius: AppSizing.bottomSheetRadius,
+      ),
+    ),
+
+    // Chip theme
+    chipTheme: const ChipThemeData(
+      shape: RoundedRectangleBorder(
+        borderRadius: AppSizing.borderRadiusFull,
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+    ),
+
+    // Divider theme
+    dividerTheme: const DividerThemeData(
+      thickness: 1,
+      space: AppSpacing.lg,
     ),
   );
 
-  // Dark Theme
+  /// Dark Theme - Mobile optimized
   static ThemeData darkTheme = ThemeData(
+    useMaterial3: true,
     brightness: Brightness.dark,
-    primaryColor: Colors.cyan, // Black background for dark theme
+    primaryColor: _primaryColorDark,
     scaffoldBackgroundColor: Colors.black,
-    textTheme: const TextTheme(
-      titleLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
-      titleMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.w600, color: Colors.white),
-      bodyLarge: TextStyle(fontSize: 16, color: Colors.white),
-      bodyMedium: TextStyle(fontSize: 14, color: Colors.white70),
-      labelLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+    colorScheme: const ColorScheme.dark(
+      primary: _primaryColorDark,
+      secondary: _secondaryColor,
+      onPrimary: Colors.white,
     ),
+
+    // Mobile-optimized typography (reduced from desktop sizes)
+    textTheme: AppTypography.mobileTextTheme.apply(
+      bodyColor: Colors.white,
+      displayColor: Colors.white,
+    ),
+
+    // Button theme with mobile-friendly sizing
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        foregroundColor: Colors.white, backgroundColor: Colors.cyan, // Text color for elevated button
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+        foregroundColor: Colors.white,
+        backgroundColor: _primaryColorDark,
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppSizing.borderRadiusSM,
+        ),
+        padding: AppSpacing.buttonPadding,
+        minimumSize: const Size(88, AppSizing.buttonHeightMD),
       ),
     ),
+
+    // Text button theme
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: _primaryColorDark,
+        padding: AppSpacing.buttonPadding,
+        minimumSize: const Size(64, AppSizing.buttonHeightMD),
+      ),
+    ),
+
+    // Outlined button theme
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: _primaryColorDark,
+        side: const BorderSide(color: _primaryColorDark),
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppSizing.borderRadiusSM,
+        ),
+        padding: AppSpacing.buttonPadding,
+        minimumSize: const Size(88, AppSizing.buttonHeightMD),
+      ),
+    ),
+
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: Colors.cyan,
+      backgroundColor: _primaryColorDark,
+      foregroundColor: Colors.white,
     ),
-    appBarTheme: const AppBarTheme(
-      color: Colors.cyan, // AppBar with cyan background for dark mode
-      elevation: 4,
-      titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
-    ),
-    inputDecorationTheme: const InputDecorationTheme(
-      border: OutlineInputBorder(),
-      focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.cyan),
+
+    // AppBar with mobile-optimized title size
+    appBarTheme: AppBarTheme(
+      backgroundColor: _primaryColorDark,
+      elevation: 0,
+      centerTitle: true,
+      titleTextStyle: AppTypography.mobileTextTheme.titleLarge?.copyWith(
+        color: Colors.white,
+        fontWeight: FontWeight.w600,
       ),
-    ), colorScheme: const ColorScheme.dark(
-      primary: Colors.cyan, // Primary color for dark theme
-      secondary: Colors.cyanAccent, // Secondary color
-    ).copyWith(surface: Colors.black),
+      iconTheme: const IconThemeData(
+        color: Colors.white,
+        size: AppSizing.iconMD,
+      ),
+    ),
+
+    // Input decoration with proper sizing
+    inputDecorationTheme: const InputDecorationTheme(
+      border: OutlineInputBorder(
+        borderRadius: AppSizing.borderRadiusSM,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: AppSizing.borderRadiusSM,
+        borderSide: BorderSide(color: _primaryColorDark, width: 2),
+      ),
+      contentPadding: AppSpacing.inputPadding,
+      isDense: true,
+    ),
+
+    // Card theme
+    cardTheme: const CardThemeData(
+      elevation: 2,
+      color: Color(0xFF1E1E1E),
+      shape: RoundedRectangleBorder(
+        borderRadius: AppSizing.borderRadiusMD,
+      ),
+      margin: EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+    ),
+
+    // Bottom sheet theme
+    bottomSheetTheme: const BottomSheetThemeData(
+      backgroundColor: Color(0xFF1E1E1E),
+      shape: RoundedRectangleBorder(
+        borderRadius: AppSizing.bottomSheetRadius,
+      ),
+    ),
+
+    // Chip theme
+    chipTheme: const ChipThemeData(
+      shape: RoundedRectangleBorder(
+        borderRadius: AppSizing.borderRadiusFull,
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+    ),
+
+    // Divider theme
+    dividerTheme: const DividerThemeData(
+      thickness: 1,
+      space: AppSpacing.lg,
+      color: Color(0xFF2C2C2C),
+    ),
   );
 }

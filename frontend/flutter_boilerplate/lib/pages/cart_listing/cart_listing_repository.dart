@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutterboilerplate/models/api_response.dart';
 import 'package:flutterboilerplate/models/api_response_freezed.dart';
 import 'package:flutterboilerplate/networking/dio_client.dart';
-import 'package:flutterboilerplate/pages/checkout_order_flow/models/checkout_models.dart';
 import 'package:flutterboilerplate/pages/checkout_order_flow/checkout_repository.dart';
+import 'package:flutterboilerplate/pages/checkout_order_flow/models/checkout_models.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_operation_response.dart';
 import 'package:flutterboilerplate/singletonGods/api_constants.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
@@ -30,7 +30,7 @@ class CartListingRepository {
         'data': {
           'tableId': tableId,
           'restaurantId': restaurantId,
-        }
+        },
       };
       AppLogger.log('📦 Request Payload: $payload');
 
@@ -50,8 +50,8 @@ class CartListingRepository {
       }
 
       // Handle non-200 responses
-      String errorMessage = 'Failed to fetch cart';
-      String errorCode = 'HTTP_${response.statusCode}';
+      var errorMessage = 'Failed to fetch cart';
+      var errorCode = 'HTTP_${response.statusCode}';
 
       if (response.data is Map<String, dynamic>) {
         final jsonResponse = response.data as Map<String, dynamic>;
@@ -65,7 +65,7 @@ class CartListingRepository {
       );
 
     } on DioException catch (e) {
-      AppLogger.log('❌ Dio Error: ${e.toString()}');
+      AppLogger.log('❌ Dio Error: $e');
       
       String errorMessage;
       String errorCode;
@@ -76,11 +76,9 @@ class CartListingRepository {
         case DioExceptionType.receiveTimeout:
           errorMessage = 'Request timed out';
           errorCode = 'TIMEOUT_ERROR';
-          break;
         case DioExceptionType.connectionError:
           errorMessage = 'No internet connection';
           errorCode = 'CONNECTION_ERROR';
-          break;
         default:
           errorMessage = 'Network error: ${e.message}';
           errorCode = 'NETWORK_ERROR';
@@ -92,7 +90,7 @@ class CartListingRepository {
       );
       
     } catch (e) {
-      AppLogger.log('❌ General Error: ${e.toString()}');
+      AppLogger.log('❌ General Error: $e');
       return ApiResponse.error(
         'Failed to fetch cart: $e',
         errorCode: 'UNKNOWN_ERROR',

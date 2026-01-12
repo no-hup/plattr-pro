@@ -8,7 +8,7 @@ class TableResponseParser {
     AppLogger.log('🔍 Parsing JSON: $json');
     
     // Extract the result field if it exists (handle nested structure)
-    final Map<String, dynamic> resultData = json.containsKey('result') 
+    final resultData = json.containsKey('result') 
         ? json['result'] as Map<String, dynamic>
         : json;
     
@@ -45,7 +45,6 @@ class TableResponseParser {
       return TableValidationResponse(
         status: status,
         message: message,
-        requiresOtp: false,
         data: details,
       );
     }
@@ -62,7 +61,6 @@ class TableResponseParser {
         status: status,
         message: message,
         data: data,
-        requiresOtp: false,
       );
     } catch (e) {
       AppLogger.log('❌ JSON Parse Error: $e');
@@ -73,15 +71,15 @@ class TableResponseParser {
 
 /// Exception for validation parsing errors
 class TableValidationException implements Exception {
-  final String message;
-  final String? code;
-  final StackTrace? stackTrace;
   
   TableValidationException({
     required this.message,
     this.code,
     this.stackTrace,
   });
+  final String message;
+  final String? code;
+  final StackTrace? stackTrace;
   
   @override
   String toString() => 'TableValidationException(message: $message, code: $code, stackTrace: $stackTrace)';

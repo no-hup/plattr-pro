@@ -15,7 +15,7 @@ void main() {
         !Directory(contractDir).existsSync()) {
       test('skip - CONTRACT_DIR not set or invalid', () {
         expect(true, isTrue,
-            reason: 'Set CONTRACT_DIR to directory with *.json responses');
+            reason: 'Set CONTRACT_DIR to directory with *.json responses',);
       });
       return;
     }
@@ -45,9 +45,9 @@ void main() {
 
         // Basic assertions common to add/get responses
         expect(parsed.status.isNotEmpty, true,
-            reason: 'status should not be empty');
+            reason: 'status should not be empty',);
         expect(parsed.message.isNotEmpty, true,
-            reason: 'message should not be empty');
+            reason: 'message should not be empty',);
 
         final cart = parsed.data?.cart;
         expect(cart, isNotNull, reason: 'data.cart should not be null');
@@ -57,13 +57,13 @@ void main() {
         final price = cart.priceInfo;
         if (price != null) {
           expect(price.basePrice is num, true,
-              reason: 'basePrice must be number');
+              reason: 'basePrice must be number',);
           expect(price.finalPrice is num, true,
-              reason: 'finalPrice must be number');
+              reason: 'finalPrice must be number',);
           expect(price.totalAddonBasePrice is num, true,
-              reason: 'totalAddonBasePrice must be number');
+              reason: 'totalAddonBasePrice must be number',);
           expect(price.totalVariantBasePrice is num, true,
-              reason: 'totalVariantBasePrice must be number');
+              reason: 'totalVariantBasePrice must be number',);
         }
       });
     }

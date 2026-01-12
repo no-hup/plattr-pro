@@ -6,6 +6,7 @@ import 'package:flutterboilerplate/pages/debug_baner.dart';
 import 'package:flutterboilerplate/pages/otp/otp_input_dialog.dart';
 import 'package:flutterboilerplate/session/session_provider.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -387,7 +388,7 @@ class TableVerificationPageState extends State<TableVerificationPage> {
     return Scaffold(
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: AppSpacing.pagePadding,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -395,9 +396,9 @@ class TableVerificationPageState extends State<TableVerificationPage> {
                 'Error',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
-              const SizedBox(height: 8),
+              AppSpacing.verticalSM,
               Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
+              AppSpacing.verticalLG,
               ElevatedButton(
                 onPressed: _retryValidation,
                 child: const Text('Retry'),
@@ -414,7 +415,7 @@ class TableVerificationPageState extends State<TableVerificationPage> {
     return Scaffold(
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: AppSpacing.pagePadding,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -422,9 +423,9 @@ class TableVerificationPageState extends State<TableVerificationPage> {
                 'OTP Required',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
-              const SizedBox(height: 8),
+              AppSpacing.verticalSM,
               Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
+              AppSpacing.verticalLG,
               ElevatedButton(
                 onPressed: _retryValidation,
                 child: const Text('Retry'),
@@ -448,7 +449,7 @@ class TableVerificationPageState extends State<TableVerificationPage> {
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: AppSpacing.pagePadding,
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -458,11 +459,11 @@ class TableVerificationPageState extends State<TableVerificationPage> {
                       'Please verify your table',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
-                    const SizedBox(height: 24),
+                    AppSpacing.verticalXL,
                     _buildNameField(),
-                    const SizedBox(height: 16),
+                    AppSpacing.verticalLG,
                     _buildPhoneField(),
-                    const SizedBox(height: 24),
+                    AppSpacing.verticalXL,
                     _buildSubmitButton(),
                   ],
                 ),

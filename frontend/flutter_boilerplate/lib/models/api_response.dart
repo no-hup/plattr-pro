@@ -29,9 +29,6 @@ class ApiResponse<T> {
 }
 
 class ErrorDetails {
-  final String message;
-  final String code;
-  final Map<String, dynamic>? details;
 
   ErrorDetails({
     required this.message,
@@ -44,4 +41,7 @@ class ErrorDetails {
     code: (json['status'] ?? '').toString(),
     details: json['details'] as Map<String, dynamic>?,
   );
+  final String message;
+  final String code;
+  final Map<String, dynamic>? details;
 }
