@@ -18,7 +18,17 @@ This document outlines a **minimal-change** migration strategy that **maximizes 
 4. **Keep theming agnostic** - styling will be done separately
 
 ### 🚨 Key Update (Senior Dev Recommendation)
-We will use the **`scrollable_positioned_list`** package instead of manual `GlobalKey` calculations for scroll synchronization. This guarantees reliability even when scrolling to categories that haven't been rendered yet (solving the lazy loading issue). We will maintain the current nested list structure for now.
+We will use the **`scrollable_positioned_list`** package instead of manual `GlobalKey` calculations for scroll synchronization. This guarantees reliability even when scrolling to categories that haven't been rendered yet (solving the lazy loading issue).
+
+**Key Architecture Decision - Nested Structure Retained:**
+- Each list item in `ScrollablePositionedList` is a `CategorySection` widget (which contains its own inner lists of subcategories/items)
+- **Index 0** = "Food Category Section" (entire category with all its subcategories)
+- **Index 1** = "Drinks Category Section" (entire category with all its subcategories)
+- This creates a **perfect 1-to-1 mapping** between list indices and the `categories` array
+- Implementation is simple: `index == categoryIndex`, no offset math needed
+- **Trade-off:** Not a fully flat virtualized list, but acceptable for typical menu sizes
+
+> **P4 Optimization (Future):** Flatten to single list with mixed item types for better virtualization on very large menus.
 
 ---
 
@@ -161,6 +171,35 @@ void closeFloatingMenu() {
 
 This is the most important feature - must be smooth and bug-free. We use `scrollable_positioned_list` to handle this reliably without manual math or race conditions.
 
+### Why `scrollable_positioned_list`?
+
+| Problem with Manual Approach | Solution with Package |
+|------------------------------|----------------------|
+| `GlobalKey` calculations fail for lazy-loaded items | `scrollTo(index)` works even for unrendered items |
+| Complex offset math with nested widgets | Simple index-based navigation |
+| Race conditions during rapid scrolling | Built-in scroll controller handles timing |
+| Manual position tracking error-prone | `ItemPositionsListener` gives exact visible items |
+
+### How the 1-to-1 Mapping Works
+
+```
+ScrollablePositionedList itemBuilder:
+┌─────────────────────────────────────────────────────────┐
+│ index: 0  →  categories[0]  →  CategorySection("Food")  │
+│              └── Contains: Starters, Mains, etc.        │
+├─────────────────────────────────────────────────────────┤
+│ index: 1  →  categories[1]  →  CategorySection("Drinks")│
+│              └── Contains: Hot, Cold, etc.              │
+├─────────────────────────────────────────────────────────┤
+│ index: 2  →  categories[2]  →  CategorySection("Dessert")│
+│              └── Contains: Ice Cream, Cakes, etc.       │
+└─────────────────────────────────────────────────────────┘
+```
+
+This means:
+- **Tab tap** → `scrollTo(index: categoryIndex)` - direct mapping, no math
+- **Scroll spy** → `positions.first.index` gives us the category index directly
+
 ### Implementation Approach
 
 #### 1. Setup in MenuPage
@@ -178,12 +217,12 @@ void initState() {
 
 void _setupScrollListener() {
   _itemPositionsListener.itemPositions.addListener(() {
-    // Get visible items
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
 
-    // Find the first item that is visible on screen
-    // Sort by index to find the topmost one
+    // Find items that are actually visible on screen
+    // itemLeadingEdge < 1 means top of item is above viewport bottom
+    // itemTrailingEdge > 0 means bottom of item is below viewport top
     final visibleIndices = positions
         .where((item) => item.itemLeadingEdge < 1 && item.itemTrailingEdge > 0)
         .map((item) => item.index)
@@ -191,50 +230,115 @@ void _setupScrollListener() {
 
     if (visibleIndices.isNotEmpty) {
       final topIndex = visibleIndices.first;
-      // Map the outer list index directly to the category
-      // Index 0 = Category 0, Index 1 = Category 1, etc.
-      final category = menuData.categories[topIndex];
       
-      context.read<MenuState>().setActiveCategory(category.id);
+      // ✨ MAGIC: Direct 1-to-1 mapping!
+      // topIndex == categoryIndex because each list item IS a CategorySection
+      // No offset calculations, no nested index math
+      if (topIndex < menuData.categories.length) {
+        final category = menuData.categories[topIndex];
+        context.read<MenuState>().setActiveCategory(category.id);
+      }
     }
   });
 }
 ```
 
+#### 1b. Build the ScrollablePositionedList
+
+```dart
+// In MenuPage build method - replaces old ListView.builder
+ScrollablePositionedList.builder(
+  itemScrollController: _itemScrollController,
+  itemPositionsListener: _itemPositionsListener,
+  itemCount: menuData.categories.length,  // 1-to-1 with categories
+  itemBuilder: (context, index) {
+    // index 0 = categories[0], index 1 = categories[1], etc.
+    final category = menuData.categories[index];
+    return CategorySection(
+      category: category,
+      menuItemsMap: menuData.menuItems,
+      itemQuantities: cartState.itemQuantities,
+      onQuantityChanged: (itemId, qty) => /* ... */,
+      tableId: tableId,
+      restaurantId: restaurantId,
+      isSubcategoryExpanded: menuState.isSubcategoryExpanded,
+      onSubcategoryToggle: menuState.toggleSubcategory,
+      showImages: menuData.tableContext?.showImages ?? false,
+    );
+  },
+)
+```
+
 #### 2. Programmatic Scroll (Tab/Floating Menu → Category)
 
 ```dart
-// In MenuPage
+// In MenuPage - called when user taps a category tab or floating menu item
 void scrollToCategory(String categoryId) {
+  // Find the index in categories array
   final index = menuData.categories.indexWhere((c) => c.id == categoryId);
+  
   if (index != -1) {
+    // ✨ Direct scroll - index IS the category position
+    // No need to calculate cumulative item counts or nested offsets
     _itemScrollController.scrollTo(
       index: index,
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOut,
     );
-    // Close floating menu if open
+    
+    // Update active state immediately for responsive UI
+    context.read<MenuState>().setActiveCategory(categoryId);
+    
+    // Close floating menu if it was open
     context.read<MenuState>().closeFloatingMenu();
   }
 }
 ```
 
+**Why this works reliably:**
+- `scrollTo(index)` works even if that `CategorySection` hasn't been rendered yet
+- The package handles virtualization internally - no lazy loading issues
+- Animation is smooth because there's no "jump and adjust" behavior
+
 #### 3. Tab Bar Auto-Scroll (Keep Active Tab Visible)
+
+The tab bar has its own horizontal scroll. When the user scrolls the menu and the active category changes, the tab bar should auto-scroll to keep the active tab visible.
 
 ```dart
 // In CategoryTabBar widget - auto-scroll tabs to keep active visible
 
 class CategoryTabBar extends StatefulWidget {
-  // ...
+  const CategoryTabBar({
+    required this.categories,
+    required this.activeCategoryId,
+    required this.onCategoryTap,
+    super.key,
+  });
+  
+  final List<Category> categories;
+  final String? activeCategoryId;
+  final void Function(String categoryId) onCategoryTap;
+  
+  @override
+  State<CategoryTabBar> createState() => _CategoryTabBarState();
 }
 
 class _CategoryTabBarState extends State<CategoryTabBar> {
-  final ScrollController _tabScrollController = ScrollController();
   final Map<String, GlobalKey> _tabKeys = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // Create a GlobalKey for each tab to enable ensureVisible
+    for (final cat in widget.categories) {
+      _tabKeys[cat.id] = GlobalKey();
+    }
+  }
 
   @override
   void didUpdateWidget(CategoryTabBar oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // When active category changes (from scroll spy), auto-scroll tab bar
     if (widget.activeCategoryId != oldWidget.activeCategoryId) {
       _scrollToActiveTab();
     }
@@ -244,18 +348,80 @@ class _CategoryTabBarState extends State<CategoryTabBar> {
     if (widget.activeCategoryId == null) return;
     final key = _tabKeys[widget.activeCategoryId];
     if (key?.currentContext != null) {
+      // Smoothly scroll the tab bar to center the active tab
       Scrollable.ensureVisible(
         key!.currentContext!,
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
-        alignment: 0.5,  // Center the tab
+        alignment: 0.5,  // 0.5 = center the tab in view
       );
     }
   }
   
-  // Build tabs with keys...
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: AppSpacing.pagePaddingHorizontal,
+      child: Row(
+        children: widget.categories.map((cat) {
+          final isActive = cat.id == widget.activeCategoryId;
+          return Container(
+            key: _tabKeys[cat.id],  // Assign key for ensureVisible
+            // ... rest of tab styling
+          );
+        }).toList(),
+      ),
+    );
+  }
 }
 ```
+
+### Bidirectional Sync Summary
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    SCROLL SYNC FLOW                             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  USER SCROLLS MENU                    USER TAPS TAB/FAB         │
+│        │                                     │                  │
+│        ▼                                     ▼                  │
+│  ItemPositionsListener              scrollToCategory(id)        │
+│  detects topmost visible                     │                  │
+│        │                                     │                  │
+│        ▼                                     ▼                  │
+│  topIndex = visible[0].index       index = categories.indexOf  │
+│        │                                     │                  │
+│        ▼                                     ▼                  │
+│  category = categories[topIndex]   _itemScrollController.scrollTo│
+│        │                                     │                  │
+│        ▼                                     ▼                  │
+│  setActiveCategory(category.id)    setActiveCategory(id)        │
+│        │                                     │                  │
+│        └──────────────┬──────────────────────┘                  │
+│                       ▼                                         │
+│              MenuState.activeCategoryId                         │
+│                       │                                         │
+│                       ▼                                         │
+│              CategoryTabBar rebuilds                            │
+│              _scrollToActiveTab() called                        │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📦 Package Dependencies
+
+Add the following to `pubspec.yaml`:
+
+```yaml
+dependencies:
+  scrollable_positioned_list: ^0.3.8  # For scroll-to-index and position listening
+```
+
+Run `flutter pub get` after adding.
 
 ---
 
@@ -506,63 +672,17 @@ class CategorySection extends StatelessWidget {
 
 ### 4. CategoryTabBar - NEW (in `/widgets/category_tab_bar.dart`)
 
-```dart
-/// Horizontally scrollable category tabs - NEW FILE
-/// This is genuinely new functionality with no existing equivalent
+> **See complete implementation in [Scroll Sync Implementation](#-critical-scroll-sync-implementation-p0) section above.**
 
-class CategoryTabBar extends StatelessWidget {
-  const CategoryTabBar({
-    required this.categories,
-    required this.activeCategoryId,
-    required this.onCategoryTap,
-    super.key,
-  });
+The `CategoryTabBar` is a `StatefulWidget` that:
+- Displays horizontal scrollable category tabs
+- Highlights the active category
+- **Auto-scrolls horizontally** to keep the active tab visible when user scrolls the menu
+- Uses `GlobalKey` per tab + `Scrollable.ensureVisible` for auto-scroll
 
-  final List<Category> categories;
-  final String? activeCategoryId;
-  final void Function(String categoryId) onCategoryTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: AppSpacing.pagePaddingHorizontal,
-      child: Row(
-        children: categories.map((cat) {
-          final isActive = cat.id == activeCategoryId;
-          return Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: InkWell(
-              onTap: () => onCategoryTap(cat.id),
-              child: Container(
-                padding: AppSpacing.buttonPadding,
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: isActive 
-                          ? Theme.of(context).colorScheme.primary 
-                          : Colors.transparent,
-                      width: 2,
-                    ),
-                  ),
-                ),
-                child: Text(
-                  cat.name.toUpperCase(),
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: isActive 
-                        ? Theme.of(context).colorScheme.primary 
-                        : Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-```
+Key features:
+- `onCategoryTap` callback → triggers `scrollToCategory()` in MenuPage
+- `didUpdateWidget` detects when `activeCategoryId` changes → calls `_scrollToActiveTab()`
 
 ### 5. FloatingMenuOverlay - NEW (separate file: `menuListing/widgets/floating_menu_overlay.dart`)
 
@@ -729,20 +849,32 @@ PriceSummaryPanel(
 
 ---
 
-### Phase 4: Category Tab Bar & Scrollable List
+### Phase 4: Category Tab Bar & Scrollable List (CRITICAL)
+
+**Package Dependency:**
+- [ ] Add `scrollable_positioned_list: ^0.3.8` to pubspec.yaml
+- [ ] Run `flutter pub get`
 
 **Tasks:**
-- [ ] Create `CategoryTabBar` widget (StatefulWidget for internal scroll control)
-- [ ] Add to `MenuPage` body above the List
-- [ ] **Replace `ListView` with `ScrollablePositionedList` in `MenuPage`**
-- [ ] Setup `ItemPositionsListener` in `MenuPage` initState
-- [ ] Wire up `onCategoryTap` → `scrollTo`
+- [ ] Create `CategoryTabBar` widget (StatefulWidget for internal scroll control + auto-scroll)
+- [ ] Add `CategoryTabBar` to `MenuPage` body above the list
+- [ ] **Replace `ListView.builder` with `ScrollablePositionedList.builder`** in `MenuPage`
+- [ ] Create `ItemScrollController` and `ItemPositionsListener` in `MenuPage` state
+- [ ] Setup `_setupScrollListener()` in `initState` for scroll spy (updates activeCategoryId)
+- [ ] Implement `scrollToCategory(String categoryId)` method
+- [ ] Wire up `CategoryTabBar.onCategoryTap` → `scrollToCategory`
+- [ ] Wire up `FloatingMenuOverlay.onCategoryTap` → `scrollToCategory` (in Phase 7)
+
+**Key Implementation Note:**
+Each `CategorySection` is one item in the list. Index 0 = Category 0, Index 1 = Category 1.
+No offset math needed - direct 1-to-1 mapping.
 
 **Files Created/Modified:**
 | File | Change |
 |------|--------|
-| `widgets/category_tab_bar.dart` | **NEW** - ~80 lines (StatefulWidget) |
-| `MenuPage.dart` | Replace ListView with ScrollablePositionedList |
+| `pubspec.yaml` | Add scrollable_positioned_list dependency |
+| `widgets/category_tab_bar.dart` | **NEW** - ~100 lines (StatefulWidget with auto-scroll) |
+| `MenuPage.dart` | Replace ListView with ScrollablePositionedList, add controllers |
 
 ---
 
@@ -840,6 +972,7 @@ PriceSummaryPanel(
 | **P2** | Auto-expand First Subcategory | On load, expand first subcategory of first category | Post-MVP |
 | **P2** | Search Functionality | Search icon → search overlay | Post-MVP |
 | **P3** | Nested Subcategories in Floating Menu | Show subcategories in overlay when tapping category | Post-MVP |
+| **P4** | Flatten List Structure | Refactor to single flat list with mixed item types | Better virtualization for very large menus |
 ## ⚠️ Edge Cases (Covered by Implementation)
 
 | Edge Case | Handling |
@@ -853,8 +986,11 @@ PriceSummaryPanel(
 | `showImages=true` but no image | No placeholder, just hide image area |
 | Image URL broken | Use errorBuilder to hide gracefully |
 | Very few items | Tab taps still work, scroll not needed |
-| Rapid tab switching | scrollToCategory replaces previous scroll |
-| **P4** | **Flatten List Structure** | Refactor `MenuPage` to use a single flat list instead of nested `CategorySection` lists. | **Low Priority** - Optimizes performance for large menus. |
+| Rapid tab switching | `scrollTo` replaces previous animation - no queue buildup |
+| Scroll to unrendered category | `scrollable_positioned_list` handles this automatically |
+| User scrolls during programmatic scroll | User scroll wins, animation interrupted gracefully |
+| Very tall CategorySection | Position listener reports it as active until scrolled past |
+| First category fills entire screen | Only first tab active until user scrolls significantly |
 
 ---
 
@@ -874,10 +1010,19 @@ PriceSummaryPanel(
 - [ ] Cart summary shows at bottom using PriceSummaryPanel
 - [ ] Checkout button navigates to cart
 
+### Scroll Sync (P0 - Critical)
+- [ ] **Tap tab → menu scrolls to that category section**
+- [ ] **Scroll menu → active tab updates to reflect topmost visible category**
+- [ ] **Active tab auto-scrolls horizontally to stay centered**
+- [ ] **Tap FAB menu item → menu scrolls + FAB overlay closes**
+- [ ] **Scrolling to last category works** (even if not yet rendered)
+- [ ] No "jump and adjust" behavior - smooth single animation
+
 ### Polish (P1)
 - [ ] Smooth scroll animations (400ms, easeInOut)
 - [ ] Smooth collapse/expand animations (200ms)
-- [ ] No feedback loop when programmatically scrolling
+- [ ] Tab bar auto-scroll is subtle (200ms, easeOut)
+- [ ] No feedback loop when programmatically scrolling (setActiveCategory called once)
 
 ### Future Ready
 - [ ] `subcategoryKeys` map in place for future subcategory scroll

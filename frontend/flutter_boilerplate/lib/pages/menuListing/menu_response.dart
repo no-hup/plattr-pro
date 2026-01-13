@@ -38,6 +38,21 @@ class MenuResponse with _$MenuResponse {
   }
 }
 
+/// 🆕 NEW MODEL: TableContextData - represents table context for display
+@freezed
+class TableContextData with _$TableContextData {
+  factory TableContextData({
+    required String restaurantName,
+    String? tableNumber,
+    String? otp,
+    @Default(false) bool showOtp,
+    @Default(false) bool showImages,
+  }) = _TableContextData;
+
+  factory TableContextData.fromJson(Map<String, dynamic> json) =>
+      _$TableContextDataFromJson(json);
+}
+
 /// 🆕 NEW MODEL: ActiveMenu - represents the currently active menu
 @freezed
 class ActiveMenu with _$ActiveMenu {
@@ -74,6 +89,8 @@ class MenuData with _$MenuData {
     required Map<String, List<MenuItem>> menuItems,
     required MenuMetadata metadata,
     ActiveMenu? activeMenu,
+    TableContextData? tableContext,
+    String? restaurantName, // Fallback for header display
   }) = _MenuData;
 
   factory MenuData.fromJson(Map<String, dynamic> json) {
@@ -84,6 +101,8 @@ class MenuData with _$MenuData {
         'categories': json['categories'] as List<dynamic>? ?? [],
         'menuItems': json['menuItems'] as Map<String, dynamic>? ?? {},
         'metadata': json['metadata'] as Map<String, dynamic>? ?? {},
+        'tableContext': json['tableContext'] as Map<String, dynamic>?,
+        'restaurantName': json['restaurantName'] as String?,
       };
 
       // Parse activeMenu if present
@@ -91,6 +110,14 @@ class MenuData with _$MenuData {
       if (sanitizedJson['activeMenu'] != null) {
         activeMenu = ActiveMenu.fromJson(
           sanitizedJson['activeMenu'] as Map<String, dynamic>,
+        );
+      }
+
+      // Parse tableContext if present
+      TableContextData? tableContext;
+      if (sanitizedJson['tableContext'] != null) {
+        tableContext = TableContextData.fromJson(
+          sanitizedJson['tableContext'] as Map<String, dynamic>,
         );
       }
 
@@ -125,6 +152,8 @@ class MenuData with _$MenuData {
         categories: categories,
         menuItems: parsedMenuItems,
         metadata: metadata,
+        tableContext: tableContext,
+        restaurantName: sanitizedJson['restaurantName'] as String?,
       );
     } catch (e) {
       // Return a default MenuData if parsing fails

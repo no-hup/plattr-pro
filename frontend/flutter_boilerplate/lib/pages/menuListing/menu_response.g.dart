@@ -6,6 +6,30 @@ part of 'menu_response.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+_$TableContextDataImpl _$$TableContextDataImplFromJson(
+        Map<String, dynamic> json) =>
+    _$TableContextDataImpl(
+      restaurantName: json['restaurantName'] as String,
+      tableNumber: json['tableNumber'] as String?,
+      otp: json['otp'] as String?,
+      showOtp: json['showOtp'] as bool? ?? false,
+      showImages: json['showImages'] as bool? ?? false,
+      areSubcategoriesExpandedByDefault:
+          json['areSubcategoriesExpandedByDefault'] as bool? ?? false,
+    );
+
+Map<String, dynamic> _$$TableContextDataImplToJson(
+        _$TableContextDataImpl instance) =>
+    <String, dynamic>{
+      'restaurantName': instance.restaurantName,
+      'tableNumber': instance.tableNumber,
+      'otp': instance.otp,
+      'showOtp': instance.showOtp,
+      'showImages': instance.showImages,
+      'areSubcategoriesExpandedByDefault':
+          instance.areSubcategoriesExpandedByDefault,
+    };
+
 _$ActiveMenuImpl _$$ActiveMenuImplFromJson(Map<String, dynamic> json) =>
     _$ActiveMenuImpl(
       menuId: json['menuId'] as String,
@@ -43,16 +67,16 @@ Map<String, dynamic> _$$SubcategoryImplToJson(_$SubcategoryImpl instance) =>
 _$MenuMetadataImpl _$$MenuMetadataImplFromJson(Map<String, dynamic> json) =>
     _$MenuMetadataImpl(
       totalCategories: (json['totalCategories'] as num).toInt(),
-      totalSubcategories: (json['totalSubcategories'] as num?)?.toInt() ?? 0,
       totalMenuItems: (json['totalMenuItems'] as num).toInt(),
+      totalSubcategories: (json['totalSubcategories'] as num?)?.toInt() ?? 0,
       activeMenuId: json['activeMenuId'] as String?,
     );
 
 Map<String, dynamic> _$$MenuMetadataImplToJson(_$MenuMetadataImpl instance) =>
     <String, dynamic>{
       'totalCategories': instance.totalCategories,
-      'totalSubcategories': instance.totalSubcategories,
       'totalMenuItems': instance.totalMenuItems,
+      'totalSubcategories': instance.totalSubcategories,
       'activeMenuId': instance.activeMenuId,
     };
 
@@ -63,6 +87,7 @@ _$CategoryImpl _$$CategoryImplFromJson(Map<String, dynamic> json) =>
       description: json['description'] as String,
       order: (json['order'] as num).toInt(),
       image: json['image'] as String?,
+      viewType: json['viewType'] as String? ?? 'list',
       subcategories: (json['subcategories'] as List<dynamic>?)
               ?.map((e) => Subcategory.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -76,6 +101,7 @@ Map<String, dynamic> _$$CategoryImplToJson(_$CategoryImpl instance) =>
       'description': instance.description,
       'order': instance.order,
       'image': instance.image,
+      'viewType': instance.viewType,
       'subcategories': instance.subcategories,
     };
 
@@ -83,15 +109,15 @@ _$MenuItemImpl _$$MenuItemImplFromJson(Map<String, dynamic> json) =>
     _$MenuItemImpl(
       id: json['menuItemId'] as String,
       categoryId: json['categoryId'] as String,
+      meta: MenuItemMeta.fromJson(json['meta'] as Map<String, dynamic>),
+      priceInfo: PriceInfo.fromJson(json['priceInfo'] as Map<String, dynamic>),
+      isInStock: json['isInStock'] as bool,
+      isCustomizable: json['isCustomizable'] as bool,
       primarySubcategoryId: json['primarySubcategoryId'] as String?,
       subcategoryIds: (json['subcategoryIds'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           const [],
-      meta: MenuItemMeta.fromJson(json['meta'] as Map<String, dynamic>),
-      priceInfo: PriceInfo.fromJson(json['priceInfo'] as Map<String, dynamic>),
-      isInStock: json['isInStock'] as bool,
-      isCustomizable: json['isCustomizable'] as bool,
       variants: (json['variants'] as List<dynamic>?)
               ?.map((e) => Variant.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -115,12 +141,12 @@ Map<String, dynamic> _$$MenuItemImplToJson(_$MenuItemImpl instance) =>
     <String, dynamic>{
       'menuItemId': instance.id,
       'categoryId': instance.categoryId,
-      'primarySubcategoryId': instance.primarySubcategoryId,
-      'subcategoryIds': instance.subcategoryIds,
       'meta': instance.meta,
       'priceInfo': instance.priceInfo,
       'isInStock': instance.isInStock,
       'isCustomizable': instance.isCustomizable,
+      'primarySubcategoryId': instance.primarySubcategoryId,
+      'subcategoryIds': instance.subcategoryIds,
       'variants': instance.variants,
       'addons': instance.addons,
       'nutritionalInfo': instance.nutritionalInfo,
