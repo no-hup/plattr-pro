@@ -92,6 +92,7 @@
           "isActive": true,
           "isDefault": true,
           "categoryIds": [
+            "cat_bestsellers",
             "cat_food",
             "cat_beverages"
           ],
@@ -108,7 +109,11 @@
             "item_espresso",
             "item_iced_lemonade",
             "item_iced_coffee",
-            "item_berry_smoothie"
+            "item_berry_smoothie",
+            "item_bs_classic_burger",
+            "item_bs_margherita",
+            "item_bs_chocolate_cake",
+            "item_bs_cappuccino"
           ],
           "order": 0,
           "createdAt": {
@@ -211,6 +216,14 @@
         }
       },
       "categories": {
+        "cat_bestsellers": {
+          "id": "cat_bestsellers",
+          "name": "Best Sellers ⭐",
+          "description": "Our most popular items",
+          "image": "https://example.com/images/bestsellers.jpg",
+          "order": 0,
+          "viewType": "carousel"
+        },
         "cat_food": {
           "id": "cat_food",
           "name": "Food",
@@ -232,6 +245,7 @@
           "description": "Hot and cold drinks",
           "image": "https://example.com/images/cat-beverages.jpg",
           "order": 2,
+          "defaultExpanded": false,
           "subcategoryIds": [
             "subcat_hot_drinks",
             "subcat_cold_drinks",
@@ -838,6 +852,110 @@
           "allergenTags": [],
           "isInStock": true,
           "isCustomizable": true
+        },
+        "item_bs_classic_burger": {
+          "menuItemId": "item_bs_classic_burger",
+          "categoryId": "cat_bestsellers",
+          "meta": {
+            "name": "Classic Cheeseburger",
+            "description": "Angus beef patty with cheddar, lettuce, tomato",
+            "categoryName": "Best Sellers",
+            "image": "https://example.com/images/classic-burger.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 140,
+            "discount": 10,
+            "finalPrice": 126
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 650,
+            "protein": 35,
+            "carbs": 45,
+            "fat": 38
+          },
+          "allergenTags": ["gluten", "dairy"],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_bs_margherita": {
+          "menuItemId": "item_bs_margherita",
+          "categoryId": "cat_bestsellers",
+          "meta": {
+            "name": "Margherita Pizza",
+            "description": "Fresh mozzarella, tomato sauce, basil",
+            "categoryName": "Best Sellers",
+            "image": "https://example.com/images/margherita.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 180,
+            "discount": 0,
+            "finalPrice": 180
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 800,
+            "protein": 30,
+            "carbs": 90,
+            "fat": 35
+          },
+          "allergenTags": ["gluten", "dairy"],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_bs_chocolate_cake": {
+          "menuItemId": "item_bs_chocolate_cake",
+          "categoryId": "cat_bestsellers",
+          "meta": {
+            "name": "Chocolate Lava Cake",
+            "description": "Warm chocolate cake with molten center",
+            "categoryName": "Best Sellers",
+            "image": "https://example.com/images/chocolate-cake.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 80,
+            "discount": 0,
+            "finalPrice": 80
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 450,
+            "protein": 6,
+            "carbs": 55,
+            "fat": 25
+          },
+          "allergenTags": ["gluten", "dairy", "eggs"],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_bs_cappuccino": {
+          "menuItemId": "item_bs_cappuccino",
+          "categoryId": "cat_bestsellers",
+          "meta": {
+            "name": "Cappuccino",
+            "description": "Espresso with steamed milk foam",
+            "categoryName": "Best Sellers",
+            "image": "https://example.com/images/cappuccino.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 60,
+            "discount": 0,
+            "finalPrice": 60
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 80,
+            "protein": 4,
+            "carbs": 8,
+            "fat": 4
+          },
+          "allergenTags": ["dairy"],
+          "isInStock": true,
+          "isCustomizable": false
         }
       },
       "variants": {

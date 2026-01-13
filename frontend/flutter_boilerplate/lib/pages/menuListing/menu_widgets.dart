@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutterboilerplate/pages/menuListing/mennu_bottomsheet.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_state.dart';
+import 'package:flutterboilerplate/pages/menuListing/widgets/category_carousel.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
-import 'package:flutterboilerplate/theme/theme.dart';
+import 'package:flutterboilerplate/theme/design_system/app_colors.dart';
+import 'package:flutterboilerplate/theme/design_system/app_dimensions.dart';
+import 'package:flutterboilerplate/theme/design_system/app_typography.dart';
 import 'package:flutterboilerplate/widgets/price_display.dart';
 import 'package:flutterboilerplate/widgets/quantity_selector.dart';
 import 'package:flutterboilerplate/widgets/status_badge.dart';
@@ -34,8 +37,9 @@ class MenuItemCard extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppColors.paper,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusLG)),
       ),
       builder: (context) => MenuCustomizationSheet(
         item: item,
@@ -82,29 +86,61 @@ class MenuItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-      child: Padding(
-        padding: AppSpacing.pagePadding,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image section (if enabled)
-            if (showImage && item.meta.image != null) ...[
-              _MenuItemImage(imageUrl: item.meta.image!),
-              const SizedBox(width: AppSpacing.md),
-            ],
-            Expanded(
-              child: _MenuItemDetails(item: item),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppDimensions.space24, vertical: AppDimensions.space4),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.divider)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+             // Optional: Show details or customization on tap
+          },
+          hoverColor: AppColors.paperAlt,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppDimensions.space20),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Details Section (Expanded)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: AppDimensions.space16),
+                    child: _MenuItemDetails(item: item),
+                  ),
+                ),
+                
+                // Actions & Price Section
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                   PriceDisplay(
+                      finalPrice: item.priceInfo.finalPrice.toDouble(),
+                      basePrice: item.priceInfo.discount > 0
+                          ? item.priceInfo.basePrice.toDouble()
+                          : null,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      style: AppTypography.price,
+                    ),
+                    const SizedBox(height: AppDimensions.space8),
+                    _QuantityControl(
+                      item: item,
+                      quantity: quantity,
+                      onAddToCart: () => _handleAddToCart(context),
+                      tableId: tableId,
+                      restaurantId: restaurantId,
+                    ),
+                  ],
+                ),
+                
+                 if (showImage && item.meta.image != null) ...[
+                  const SizedBox(width: AppDimensions.space16),
+                  _MenuItemImage(imageUrl: item.meta.image!),
+                ],
+              ],
             ),
-            _QuantityControl(
-              item: item,
-              quantity: quantity,
-              onAddToCart: () => _handleAddToCart(context),
-              tableId: tableId,
-              restaurantId: restaurantId,
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -120,7 +156,7 @@ class _MenuItemImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
       child: SizedBox(
         width: 80,
         height: 80,
@@ -128,18 +164,17 @@ class _MenuItemImage extends StatelessWidget {
           imageUrl,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            // Hide gracefully on load failure
             return const SizedBox.shrink();
           },
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
             return Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              color: AppColors.paperAlt,
               child: const Center(
                 child: SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
                 ),
               ),
             );
@@ -162,36 +197,27 @@ class _MenuItemDetails extends StatelessWidget {
       children: [
         Text(
           item.meta.name,
-          style: Theme.of(context).textTheme.titleMedium,
+          style: AppTypography.h3,
         ),
-        AppSpacing.verticalXS,
+        const SizedBox(height: AppDimensions.space4),
         Text(
           item.meta.description,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        AppSpacing.verticalSM,
-        PriceDisplay(
-          finalPrice: item.priceInfo.finalPrice.toDouble(),
-          basePrice: item.priceInfo.discount > 0
-              ? item.priceInfo.basePrice.toDouble()
-              : null,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          style: AppTypography.body,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
         if (item.isCustomizable) ...[
-          AppSpacing.verticalXS,
-          StatusBadge.customizable(),
+          const SizedBox(height: AppDimensions.space8),
+          StatusBadge.customizable(), // Note: StatusBadge might need updates to match design
         ],
         if (!item.isInStock) ...[
-          AppSpacing.verticalXS,
+          const SizedBox(height: AppDimensions.space8),
           StatusBadge.outOfStock(),
         ],
       ],
     );
   }
 }
-
-// Note: _PriceInfo, _CustomizableIndicator, and _OutOfStockIndicator have been
-// replaced with centralized widgets: PriceDisplay and StatusBadge.
 
 class _QuantityControl extends StatelessWidget {
   const _QuantityControl({
@@ -210,34 +236,105 @@ class _QuantityControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        if (!item.isInStock)
-          const ElevatedButton(
-            onPressed: null,
-            child: Text('Add'),
-          )
-        else if (quantity > 0)
-          QuantitySelector(
-            quantity: quantity,
-            onDecrement: () => context.read<MenuState>().updateCartItem(
-                  item,
-                  false,
-                  tableId: tableId,
-                  restaurantId: restaurantId,
-                ),
-            onIncrement: onAddToCart,
-            compact: true,
-          )
-        else
-          ElevatedButton(
-            onPressed: onAddToCart,
-            child: const Text('Add'),
-          ),
-      ],
+    if (!item.isInStock) {
+      return const SizedBox.shrink(); // Hide button if out of stock, managed by badge
+    }
+
+    if (quantity > 0) {
+      return Container(
+        decoration: const BoxDecoration(
+          color: AppColors.primaryLight,
+          borderRadius: BorderRadius.all(Radius.circular(AppDimensions.radiusPill)),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space8, vertical: AppDimensions.space4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _QuantityIconButton(
+              icon: Icons.remove,
+              onTap: () => context.read<MenuState>().updateCartItem(
+                    item,
+                    false,
+                    tableId: tableId,
+                    restaurantId: restaurantId,
+                  ),
+              color: AppColors.inkLight,
+            ),
+            SizedBox(
+              width: 24,
+              child: Text(
+                quantity.toString(),
+                textAlign: TextAlign.center,
+                style: AppTypography.uiSans.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+             _QuantityIconButton(
+              icon: Icons.add,
+               onTap: onAddToCart,
+               color: AppColors.primary,
+               isFilled: true,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return TextButton(
+      onPressed: onAddToCart,
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.primary,
+        backgroundColor: AppColors.paper,
+        side: const BorderSide(color: AppColors.divider),
+        shape: const RoundedRectangleBorder(
+           borderRadius: BorderRadius.all(Radius.circular(AppDimensions.radiusPill)),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space20, vertical: AppDimensions.space6),
+        minimumSize: Size.zero, 
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Text(
+        'ADD',
+        style: AppTypography.label.copyWith(letterSpacing: 1.0, fontWeight: FontWeight.bold),
+      ),
     );
   }
 }
+
+class _QuantityIconButton extends StatelessWidget {
+  const _QuantityIconButton({
+    required this.icon,
+    required this.onTap,
+    required this.color,
+    this.isFilled = false,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color color;
+  final bool isFilled;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+      child: Container(
+        width: 24,
+        height: 24,
+        decoration: isFilled ? BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+        ) : null,
+        child: Icon(
+          icon, 
+          size: 16, 
+          color: isFilled ? Colors.white : color
+        ),
+      ),
+    );
+  }
+}
+
 
 class CategorySection extends StatelessWidget {
   const CategorySection({
@@ -259,33 +356,49 @@ class CategorySection extends StatelessWidget {
   final void Function(String itemId, bool increment) onQuantityChanged;
   final String tableId;
   final String restaurantId;
-  
-  /// Callback to check if a subcategory is expanded. Defaults to always expanded if not provided.
   final bool Function(String subcategoryId)? isSubcategoryExpanded;
-  
-  /// Callback to toggle subcategory expansion.
   final void Function(String subcategoryId)? onSubcategoryToggle;
-  
-  /// Whether to show images in menu item cards.
   final bool showImages;
 
   @override
   Widget build(BuildContext context) {
+    if (category.viewType == 'carousel') {
+      return CategoryCarousel(
+        category: category,
+        items: menuItemsMap[category.id] ?? [],
+        itemQuantities: itemQuantities,
+        onQuantityChanged: onQuantityChanged,
+        tableId: tableId,
+        restaurantId: restaurantId,
+      );
+    }
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Category Header
-        Padding(
-          padding: AppSpacing.pagePadding,
-          child: Text(
-            category.name,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+        // Category Header (Sticky supported by scroll view usually, but here just styled)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.space24, 
+            vertical: AppDimensions.space16
+          ),
+          decoration: const BoxDecoration(
+             color: AppColors.paper, // Should be sticky/opaque
+             border: Border(bottom: BorderSide(color: AppColors.divider)),
+          ),
+          child: Row(
+            children: [
+              Container(width: 8, height: 2, color: AppColors.primary),
+              const SizedBox(width: AppDimensions.space12),
+              Text(
+                category.name.toUpperCase(),
+                style: AppTypography.h2,
+              ),
+            ],
           ),
         ),
-        // If category has subcategories, show subcategory sections
-        // Otherwise show items directly under category (legacy mode)
+        
         if (category.subcategories.isNotEmpty)
           ..._buildSubcategorySections(context)
         else
@@ -294,49 +407,43 @@ class CategorySection extends StatelessWidget {
     );
   }
 
-  /// Build subcategory sections with collapsible headers
   List<Widget> _buildSubcategorySections(BuildContext context) {
     final sections = <Widget>[];
     
     for (final subcat in category.subcategories) {
       final subcatItems = menuItemsMap[subcat.id] ?? [];
-      if (subcatItems.isEmpty) continue; // Skip empty subcategories
+      if (subcatItems.isEmpty) continue;
       
-      // Check if subcategory is expanded (default to true if no callback provided)
       final isExpanded = isSubcategoryExpanded?.call(subcat.id) ?? true;
       
-      // Subcategory header with toggle
       sections.add(
         InkWell(
           onTap: onSubcategoryToggle != null 
               ? () => onSubcategoryToggle!(subcat.id)
               : null,
-          child: Padding(
-            padding: const EdgeInsets.only(
-              left: AppSpacing.lg, 
-              right: AppSpacing.lg, 
-              top: AppSpacing.sm, 
-              bottom: AppSpacing.xs,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.space24, 
+              vertical: AppDimensions.space12
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.paperAlt.withOpacity(0.5),
             ),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
                     subcat.name,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppTypography.h3.copyWith(fontSize: 16),
                   ),
                 ),
-                // Show chevron only if toggle is available
                 if (onSubcategoryToggle != null)
                   AnimatedRotation(
                     duration: const Duration(milliseconds: 200),
                     turns: isExpanded ? 0.5 : 0,
-                    child: Icon(
+                    child: const Icon(
                       Icons.keyboard_arrow_down,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: AppColors.primary,
                     ),
                   ),
               ],
@@ -345,16 +452,19 @@ class CategorySection extends StatelessWidget {
         ),
       );
       
-      // Items list with smooth collapse animation
       sections.add(
         ClipRect(
-          child: AnimatedSize(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            alignment: Alignment.topCenter,
-            child: isExpanded 
-                ? _buildItemsList(subcatItems)
-                : const SizedBox.shrink(),
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 150),
+            opacity: isExpanded ? 1.0 : 0.0,
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOut,
+              alignment: Alignment.topCenter,
+              child: isExpanded 
+                  ? _buildItemsList(subcatItems)
+                  : const SizedBox.shrink(),
+            ),
           ),
         ),
       );
@@ -363,7 +473,6 @@ class CategorySection extends StatelessWidget {
     return sections;
   }
 
-  /// Build a list of menu item cards
   Widget _buildItemsList(List<MenuItem> items) {
     return ListView.builder(
       shrinkWrap: true,
@@ -385,6 +494,3 @@ class CategorySection extends StatelessWidget {
     );
   }
 }
-
-// Note: MenuErrorView, MenuLoadingView, and FloatingCartWidget have been removed.
-// Use PageStateView.loading(), PageStateView.error(), and PriceSummaryPanel instead.

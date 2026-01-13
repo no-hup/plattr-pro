@@ -165,6 +165,8 @@ function organizeMenuWithSubcategories(categories, subcategories, menuItems, var
         description: cat.description || '',
         image: cat.image || null,
         order: cat.order || 0,
+        viewType: cat.viewType || 'list',  // 'list' (default) or 'carousel'
+        defaultExpanded: cat.defaultExpanded !== false,  // Default true if not specified
         subcategories: categorySubcategories
       };
     });

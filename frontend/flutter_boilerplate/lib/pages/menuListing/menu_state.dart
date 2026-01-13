@@ -61,6 +61,25 @@ class MenuState extends ChangeNotifier {
     notifyListeners();
   }
   
+  /// Initialize collapsed state from backend defaultExpanded field.
+  /// Categories with defaultExpanded: false will have all their subcategories pre-collapsed.
+  void _initializeCollapsedStateFromBackend() {
+    if (_menuData == null) return;
+    
+    // Clear any previous collapsed state
+    _collapsedSubcategoryIds.clear();
+    
+    for (final category in _menuData!.categories) {
+      if (!category.defaultExpanded) {
+        // Pre-collapse all subcategories of this category
+        for (final subcat in category.subcategories) {
+          _collapsedSubcategoryIds.add(subcat.id);
+        }
+        AppLogger.log('📂 MENU: Pre-collapsed ${category.subcategories.length} subcategories for ${category.name} (defaultExpanded: false)');
+      }
+    }
+  }
+  
   // ==================== Floating Menu State ====================
   
   /// Whether the floating menu overlay is expanded
@@ -432,6 +451,9 @@ class MenuState extends ChangeNotifier {
       // Set initial active category to first category
       if (_menuData != null && _menuData!.categories.isNotEmpty) {
         _activeCategoryId = _menuData!.categories.first.id;
+        
+        // Initialize collapsed state from backend defaultExpanded field
+        _initializeCollapsedStateFromBackend();
       }
       
       // Fetch the cart after menu is loaded (but don't wait for UI update yet)

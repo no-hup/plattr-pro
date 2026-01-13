@@ -191,6 +191,8 @@ class Category with _$Category {
     required int order,
     String? image,
     @Default([]) List<Subcategory> subcategories, // 🆕 NEW - nested subcategories
+    @Default('list') String viewType, // 'list' (default) or 'carousel' for horizontal display
+    @Default(true) bool defaultExpanded, // Backend-controlled: if false, subcategories start collapsed
   }) = _Category;
 
   factory Category.fromJson(Map<String, dynamic> json) =>
