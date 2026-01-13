@@ -16,32 +16,32 @@ console.log('Mock data loaded successfully');
 // Helper function to transform data before saving
 function transformData(data) {
   if (!data || typeof data !== 'object') return data;
-  
+
   // Create a copy to avoid modifying the original
-  const result = Array.isArray(data) ? [...data] : {...data};
-  
+  const result = Array.isArray(data) ? [...data] : { ...data };
+
   // Process each property
   for (const key in result) {
     const value = result[key];
-    
+
     // Handle location objects with _latitude and _longitude
     if (key === 'location' && value && value._latitude !== undefined && value._longitude !== undefined) {
       result[key] = new admin.firestore.GeoPoint(value._latitude, value._longitude);
       continue;
     }
-    
+
     // Handle timestamps
     if (value && value._seconds !== undefined && value._nanoseconds !== undefined) {
       result[key] = new admin.firestore.Timestamp(value._seconds, value._nanoseconds);
       continue;
     }
-    
+
     // Recursively process nested objects and arrays
     if (value && typeof value === 'object') {
       result[key] = transformData(value);
     }
   }
-  
+
   return result;
 }
 
@@ -50,7 +50,7 @@ async function importData() {
     // Import restaurants
     for (const [restaurantId, restaurantData] of Object.entries(mockData.restaurants)) {
       console.log(`Importing restaurant: ${restaurantId}`);
-      
+
       try {
         // Transform the data to handle special Firestore data types
         const transformedInfo = transformData(restaurantData.info);
@@ -63,24 +63,24 @@ async function importData() {
           }
           return value;
         }));
-        
+
         // Create restaurants collection if it doesn't exist
         console.log('Creating restaurant document reference...');
         const restaurantRef = db.collection('restaurants').doc(restaurantId);
-        
+
         console.log('Setting restaurant data...');
         await restaurantRef.set(transformedInfo, { merge: true });
         console.log(`Restaurant ${restaurantId} info imported successfully`);
 
         // Import sub-collections (menus and subcategories added for multi-menu hierarchy)
         const subCollections = ['menus', 'subcategories', 'menuItems', 'categories', 'variants', 'tables', 'servers', 'orders', 'addons', 'kitchens', 'sessions', 'carts'];
-        
+
         for (const subCollection of subCollections) {
           if (restaurantData[subCollection]) {
             console.log(`Processing ${subCollection} for restaurant ${restaurantId}...`);
             // Create sub-collection reference
             const subCollectionRef = restaurantRef.collection(subCollection);
-            
+
             // Handle different data structures (objects vs arrays)
             if (Array.isArray(restaurantData[subCollection])) {
               // For array-based collections like carts and orders

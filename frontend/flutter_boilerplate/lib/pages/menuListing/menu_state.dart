@@ -28,6 +28,57 @@ class MenuState extends ChangeNotifier {
   bool _isUpdatingCart = false;
   bool get isUpdatingCart => _isUpdatingCart;
 
+  // ==================== Navigation State ====================
+  
+  /// The currently active category ID (for scroll sync)
+  String? _activeCategoryId;
+  String? get activeCategoryId => _activeCategoryId;
+  
+  void setActiveCategory(String id) {
+    if (_activeCategoryId != id) {
+      _activeCategoryId = id;
+      notifyListeners();
+    }
+  }
+  
+  // ==================== Collapse State ====================
+  
+  /// Set of COLLAPSED subcategory IDs (expanded by default for better UX)
+  /// Tracks which subcategories the user has manually collapsed.
+  final Set<String> _collapsedSubcategoryIds = {};
+  
+  bool isSubcategoryExpanded(String id) {
+    // Default is expanded (true), only collapsed if explicitly in the set
+    return !_collapsedSubcategoryIds.contains(id);
+  }
+  
+  void toggleSubcategory(String id) {
+    if (_collapsedSubcategoryIds.contains(id)) {
+      _collapsedSubcategoryIds.remove(id); // Expand
+    } else {
+      _collapsedSubcategoryIds.add(id); // Collapse
+    }
+    notifyListeners();
+  }
+  
+  // ==================== Floating Menu State ====================
+  
+  /// Whether the floating menu overlay is expanded
+  bool _isFloatingMenuExpanded = false;
+  bool get isFloatingMenuExpanded => _isFloatingMenuExpanded;
+  
+  void toggleFloatingMenu() {
+    _isFloatingMenuExpanded = !_isFloatingMenuExpanded;
+    notifyListeners();
+  }
+  
+  void closeFloatingMenu() {
+    if (_isFloatingMenuExpanded) {
+      _isFloatingMenuExpanded = false;
+      notifyListeners();
+    }
+  }
+
   // Helper method to convert legacy Map<String, String> to List<VariantSelection>
   List<VariantSelection> _convertToVariantSelections(Map<String, String>? variants) {
     if (variants == null || variants.isEmpty) return [];
@@ -377,6 +428,11 @@ class MenuState extends ChangeNotifier {
 
       // Store menu data
       _menuData = response.data;
+      
+      // Set initial active category to first category
+      if (_menuData != null && _menuData!.categories.isNotEmpty) {
+        _activeCategoryId = _menuData!.categories.first.id;
+      }
       
       // Fetch the cart after menu is loaded (but don't wait for UI update yet)
       AppLogger.log('📝 MENU: Menu loaded, now fetching cart');
