@@ -155,8 +155,6 @@ mixin _$TableContextData {
   String? get otp => throw _privateConstructorUsedError;
   bool get showOtp => throw _privateConstructorUsedError;
   bool get showImages => throw _privateConstructorUsedError;
-  bool get areSubcategoriesExpandedByDefault =>
-      throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -175,8 +173,7 @@ abstract class $TableContextDataCopyWith<$Res> {
       String? tableNumber,
       String? otp,
       bool showOtp,
-      bool showImages,
-      bool areSubcategoriesExpandedByDefault});
+      bool showImages});
 }
 
 /// @nodoc
@@ -197,7 +194,6 @@ class _$TableContextDataCopyWithImpl<$Res, $Val extends TableContextData>
     Object? otp = freezed,
     Object? showOtp = null,
     Object? showImages = null,
-    Object? areSubcategoriesExpandedByDefault = null,
   }) {
     return _then(_value.copyWith(
       restaurantName: null == restaurantName
@@ -220,11 +216,6 @@ class _$TableContextDataCopyWithImpl<$Res, $Val extends TableContextData>
           ? _value.showImages
           : showImages // ignore: cast_nullable_to_non_nullable
               as bool,
-      areSubcategoriesExpandedByDefault: null ==
-              areSubcategoriesExpandedByDefault
-          ? _value.areSubcategoriesExpandedByDefault
-          : areSubcategoriesExpandedByDefault // ignore: cast_nullable_to_non_nullable
-              as bool,
     ) as $Val);
   }
 }
@@ -242,8 +233,7 @@ abstract class _$$TableContextDataImplCopyWith<$Res>
       String? tableNumber,
       String? otp,
       bool showOtp,
-      bool showImages,
-      bool areSubcategoriesExpandedByDefault});
+      bool showImages});
 }
 
 /// @nodoc
@@ -262,7 +252,6 @@ class __$$TableContextDataImplCopyWithImpl<$Res>
     Object? otp = freezed,
     Object? showOtp = null,
     Object? showImages = null,
-    Object? areSubcategoriesExpandedByDefault = null,
   }) {
     return _then(_$TableContextDataImpl(
       restaurantName: null == restaurantName
@@ -285,11 +274,6 @@ class __$$TableContextDataImplCopyWithImpl<$Res>
           ? _value.showImages
           : showImages // ignore: cast_nullable_to_non_nullable
               as bool,
-      areSubcategoriesExpandedByDefault: null ==
-              areSubcategoriesExpandedByDefault
-          ? _value.areSubcategoriesExpandedByDefault
-          : areSubcategoriesExpandedByDefault // ignore: cast_nullable_to_non_nullable
-              as bool,
     ));
   }
 }
@@ -302,8 +286,7 @@ class _$TableContextDataImpl implements _TableContextData {
       this.tableNumber,
       this.otp,
       this.showOtp = false,
-      this.showImages = false,
-      this.areSubcategoriesExpandedByDefault = false});
+      this.showImages = false});
 
   factory _$TableContextDataImpl.fromJson(Map<String, dynamic> json) =>
       _$$TableContextDataImplFromJson(json);
@@ -320,13 +303,10 @@ class _$TableContextDataImpl implements _TableContextData {
   @override
   @JsonKey()
   final bool showImages;
-  @override
-  @JsonKey()
-  final bool areSubcategoriesExpandedByDefault;
 
   @override
   String toString() {
-    return 'TableContextData(restaurantName: $restaurantName, tableNumber: $tableNumber, otp: $otp, showOtp: $showOtp, showImages: $showImages, areSubcategoriesExpandedByDefault: $areSubcategoriesExpandedByDefault)';
+    return 'TableContextData(restaurantName: $restaurantName, tableNumber: $tableNumber, otp: $otp, showOtp: $showOtp, showImages: $showImages)';
   }
 
   @override
@@ -341,17 +321,13 @@ class _$TableContextDataImpl implements _TableContextData {
             (identical(other.otp, otp) || other.otp == otp) &&
             (identical(other.showOtp, showOtp) || other.showOtp == showOtp) &&
             (identical(other.showImages, showImages) ||
-                other.showImages == showImages) &&
-            (identical(other.areSubcategoriesExpandedByDefault,
-                    areSubcategoriesExpandedByDefault) ||
-                other.areSubcategoriesExpandedByDefault ==
-                    areSubcategoriesExpandedByDefault));
+                other.showImages == showImages));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, restaurantName, tableNumber, otp,
-      showOtp, showImages, areSubcategoriesExpandedByDefault);
+  int get hashCode => Object.hash(
+      runtimeType, restaurantName, tableNumber, otp, showOtp, showImages);
 
   @JsonKey(ignore: true)
   @override
@@ -374,8 +350,7 @@ abstract class _TableContextData implements TableContextData {
       final String? tableNumber,
       final String? otp,
       final bool showOtp,
-      final bool showImages,
-      final bool areSubcategoriesExpandedByDefault}) = _$TableContextDataImpl;
+      final bool showImages}) = _$TableContextDataImpl;
 
   factory _TableContextData.fromJson(Map<String, dynamic> json) =
       _$TableContextDataImpl.fromJson;
@@ -390,8 +365,6 @@ abstract class _TableContextData implements TableContextData {
   bool get showOtp;
   @override
   bool get showImages;
-  @override
-  bool get areSubcategoriesExpandedByDefault;
   @override
   @JsonKey(ignore: true)
   _$$TableContextDataImplCopyWith<_$TableContextDataImpl> get copyWith =>
@@ -1326,9 +1299,11 @@ mixin _$Category {
   String get description => throw _privateConstructorUsedError;
   int get order => throw _privateConstructorUsedError;
   String? get image => throw _privateConstructorUsedError;
+  List<Subcategory> get subcategories =>
+      throw _privateConstructorUsedError; // 🆕 NEW - nested subcategories
   String get viewType =>
-      throw _privateConstructorUsedError; // 🆕 NEW - 'list' or 'carousel'
-  List<Subcategory> get subcategories => throw _privateConstructorUsedError;
+      throw _privateConstructorUsedError; // 'list' (default) or 'carousel' for horizontal display
+  bool get defaultExpanded => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -1347,8 +1322,9 @@ abstract class $CategoryCopyWith<$Res> {
       String description,
       int order,
       String? image,
+      List<Subcategory> subcategories,
       String viewType,
-      List<Subcategory> subcategories});
+      bool defaultExpanded});
 }
 
 /// @nodoc
@@ -1369,8 +1345,9 @@ class _$CategoryCopyWithImpl<$Res, $Val extends Category>
     Object? description = null,
     Object? order = null,
     Object? image = freezed,
-    Object? viewType = null,
     Object? subcategories = null,
+    Object? viewType = null,
+    Object? defaultExpanded = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -1393,14 +1370,18 @@ class _$CategoryCopyWithImpl<$Res, $Val extends Category>
           ? _value.image
           : image // ignore: cast_nullable_to_non_nullable
               as String?,
-      viewType: null == viewType
-          ? _value.viewType
-          : viewType // ignore: cast_nullable_to_non_nullable
-              as String,
       subcategories: null == subcategories
           ? _value.subcategories
           : subcategories // ignore: cast_nullable_to_non_nullable
               as List<Subcategory>,
+      viewType: null == viewType
+          ? _value.viewType
+          : viewType // ignore: cast_nullable_to_non_nullable
+              as String,
+      defaultExpanded: null == defaultExpanded
+          ? _value.defaultExpanded
+          : defaultExpanded // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -1419,8 +1400,9 @@ abstract class _$$CategoryImplCopyWith<$Res>
       String description,
       int order,
       String? image,
+      List<Subcategory> subcategories,
       String viewType,
-      List<Subcategory> subcategories});
+      bool defaultExpanded});
 }
 
 /// @nodoc
@@ -1439,8 +1421,9 @@ class __$$CategoryImplCopyWithImpl<$Res>
     Object? description = null,
     Object? order = null,
     Object? image = freezed,
-    Object? viewType = null,
     Object? subcategories = null,
+    Object? viewType = null,
+    Object? defaultExpanded = null,
   }) {
     return _then(_$CategoryImpl(
       id: null == id
@@ -1463,14 +1446,18 @@ class __$$CategoryImplCopyWithImpl<$Res>
           ? _value.image
           : image // ignore: cast_nullable_to_non_nullable
               as String?,
-      viewType: null == viewType
-          ? _value.viewType
-          : viewType // ignore: cast_nullable_to_non_nullable
-              as String,
       subcategories: null == subcategories
           ? _value._subcategories
           : subcategories // ignore: cast_nullable_to_non_nullable
               as List<Subcategory>,
+      viewType: null == viewType
+          ? _value.viewType
+          : viewType // ignore: cast_nullable_to_non_nullable
+              as String,
+      defaultExpanded: null == defaultExpanded
+          ? _value.defaultExpanded
+          : defaultExpanded // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -1484,8 +1471,9 @@ class _$CategoryImpl implements _Category {
       required this.description,
       required this.order,
       this.image,
+      final List<Subcategory> subcategories = const [],
       this.viewType = 'list',
-      final List<Subcategory> subcategories = const []})
+      this.defaultExpanded = true})
       : _subcategories = subcategories;
 
   factory _$CategoryImpl.fromJson(Map<String, dynamic> json) =>
@@ -1501,12 +1489,7 @@ class _$CategoryImpl implements _Category {
   final int order;
   @override
   final String? image;
-  @override
-  @JsonKey()
-  final String viewType;
-// 🆕 NEW - 'list' or 'carousel'
   final List<Subcategory> _subcategories;
-// 🆕 NEW - 'list' or 'carousel'
   @override
   @JsonKey()
   List<Subcategory> get subcategories {
@@ -1515,9 +1498,18 @@ class _$CategoryImpl implements _Category {
     return EqualUnmodifiableListView(_subcategories);
   }
 
+// 🆕 NEW - nested subcategories
+  @override
+  @JsonKey()
+  final String viewType;
+// 'list' (default) or 'carousel' for horizontal display
+  @override
+  @JsonKey()
+  final bool defaultExpanded;
+
   @override
   String toString() {
-    return 'Category(id: $id, name: $name, description: $description, order: $order, image: $image, viewType: $viewType, subcategories: $subcategories)';
+    return 'Category(id: $id, name: $name, description: $description, order: $order, image: $image, subcategories: $subcategories, viewType: $viewType, defaultExpanded: $defaultExpanded)';
   }
 
   @override
@@ -1531,16 +1523,26 @@ class _$CategoryImpl implements _Category {
                 other.description == description) &&
             (identical(other.order, order) || other.order == order) &&
             (identical(other.image, image) || other.image == image) &&
+            const DeepCollectionEquality()
+                .equals(other._subcategories, _subcategories) &&
             (identical(other.viewType, viewType) ||
                 other.viewType == viewType) &&
-            const DeepCollectionEquality()
-                .equals(other._subcategories, _subcategories));
+            (identical(other.defaultExpanded, defaultExpanded) ||
+                other.defaultExpanded == defaultExpanded));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, id, name, description, order,
-      image, viewType, const DeepCollectionEquality().hash(_subcategories));
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      name,
+      description,
+      order,
+      image,
+      const DeepCollectionEquality().hash(_subcategories),
+      viewType,
+      defaultExpanded);
 
   @JsonKey(ignore: true)
   @override
@@ -1563,8 +1565,9 @@ abstract class _Category implements Category {
       required final String description,
       required final int order,
       final String? image,
+      final List<Subcategory> subcategories,
       final String viewType,
-      final List<Subcategory> subcategories}) = _$CategoryImpl;
+      final bool defaultExpanded}) = _$CategoryImpl;
 
   factory _Category.fromJson(Map<String, dynamic> json) =
       _$CategoryImpl.fromJson;
@@ -1580,9 +1583,11 @@ abstract class _Category implements Category {
   @override
   String? get image;
   @override
-  String get viewType;
-  @override // 🆕 NEW - 'list' or 'carousel'
   List<Subcategory> get subcategories;
+  @override // 🆕 NEW - nested subcategories
+  String get viewType;
+  @override // 'list' (default) or 'carousel' for horizontal display
+  bool get defaultExpanded;
   @override
   @JsonKey(ignore: true)
   _$$CategoryImplCopyWith<_$CategoryImpl> get copyWith =>

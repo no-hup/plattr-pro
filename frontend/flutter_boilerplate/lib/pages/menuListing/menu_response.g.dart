@@ -14,8 +14,6 @@ _$TableContextDataImpl _$$TableContextDataImplFromJson(
       otp: json['otp'] as String?,
       showOtp: json['showOtp'] as bool? ?? false,
       showImages: json['showImages'] as bool? ?? false,
-      areSubcategoriesExpandedByDefault:
-          json['areSubcategoriesExpandedByDefault'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$TableContextDataImplToJson(
@@ -26,8 +24,6 @@ Map<String, dynamic> _$$TableContextDataImplToJson(
       'otp': instance.otp,
       'showOtp': instance.showOtp,
       'showImages': instance.showImages,
-      'areSubcategoriesExpandedByDefault':
-          instance.areSubcategoriesExpandedByDefault,
     };
 
 _$ActiveMenuImpl _$$ActiveMenuImplFromJson(Map<String, dynamic> json) =>
@@ -87,11 +83,12 @@ _$CategoryImpl _$$CategoryImplFromJson(Map<String, dynamic> json) =>
       description: json['description'] as String,
       order: (json['order'] as num).toInt(),
       image: json['image'] as String?,
-      viewType: json['viewType'] as String? ?? 'list',
       subcategories: (json['subcategories'] as List<dynamic>?)
               ?.map((e) => Subcategory.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
+      viewType: json['viewType'] as String? ?? 'list',
+      defaultExpanded: json['defaultExpanded'] as bool? ?? true,
     );
 
 Map<String, dynamic> _$$CategoryImplToJson(_$CategoryImpl instance) =>
@@ -101,8 +98,9 @@ Map<String, dynamic> _$$CategoryImplToJson(_$CategoryImpl instance) =>
       'description': instance.description,
       'order': instance.order,
       'image': instance.image,
-      'viewType': instance.viewType,
       'subcategories': instance.subcategories,
+      'viewType': instance.viewType,
+      'defaultExpanded': instance.defaultExpanded,
     };
 
 _$MenuItemImpl _$$MenuItemImplFromJson(Map<String, dynamic> json) =>

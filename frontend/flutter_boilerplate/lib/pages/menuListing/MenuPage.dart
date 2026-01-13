@@ -143,14 +143,22 @@ class _MenuPageContentState extends State<MenuPageContent> {
   }
 
   /// Method to scroll to a specific category by index
+  /// Uses different alignment for last category to prevent glitch when content is shorter than viewport
   void scrollToCategory(int index) {
-    if (_itemScrollController.isAttached) {
-      _itemScrollController.scrollTo(
-        index: index,
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
-      );
-    }
+    if (!_itemScrollController.isAttached) return;
+    
+    final menuState = context.read<MenuState>();
+    final categories = menuState.menuData?.categories ?? [];
+    final isLastCategory = index == categories.length - 1;
+    
+    _itemScrollController.scrollTo(
+      index: index,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+      // For last category, use a lower alignment to prevent bounce/glitch
+      // when the category + items height is less than viewport
+      alignment: isLastCategory ? 0.2 : 0.0,
+    );
   }
 
   /// Method to scroll to a category by ID

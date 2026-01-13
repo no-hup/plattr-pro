@@ -1,266 +1,214 @@
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'design_system/app_colors.dart';
+import 'design_system/app_dimensions.dart';
+import 'design_system/app_typography.dart';
 
-import 'app_sizing.dart';
-import 'app_spacing.dart';
-import 'app_typography.dart';
-
-/// App-wide theme configuration
-/// Uses mobile-optimized typography from AppTypography
+/// App-wide theme configuration using the Lumière Design System
 class AppTheme {
   // Prevent instantiation
   AppTheme._();
 
-  // Brand colors
-  static const Color _primaryColor = Colors.cyan;
-  static const Color _primaryColorDark = Colors.cyan;
-  static const Color _secondaryColor = Colors.cyanAccent;
-
-  /// Light Theme - Mobile optimized
+  /// Light Theme - Lumière
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
-    primaryColor: _primaryColor,
-    canvasColor: Colors.white,
-    scaffoldBackgroundColor: Colors.white,
+    
+    // Colors
+    primaryColor: AppColors.primary,
+    canvasColor: AppColors.paper,
+    scaffoldBackgroundColor: AppColors.paper,
+    cardColor: AppColors.paper,
+    dividerColor: AppColors.divider,
+    
     colorScheme: const ColorScheme.light(
-      primary: _primaryColor,
-      secondary: _secondaryColor,
+      primary: AppColors.primary,
+      onPrimary: Colors.white,
+      secondary: AppColors.ink,
+      onSecondary: Colors.white,
+      surface: AppColors.paper,
+      onSurface: AppColors.ink,
+      error: AppColors.danger,
+      onError: Colors.white,
+      outline: AppColors.divider,
     ),
 
-    // Mobile-optimized typography (reduced from desktop sizes)
-    textTheme: AppTypography.mobileTextTheme.apply(
-      bodyColor: Colors.black,
-      displayColor: Colors.black,
+    // Typography
+    textTheme: TextTheme(
+      // Display
+      displayLarge: AppTypography.h1,
+      displayMedium: AppTypography.h1.copyWith(fontSize: 20),
+      displaySmall: AppTypography.h1.copyWith(fontSize: 18),
+      
+      // Headlines
+      headlineLarge: AppTypography.h2,
+      headlineMedium: AppTypography.h3,
+      headlineSmall: AppTypography.h3.copyWith(fontSize: 16),
+      
+      // Titles (Used for Cards, Lists)
+      titleLarge: AppTypography.headerSerif.copyWith(fontSize: 18), 
+      titleMedium: AppTypography.uiSans.copyWith(fontSize: 16, fontWeight: FontWeight.w600),
+      titleSmall: AppTypography.uiSans.copyWith(fontSize: 14, fontWeight: FontWeight.w600),
+      
+      // Body
+      bodyLarge: AppTypography.body, 
+      bodyMedium: AppTypography.body.copyWith(fontSize: 13),
+      bodySmall: AppTypography.meta, // for metadata
+      
+      // Labels (Buttons)
+      labelLarge: AppTypography.label,
+      labelMedium: AppTypography.label.copyWith(fontSize: 11),
+      labelSmall: AppTypography.label.copyWith(fontSize: 10),
     ),
 
-    // Button theme with mobile-friendly sizing
+    // AppBar
+    appBarTheme: AppBarTheme(
+      backgroundColor: AppColors.paper.withOpacity(0.95),
+      foregroundColor: AppColors.ink,
+      elevation: 0,
+      centerTitle: false,
+      scrolledUnderElevation: 0,
+      systemOverlayStyle: SystemUiOverlayStyle.dark,
+      titleTextStyle: AppTypography.h1.copyWith(fontSize: 20),
+      iconTheme: const IconThemeData(
+        color: AppColors.ink,
+        size: 24,
+      ),
+      shape: const Border(bottom: BorderSide(color: AppColors.divider)),
+    ),
+
+    // Buttons
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         foregroundColor: Colors.white,
-        backgroundColor: _primaryColor,
+        backgroundColor: AppColors.primary,
+        elevation: 0,
         shape: const RoundedRectangleBorder(
-          borderRadius: AppSizing.borderRadiusSM,
+          borderRadius: BorderRadius.all(Radius.circular(AppDimensions.radiusSM)),
         ),
-        padding: AppSpacing.buttonPadding,
-        minimumSize: const Size(88, AppSizing.buttonHeightMD),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.space16, 
+          vertical: AppDimensions.space12
+        ),
+        textStyle: AppTypography.label,
       ),
     ),
-
-    // Text button theme
-    textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        foregroundColor: _primaryColor,
-        padding: AppSpacing.buttonPadding,
-        minimumSize: const Size(64, AppSizing.buttonHeightMD),
-      ),
-    ),
-
-    // Outlined button theme
+    
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: _primaryColor,
-        side: const BorderSide(color: _primaryColor),
+        foregroundColor: AppColors.primary,
+        side: const BorderSide(color: AppColors.divider),
         shape: const RoundedRectangleBorder(
-          borderRadius: AppSizing.borderRadiusSM,
+          borderRadius: BorderRadius.all(Radius.circular(AppDimensions.radiusPill)),
         ),
-        padding: AppSpacing.buttonPadding,
-        minimumSize: const Size(88, AppSizing.buttonHeightMD),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.space20, 
+          vertical: AppDimensions.space8 // compact
+        ),
+        textStyle: AppTypography.label,
       ),
     ),
 
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.primary,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.space12, 
+          vertical: AppDimensions.space8
+        ),
+        textStyle: AppTypography.label,
+      ),
+    ),
+    
+    // Floating Action Button
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: _primaryColor,
+      backgroundColor: AppColors.primary,
       foregroundColor: Colors.white,
+      elevation: 4,
     ),
 
-    // AppBar with mobile-optimized title size
-    appBarTheme: AppBarTheme(
-      backgroundColor: _primaryColor,
-      elevation: 0,
-      centerTitle: true,
-      titleTextStyle: AppTypography.mobileTextTheme.titleLarge?.copyWith(
-        color: Colors.white,
-        fontWeight: FontWeight.w600,
-      ),
-      iconTheme: const IconThemeData(
-        color: Colors.white,
-        size: AppSizing.iconMD,
-      ),
-    ),
-
-    // Input decoration with proper sizing
-    inputDecorationTheme: const InputDecorationTheme(
+    // Input Decoration
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: AppColors.paperAlt,
       border: OutlineInputBorder(
-        borderRadius: AppSizing.borderRadiusSM,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
+        borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: AppSizing.borderRadiusSM,
-        borderSide: BorderSide(color: _primaryColor, width: 2),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1),
       ),
-      contentPadding: AppSpacing.inputPadding,
-      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.space16, 
+        vertical: AppDimensions.space12
+      ),
+      hintStyle: AppTypography.uiSans.copyWith(color: AppColors.inkLighter),
     ),
 
-    // Card theme
+    // Card
     cardTheme: const CardThemeData(
-      elevation: 2,
+      color: AppColors.paper,
+      elevation: 0, // Using custom shadows usually, but default to flat
       shape: RoundedRectangleBorder(
-        borderRadius: AppSizing.borderRadiusMD,
+        side: BorderSide(color: AppColors.divider),
+        borderRadius: BorderRadius.all(Radius.circular(AppDimensions.radiusSM)),
       ),
       margin: EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+        horizontal: AppDimensions.space16, 
+        vertical: AppDimensions.space8
       ),
     ),
 
-    // Bottom sheet theme
+    // Bottom Sheet
     bottomSheetTheme: const BottomSheetThemeData(
+      backgroundColor: AppColors.paper,
+      modalBackgroundColor: AppColors.paper,
       shape: RoundedRectangleBorder(
-        borderRadius: AppSizing.bottomSheetRadius,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusLG)),
       ),
     ),
 
-    // Chip theme
-    chipTheme: const ChipThemeData(
-      shape: RoundedRectangleBorder(
-        borderRadius: AppSizing.borderRadiusFull,
-      ),
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+    // Chip
+    chipTheme: ChipThemeData(
+      backgroundColor: AppColors.paper,
+      disabledColor: AppColors.paperAlt,
+      selectedColor: AppColors.primary,
+      secondarySelectedColor: AppColors.primary,
+      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space12, vertical: AppDimensions.space8),
+      labelStyle: AppTypography.uiSans.copyWith(fontSize: 12),
+      secondaryLabelStyle: AppTypography.uiSans.copyWith(fontSize: 12, color: Colors.white),
+      brightness: Brightness.light,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(AppDimensions.radiusPill)),
+        side: BorderSide(color: AppColors.divider),
       ),
     ),
 
-    // Divider theme
+    // Divider
     dividerTheme: const DividerThemeData(
       thickness: 1,
-      space: AppSpacing.lg,
+      space: 1,
+      color: AppColors.divider,
     ),
   );
 
-  /// Dark Theme - Mobile optimized
+  /// Dark Theme - Not strictly defined in Lumière specs yet, falling back to a dark interpretation
   static ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    primaryColor: _primaryColorDark,
-    scaffoldBackgroundColor: Colors.black,
+    primaryColor: AppColors.primary, // Keep primary
+    scaffoldBackgroundColor: const Color(0xFF121212),
+    cardColor: const Color(0xFF1E1E1E),
     colorScheme: const ColorScheme.dark(
-      primary: _primaryColorDark,
-      secondary: _secondaryColor,
-      onPrimary: Colors.white,
+      primary: AppColors.primary,
+      secondary: AppColors.primaryLight,
     ),
-
-    // Mobile-optimized typography (reduced from desktop sizes)
-    textTheme: AppTypography.mobileTextTheme.apply(
+    // Reusing tokens where applicable, but this might need a dedicated dark palette later
+    textTheme: lightTheme.textTheme.apply(
       bodyColor: Colors.white,
       displayColor: Colors.white,
-    ),
-
-    // Button theme with mobile-friendly sizing
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        foregroundColor: Colors.white,
-        backgroundColor: _primaryColorDark,
-        shape: const RoundedRectangleBorder(
-          borderRadius: AppSizing.borderRadiusSM,
-        ),
-        padding: AppSpacing.buttonPadding,
-        minimumSize: const Size(88, AppSizing.buttonHeightMD),
-      ),
-    ),
-
-    // Text button theme
-    textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        foregroundColor: _primaryColorDark,
-        padding: AppSpacing.buttonPadding,
-        minimumSize: const Size(64, AppSizing.buttonHeightMD),
-      ),
-    ),
-
-    // Outlined button theme
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: _primaryColorDark,
-        side: const BorderSide(color: _primaryColorDark),
-        shape: const RoundedRectangleBorder(
-          borderRadius: AppSizing.borderRadiusSM,
-        ),
-        padding: AppSpacing.buttonPadding,
-        minimumSize: const Size(88, AppSizing.buttonHeightMD),
-      ),
-    ),
-
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: _primaryColorDark,
-      foregroundColor: Colors.white,
-    ),
-
-    // AppBar with mobile-optimized title size
-    appBarTheme: AppBarTheme(
-      backgroundColor: _primaryColorDark,
-      elevation: 0,
-      centerTitle: true,
-      titleTextStyle: AppTypography.mobileTextTheme.titleLarge?.copyWith(
-        color: Colors.white,
-        fontWeight: FontWeight.w600,
-      ),
-      iconTheme: const IconThemeData(
-        color: Colors.white,
-        size: AppSizing.iconMD,
-      ),
-    ),
-
-    // Input decoration with proper sizing
-    inputDecorationTheme: const InputDecorationTheme(
-      border: OutlineInputBorder(
-        borderRadius: AppSizing.borderRadiusSM,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: AppSizing.borderRadiusSM,
-        borderSide: BorderSide(color: _primaryColorDark, width: 2),
-      ),
-      contentPadding: AppSpacing.inputPadding,
-      isDense: true,
-    ),
-
-    // Card theme
-    cardTheme: const CardThemeData(
-      elevation: 2,
-      color: Color(0xFF1E1E1E),
-      shape: RoundedRectangleBorder(
-        borderRadius: AppSizing.borderRadiusMD,
-      ),
-      margin: EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-    ),
-
-    // Bottom sheet theme
-    bottomSheetTheme: const BottomSheetThemeData(
-      backgroundColor: Color(0xFF1E1E1E),
-      shape: RoundedRectangleBorder(
-        borderRadius: AppSizing.bottomSheetRadius,
-      ),
-    ),
-
-    // Chip theme
-    chipTheme: const ChipThemeData(
-      shape: RoundedRectangleBorder(
-        borderRadius: AppSizing.borderRadiusFull,
-      ),
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-    ),
-
-    // Divider theme
-    dividerTheme: const DividerThemeData(
-      thickness: 1,
-      space: AppSpacing.lg,
-      color: Color(0xFF2C2C2C),
     ),
   );
 }
