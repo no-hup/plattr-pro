@@ -117,7 +117,7 @@ git commit -m "<commit message>"
 
 ### Format
 ```
-<Short summary line describing the main change>
+<Short summary line describing the main change. important: if multiple features are there in the commit hten the first line should have the feature names separated by comma so that >
 
 • <Major change 1>
 • <Major change 2>
@@ -127,7 +127,7 @@ git commit -m "<commit message>"
 ```
 
 ### Rules
-1. **Maximum 5 bullet points** — Focus on the most significant changes
+1. **Maximum 5 bullet points** — Focus on the most significant changes. Just by looking at the first line of the commit dev should be able to know what all makor things are part of that commit.
 2. **Brief and clear** — Each bullet should be a concise description
 3. **Use action verbs** — Extract, Refactor, Add, Remove, Fix, Update, Simplify
 4. **Group related changes** — Combine similar changes into one bullet

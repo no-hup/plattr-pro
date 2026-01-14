@@ -24,6 +24,7 @@ class MenuCustomizationSheet extends StatefulWidget {
 class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
   late Map<String, String> _selectedVariants;
   late Set<String> _selectedAddons;
+  bool _imageLoadFailed = false;
   int _quantity = 1;
 
   @override
@@ -37,14 +38,14 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
   void _initializeDefaults() {
     for (final variant in widget.item.variants) {
       if (variant.options.isNotEmpty) {
-         // Default to first option -> Logic can be improved to check 'isMandatory'
-         _selectedVariants[variant.name] = variant.options.first.name;
+        // Default to first option -> Logic can be improved to check 'isMandatory'
+        _selectedVariants[variant.name] = variant.options.first.name;
       }
     }
   }
 
   double get _totalPrice {
-    double total = widget.item.priceInfo.finalPrice.toDouble();
+    var total = widget.item.priceInfo.finalPrice.toDouble();
 
     // Add variants cost
     for (final variant in widget.item.variants) {
@@ -87,33 +88,43 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header
-          _buildHeader(),
-
           // Scrollable Content
           Flexible(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppDimensions.space24),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                   // Description
-                   if (widget.item.meta.description.isNotEmpty) ...[
-                     Text(
-                       widget.item.meta.description,
-                       style: AppTypography.body.copyWith(
-                         color: AppColors.inkLight,
-                       ),
-                     ),
-                     const SizedBox(height: AppDimensions.space24),
-                   ],
-
-                   // Variants
-                   ...widget.item.variants.map(_buildVariantGroup),
-
-                   // Addons
-                   if (widget.item.addons.isNotEmpty)
-                     _buildAddonsSection(widget.item.addons),
+                  // Image & Header Section
+                  _buildStickyHeader(context),
+                  
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Description
+                        if (widget.item.meta.description.isNotEmpty) ...[
+                          const SizedBox(height: AppDimensions.space12),
+                          Text(
+                            widget.item.meta.description,
+                            style: AppTypography.body.copyWith(
+                              color: AppColors.inkLight,
+                            ),
+                          ),
+                          const SizedBox(height: AppDimensions.space24),
+                        ],
+          
+                        // Variants
+                        ...widget.item.variants.map(_buildVariantGroup),
+          
+                        // Addons
+                        if (widget.item.addons.isNotEmpty)
+                          _buildAddonsSection(widget.item.addons),
+                          
+                        const SizedBox(height: AppDimensions.space24),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -128,64 +139,140 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppDimensions.space24,
-        AppDimensions.space24,
-        AppDimensions.space24,
-        AppDimensions.space12,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.item.meta.name,
-                  style: AppTypography.h3,
-                ),
-                Text(
-                  'Customize your order',
-                  style: AppTypography.labelSmall.copyWith(
-                    color: AppColors.inkLight,
+  Widget _buildStickyHeader(BuildContext context) {
+    final hasImage = widget.item.meta.image != null &&
+        widget.item.meta.image!.isNotEmpty &&
+        !_imageLoadFailed;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Close button overlay for image
+        Stack(
+          children: [
+            if (hasImage) 
+              AspectRatio(
+                aspectRatio: 16/9,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(AppDimensions.radiusLG), // Same as bottom sheet
+                  ),
+                  child: Image.network(
+                    widget.item.meta.image!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted && !_imageLoadFailed) {
+                          setState(() {
+                            _imageLoadFailed = true;
+                          });
+                        }
+                      });
+                      return const SizedBox.shrink();
+                    },
                   ),
                 ),
-              ],
+              ),
+            
+            // If no image, we need a spacer for the close button or just normal padding
+            if (!hasImage) 
+              const SizedBox(height: AppDimensions.space24),
+
+            Positioned(
+              top: hasImage ? AppDimensions.space16 : 0,
+              right: hasImage ? AppDimensions.space16 : AppDimensions.space8,
+              child: IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close, color: AppColors.ink),
+                style: IconButton.styleFrom(
+                  backgroundColor: hasImage ? AppColors.paper : AppColors.paperAlt,
+                  highlightColor: Colors.transparent, 
+                ),
+              ),
             ),
+          ],
+        ),
+        
+        // Title Section
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppDimensions.space24, 
+            AppDimensions.space16, 
+            AppDimensions.space24, 
+            0,
           ),
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close, color: AppColors.ink),
-            style: IconButton.styleFrom(
-              backgroundColor: AppColors.paperAlt,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.item.meta.name,
+                style: AppTypography.h3,
+              ),
+              const SizedBox(height: AppDimensions.space4),
+              Text(
+                'Customize your order',
+                style: AppTypography.labelSmall.copyWith(
+                  color: AppColors.inkLight,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildVariantGroup(Variant variant) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppDimensions.space24),
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppDimensions.space24),
+      decoration: BoxDecoration(
+        color: AppColors.paperAlt,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+        border: Border.all(color: AppColors.divider),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(variant.name, style: AppTypography.labelLarge),
-          const SizedBox(height: AppDimensions.space12),
+          Padding(
+            padding: const EdgeInsets.all(AppDimensions.space16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    variant.name.toUpperCase(), 
+                    style: AppTypography.labelLarge.copyWith(letterSpacing: 0.5),
+                  ),
+                ),
+                if (variant.isMandatory)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.ink,
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+                    ),
+                    child: Text(
+                      'REQUIRED',
+                      style: AppTypography.labelSmall.copyWith(fontSize: 10, color: AppColors.paper),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: AppColors.divider),
           ...variant.options.map((option) {
-            // RadioGroup logic
+            final isSelected = _selectedVariants[variant.name] == option.name;
             return InkWell(
               onTap: () {
                 setState(() {
                   _selectedVariants[variant.name] = option.name;
                 });
               },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space16, 
+                  vertical: AppDimensions.space12,
+                ),
+                color: isSelected ? AppColors.primaryLight.withValues(alpha: 0.5) : null,
                 child: Row(
                   children: [
                     Radio<String>(
@@ -199,9 +286,16 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
                          }
                       },
                       activeColor: AppColors.primary,
+                      visualDensity: VisualDensity.compact,
                     ),
+                    const SizedBox(width: AppDimensions.space8),
                     Expanded(
-                      child: Text(option.name, style: AppTypography.body),
+                      child: Text(
+                        option.name, 
+                        style: isSelected 
+                            ? AppTypography.body.copyWith(fontWeight: FontWeight.w600) 
+                            : AppTypography.body,
+                      ),
                     ),
                     if (option.priceInfo.finalPrice > 0)
                       Text(
@@ -221,13 +315,23 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
   }
 
   Widget _buildAddonsSection(List<Addon> addons) {
-     return Padding(
-      padding: const EdgeInsets.only(bottom: AppDimensions.space24),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.paperAlt,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+        border: Border.all(color: AppColors.divider),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Add-ons', style: AppTypography.labelLarge),
-           const SizedBox(height: AppDimensions.space12),
+          Padding(
+            padding: const EdgeInsets.all(AppDimensions.space16),
+            child: Text(
+              'ADD-ONS', 
+              style: AppTypography.labelLarge.copyWith(letterSpacing: 0.5),
+            ),
+          ),
+          const Divider(height: 1, color: AppColors.divider),
           ...addons.map((addon) {
             final isSelected = _selectedAddons.contains(addon.meta.name);
             final price = addon.priceInfo.finalPrice;
@@ -242,15 +346,19 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
                   }
                 });
               },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space16, 
+                  vertical: AppDimensions.space12,
+                ),
+                color: isSelected ? AppColors.primaryLight.withValues(alpha: 0.5) : null,
                 child: Row(
                   children: [
                     Checkbox(
                       value: isSelected,
                       onChanged: (value) {
                         setState(() {
-                          if (value == true) {
+                          if (value ?? false) {
                             _selectedAddons.add(addon.meta.name);
                           } else {
                             _selectedAddons.remove(addon.meta.name);
@@ -261,9 +369,16 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(4),
                       ),
+                      visualDensity: VisualDensity.compact,
                     ),
+                    const SizedBox(width: AppDimensions.space8),
                     Expanded(
-                      child: Text(addon.meta.name, style: AppTypography.body),
+                      child: Text(
+                        addon.meta.name, 
+                        style: isSelected 
+                            ? AppTypography.body.copyWith(fontWeight: FontWeight.w600)
+                            : AppTypography.body,
+                      ),
                     ),
                     if (price > 0)
                       Text(

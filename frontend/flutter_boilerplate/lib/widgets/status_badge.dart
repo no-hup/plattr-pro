@@ -59,6 +59,27 @@ class StatusBadge extends StatelessWidget {
     );
   }
 
+  /// Creates a Non-Veg indicator (Minimal).
+  factory StatusBadge.nonVeg({Key? key}) {
+    return StatusBadge(
+      key: key,
+      label: 'Non-Veg', 
+      icon: Icons.circle,
+      iconSize: 12,
+      // Custom styling handled in build or here
+    );
+  }
+  
+  /// Creates a Spicy indicator (Minimal).
+  factory StatusBadge.spicy({Key? key, String level = 'HOT'}) {
+    return StatusBadge(
+      key: key,
+      label: level, 
+      icon: Icons.whatshot,
+      iconSize: 14,
+    );
+  }
+
   /// The text label for the badge.
   final String label;
 
@@ -81,6 +102,20 @@ class StatusBadge extends StatelessWidget {
     // Determine colors based on badge type or explicit values
     Color bgColor;
     Color fgColor;
+    
+    // Helper for specific hardcoded styles
+    if (label == 'Non-Veg') {
+       // Minimal style for Non-Veg
+       return Container(
+         padding: const EdgeInsets.all(4),
+         decoration: BoxDecoration(
+           color: AppColors.paper,
+           border: Border.all(color: AppColors.danger),
+           borderRadius: BorderRadius.circular(4),
+         ),
+         child: Icon(Icons.circle, size: 8, color: AppColors.danger),
+       );
+    } 
 
     if (backgroundColor != null && foregroundColor != null) {
       bgColor = backgroundColor!;
@@ -95,6 +130,10 @@ class StatusBadge extends StatelessWidget {
       // Discount badge
       bgColor = theme.colorScheme.tertiaryContainer.withOpacity(0.3);
       fgColor = theme.colorScheme.tertiary;
+    } else if (icon == Icons.whatshot) {
+       // Spicy badge
+       bgColor = Colors.orange.withOpacity(0.1);
+       fgColor = Colors.deepOrange;
     } else {
       // Default styling
       bgColor = theme.colorScheme.surfaceContainerHighest;
@@ -116,8 +155,11 @@ class StatusBadge extends StatelessWidget {
               size: iconSize,
               color: fgColor,
             ),
-            const SizedBox(width: AppSpacing.xs),
+            if (label.isNotEmpty && label != 'HOT' && label != 'MILD')...[ // Hide text for simple icons if desired
+               const SizedBox(width: AppSpacing.xs),
+            ]
           ],
+          if (label != 'HOT' && label != 'MILD') // Only show icon for spicy
           Text(
             label,
             style: theme.textTheme.bodySmall?.copyWith(

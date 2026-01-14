@@ -194,6 +194,22 @@ class _MenuItemDetails extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Metadata Row (Non-Veg/Spicy) above title
+        if (item.dietaryType == 'NON_VEG' || (item.spiceLevel != null && item.spiceLevel != 'MILD')) ...[
+          Row(
+            children: [
+                if (item.dietaryType != null && item.dietaryType == 'NON_VEG') ...[
+                    StatusBadge.nonVeg(),
+                    const SizedBox(width: 8),
+                ],
+                if (item.spiceLevel != null && item.spiceLevel != 'MILD') ...[
+                    StatusBadge.spicy(level: item.spiceLevel!),
+                    const SizedBox(width: 8),
+                ],
+            ],
+          ),
+          const SizedBox(height: 4),
+        ],
         Text(
           item.meta.name,
           style: AppTypography.h3,

@@ -133,6 +133,8 @@ _$MenuItemImpl _$$MenuItemImplFromJson(Map<String, dynamic> json) =>
               .toList() ??
           const [],
       quantity: (json['quantity'] as num?)?.toInt() ?? 0,
+      dietaryType: json['dietaryType'] as String?,
+      spiceLevel: json['spiceLevel'] as String?,
     );
 
 Map<String, dynamic> _$$MenuItemImplToJson(_$MenuItemImpl instance) =>
@@ -150,6 +152,8 @@ Map<String, dynamic> _$$MenuItemImplToJson(_$MenuItemImpl instance) =>
       'nutritionalInfo': instance.nutritionalInfo,
       'allergenTags': instance.allergenTags,
       'quantity': instance.quantity,
+      'dietaryType': instance.dietaryType,
+      'spiceLevel': instance.spiceLevel,
     };
 
 _$MenuItemMetaImpl _$$MenuItemMetaImplFromJson(Map<String, dynamic> json) =>

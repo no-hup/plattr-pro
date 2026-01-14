@@ -8,6 +8,7 @@ import 'package:flutterboilerplate/theme/design_system/app_colors.dart';
 import 'package:flutterboilerplate/theme/design_system/app_dimensions.dart';
 import 'package:flutterboilerplate/theme/app_typography.dart';
 import 'package:flutterboilerplate/widgets/price_display.dart';
+import 'package:flutterboilerplate/widgets/status_badge.dart';
 import 'package:provider/provider.dart';
 
 /// Horizontal carousel widget for special categories (Bestsellers, Recommended, etc.)
@@ -141,6 +142,8 @@ class _CarouselItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasImage = item.meta.image != null && item.meta.image!.isNotEmpty;
+    
     return Container(
       width: 180,
       decoration: BoxDecoration(
@@ -152,15 +155,15 @@ class _CarouselItemCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image section
+          // Image section (Conditional)
+          if (hasImage)
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusMD)),
             child: Container(
               height: 100,
               width: double.infinity,
               color: AppColors.paperAlt,
-              child: item.meta.image != null
-                  ? Image.network(
+              child: Image.network(
                       item.meta.image!,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
@@ -176,8 +179,7 @@ class _CarouselItemCard extends StatelessWidget {
                           ),
                         );
                       },
-                    )
-                  : _buildPlaceholder(),
+                    ),
             ),
           ),
           
@@ -188,6 +190,25 @@ class _CarouselItemCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Metadata Badges Row (Veg/Non-Veg, Spicy)
+                  if (!hasImage) ...[ // Add slight top padding if no image
+                     const SizedBox(height: 4),
+                  ],
+                  Row(
+                    children: [
+                       if (item.dietaryType != null && item.dietaryType == 'NON_VEG') ...[
+                         StatusBadge.nonVeg(),
+                         const SizedBox(width: 8),
+                       ],
+                       if (item.spiceLevel != null && item.spiceLevel != 'MILD') ...[
+                         StatusBadge.spicy(level: item.spiceLevel!),
+                         const SizedBox(width: 8),
+                       ],
+                    ],
+                  ),
+                  if (item.dietaryType == 'NON_VEG' || (item.spiceLevel != null && item.spiceLevel != 'MILD'))
+                    const SizedBox(height: 8),
+
                   Text(
                     item.meta.name,
                     style: AppTypography.h3.copyWith(fontSize: 16),
@@ -206,6 +227,7 @@ class _CarouselItemCard extends StatelessWidget {
                               ? item.priceInfo.basePrice.toDouble()
                               : null,
                           size: PriceDisplaySize.small,
+                          crossAxisAlignment: CrossAxisAlignment.start, // Left aligned price
                         ),
                       ),
                       _buildAddButton(context),

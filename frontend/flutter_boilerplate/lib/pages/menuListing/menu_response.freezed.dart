@@ -1614,6 +1614,8 @@ mixin _$MenuItem {
   NutritionalInfo? get nutritionalInfo => throw _privateConstructorUsedError;
   List<String> get allergenTags => throw _privateConstructorUsedError;
   int get quantity => throw _privateConstructorUsedError;
+  String? get dietaryType => throw _privateConstructorUsedError;
+  String? get spiceLevel => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -1639,7 +1641,9 @@ abstract class $MenuItemCopyWith<$Res> {
       List<Addon> addons,
       NutritionalInfo? nutritionalInfo,
       List<String> allergenTags,
-      int quantity});
+      int quantity,
+      String? dietaryType,
+      String? spiceLevel});
 
   $MenuItemMetaCopyWith<$Res> get meta;
   $PriceInfoCopyWith<$Res> get priceInfo;
@@ -1672,6 +1676,8 @@ class _$MenuItemCopyWithImpl<$Res, $Val extends MenuItem>
     Object? nutritionalInfo = freezed,
     Object? allergenTags = null,
     Object? quantity = null,
+    Object? dietaryType = freezed,
+    Object? spiceLevel = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -1726,6 +1732,14 @@ class _$MenuItemCopyWithImpl<$Res, $Val extends MenuItem>
           ? _value.quantity
           : quantity // ignore: cast_nullable_to_non_nullable
               as int,
+      dietaryType: freezed == dietaryType
+          ? _value.dietaryType
+          : dietaryType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      spiceLevel: freezed == spiceLevel
+          ? _value.spiceLevel
+          : spiceLevel // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 
@@ -1779,7 +1793,9 @@ abstract class _$$MenuItemImplCopyWith<$Res>
       List<Addon> addons,
       NutritionalInfo? nutritionalInfo,
       List<String> allergenTags,
-      int quantity});
+      int quantity,
+      String? dietaryType,
+      String? spiceLevel});
 
   @override
   $MenuItemMetaCopyWith<$Res> get meta;
@@ -1813,6 +1829,8 @@ class __$$MenuItemImplCopyWithImpl<$Res>
     Object? nutritionalInfo = freezed,
     Object? allergenTags = null,
     Object? quantity = null,
+    Object? dietaryType = freezed,
+    Object? spiceLevel = freezed,
   }) {
     return _then(_$MenuItemImpl(
       id: null == id
@@ -1867,6 +1885,14 @@ class __$$MenuItemImplCopyWithImpl<$Res>
           ? _value.quantity
           : quantity // ignore: cast_nullable_to_non_nullable
               as int,
+      dietaryType: freezed == dietaryType
+          ? _value.dietaryType
+          : dietaryType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      spiceLevel: freezed == spiceLevel
+          ? _value.spiceLevel
+          : spiceLevel // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -1887,7 +1913,9 @@ class _$MenuItemImpl implements _MenuItem {
       final List<Addon> addons = const [],
       this.nutritionalInfo,
       final List<String> allergenTags = const [],
-      this.quantity = 0})
+      this.quantity = 0,
+      this.dietaryType,
+      this.spiceLevel})
       : _subcategoryIds = subcategoryIds,
         _variants = variants,
         _addons = addons,
@@ -1952,10 +1980,14 @@ class _$MenuItemImpl implements _MenuItem {
   @override
   @JsonKey()
   final int quantity;
+  @override
+  final String? dietaryType;
+  @override
+  final String? spiceLevel;
 
   @override
   String toString() {
-    return 'MenuItem(id: $id, categoryId: $categoryId, meta: $meta, priceInfo: $priceInfo, isInStock: $isInStock, isCustomizable: $isCustomizable, primarySubcategoryId: $primarySubcategoryId, subcategoryIds: $subcategoryIds, variants: $variants, addons: $addons, nutritionalInfo: $nutritionalInfo, allergenTags: $allergenTags, quantity: $quantity)';
+    return 'MenuItem(id: $id, categoryId: $categoryId, meta: $meta, priceInfo: $priceInfo, isInStock: $isInStock, isCustomizable: $isCustomizable, primarySubcategoryId: $primarySubcategoryId, subcategoryIds: $subcategoryIds, variants: $variants, addons: $addons, nutritionalInfo: $nutritionalInfo, allergenTags: $allergenTags, quantity: $quantity, dietaryType: $dietaryType, spiceLevel: $spiceLevel)';
   }
 
   @override
@@ -1984,7 +2016,11 @@ class _$MenuItemImpl implements _MenuItem {
             const DeepCollectionEquality()
                 .equals(other._allergenTags, _allergenTags) &&
             (identical(other.quantity, quantity) ||
-                other.quantity == quantity));
+                other.quantity == quantity) &&
+            (identical(other.dietaryType, dietaryType) ||
+                other.dietaryType == dietaryType) &&
+            (identical(other.spiceLevel, spiceLevel) ||
+                other.spiceLevel == spiceLevel));
   }
 
   @JsonKey(ignore: true)
@@ -2003,7 +2039,9 @@ class _$MenuItemImpl implements _MenuItem {
       const DeepCollectionEquality().hash(_addons),
       nutritionalInfo,
       const DeepCollectionEquality().hash(_allergenTags),
-      quantity);
+      quantity,
+      dietaryType,
+      spiceLevel);
 
   @JsonKey(ignore: true)
   @override
@@ -2033,7 +2071,9 @@ abstract class _MenuItem implements MenuItem {
       final List<Addon> addons,
       final NutritionalInfo? nutritionalInfo,
       final List<String> allergenTags,
-      final int quantity}) = _$MenuItemImpl;
+      final int quantity,
+      final String? dietaryType,
+      final String? spiceLevel}) = _$MenuItemImpl;
 
   factory _MenuItem.fromJson(Map<String, dynamic> json) =
       _$MenuItemImpl.fromJson;
@@ -2065,6 +2105,10 @@ abstract class _MenuItem implements MenuItem {
   List<String> get allergenTags;
   @override
   int get quantity;
+  @override
+  String? get dietaryType;
+  @override
+  String? get spiceLevel;
   @override
   @JsonKey(ignore: true)
   _$$MenuItemImplCopyWith<_$MenuItemImpl> get copyWith =>

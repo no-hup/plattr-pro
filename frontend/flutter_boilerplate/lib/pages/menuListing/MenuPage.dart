@@ -231,16 +231,16 @@ class _MenuPageContentState extends State<MenuPageContent> {
                   //   tableId: widget.tableId,
                   //   restaurantId: widget.restaurantId,
                   // ),
-                  // Offers Carousel (Placeholder for Lumière)
-                  const Padding(
-                    padding: EdgeInsets.only(top: AppSpacing.sm),
-                    child: OffersCarousel(),
-                  ),
-                  // Category Tab Bar for navigation
+                  // 1. Categories on Top
                   CategoryTabBar(
-                    categories: menuData.categories,
+                    categories: menuState.categories,
                     activeCategoryId: menuState.activeCategoryId,
-                    onCategoryTap: scrollToCategoryById,
+                    onCategoryTap: (id) => scrollToCategoryById(id),
+                  ),
+                  // 2. Offers below Categories, with more top padding for separation
+                  const Padding(
+                    padding: EdgeInsets.only(top: AppSpacing.md),
+                    child: OffersCarousel(),
                   ),
                   Expanded(
                     child: ScrollablePositionedList.builder(
