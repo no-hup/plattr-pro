@@ -33,65 +33,106 @@ class QuantitySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final iconSize = compact ? 18.0 : 24.0;
-    final buttonSize = compact ? 32.0 : 40.0;
-
+    // Determine sizes based on compact mode
+    // Compact: 32px height, Regular: 40px height
+    final height = compact ? 32.0 : 40.0;
+    // Icon sizes
+    final iconSize = compact ? 16.0 : 20.0;
+    
+    // Interactive states
     final canDecrement = isEnabled && quantity > minQuantity;
     final canIncrement = isEnabled;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Decrement button
-        SizedBox(
-          width: buttonSize,
-          height: buttonSize,
-          child: IconButton(
-            icon: Icon(Icons.remove, size: iconSize),
-            onPressed: canDecrement ? onDecrement : null,
-            padding: EdgeInsets.zero,
-            style: IconButton.styleFrom(
-              backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              foregroundColor: theme.colorScheme.primary,
-              disabledBackgroundColor:
-                  theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
-              disabledForegroundColor:
-                  theme.colorScheme.onSurface.withOpacity(0.38),
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight, // Gray-100 equivalent
+        borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Decrement button (Gray circle)
+          _buildButton(
+            icon: Icons.remove,
+            size: height - 8,
+            iconSize: iconSize,
+            onTap: canDecrement ? onDecrement : null,
+            isPrimary: false,
+          ),
+
+          // Quantity Display
+          Container(
+            constraints: BoxConstraints(minWidth: compact ? 24 : 32),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            alignment: Alignment.center,
+            child: Text(
+              '$quantity',
+              style: compact 
+                  ? AppTypography.labelMedium 
+                  : AppTypography.labelLarge,
             ),
           ),
-        ),
 
-        // Quantity display
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: compact ? AppSpacing.sm : AppSpacing.md),
-          child: Text(
-            '$quantity',
-            style: compact
-                ? theme.textTheme.bodyLarge
-                : theme.textTheme.titleMedium,
+          // Increment button (Primary circle)
+          _buildButton(
+            icon: Icons.add,
+            size: height - 8,
+            iconSize: iconSize,
+            onTap: canIncrement ? onIncrement : null,
+            isPrimary: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildButton({
+    required IconData icon,
+    required double size,
+    required double iconSize,
+    required VoidCallback? onTap,
+    required bool isPrimary,
+  }) {
+    final bool isDisabled = onTap == null;
+    
+    // Primary: Filled Blue (Primary), White Icon
+    // Secondary: Transparent/White (Paper), Gray Icon (Ink)
+    final backgroundColor = isDisabled
+        ? (isPrimary ? AppColors.primary.withOpacity(0.5) : Colors.transparent)
+        : (isPrimary ? AppColors.primary : AppColors.paper);
+        
+    final iconColor = isDisabled
+        ? Colors.white.withOpacity(0.5)
+        : (isPrimary ? Colors.white : AppColors.ink);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            shape: BoxShape.circle,
+            boxShadow: isPrimary || !isDisabled ? null : [
+              // Subtle shadow for white buttons if needed, currently flat
+            ],
+            border: !isPrimary && !isDisabled 
+                ? Border.all(color: AppColors.divider, width: 1) 
+                : null,
+          ),
+          alignment: Alignment.center,
+          child: Icon(
+            icon,
+            size: iconSize,
+            color: iconColor,
           ),
         ),
-
-        // Increment button
-        SizedBox(
-          width: buttonSize,
-          height: buttonSize,
-          child: IconButton(
-            icon: Icon(Icons.add, size: iconSize),
-            onPressed: canIncrement ? onIncrement : null,
-            padding: EdgeInsets.zero,
-            style: IconButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
-              disabledBackgroundColor:
-                  theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
-              disabledForegroundColor:
-                  theme.colorScheme.onSurface.withOpacity(0.38),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

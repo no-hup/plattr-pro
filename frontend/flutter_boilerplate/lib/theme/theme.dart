@@ -7,3 +7,5 @@ export 'app_sizing.dart';
 export 'app_spacing.dart';
 export 'app_theme.dart';
 export 'app_typography.dart';
+export 'design_system/app_colors.dart';
+export 'design_system/app_dimensions.dart';

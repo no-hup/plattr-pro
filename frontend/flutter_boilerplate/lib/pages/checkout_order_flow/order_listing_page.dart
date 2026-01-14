@@ -4,6 +4,7 @@ import 'package:flutterboilerplate/pages/checkout_order_flow/order_listing_state
 import 'package:flutterboilerplate/singletonGods/featureFlags.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
 import 'package:flutterboilerplate/theme/theme.dart';
+import 'package:flutterboilerplate/widgets/consumer_app_bar.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -44,26 +45,26 @@ class _OrderListingPageState extends State<OrderListingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.orderId != null ? 'Order Details' : 'Orders'),
-        actions: [
-          // Feature flag toggle switch for cart breakup view
+      appBar: ConsumerAppBar(
+        titleWidget: Text(
+          widget.orderId != null ? 'Order Details' : 'Orders',
+          style: AppTypography.uiSerif.copyWith(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: AppColors.primary,
+          ),
+        ),
+        trailingActions: [
           _buildFeatureFlagToggle(context),
-          IconButton(
-            icon: const Icon(Icons.menu_book),
-            onPressed: () {
-              AppLogger.log('📋 ORDER: Navigate back to menu');
-              context.go('/r/${widget.restaurantId}/t/${widget.tableId}/menu');
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.shopping_cart),
-            onPressed: () {
-              AppLogger.log('📋 ORDER: Navigate to cart');
-              context.go('/r/${widget.restaurantId}/t/${widget.tableId}/cart');
-            },
-          ),
         ],
+        onMenuTap: () {
+          AppLogger.log('📋 ORDER: Navigate back to menu');
+          context.go('/r/${widget.restaurantId}/t/${widget.tableId}/menu');
+        },
+        onCartTap: () {
+          AppLogger.log('📋 ORDER: Navigate to cart');
+          context.go('/r/${widget.restaurantId}/t/${widget.tableId}/cart');
+        },
       ),
       body: Consumer<OrderListingState>(
         builder: (context, state, child) {
@@ -304,15 +305,10 @@ class OrderDetailsView extends StatelessWidget {
     
     return Container(
       padding: AppSpacing.pagePadding,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 2,
-            offset: const Offset(0, 2),
-          ),
-        ],
+      decoration: const BoxDecoration(
+        color: AppColors.paper,
+        boxShadow: AppDimensions.shadowPaper,
+        border: Border(bottom: BorderSide(color: AppColors.divider)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,42 +318,46 @@ class OrderDetailsView extends StatelessWidget {
             children: [
               Text(
                 'Order #${orderData.orderNumber}',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTypography.h3,
               ),
-              Chip(
-                label: Text(
-                  orderStatusText,
-                  style: const TextStyle(
-                    color: Colors.white,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
+                decoration: BoxDecoration(
+                  color: orderStatusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+                  border: Border.all(color: orderStatusColor.withOpacity(0.3)),
+                ),
+                child: Text(
+                  orderStatusText.toUpperCase(),
+                  style: AppTypography.labelSmall.copyWith(
+                    color: orderStatusColor,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                backgroundColor: orderStatusColor,
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               ),
             ],
           ),
-                AppSpacing.verticalSM,
+          AppSpacing.verticalSM,
           Text(
             'Placed on $formattedDate',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.inkLight,
             ),
           ),
           if (orderData.notes.isNotEmpty) ...[
             AppSpacing.verticalLG,
             Text(
               'Notes:',
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: AppTypography.labelMedium.copyWith(
                 fontWeight: FontWeight.bold,
+                color: AppColors.ink,
               ),
             ),
             AppSpacing.verticalXS,
             Text(
               orderData.notes,
-              style: theme.textTheme.bodyMedium,
+              style: AppTypography.body,
             ),
           ],
         ],
@@ -370,15 +370,10 @@ class OrderDetailsView extends StatelessWidget {
     
     return Container(
       padding: AppSpacing.pagePadding,
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
+      decoration: const BoxDecoration(
+        color: AppColors.paper,
+        border: Border(top: BorderSide(color: AppColors.divider)),
+        boxShadow: AppDimensions.shadowPaper,
       ),
       child: SafeArea(
         child: Column(
@@ -389,15 +384,12 @@ class OrderDetailsView extends StatelessWidget {
               children: [
                 Text(
                   'Total Amount:',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppTypography.h3,
                 ),
                 Text(
                   '₹${orderData.total.toStringAsFixed(2)}',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
+                  style: AppTypography.h3.copyWith(
+                    color: AppColors.primary,
                   ),
                 ),
               ],
@@ -466,62 +458,61 @@ class OrderItemTile extends StatelessWidget {
     // Calculate total price (price * quantity)
     final totalPrice = item.price * item.quantity;
     
-    return Card(
-      elevation: 1,
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: AppSpacing.pagePadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Item Name and Price Row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Quantity indicator
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '${item.quantity}x',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.paper,
+      ),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Item Name and Price Row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Quantity indicator
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+                ),
+                child: Text(
+                  '${item.quantity}x',
+                  style: AppTypography.labelMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
                   ),
                 ),
-                AppSpacing.horizontalMD,
-                
-                // Item name and details
-                Expanded(
-                  child: Text(
-                    item.name,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                
-                // Price
-                Text(
-                  '₹${totalPrice.toStringAsFixed(2)}',
-                  style: theme.textTheme.titleMedium?.copyWith(
+              ),
+              AppSpacing.horizontalMD,
+              
+              // Item name and details
+              Expanded(
+                child: Text(
+                  item.name,
+                  style: AppTypography.body.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              ],
-            ),
-            
-            // Variants Section
-            _buildVariantsSection(theme),
-            
-            // Addons Section
-            _buildAddonsSection(theme),
-          ],
-        ),
+              ),
+              
+              // Price
+              Text(
+                '₹${totalPrice.toStringAsFixed(2)}',
+                style: AppTypography.body.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          
+          // Variants Section
+          _buildVariantsSection(theme),
+          
+          // Addons Section
+          _buildAddonsSection(theme),
+        ],
       ),
     );
   }
@@ -677,21 +668,26 @@ class CartHistoryCard extends StatelessWidget {
         ? dateFormat.format(cart.checkoutTime!) 
         : 'Unknown time';
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.lg),
-      elevation: 2,
+      decoration: const BoxDecoration(
+        color: AppColors.paper,
+        boxShadow: AppDimensions.shadowPaper,
+        borderRadius: BorderRadius.all(Radius.circular(AppDimensions.radiusMD)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Cart header with checkout time
           Container(
             padding: AppSpacing.pagePadding,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
+            decoration: const BoxDecoration(
+              color: AppColors.paperAlt,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(AppDimensions.radiusMD),
+                topRight: Radius.circular(AppDimensions.radiusMD),
               ),
+              border: Border(bottom: BorderSide(color: AppColors.divider)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -701,28 +697,30 @@ class CartHistoryCard extends StatelessWidget {
                   children: [
                     Text(
                       'Cart #${index + 1}',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTypography.h3,
                     ),
-                    Chip(
-                      label: Text(
-                        cart.status,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: Colors.white,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(cart.status).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+                        border: Border.all(color: _getStatusColor(cart.status).withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        cart.status.toUpperCase(),
+                        style: AppTypography.labelSmall.copyWith(
+                          color: _getStatusColor(cart.status),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      backgroundColor: _getStatusColor(cart.status),
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Checked out on $checkoutTimeString',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.inkLight,
                   ),
                 ),
               ],
@@ -740,15 +738,14 @@ class CartHistoryCard extends StatelessWidget {
               children: [
                 Text(
                   'Cart total:',
-                  style: theme.textTheme.bodyLarge?.copyWith(
+                  style: AppTypography.body.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
                   '₹${cart.total.toStringAsFixed(2)}',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
+                  style: AppTypography.h3.copyWith(
+                    color: AppColors.primary,
                   ),
                 ),
               ],
@@ -764,7 +761,7 @@ class CartHistoryCard extends StatelessWidget {
       case 'pending':
         return Colors.orange;
       case 'processing':
-        return Colors.blue;
+        return const Color(0xFF1A2E4A); // AppColors.primary (navy) for processing
       case 'confirmed':
         return Colors.green;
       case 'completed':
@@ -775,4 +772,5 @@ class CartHistoryCard extends StatelessWidget {
         return Colors.grey;
     }
   }
+
 } 

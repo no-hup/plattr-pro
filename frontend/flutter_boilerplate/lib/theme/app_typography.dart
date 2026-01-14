@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Typography constants optimized for mobile
 /// Font sizes reduced from desktop values to be mobile-appropriate
@@ -9,6 +10,11 @@ abstract class AppTypography {
   static const FontWeight medium = FontWeight.w500;
   static const FontWeight semiBold = FontWeight.w600;
   static const FontWeight bold = FontWeight.w700;
+
+  // Base Font Families
+  static TextStyle get uiSans => GoogleFonts.workSans();
+  static TextStyle get uiSerif => GoogleFonts.playfairDisplay();
+  static TextStyle get uiSerifAlt => GoogleFonts.lora();
 
   // Line height multipliers
   static const double lineHeightTight = 1.2;
@@ -119,8 +125,35 @@ abstract class AppTypography {
         ),
       );
 
+  /// Category tabs (uppercase, wide tracking)
+  static TextStyle get categoryTab => uiSans.copyWith(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 2.0, // tracking-widest
+      );
+
+
   /// Helper to apply color to text style
   static TextStyle withColor(TextStyle style, Color color) {
     return style.copyWith(color: color);
   }
+
+  // Static accessors for common styles
+  static TextStyle get h1 => mobileTextTheme.headlineLarge!;
+  static TextStyle get h2 => mobileTextTheme.headlineMedium!;
+  static TextStyle get h3 => mobileTextTheme.titleLarge!;
+  
+  static TextStyle get body => mobileTextTheme.bodyMedium!;
+  static TextStyle get bodySmall => mobileTextTheme.bodySmall!;
+  
+  static TextStyle get labelLarge => mobileTextTheme.labelLarge!;
+  static TextStyle get label => mobileTextTheme.labelLarge!; // Alias for labelLarge if used
+  static TextStyle get labelMedium => mobileTextTheme.labelMedium!;
+  static TextStyle get labelSmall => mobileTextTheme.labelSmall!;
+  
+  static TextStyle get price => uiSans.copyWith(
+    fontSize: fontSizeLG,
+    fontWeight: bold,
+    letterSpacing: -0.5,
+  );
 }

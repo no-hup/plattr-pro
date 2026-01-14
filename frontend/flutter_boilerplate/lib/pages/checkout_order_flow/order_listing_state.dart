@@ -139,7 +139,7 @@ class OrderListingState extends ChangeNotifier {
       case 'pending':
         return Colors.orange;
       case 'processing':
-        return Colors.blue;
+        return const Color(0xFF1A2E4A); // AppColors.primary (navy) for processing
       case 'confirmed':
         return Colors.green;
       case 'preparing':
@@ -154,6 +154,7 @@ class OrderListingState extends ChangeNotifier {
         return Colors.grey;
     }
   }
+
 
   /// Formats the order date for display
   String getFormattedOrderDate() {

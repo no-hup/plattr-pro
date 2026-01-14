@@ -19,11 +19,15 @@ class PriceSummaryPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      elevation: elevation,
-      color: backgroundColor ?? theme.cardColor,
+    // Standard Lumière footer styling
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor ?? AppColors.paper,
+        border: const Border(
+          top: BorderSide(color: AppColors.divider, width: 1),
+        ),
+        boxShadow: AppDimensions.shadowPaper,
+      ),
       child: SafeArea(
         top: false,
         child: Padding(

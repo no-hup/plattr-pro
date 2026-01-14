@@ -1,13 +1,13 @@
 // File: menu_item_card.dart
 import 'package:flutter/material.dart';
-import 'package:flutterboilerplate/pages/menuListing/mennu_bottomsheet.dart';
+import 'package:flutterboilerplate/pages/menuListing/widgets/menu_customization_sheet.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_state.dart';
 import 'package:flutterboilerplate/pages/menuListing/widgets/category_carousel.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
 import 'package:flutterboilerplate/theme/design_system/app_colors.dart';
 import 'package:flutterboilerplate/theme/design_system/app_dimensions.dart';
-import 'package:flutterboilerplate/theme/design_system/app_typography.dart';
+import 'package:flutterboilerplate/theme/app_typography.dart';
 import 'package:flutterboilerplate/widgets/price_display.dart';
 import 'package:flutterboilerplate/widgets/quantity_selector.dart';
 import 'package:flutterboilerplate/widgets/status_badge.dart';
@@ -53,7 +53,7 @@ class MenuItemCard extends StatelessWidget {
                 tableId: tableId,
                 restaurantId: restaurantId,
                 selectedVariants: selectedVariants,
-                selectedAddons: selectedAddons,
+                selectedAddons: selectedAddons.toList(),
                 context: context,
               );
         },
@@ -121,7 +121,6 @@ class MenuItemCard extends StatelessWidget {
                           ? item.priceInfo.basePrice.toDouble()
                           : null,
                       crossAxisAlignment: CrossAxisAlignment.end,
-                      style: AppTypography.price,
                     ),
                     const SizedBox(height: AppDimensions.space8),
                     _QuantityControl(
@@ -241,41 +240,16 @@ class _QuantityControl extends StatelessWidget {
     }
 
     if (quantity > 0) {
-      return Container(
-        decoration: const BoxDecoration(
-          color: AppColors.primaryLight,
-          borderRadius: BorderRadius.all(Radius.circular(AppDimensions.radiusPill)),
+      return QuantitySelector(
+        quantity: quantity,
+        onIncrement: onAddToCart,
+        onDecrement: () => context.read<MenuState>().updateCartItem(
+          item,
+          false,
+          tableId: tableId,
+          restaurantId: restaurantId,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space8, vertical: AppDimensions.space4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _QuantityIconButton(
-              icon: Icons.remove,
-              onTap: () => context.read<MenuState>().updateCartItem(
-                    item,
-                    false,
-                    tableId: tableId,
-                    restaurantId: restaurantId,
-                  ),
-              color: AppColors.inkLight,
-            ),
-            SizedBox(
-              width: 24,
-              child: Text(
-                quantity.toString(),
-                textAlign: TextAlign.center,
-                style: AppTypography.uiSans.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ),
-             _QuantityIconButton(
-              icon: Icons.add,
-               onTap: onAddToCart,
-               color: AppColors.primary,
-               isFilled: true,
-            ),
-          ],
-        ),
+        compact: true, // Use compact mode in list
       );
     }
 
@@ -300,40 +274,7 @@ class _QuantityControl extends StatelessWidget {
   }
 }
 
-class _QuantityIconButton extends StatelessWidget {
-  const _QuantityIconButton({
-    required this.icon,
-    required this.onTap,
-    required this.color,
-    this.isFilled = false,
-  });
 
-  final IconData icon;
-  final VoidCallback onTap;
-  final Color color;
-  final bool isFilled;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-      child: Container(
-        width: 24,
-        height: 24,
-        decoration: isFilled ? BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-        ) : null,
-        child: Icon(
-          icon, 
-          size: 16, 
-          color: isFilled ? Colors.white : color
-        ),
-      ),
-    );
-  }
-}
 
 
 class CategorySection extends StatelessWidget {
@@ -393,7 +334,12 @@ class CategorySection extends StatelessWidget {
               const SizedBox(width: AppDimensions.space12),
               Text(
                 category.name.toUpperCase(),
-                style: AppTypography.h2,
+                style: AppTypography.uiSerif.copyWith( // Header serif
+                  fontSize: 20, 
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                  color: AppColors.primary,
+                ),
               ),
             ],
           ),
