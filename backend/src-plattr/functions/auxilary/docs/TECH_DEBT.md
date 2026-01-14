@@ -32,3 +32,32 @@ module.exports = {
   }
 };
 ```
+
+## Frontend
+
+### 1. Mock Data Injection in Production Code (Critical)
+**Source:** `lib/pages/menuListing/menu_response.dart`
+**Description:**
+The `MenuItem.fromJson` factory currently contains temporary logic to inject `dietaryType` (Veg/Non-Veg) and `spiceLevel` by checking string patterns in the item name (e.g., "chicken", "spicy").
+**Risk:**
+- Violates separation of concerns.
+- Can lead to incorrect dietary information in production if backend data is missing or logic is flawed.
+- Logic executes in production builds.
+
+**Action:**
+- Move this logic to a `kDebugMode` block or a dedicated `MockDataTransformer` that only runs in development.
+- Remove entirely once backend sends real `dietaryType` and `spiceLevel` fields.
+
+### 2. Potential Null Pointer Exception in Mock Data Logic
+**Source:** `lib/pages/menuListing/menu_response.dart`
+**Description:**
+The mock data injection logic accesses `mutableJson['meta']['name']` without proper null checks:
+```dart
+final name = (mutableJson['meta'] as Map<String, dynamic>)['name'].toString().toLowerCase();
+```
+**Risk:**
+- If `meta` or `name` is null (e.g., malformed backend response), the app will crash with a runtime NPE during parsing.
+
+**Action:**
+- Add defensive null checks: `(mutableJson['meta'] as Map<String, dynamic>?)?['name']`.
+- This is part of the mock data removal task above.

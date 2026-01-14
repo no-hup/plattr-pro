@@ -54,6 +54,10 @@ class AppDimensions {
   // Interactive
   static const double touchTargetMin = 40.0; // Minimum touch target size
   static const double iconButtonSize = 40.0; // Header icon buttons
+  
+  // Layout: Floating overlays & panels
+  static const double cartPanelHeight = 100.0; // Height of cart summary panel
+  static const double fabOverlayOffset = 80.0; // Space above FAB for overlay positioning
 
   // Decorative
   static const double accentBarWidth = 2.0;

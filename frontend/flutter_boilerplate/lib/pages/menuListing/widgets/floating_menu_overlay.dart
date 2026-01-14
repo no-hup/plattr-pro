@@ -48,7 +48,7 @@ class FloatingMenuOverlay extends StatelessWidget {
         // Category list overlay
         if (isExpanded)
           Positioned(
-            bottom: 80 + bottomOffset, // Above FAB + cart offset
+            bottom: AppDimensions.fabOverlayOffset + bottomOffset, // Above FAB + cart offset
             right: AppSpacing.lg,
             child: CategoryOverlay(
                categories: categories,

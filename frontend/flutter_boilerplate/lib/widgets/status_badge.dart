@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutterboilerplate/theme/theme.dart';
 
+// Private constants for badge type detection (avoids hardcoded strings in logic)
+const String _kLabelOutOfStock = 'Out of Stock';
+const String _kLabelCustomizable = 'Customizable';
+const String _kLabelNonVeg = 'Non-Veg';
+const String _kLabelSpicyHot = 'HOT';
+const String _kLabelSpicyMild = 'MILD';
+
 /// A flexible badge widget for status indicators.
 ///
 /// Used for "Out of Stock", "Customizable", discount badges, etc.
@@ -18,7 +25,7 @@ class StatusBadge extends StatelessWidget {
   factory StatusBadge.outOfStock({Key? key}) {
     return StatusBadge(
       key: key,
-      label: 'Out of Stock',
+      label: _kLabelOutOfStock,
       icon: Icons.block,
     );
   }
@@ -27,7 +34,7 @@ class StatusBadge extends StatelessWidget {
   factory StatusBadge.customizable({Key? key}) {
     return StatusBadge(
       key: key,
-      label: 'Customizable',
+      label: _kLabelCustomizable,
       icon: Icons.edit_outlined,
     );
   }
@@ -63,15 +70,14 @@ class StatusBadge extends StatelessWidget {
   factory StatusBadge.nonVeg({Key? key}) {
     return StatusBadge(
       key: key,
-      label: 'Non-Veg', 
+      label: _kLabelNonVeg, 
       icon: Icons.circle,
       iconSize: 12,
-      // Custom styling handled in build or here
     );
   }
   
   /// Creates a Spicy indicator (Minimal).
-  factory StatusBadge.spicy({Key? key, String level = 'HOT'}) {
+  factory StatusBadge.spicy({Key? key, String level = _kLabelSpicyHot}) {
     return StatusBadge(
       key: key,
       label: level, 
@@ -94,18 +100,16 @@ class StatusBadge extends StatelessWidget {
 
   /// Size of the icon.
   final double iconSize;
+  
+  /// Helper to check if this is a spicy-only badge (icon-only, no text)
+  bool get _isSpicyIconOnly => label == _kLabelSpicyHot || label == _kLabelSpicyMild;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Determine colors based on badge type or explicit values
-    Color bgColor;
-    Color fgColor;
-    
-    // Helper for specific hardcoded styles
-    if (label == 'Non-Veg') {
-       // Minimal style for Non-Veg
+    // Non-Veg: Minimal style with border and small circle icon
+    if (label == _kLabelNonVeg) {
        return Container(
          padding: const EdgeInsets.all(4),
          decoration: BoxDecoration(
@@ -113,17 +117,21 @@ class StatusBadge extends StatelessWidget {
            border: Border.all(color: AppColors.danger),
            borderRadius: BorderRadius.circular(4),
          ),
-         child: Icon(Icons.circle, size: 8, color: AppColors.danger),
+         child: const Icon(Icons.circle, size: 8, color: AppColors.danger),
        );
     } 
+
+    // Determine colors based on badge type or explicit values
+    Color bgColor;
+    Color fgColor;
 
     if (backgroundColor != null && foregroundColor != null) {
       bgColor = backgroundColor!;
       fgColor = foregroundColor!;
-    } else if (label == 'Out of Stock') {
+    } else if (label == _kLabelOutOfStock) {
       bgColor = theme.colorScheme.errorContainer.withOpacity(0.3);
       fgColor = theme.colorScheme.error;
-    } else if (label == 'Customizable') {
+    } else if (label == _kLabelCustomizable) {
       bgColor = theme.colorScheme.primaryContainer.withOpacity(0.3);
       fgColor = theme.colorScheme.primary;
     } else if (icon == Icons.local_offer_outlined) {
@@ -155,18 +163,19 @@ class StatusBadge extends StatelessWidget {
               size: iconSize,
               color: fgColor,
             ),
-            if (label.isNotEmpty && label != 'HOT' && label != 'MILD')...[ // Hide text for simple icons if desired
+            // Add spacing only if text label will follow
+            if (label.isNotEmpty && !_isSpicyIconOnly)
                const SizedBox(width: AppSpacing.xs),
-            ]
           ],
-          if (label != 'HOT' && label != 'MILD') // Only show icon for spicy
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: fgColor,
-              fontWeight: FontWeight.w500,
+          // Show text label unless it's a spicy icon-only badge
+          if (!_isSpicyIconOnly)
+            Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: fgColor,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
         ],
       ),
     );
