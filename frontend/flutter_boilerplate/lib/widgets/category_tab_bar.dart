@@ -138,7 +138,7 @@ class _CategoryTab extends StatelessWidget {
           horizontal: AppSpacing.md,
         ),
         margin: const EdgeInsets.symmetric(
-           horizontal: AppSpacing.xs,
+           horizontal: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
           border: isActive

@@ -24,6 +24,9 @@ class MenuState extends ChangeNotifier {
   MenuData? _menuData;
   MenuData? get menuData => _menuData;
 
+  // Added getter for categories to simplify UI access
+  List<Category> get categories => _menuData?.categories ?? [];
+
   // Add flag to track ongoing cart updates
   bool _isUpdatingCart = false;
   bool get isUpdatingCart => _isUpdatingCart;

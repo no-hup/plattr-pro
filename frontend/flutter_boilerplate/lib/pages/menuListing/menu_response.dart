@@ -135,7 +135,35 @@ class MenuData with _$MenuData {
         if (value is List) {
           parsedMenuItems[entry.key] = value
               .whereType<Map<String, dynamic>>()
-              .map(MenuItem.fromJson)
+              .map((json) {
+                // 🛠️ MOCK DATA INJECTION (Temporary)
+                // Since backend doesn't send these fields yet, we inject them randomly/fixed for demo.
+                final mutableJson = Map<String, dynamic>.from(json);
+                
+                // Mock Dietary Type based on name or random
+                if (mutableJson['dietaryType'] == null) {
+                   final name = (mutableJson['meta'] as Map<String, dynamic>)['name'].toString().toLowerCase();
+                   if (name.contains('chicken') || name.contains('beef') || name.contains('prawn') || name.contains('lamb')) {
+                     mutableJson['dietaryType'] = 'NON_VEG';
+                   } else if (name.contains('egg')) {
+                     mutableJson['dietaryType'] = 'EGG';
+                   } else {
+                     mutableJson['dietaryType'] = 'VEG';
+                   }
+                }
+                
+                // Mock Spice Level
+                if (mutableJson['spiceLevel'] == null) {
+                   final name = (mutableJson['meta'] as Map<String, dynamic>)['name'].toString().toLowerCase();
+                   if (name.contains('spicy') || name.contains('hot') || name.contains('chilli')) {
+                     mutableJson['spiceLevel'] = 'HOT';
+                   } else if (name.contains('mild')) {
+                     mutableJson['spiceLevel'] = 'MILD';
+                   }
+                }
+
+                return MenuItem.fromJson(mutableJson);
+              })
               .toList();
         } else {
           parsedMenuItems[entry.key] = const <MenuItem>[];
@@ -215,6 +243,8 @@ class MenuItem with _$MenuItem {
     NutritionalInfo? nutritionalInfo,
     @Default([]) List<String> allergenTags,
     @Default(0) int quantity,
+    String? dietaryType,
+    String? spiceLevel,
   }) = _MenuItem;
 
   factory MenuItem.fromJson(Map<String, dynamic> json) =>
