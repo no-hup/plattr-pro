@@ -1,17 +1,20 @@
 // ignore_for_file: slash_for_doc_comments, lines_longer_than_80_chars
 
 import 'package:flutter/material.dart';
+// ignore: unused_import
 import 'package:flutterboilerplate/pages/debug_baner.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_state.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_widgets.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
 import 'package:flutterboilerplate/pages/menuListing/widgets/floating_menu_overlay.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
 import 'package:flutterboilerplate/widgets/category_tab_bar.dart';
 import 'package:flutterboilerplate/widgets/consumer_app_bar.dart';
+import 'package:flutterboilerplate/widgets/offers_carousel.dart';
+import 'package:flutterboilerplate/widgets/otp_badge.dart';
 import 'package:flutterboilerplate/widgets/page_state_view.dart';
 import 'package:flutterboilerplate/widgets/price_summary_panel.dart';
-import 'package:flutterboilerplate/widgets/status_badge.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -223,9 +226,15 @@ class _MenuPageContentState extends State<MenuPageContent> {
             children: [
               Column(
                 children: [
-                  DebugBanner(
-                    tableId: widget.tableId,
-                    restaurantId: widget.restaurantId,
+                  // DebugBanner hidden from UI 
+                  // DebugBanner(
+                  //   tableId: widget.tableId,
+                  //   restaurantId: widget.restaurantId,
+                  // ),
+                  // Offers Carousel (Placeholder for Lumière)
+                  const Padding(
+                    padding: EdgeInsets.only(top: AppSpacing.sm),
+                    child: OffersCarousel(),
                   ),
                   // Category Tab Bar for navigation
                   CategoryTabBar(
@@ -352,8 +361,8 @@ class _MenuPageContentState extends State<MenuPageContent> {
   }
 
   /// Build rich header widget with restaurant name, table info, and OTP badge
+  /// Build rich header widget with restaurant name, table info, and OTP badge
   Widget _buildRichHeader(BuildContext context, TableContextData tableContext) {
-    final theme = Theme.of(context);
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -366,19 +375,17 @@ class _MenuPageContentState extends State<MenuPageContent> {
             Flexible(
               child: Text(
                 tableContext.restaurantName,
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: AppTypography.uiSerif.copyWith(
                   fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: AppColors.primary,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             if (tableContext.showOtp && tableContext.otp != null) ...[
-              const SizedBox(width: 8),
-              StatusBadge.custom(
-                label: 'OTP ${tableContext.otp}',
-                backgroundColor: theme.colorScheme.tertiaryContainer,
-                foregroundColor: theme.colorScheme.onTertiaryContainer,
-              ),
+              const SizedBox(width: AppSpacing.sm),
+              OtpBadge(otp: tableContext.otp!),
             ],
           ],
         ),
@@ -386,9 +393,9 @@ class _MenuPageContentState extends State<MenuPageContent> {
         if (tableContext.tableNumber != null)
           Text(
             'TABLE ${tableContext.tableNumber}',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              letterSpacing: 0.5,
+            style: AppTypography.labelSmall.copyWith(
+              color: AppColors.inkLight,
+              letterSpacing: 1.0,
             ),
           ),
       ],

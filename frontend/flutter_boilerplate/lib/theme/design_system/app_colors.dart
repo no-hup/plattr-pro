@@ -29,4 +29,10 @@ class AppColors {
   
   // Overlays
   static const Color overlay = Color(0x80000000); // 50% black
+  
+  // Interactive states
+  static const Color inkMuted = Color(0x661C1C1C); // ink/40 for inactive tabs
+  static const Color hoverLight = Color(0xFFF9FAFB); // gray-50 hover background  
+  static Color get ink40 => ink.withOpacity(0.4);
+  static Color get paperTranslucent => paper.withOpacity(0.95);
 }

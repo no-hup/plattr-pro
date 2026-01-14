@@ -50,4 +50,16 @@ class AppDimensions {
       spreadRadius: -5,
     ),
   ];
+
+  // Interactive
+  static const double touchTargetMin = 40.0; // Minimum touch target size
+  static const double iconButtonSize = 40.0; // Header icon buttons
+
+  // Decorative
+  static const double accentBarWidth = 2.0;
+  static const double accentBarHeight = 8.0;
+
+  // Transitions
+  static const Duration transitionFast = Duration(milliseconds: 150);
+  static const Duration transitionNormal = Duration(milliseconds: 200);
 }

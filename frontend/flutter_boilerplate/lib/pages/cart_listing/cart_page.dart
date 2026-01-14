@@ -4,7 +4,9 @@ import 'package:flutterboilerplate/pages/menuListing/models/cart_item.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_price_info.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
 import 'package:flutterboilerplate/theme/theme.dart';
+import 'package:flutterboilerplate/widgets/consumer_app_bar.dart';
 import 'package:flutterboilerplate/widgets/price_display.dart';
+import 'package:flutterboilerplate/widgets/primary_action_button.dart';
 import 'package:flutterboilerplate/widgets/quantity_selector.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -43,25 +45,23 @@ class _CartPageState extends State<CartPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cart'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.receipt_long),
-            onPressed: () {
-              AppLogger.log('🛒 CART: Navigate to orders');
-              context
-                  .go('/r/${widget.restaurantId}/t/${widget.tableId}/orders');
-            },
+      appBar: ConsumerAppBar(
+        titleWidget: Text(
+          'Cart',
+          style: AppTypography.uiSerif.copyWith(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: AppColors.primary,
           ),
-          IconButton(
-            icon: const Icon(Icons.menu_book),
-            onPressed: () {
-              AppLogger.log('🛒 CART: Navigate back to menu');
-              context.go('/r/${widget.restaurantId}/t/${widget.tableId}');
-            },
-          ),
-        ],
+        ),
+        onOrdersTap: () {
+          AppLogger.log('🛒 CART: Navigate to orders');
+          context.go('/r/${widget.restaurantId}/t/${widget.tableId}/orders');
+        },
+        onMenuTap: () {
+          AppLogger.log('🛒 CART: Navigate back to menu');
+          context.go('/r/${widget.restaurantId}/t/${widget.tableId}');
+        },
       ),
       body: Consumer<CartListingState>(
         builder: (context, state, child) {
@@ -216,46 +216,18 @@ class CartItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    // Note: We use Theme.of(context) for some parts but AppTypography/AppColors for major styling
+    // to align with the new design system
     final state = context.watch<CartListingState>();
     final menuItem = state.getMenuItemById(item.menuItemId);
     final hasMenuItem = menuItem != null;
 
     // Enhanced detailed logging for debugging
     AppLogger.log('💲 CART_TILE: Building tile for item ${item.menuItemId}');
-    AppLogger.log(
-        '💲 CART_TILE: - name: ${item.name ?? "null"} (from ${item.name == null && hasMenuItem ? "menu" : "cart"})',);
-    AppLogger.log(
-        '💲 CART_TILE: - menuItem found: ${hasMenuItem ? "yes" : "no"}',);
-    AppLogger.log('💲 CART_TILE: - quantity: ${item.quantity}');
-    AppLogger.log(
-        '💲 CART_TILE: - priceInfo present: ${item.priceInfo != null ? "yes" : "null"}',);
 
     final isUsingMenuDataForDisplay =
         (item.name == null || item.name!.isEmpty) && hasMenuItem ||
             item.priceInfo == null && hasMenuItem;
-
-    if (isUsingMenuDataForDisplay) {
-      AppLogger.log(
-          '💲 CART_TILE: Using menu data to supplement missing cart item data',);
-    }
-
-    if (item.priceInfo != null) {
-      AppLogger.log(
-          '💲 CART_TILE: - itemBasePrice: ${item.priceInfo?.itemBasePrice}',);
-      AppLogger.log(
-          '💲 CART_TILE: - itemFinalPrice: ${item.priceInfo?.itemFinalPrice}',);
-      AppLogger.log(
-          '💲 CART_TILE: - finalPrice: ${item.priceInfo?.finalPrice}',);
-    } else if (hasMenuItem) {
-      AppLogger.log(
-          '💲 CART_TILE: - Fallback to menuItem price: ${menuItem.priceInfo.basePrice}',);
-    }
-
-    AppLogger.log(
-        '💲 CART_TILE: - selectedVariants count: ${item.selectedVariants.length}',);
-    AppLogger.log(
-        '💲 CART_TILE: - selectedAddons count: ${item.selectedAddons.length}',);
 
     // Get pricing information with robust fallbacks
     final basePrice = item.priceInfo?.itemBasePrice.toDouble() ??
@@ -280,313 +252,232 @@ class CartItemTile extends StatelessWidget {
     final itemDescription =
         item.description ?? (hasMenuItem ? menuItem.meta.description : null);
 
-    return Card(
-      elevation: 2,
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: AppSpacing.pagePadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Item Name and Price Row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    itemName,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.paper,
+        border: Border(bottom: BorderSide(color: AppColors.divider)),
+      ),
+      padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.md, horizontal: AppSpacing.sm,),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Item Name and Price Row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  itemName,
+                  style: AppTypography.body.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(width: 8),
+              ),
+              const SizedBox(width: 8),
 
-                // Price display - using centralized PriceDisplay widget
-                PriceDisplay(
-                  finalPrice: finalPrice,
-                  basePrice: showBasePriceStrikethrough ? basePrice : null,
-                  discountAmount: discount > 0 ? discount : null,
-                ),
-              ],
+              // Price display - using centralized PriceDisplay widget
+              PriceDisplay(
+                finalPrice: finalPrice,
+                basePrice: showBasePriceStrikethrough ? basePrice : null,
+                discountAmount: discount > 0 ? discount : null,
+              ),
+            ],
+          ),
+
+          // Item Description (if available)
+          if (itemDescription != null && itemDescription.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              itemDescription,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.inkLight,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
+          ],
 
-            // Item Description (if available)
-            if (itemDescription != null && itemDescription.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(
-                itemDescription,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+          // Add a note if we're using menu data as fallback
+          if (isUsingMenuDataForDisplay) ...[
+            const SizedBox(height: 8),
+            Text(
+              '* Using menu data to display this item',
+              style: AppTypography.labelSmall.copyWith(
+                fontStyle: FontStyle.italic,
+                color: AppColors.primary,
               ),
-            ],
+            ),
+          ],
 
-            // Add a note if we're using menu data as fallback
-            if (isUsingMenuDataForDisplay) ...[
-              const SizedBox(height: 8),
-              Text(
-                '* Using menu data to display this item',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontStyle: FontStyle.italic,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ],
+          const SizedBox(height: 12),
 
+          // Variants Section
+          if (item.selectedVariants.isNotEmpty) ...[
             const SizedBox(height: 12),
-
-            // Variants Section
-            if (item.selectedVariants.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  'Selected Variants',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
-                  ),
+            const Divider(height: 1),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                'Selected Variants',
+                style: AppTypography.labelSmall.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
                 ),
               ),
-              ...item.selectedVariants.map((variant) {
-                // Display variant information
-                final variantPrice = variant.selectedOption.price;
-                final showVariantPrice = variantPrice > 0;
+            ),
+            ...item.selectedVariants.map((variant) {
+              final variantPrice = variant.selectedOption.price;
+              final showVariantPrice = variantPrice > 0;
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 4, left: 8),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check_circle_outline,
-                        size: 16,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '${variant.name}: ${variant.selectedOption.name}',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ),
-                      if (showVariantPrice)
-                        Text(
-                          '₹${variantPrice.toStringAsFixed(2)}',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                    ],
-                  ),
-                );
-              }),
-            ],
-
-            // Addons Section
-            if (item.selectedAddons.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              if (item.selectedVariants.isEmpty) const Divider(height: 1),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  'Selected Add-ons',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.secondary,
-                  ),
-                ),
-              ),
-              ...item.selectedAddons.map((addon) {
-                // Display addon information
-                final addonPrice = addon.price;
-                final showAddonPrice = addonPrice > 0;
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 4, left: 8),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.add_circle,
-                        size: 16,
-                        color: theme.colorScheme.secondary,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          addon.name,
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ),
-                      if (showAddonPrice)
-                        Text(
-                          '₹${addonPrice.toStringAsFixed(2)}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              }),
-            ],
-
-            // Fallback to legacy variant display if needed - using Map<String, String> from extension
-            if (item.selectedVariants.isEmpty &&
-                item.selectedVariantsMap != null &&
-                item.selectedVariantsMap!.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  'Selected Variants',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: item.selectedVariantsMap!.entries.map((entry) {
-                        return _buildChip(
-                          context,
-                          '${entry.key}: ${entry.value}',
-                          color: theme.colorScheme.primary.withOpacity(0.1),
-                          textColor: theme.colorScheme.primary,
-                        );
-                      }).toList(),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4, left: 8),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.check_circle_outline,
+                      size: 16,
+                      color: AppColors.primary,
                     ),
-                  ),
-                ],
-              ),
-            ],
-
-            // Fallback to legacy addon display if needed - using List<String> from extension
-            if (item.selectedAddons.isEmpty &&
-                item.selectedAddonsList != null &&
-                item.selectedAddonsList!.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              if (item.selectedVariants.isEmpty &&
-                  (item.selectedVariantsMap == null ||
-                      item.selectedVariantsMap!.isEmpty))
-                const Divider(height: 1),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  'Selected Add-ons',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.secondary,
-                  ),
-                ),
-              ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: item.selectedAddonsList!.map((addon) {
-                        return _buildChip(
-                          context,
-                          addon,
-                          color: theme.colorScheme.secondary.withOpacity(0.1),
-                          textColor: theme.colorScheme.secondary,
-                        );
-                      }).toList(),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${variant.name}: ${variant.selectedOption.name}',
+                        style: AppTypography.bodySmall,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    if (showVariantPrice)
+                      Text(
+                        '₹${variantPrice.toStringAsFixed(2)}',
+                        style: AppTypography.bodySmall,
+                      ),
+                  ],
+                ),
+              );
+            }),
+          ],
 
+          // Addons Section
+          if (item.selectedAddons.isNotEmpty) ...[
             const SizedBox(height: 12),
-
-            // Quantity Control
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Add remove button
-                TextButton.icon(
-                  onPressed: context.watch<CartListingState>().isUpdatingCart
-                      ? null
-                      : () {
-                          AppLogger.log(
-                              '🛒 CART: Removing item ${item.menuItemId} from cart',);
-                          if (item.quantity <= 1) {
-                            _showRemoveConfirmation(context);
-                          } else {
-                            context.read<CartListingState>().updateCartItem(
-                                  item,
-                                  false,
-                                  tableId: tableId,
-                                  restaurantId: restaurantId,
-                                );
-                          }
-                        },
-                  icon: const Icon(Icons.delete_outline, size: 20),
-                  label: const Text('Remove'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: theme.colorScheme.error,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                  ),
+            if (item.selectedVariants.isEmpty) const Divider(height: 1),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                'Selected Add-ons',
+                style: AppTypography.labelSmall.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
                 ),
-                // Quantity Control - using centralized QuantitySelector
-                QuantitySelector(
-                  quantity: item.quantity,
-                  onDecrement: context.watch<CartListingState>().isUpdatingCart || item.quantity <= 1
-                      ? null
-                      : () {
-                          AppLogger.log(
-                              '🛒 CART: Decreasing quantity for ${item.menuItemId}',);
+              ),
+            ),
+            ...item.selectedAddons.map((addon) {
+              final addonPrice = addon.price;
+              final showAddonPrice = addonPrice > 0;
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4, left: 8),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.add_circle,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        addon.name,
+                        style: AppTypography.bodySmall,
+                      ),
+                    ),
+                    if (showAddonPrice)
+                      Text(
+                        '₹${addonPrice.toStringAsFixed(2)}',
+                        style: AppTypography.bodySmall.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }),
+          ],
+
+          const SizedBox(height: 12),
+
+          // Quantity Control
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Add remove button
+              TextButton.icon(
+                onPressed: context.watch<CartListingState>().isUpdatingCart
+                    ? null
+                    : () {
+                        AppLogger.log(
+                            '🛒 CART: Removing item ${item.menuItemId} from cart',);
+                        if (item.quantity <= 1) {
+                          _showRemoveConfirmation(context);
+                        } else {
                           context.read<CartListingState>().updateCartItem(
                                 item,
                                 false,
                                 tableId: tableId,
                                 restaurantId: restaurantId,
                               );
-                        },
-                  onIncrement: context.watch<CartListingState>().isUpdatingCart
-                      ? null
-                      : () {
-                          AppLogger.log(
-                              '🛒 CART: Increasing quantity for ${item.menuItemId}',);
-                          context.read<CartListingState>().updateCartItem(
-                                item,
-                                true,
-                                tableId: tableId,
-                                restaurantId: restaurantId,
-                              );
-                        },
-                  isEnabled: !context.watch<CartListingState>().isUpdatingCart,
-                  minQuantity: 1,
+                        }
+                      },
+                icon: const Icon(Icons.delete_outline, size: 20),
+                label: const Text('Remove'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.danger,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+              // Quantity Control - using centralized QuantitySelector
+              QuantitySelector(
+                quantity: item.quantity,
+                onDecrement: context.watch<CartListingState>().isUpdatingCart ||
+                        item.quantity <= 1
+                    ? null
+                    : () {
+                        AppLogger.log(
+                            '🛒 CART: Decreasing quantity for ${item.menuItemId}',);
+                        context.read<CartListingState>().updateCartItem(
+                              item,
+                              false,
+                              tableId: tableId,
+                              restaurantId: restaurantId,
+                            );
+                      },
+                onIncrement: context.watch<CartListingState>().isUpdatingCart
+                    ? null
+                    : () {
+                        AppLogger.log(
+                            '🛒 CART: Increasing quantity for ${item.menuItemId}',);
+                        context.read<CartListingState>().updateCartItem(
+                              item,
+                              true,
+                              tableId: tableId,
+                              restaurantId: restaurantId,
+                            );
+                      },
+                isEnabled: !context.watch<CartListingState>().isUpdatingCart,
+                minQuantity: 1,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   // Add a confirmation dialog for removing items
   void _showRemoveConfirmation(BuildContext context) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Remove Item'),
@@ -609,113 +500,11 @@ class CartItemTile extends StatelessWidget {
                   );
             },
             style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: AppColors.danger,
             ),
             child: const Text('REMOVE'),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildQuantityControls(BuildContext context) {
-    final theme = Theme.of(context);
-    final state = context.watch<CartListingState>();
-
-    return Row(
-      children: [
-        // Decrement button
-        IconButton(
-          icon: const Icon(Icons.remove),
-          onPressed: state.isUpdatingCart || item.quantity <= 1
-              ? null
-              : () {
-                  AppLogger.log(
-                      '🛒 CART: Decreasing quantity for ${item.menuItemId}',);
-                  context.read<CartListingState>().updateCartItem(
-                        item,
-                        false,
-                        tableId: tableId,
-                        restaurantId: restaurantId,
-                      );
-                },
-          style: IconButton.styleFrom(
-            backgroundColor: theme.colorScheme.surfaceContainerHighest,
-            foregroundColor: theme.colorScheme.primary,
-            disabledBackgroundColor:
-                theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
-            disabledForegroundColor:
-                theme.colorScheme.onSurface.withOpacity(0.38),
-          ),
-        ),
-
-        // Quantity display
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text(
-            '${item.quantity}',
-            style: theme.textTheme.titleMedium,
-          ),
-        ),
-
-        // Increment button
-        IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: state.isUpdatingCart
-              ? null
-              : () {
-                  AppLogger.log(
-                      '🛒 CART: Increasing quantity for ${item.menuItemId}',);
-                  context.read<CartListingState>().updateCartItem(
-                        item,
-                        true,
-                        tableId: tableId,
-                        restaurantId: restaurantId,
-                      );
-                },
-          style: IconButton.styleFrom(
-            backgroundColor: theme.colorScheme.primary,
-            foregroundColor: theme.colorScheme.onPrimary,
-            disabledBackgroundColor:
-                theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
-            disabledForegroundColor:
-                theme.colorScheme.onSurface.withOpacity(0.38),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildChip(
-    BuildContext context,
-    String label, {
-    bool isFromMenu = false,
-    Color? color,
-    Color? textColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color ??
-            (isFromMenu
-                ? Theme.of(context)
-                    .colorScheme
-                    .surfaceContainerHighest
-                    .withOpacity(0.5)
-                : Theme.of(context).colorScheme.surfaceContainerHighest),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: textColor ??
-              (isFromMenu
-                  ? Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant
-                      .withOpacity(0.7)
-                  : Theme.of(context).colorScheme.onSurfaceVariant),
-        ),
       ),
     );
   }
@@ -774,15 +563,10 @@ class CartPriceSummary extends StatelessWidget {
 
     return Container(
       padding: AppSpacing.pagePadding,
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
+      decoration: const BoxDecoration(
+        color: AppColors.paper,
+        border: Border(top: BorderSide(color: AppColors.divider)),
+        boxShadow: AppDimensions.shadowPaper,
       ),
       child: SafeArea(
         child: Column(
@@ -816,11 +600,9 @@ class CartPriceSummary extends StatelessWidget {
               context,
               'To Pay:',
               '₹${finalPrice.toStringAsFixed(2)}',
-              labelStyle: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-              valueStyle: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+              labelStyle: AppTypography.h3,
+              valueStyle: AppTypography.h3.copyWith(
+                color: AppColors.primary,
               ),
             ),
 
@@ -828,7 +610,9 @@ class CartPriceSummary extends StatelessWidget {
 
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: PrimaryActionButton(
+                label: 'PROCEED TO CHECKOUT',
+                isLoading: state.isUpdatingCart,
                 onPressed: state.isUpdatingCart || hasNoItems
                     ? null
                     : () async {
@@ -879,18 +663,6 @@ class CartPriceSummary extends StatelessWidget {
                           }
                         }
                       },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: state.isUpdatingCart
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(color: Colors.white),
-                      )
-                    : const Text('PROCEED TO CHECKOUT'),
               ),
             ),
           ],

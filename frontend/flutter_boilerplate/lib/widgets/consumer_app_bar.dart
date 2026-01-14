@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
 
 /// Reusable AppBar that keeps the consumer app navigation actions consistent.
 class ConsumerAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -6,13 +7,18 @@ class ConsumerAppBar extends StatelessWidget implements PreferredSizeWidget {
     super.key,
     this.title,
     this.titleWidget,
+    this.tableContextData, // Should be passed if available
     this.onOrdersTap,
     this.onMenuTap,
     this.onCartTap,
     this.onSearchTap,
     this.onOffersTap,
     this.leading,
+    this.trailing,
     this.leadingActions = const <Widget>[],
+    this.trailingActions = const <Widget>[],
+    this.restaurantId,
+    this.tableId,
     this.cartItemCount,
   });
 
@@ -22,100 +28,118 @@ class ConsumerAppBar extends StatelessWidget implements PreferredSizeWidget {
   /// Optional title widget that takes precedence over title text.
   final Widget? titleWidget;
   
+  /// Table context data for OTP/Name display
+  final dynamic tableContextData; // Using dynamic or modify definition to import TableContextData
+  
   final VoidCallback? onOrdersTap;
   final VoidCallback? onMenuTap;
   final VoidCallback? onCartTap;
   final VoidCallback? onSearchTap;
   final VoidCallback? onOffersTap;
   final Widget? leading;
+  final Widget? trailing;
   final List<Widget> leadingActions;
-  
+  final List<Widget> trailingActions;
+  final String? restaurantId;
+  final String? tableId;
   /// Optional item count for cart badge display.
   final int? cartItemCount;
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(60.0); // Slightly taller
 
   @override
   Widget build(BuildContext context) {
-    final actions = <Widget>[
-      ...leadingActions,
-      if (onSearchTap != null)
-        IconButton(
-          icon: const Icon(Icons.search),
-          onPressed: onSearchTap,
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.paperTranslucent,
+        border: Border(
+           bottom: BorderSide(color: AppColors.divider, width: 1),
         ),
-      if (onOffersTap != null)
-        IconButton(
-          icon: const Icon(Icons.local_offer),
-          onPressed: onOffersTap,
-        ),
-      if (onOrdersTap != null)
-        IconButton(
-          icon: const Icon(Icons.receipt_long),
-          onPressed: onOrdersTap,
-        ),
-      if (onMenuTap != null)
-        IconButton(
-          icon: const Icon(Icons.menu_book),
-          onPressed: onMenuTap,
-        ),
-      if (onCartTap != null)
-        _buildCartButton(context),
-    ];
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          child: SizedBox(
+            height: kToolbarHeight,
+            child: Row(
+              children: [
+                if (leading != null) leading!,
+                
+                // Title Area
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                    child: titleWidget ?? _buildDefaultTitle(context),
+                  ),
+                ),
 
-    // Use titleWidget if provided, otherwise fallback to Text(title) or 'Menu'
-    final displayTitle = titleWidget ?? Text(title ?? 'Menu');
+                // Actions
+                ...leadingActions,
+                ...trailingActions,
+                if (onSearchTap != null) _buildIconButton(Icons.search, onSearchTap!),
+                if (onOffersTap != null) _buildIconButton(Icons.local_offer_outlined, onOffersTap!),
+                if (onOrdersTap != null) _buildIconButton(Icons.receipt_long_outlined, onOrdersTap!),
+                if (onMenuTap != null) _buildIconButton(Icons.menu_book_outlined, onMenuTap!),
+                if (onCartTap != null) _buildCartButton(context),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-    return AppBar(
-      title: displayTitle,
-      leading: leading,
-      actions: actions,
+  Widget _buildDefaultTitle(BuildContext context) {
+    return Text(
+      title ?? 'Lumière', 
+      style: AppTypography.uiSerif.copyWith( // Brand font
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+        fontStyle: FontStyle.italic,
+        color: AppColors.primary,
+      ),
+    );
+  }
+  
+  Widget _buildIconButton(IconData icon, VoidCallback onTap) {
+    return SizedBox(
+      width: AppDimensions.iconButtonSize,
+      height: AppDimensions.iconButtonSize,
+      child: IconButton(
+        icon: Icon(icon, size: 22, color: AppColors.ink),
+        onPressed: onTap,
+        style: IconButton.styleFrom(
+            padding: EdgeInsets.zero,
+            shape: const CircleBorder(),
+        ),
+      ),
     );
   }
 
   Widget _buildCartButton(BuildContext context) {
-    final icon = const Icon(Icons.shopping_cart);
-    
-    if (cartItemCount != null && cartItemCount! > 0) {
-      return Stack(
-        alignment: Alignment.center,
-        children: [
-          IconButton(
-            icon: icon,
-            onPressed: onCartTap,
-          ),
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        _buildIconButton(Icons.shopping_cart_outlined, onCartTap!),
+        if (cartItemCount != null && cartItemCount! > 0)
           Positioned(
-            top: 8,
-            right: 8,
+            top: 4,
+            right: 4,
             child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.error,
-                borderRadius: BorderRadius.circular(10),
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: AppColors.danger,
+                shape: BoxShape.circle,
               ),
               constraints: const BoxConstraints(
-                minWidth: 16,
-                minHeight: 16,
-              ),
-              child: Text(
-                cartItemCount! > 99 ? '99+' : '$cartItemCount',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onError,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
+                minWidth: 8,
+                minHeight: 8,
               ),
             ),
           ),
-        ],
-      );
-    }
-    
-    return IconButton(
-      icon: icon,
-      onPressed: onCartTap,
+      ],
     );
   }
 }

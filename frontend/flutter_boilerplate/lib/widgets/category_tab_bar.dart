@@ -93,7 +93,7 @@ class _CategoryTabBarState extends State<CategoryTabBar> {
         color: Theme.of(context).colorScheme.surface,
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outlineVariant,
+            color: AppColors.divider,
             width: 1,
           ),
         ),
@@ -131,45 +131,30 @@ class _CategoryTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xs,
-          vertical: AppSpacing.sm,
-        ),
+      child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
-          vertical: AppSpacing.xs,
         ),
-        constraints: const BoxConstraints(
-          maxWidth: 150, // Max width for ellipsis
+        margin: const EdgeInsets.symmetric(
+           horizontal: AppSpacing.xs,
         ),
         decoration: BoxDecoration(
-          color: isActive 
-              ? colorScheme.primaryContainer 
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isActive 
-                ? colorScheme.primary 
-                : colorScheme.outlineVariant,
-            width: 1,
-          ),
+          border: isActive
+              ? const Border(
+                  bottom: BorderSide(
+                    color: AppColors.primary,
+                    width: 2,
+                  ),
+                )
+              : const Border(bottom: BorderSide.none),
         ),
+        alignment: Alignment.center,
         child: Text(
-          name,
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-          style: theme.textTheme.labelLarge?.copyWith(
-            color: isActive 
-                ? colorScheme.onPrimaryContainer 
-                : colorScheme.onSurfaceVariant,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+          name.toUpperCase(),
+          style: AppTypography.categoryTab.copyWith(
+            color: isActive ? AppColors.primary : AppColors.inkMuted,
           ),
         ),
       ),
