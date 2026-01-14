@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/theme/theme.dart';
 
 /// Reusable AppBar that keeps the consumer app navigation actions consistent.
@@ -29,7 +29,7 @@ class ConsumerAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget? titleWidget;
   
   /// Table context data for OTP/Name display
-  final dynamic tableContextData; // Using dynamic or modify definition to import TableContextData
+  final TableContextData? tableContextData;
   
   final VoidCallback? onOrdersTap;
   final VoidCallback? onMenuTap;

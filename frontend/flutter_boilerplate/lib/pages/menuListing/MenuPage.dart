@@ -19,8 +19,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
-/// Estimated height of the cart summary panel for FAB offset calculation
-const double _kCartPanelHeight = 100.0;
+/// Cart panel height referenced from AppDimensions.cartPanelHeight
 
 class MenuPage extends StatelessWidget {
   const MenuPage({
@@ -249,7 +248,7 @@ class _MenuPageContentState extends State<MenuPageContent> {
                       itemPositionsListener: _itemPositionsListener,
                       // Add bottom padding when cart panel is visible to prevent content hiding
                       padding: EdgeInsets.only(
-                        bottom: cartItemCount > 0 ? _kCartPanelHeight : 0,
+                        bottom: cartItemCount > 0 ? AppDimensions.cartPanelHeight : 0,
                       ),
                       itemBuilder: (context, index) {
                         final category = menuData.categories[index];
@@ -302,7 +301,7 @@ class _MenuPageContentState extends State<MenuPageContent> {
                 categories: menuData.categories,
                 onToggle: menuState.toggleFloatingMenu,
                 onCategoryTap: scrollToCategoryById,
-                bottomOffset: cartItemCount > 0 ? _kCartPanelHeight : 0,
+                bottomOffset: cartItemCount > 0 ? AppDimensions.cartPanelHeight : 0,
               ),
             ],
           ),
@@ -360,7 +359,6 @@ class _MenuPageContentState extends State<MenuPageContent> {
     );
   }
 
-  /// Build rich header widget with restaurant name, table info, and OTP badge
   /// Build rich header widget with restaurant name, table info, and OTP badge
   Widget _buildRichHeader(BuildContext context, TableContextData tableContext) {
     
