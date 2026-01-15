@@ -17,6 +17,8 @@ class PriceDisplay extends StatelessWidget {
     this.showDiscountBadge = false,
     this.size = PriceDisplaySize.medium,
     this.crossAxisAlignment = CrossAxisAlignment.end,
+    this.isVertical = false,
+    this.reverseDiscountOrder = false,
   });
 
   /// The final price to display (after discounts).
@@ -39,6 +41,12 @@ class PriceDisplay extends StatelessWidget {
 
   /// Cross axis alignment for the column layout.
   final CrossAxisAlignment crossAxisAlignment;
+
+  /// Whether to display prices vertically.
+  final bool isVertical;
+
+  /// If true and isVertical is true, shows base price below final price.
+  final bool reverseDiscountOrder;
 
   bool get _hasDiscount =>
       basePrice != null && basePrice! > finalPrice && basePrice! > 0;
@@ -89,27 +97,42 @@ class PriceDisplay extends StatelessWidget {
         );
     }
 
+    final basePriceWidget = _hasDiscount
+        ? Text(
+            '$currencySymbol${basePrice!.toStringAsFixed(2)}',
+            style: basePriceStyle,
+          )
+        : null;
+
+    final finalPriceWidget = Text(
+      '$currencySymbol${finalPrice.toStringAsFixed(2)}',
+      style: finalPriceStyle,
+    );
+
     return Column(
       crossAxisAlignment: crossAxisAlignment,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Price row with base price strikethrough
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_hasDiscount) ...[
-              Text(
-                '$currencySymbol${basePrice!.toStringAsFixed(2)}',
-                style: basePriceStyle,
-              ),
-              const SizedBox(width: AppSpacing.xs),
+        if (isVertical) ...[
+          if (reverseDiscountOrder && basePriceWidget != null) ...[
+            finalPriceWidget,
+            basePriceWidget,
+          ] else if (basePriceWidget != null) ...[
+            basePriceWidget,
+            finalPriceWidget,
+          ] else
+            finalPriceWidget,
+        ] else
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (basePriceWidget != null) ...[
+                basePriceWidget,
+                const SizedBox(width: AppSpacing.xs),
+              ],
+              finalPriceWidget,
             ],
-            Text(
-              '$currencySymbol${finalPrice.toStringAsFixed(2)}',
-              style: finalPriceStyle,
-            ),
-          ],
-        ),
+          ),
 
         // Discount amount if provided
         if (discountAmount != null && discountAmount! > 0) ...[

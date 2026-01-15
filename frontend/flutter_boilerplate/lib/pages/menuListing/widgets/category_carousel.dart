@@ -81,7 +81,7 @@ class CategoryCarousel extends StatelessWidget {
 }
 
 /// Individual card for carousel display
-class _CarouselItemCard extends StatelessWidget {
+class _CarouselItemCard extends StatefulWidget {
   const _CarouselItemCard({
     required this.item,
     required this.quantity,
@@ -96,6 +96,13 @@ class _CarouselItemCard extends StatelessWidget {
   final String tableId;
   final String restaurantId;
 
+  @override
+  State<_CarouselItemCard> createState() => _CarouselItemCardState();
+}
+
+class _CarouselItemCardState extends State<_CarouselItemCard> {
+  bool _imageFailed = false;
+
   void _showCustomizationSheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
@@ -105,16 +112,16 @@ class _CarouselItemCard extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusLG)),
       ),
       builder: (context) => MenuCustomizationSheet(
-        item: item,
+        item: widget.item,
         onConfirm: (selectedVariants, selectedAddons) {
           AppLogger.log(
             '🛒 CAROUSEL: Adding customized item with variants: $selectedVariants, addons: $selectedAddons',
           );
           context.read<MenuState>().updateCartItem(
-                item,
+                widget.item,
                 true,
-                tableId: tableId,
-                restaurantId: restaurantId,
+                tableId: widget.tableId,
+                restaurantId: widget.restaurantId,
                 selectedVariants: selectedVariants,
                 selectedAddons: selectedAddons.toList(),
                 context: context,
@@ -127,22 +134,24 @@ class _CarouselItemCard extends StatelessWidget {
   void _handleAddToCart(BuildContext context) {
     final menuState = context.read<MenuState>();
 
-    if (menuState.needsCustomization(item)) {
-      final storedCustomization = menuState.getStoredCustomization(item.id);
+    if (menuState.needsCustomization(widget.item)) {
+      final storedCustomization = menuState.getStoredCustomization(widget.item.id);
 
-      if (quantity == 0 || storedCustomization == null) {
+      if (widget.quantity == 0 || storedCustomization == null) {
         _showCustomizationSheet(context);
       } else {
-        onQuantityChanged(true);
+        widget.onQuantityChanged(true);
       }
     } else {
-      onQuantityChanged(true);
+      widget.onQuantityChanged(true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = item.meta.image != null && item.meta.image!.isNotEmpty;
+    final hasImage = widget.item.meta.image != null && 
+                     widget.item.meta.image!.isNotEmpty && 
+                     !_imageFailed;
     
     return Container(
       width: 180,
@@ -164,10 +173,18 @@ class _CarouselItemCard extends StatelessWidget {
               width: double.infinity,
               color: AppColors.paperAlt,
               child: Image.network(
-                      item.meta.image!,
+                      widget.item.meta.image!,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        return _buildPlaceholder();
+                        // Set state to hide image on next build
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted && !_imageFailed) {
+                            setState(() {
+                              _imageFailed = true;
+                            });
+                          }
+                        });
+                        return const SizedBox.shrink();
                       },
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
@@ -196,21 +213,21 @@ class _CarouselItemCard extends StatelessWidget {
                   ],
                   Row(
                     children: [
-                       if (item.dietaryType != null && item.dietaryType == 'NON_VEG') ...[
+                       if (widget.item.dietaryType != null && widget.item.dietaryType == 'NON_VEG') ...[
                          StatusBadge.nonVeg(),
                          const SizedBox(width: 8),
                        ],
-                       if (item.spiceLevel != null && item.spiceLevel != 'MILD') ...[
-                         StatusBadge.spicy(level: item.spiceLevel!),
+                       if (widget.item.spiceLevel != null && widget.item.spiceLevel != 'MILD') ...[
+                         StatusBadge.spicy(level: widget.item.spiceLevel!),
                          const SizedBox(width: 8),
                        ],
                     ],
                   ),
-                  if (item.dietaryType == 'NON_VEG' || (item.spiceLevel != null && item.spiceLevel != 'MILD'))
+                  if (widget.item.dietaryType == 'NON_VEG' || (widget.item.spiceLevel != null && widget.item.spiceLevel != 'MILD'))
                     const SizedBox(height: 8),
 
                   Text(
-                    item.meta.name,
+                    widget.item.meta.name,
                     style: AppTypography.h3.copyWith(fontSize: 16),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -219,15 +236,18 @@ class _CarouselItemCard extends StatelessWidget {
                   // Price and Add button row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Expanded(
                         child: PriceDisplay(
-                          finalPrice: item.priceInfo.finalPrice.toDouble(),
-                          basePrice: item.priceInfo.discount > 0
-                              ? item.priceInfo.basePrice.toDouble()
+                          finalPrice: widget.item.priceInfo.finalPrice.toDouble(),
+                          basePrice: widget.item.priceInfo.discount > 0
+                              ? widget.item.priceInfo.basePrice.toDouble()
                               : null,
                           size: PriceDisplaySize.small,
                           crossAxisAlignment: CrossAxisAlignment.start, // Left aligned price
+                          isVertical: true,
+                          reverseDiscountOrder: true,
                         ),
                       ),
                       _buildAddButton(context),
@@ -242,18 +262,8 @@ class _CarouselItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholder() {
-    return Center(
-      child: Icon(
-        Icons.restaurant_menu,
-        size: 32,
-        color: AppColors.inkLighter.withOpacity(0.4),
-      ),
-    );
-  }
-
   Widget _buildAddButton(BuildContext context) {
-    if (!item.isInStock) {
+    if (!widget.item.isInStock) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
@@ -268,7 +278,7 @@ class _CarouselItemCard extends StatelessWidget {
       );
     }
 
-    if (quantity > 0) {
+    if (widget.quantity > 0) {
       return Container(
         decoration: const BoxDecoration(
           color: AppColors.primaryLight,
@@ -281,10 +291,10 @@ class _CarouselItemCard extends StatelessWidget {
             InkWell(
               onTap: () {
                 context.read<MenuState>().updateCartItem(
-                      item,
+                      widget.item,
                       false,
-                      tableId: tableId,
-                      restaurantId: restaurantId,
+                      tableId: widget.tableId,
+                      restaurantId: widget.restaurantId,
                     );
               },
               child: const Padding(
@@ -295,7 +305,7 @@ class _CarouselItemCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Text(
-                '$quantity',
+                '${widget.quantity}',
                 style: AppTypography.uiSans.copyWith(fontWeight: FontWeight.bold),
               ),
             ),

@@ -13,7 +13,7 @@ import 'package:flutterboilerplate/widgets/quantity_selector.dart';
 import 'package:flutterboilerplate/widgets/status_badge.dart';
 import 'package:provider/provider.dart';
 
-class MenuItemCard extends StatelessWidget {
+class MenuItemCard extends StatefulWidget {
   const MenuItemCard({
     required this.item,
     required this.quantity,
@@ -33,6 +33,13 @@ class MenuItemCard extends StatelessWidget {
   /// Whether to show the item image. Defaults to false.
   final bool showImage;
 
+  @override
+  State<MenuItemCard> createState() => _MenuItemCardState();
+}
+
+class _MenuItemCardState extends State<MenuItemCard> {
+  bool _imageFailed = false;
+
   void _showCustomizationSheet(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
@@ -42,16 +49,16 @@ class MenuItemCard extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusLG)),
       ),
       builder: (context) => MenuCustomizationSheet(
-        item: item,
+        item: widget.item,
         onConfirm: (selectedVariants, selectedAddons) {
           AppLogger.log(
             '🛒 MENU: Adding customized item with variants: $selectedVariants, addons: $selectedAddons',
           );
           context.read<MenuState>().updateCartItem(
-                item,
+                widget.item,
                 true,
-                tableId: tableId,
-                restaurantId: restaurantId,
+                tableId: widget.tableId,
+                restaurantId: widget.restaurantId,
                 selectedVariants: selectedVariants,
                 selectedAddons: selectedAddons.toList(),
                 context: context,
@@ -64,28 +71,33 @@ class MenuItemCard extends StatelessWidget {
   void _handleAddToCart(BuildContext context) {
     final menuState = context.read<MenuState>();
 
-    if (menuState.needsCustomization(item)) {
-      final storedCustomization = menuState.getStoredCustomization(item.id);
+    if (menuState.needsCustomization(widget.item)) {
+      final storedCustomization = menuState.getStoredCustomization(widget.item.id);
 
-      if (quantity == 0 || storedCustomization == null) {
+      if (widget.quantity == 0 || storedCustomization == null) {
         AppLogger.log(
-          '🛒 MENU: Showing customization sheet for item ${item.id}',
+          '🛒 MENU: Showing customization sheet for item ${widget.item.id}',
         );
         _showCustomizationSheet(context);
       } else {
         AppLogger.log(
-          '🛒 MENU: Using stored customization for item ${item.id}',
+          '🛒 MENU: Using stored customization for item ${widget.item.id}',
         );
-        onQuantityChanged(true);
+        widget.onQuantityChanged(true);
       }
     } else {
-      AppLogger.log('🛒 MENU: Adding non-customizable item ${item.id}');
-      onQuantityChanged(true);
+      AppLogger.log('🛒 MENU: Adding non-customizable item ${widget.item.id}');
+      widget.onQuantityChanged(true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final hasImage = widget.showImage && 
+                     widget.item.meta.image != null && 
+                     widget.item.meta.image!.isNotEmpty && 
+                     !_imageFailed;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppDimensions.space24, vertical: AppDimensions.space4),
       decoration: const BoxDecoration(
@@ -107,7 +119,7 @@ class MenuItemCard extends StatelessWidget {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(right: AppDimensions.space16),
-                    child: _MenuItemDetails(item: item),
+                    child: _MenuItemDetails(item: widget.item),
                   ),
                 ),
                 
@@ -116,26 +128,37 @@ class MenuItemCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                    PriceDisplay(
-                      finalPrice: item.priceInfo.finalPrice.toDouble(),
-                      basePrice: item.priceInfo.discount > 0
-                          ? item.priceInfo.basePrice.toDouble()
+                      finalPrice: widget.item.priceInfo.finalPrice.toDouble(),
+                      basePrice: widget.item.priceInfo.discount > 0
+                          ? widget.item.priceInfo.basePrice.toDouble()
                           : null,
                       crossAxisAlignment: CrossAxisAlignment.end,
+                      isVertical: true,
+                      reverseDiscountOrder: true,
                     ),
                     const SizedBox(height: AppDimensions.space8),
                     _QuantityControl(
-                      item: item,
-                      quantity: quantity,
+                      item: widget.item,
+                      quantity: widget.quantity,
                       onAddToCart: () => _handleAddToCart(context),
-                      tableId: tableId,
-                      restaurantId: restaurantId,
+                      tableId: widget.tableId,
+                      restaurantId: widget.restaurantId,
                     ),
                   ],
                 ),
                 
-                 if (showImage && item.meta.image != null) ...[
+                 if (hasImage) ...[
                   const SizedBox(width: AppDimensions.space16),
-                  _MenuItemImage(imageUrl: item.meta.image!),
+                  _MenuItemImage(
+                    imageUrl: widget.item.meta.image!,
+                    onError: () {
+                      if (mounted) {
+                        setState(() {
+                          _imageFailed = true;
+                        });
+                      }
+                    },
+                  ),
                 ],
               ],
             ),
@@ -148,9 +171,10 @@ class MenuItemCard extends StatelessWidget {
 
 /// Fixed-height image container for menu items
 class _MenuItemImage extends StatelessWidget {
-  const _MenuItemImage({required this.imageUrl});
+  const _MenuItemImage({required this.imageUrl, this.onError});
 
   final String imageUrl;
+  final VoidCallback? onError;
 
   @override
   Widget build(BuildContext context) {
@@ -163,6 +187,11 @@ class _MenuItemImage extends StatelessWidget {
           imageUrl,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
+            // Use microtask to call onError after build completes
+            // Parent widget has mounted check to prevent setState on unmounted widget
+            if (onError != null) {
+              Future.microtask(onError!);
+            }
             return const SizedBox.shrink();
           },
           loadingBuilder: (context, child, loadingProgress) {

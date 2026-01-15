@@ -30,6 +30,10 @@ class ApiConfig {
   static const String checkoutCartEndpoint = '/cart-checkoutCart';
   static const String orderGetCartEndpoint = '/order-getOrder';
   static const String listRestaurantsDevEndpoint = '/dev-listRestaurants';
+  
+  // Offers API endpoints
+  static const String getApplicableOffersEndpoint = '/offers-getApplicableOffers';
+  static const String applyOfferEndpoint = '/offers-applyOffer';
 }
 
 const errorMessages = {
