@@ -15,9 +15,9 @@ class ApiResponse<T> {
     errorDetails: errorDetails,
   );
 
-  factory ApiResponse.success(T data) => ApiResponse(
+  factory ApiResponse.success(T data, {String message = 'Success'}) => ApiResponse(
     success: true,
-    message: 'Success',
+    message: message,
     data: data,
   );
 

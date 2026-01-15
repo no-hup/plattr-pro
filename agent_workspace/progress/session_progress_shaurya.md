@@ -11,3 +11,7 @@ todo: FE menu page seems to be breaking. secitons are not clickable, need to che
 
 designs added 
 todo - post migration make stragegy for design and theming changes to accomodate new design
+
+15th Jan
+
+How does offer actually get applied on backend and its realtion with prices.

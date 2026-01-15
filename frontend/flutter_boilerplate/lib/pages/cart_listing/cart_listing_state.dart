@@ -11,10 +11,11 @@ import 'package:flutterboilerplate/pages/menuListing/models/cart.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_item.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_item_price_info.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_price_info.dart';
+import 'package:flutterboilerplate/pages/menuListing/offers_state_mixin.dart';
 import 'package:flutterboilerplate/session/session_provider.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
 
-class CartListingState extends ChangeNotifier {
+class CartListingState extends ChangeNotifier with OffersStateMixin {
   CartListingState(
     this._repository,
     this._menuRepository,
@@ -226,6 +227,9 @@ class CartListingState extends ChangeNotifier {
 
       _isLoading = false;
       notifyListeners();
+      
+      // Fetch offers after successful cart load (non-blocking)
+      fetchOffersInBackground(restaurantId: restaurantId, tableId: tableId);
     } catch (e) {
       AppLogger.log('❌ CART: Error fetching cart - $e');
       _error = e.toString();
@@ -547,4 +551,10 @@ class CartListingState extends ChangeNotifier {
   //     fontSize: 16.0,
   //   );
   // }
+
+  // ==================== Offers Mixin Implementation ====================
+  
+  /// CartListingState has access to SessionProvider, so we return the sessionId.
+  @override
+  String? getSessionIdForOffers() => _sessionProvider.sessionId;
 }

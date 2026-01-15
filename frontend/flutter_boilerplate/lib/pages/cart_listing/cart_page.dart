@@ -25,12 +25,15 @@ class CartPage extends StatefulWidget {
   State<CartPage> createState() => _CartPageState();
 }
 
-class _CartPageState extends State<CartPage> {
+class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
     // Direct debug print for log testing
     print('🔍🔍🔍 TESTING LOGS - CART PAGE INIT STATE 🔍🔍🔍');
+    
+    // Register lifecycle observer for offers refresh on resume
+    WidgetsBinding.instance.addObserver(this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AppLogger.log(
@@ -40,6 +43,25 @@ class _CartPageState extends State<CartPage> {
             restaurantId: widget.restaurantId,
           );
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Refresh offers when app comes back to foreground
+    if (state == AppLifecycleState.resumed) {
+      AppLogger.log('🔄 CART: App resumed, refreshing offers');
+      context.read<CartListingState>().fetchOffers(
+        restaurantId: widget.restaurantId,
+        tableId: widget.tableId,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override

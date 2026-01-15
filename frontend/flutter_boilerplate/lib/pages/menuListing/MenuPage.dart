@@ -79,7 +79,7 @@ class MenuPageContent extends StatefulWidget {
   State<MenuPageContent> createState() => _MenuPageContentState();
 }
 
-class _MenuPageContentState extends State<MenuPageContent> {
+class _MenuPageContentState extends State<MenuPageContent> with WidgetsBindingObserver {
   // Controllers provided by scrollable_positioned_list package
   final ItemScrollController _itemScrollController = ItemScrollController();
   final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
@@ -91,6 +91,21 @@ class _MenuPageContentState extends State<MenuPageContent> {
   void initState() {
     super.initState();
     _setupScrollSyncListener();
+    // Register lifecycle observer for offers refresh on resume
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Refresh offers when app comes back to foreground
+    if (state == AppLifecycleState.resumed) {
+      AppLogger.log('🔄 MENU: App resumed, refreshing offers');
+      context.read<MenuState>().fetchOffers(
+        restaurantId: widget.restaurantId,
+        tableId: widget.tableId,
+      );
+    }
   }
 
   /// Setup scroll spy listener that syncs scroll position to active category
@@ -140,6 +155,7 @@ class _MenuPageContentState extends State<MenuPageContent> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _itemPositionsListener.itemPositions.removeListener(_onScrollPositionsChanged);
     super.dispose();
   }

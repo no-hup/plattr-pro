@@ -11,11 +11,12 @@ import 'package:flutterboilerplate/pages/menuListing/models/cart_item_price_info
 import 'package:flutterboilerplate/pages/menuListing/models/cart_price_info.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/variant_option.dart' as model;
 import 'package:flutterboilerplate/pages/menuListing/models/variant_selection.dart';
+import 'package:flutterboilerplate/pages/menuListing/offers_state_mixin.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
 
 /// Custom logic for addons and variants is implemented with the current user in mind.
 /// Each combination of addons and variants is treated as a unique item in the cart.
-class MenuState extends ChangeNotifier {
+class MenuState extends ChangeNotifier with OffersStateMixin {
   MenuState(this._repository);
 
   final MenuRepository _repository;
@@ -468,6 +469,9 @@ class MenuState extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       
+      // Fetch offers after successful menu and cart load (non-blocking)
+      fetchOffersInBackground(restaurantId: restaurantId, tableId: tableId);
+      
     } catch (e) {
       AppLogger.log('❌ MENU: Error fetching menu - $e');
       _error = e.toString();
@@ -634,4 +638,10 @@ class MenuState extends ChangeNotifier {
   Cart? _cart;
   Cart? get cart => _cart;
 
+  // ==================== Offers Mixin Implementation ====================
+  
+  /// MenuState doesn't have direct session access, so return null.
+  /// Session-based offers will work when called from CartListingState.
+  @override
+  String? getSessionIdForOffers() => null;
 }
