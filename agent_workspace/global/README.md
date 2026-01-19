@@ -52,3 +52,44 @@ Before calling a task done:
 - Shared learnings → `learnings/`
 
 Always use absolute paths in documentation so sub-agents can navigate without context.
+
+## Project Context Instructions for AI Agents
+
+This project contains multiple Flutter applications. When analyzing the codebase or performing tasks, please focus primarily on the `lib` folder where the core application logic resides.
+
+### Flutter Applications
+The main Flutter applications are located in:
+- `frontend/flutter_boilerplate`
+- `frontend/src-platter-apps/apps/platter_admin`
+- `frontend/src-platter-apps/apps/platter_kitchen`
+- `frontend/src-platter-apps/apps/platter_server`
+
+### Ignored Files & Directories
+To maintain relevant context and avoid analyzing unnecessary boilerplate or auto-generated code, the following directories and files should generally be IGNORED within each Flutter application directory, unless specifically requested otherwise:
+
+#### Platform-Specific Boilerplate
+- `android/`
+- `ios/`
+- `linux/`
+- `macos/`
+- `windows/`
+- `web/` (Focus on `lib/` for web logic; `web/` contains static assets and config)
+
+#### Build & Tooling
+- `build/`
+- `.dart_tool/`
+- `.idea/`
+- `.vscode/`
+
+#### Configuration Files (Unless modification is required)
+- `pubspec.lock`
+- `.metadata`
+- `analysis_options.yaml` (Unless checking lint rules)
+
+#### Large Data Files (Ignore content by default)
+The following files are large and should NOT be read or included in context unless specifically asked to modify or inspect their data structure:
+- `backend/src-plattr/functions/mock/mockData.json`
+- `backend/src-plattr/functions/mock/mockDataV2.json`
+
+### Primary Focus
+**`lib/`**: This directory contains the source code for the Flutter applications. Please prioritize searching and editing files within `lib/`.
