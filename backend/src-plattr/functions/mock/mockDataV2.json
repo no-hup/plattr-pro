@@ -875,7 +875,10 @@
             "carbs": 45,
             "fat": 38
           },
-          "allergenTags": ["gluten", "dairy"],
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
           "isInStock": true,
           "isCustomizable": false
         },
@@ -901,7 +904,10 @@
             "carbs": 90,
             "fat": 35
           },
-          "allergenTags": ["gluten", "dairy"],
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
           "isInStock": true,
           "isCustomizable": false
         },
@@ -927,7 +933,11 @@
             "carbs": 55,
             "fat": 25
           },
-          "allergenTags": ["gluten", "dairy", "eggs"],
+          "allergenTags": [
+            "gluten",
+            "dairy",
+            "eggs"
+          ],
           "isInStock": true,
           "isCustomizable": false
         },
@@ -953,7 +963,9 @@
             "carbs": 8,
             "fat": 4
           },
-          "allergenTags": ["dairy"],
+          "allergenTags": [
+            "dairy"
+          ],
           "isInStock": true,
           "isCustomizable": false
         }
@@ -2081,6 +2093,401 @@
       "kitchens": {
         "kitchen1": {
           "name": "Diner Kitchen",
+          "status": "active"
+        }
+      },
+      "sessions": {},
+      "carts": {},
+      "orders": {}
+    },
+    "rest_flag_multi_variant_true": {
+      "info": {
+        "name": "QA - Multi Variant Supported (TRUE)",
+        "address": "42 QA Blvd",
+        "location": {
+          "_latitude": 40.7128,
+          "_longitude": -74.006
+        }
+      },
+      "menus": {
+        "menu_qa_1": {
+          "menuId": "menu_qa_1",
+          "name": "QA Menu 1",
+          "description": "Menu for Flag True Test",
+          "isActive": true,
+          "isDefault": true,
+          "categoryIds": [
+            "cat_qa_1"
+          ],
+          "menuItemIds": [
+            "item_qa_burger_1",
+            "item_qa_salad_1"
+          ],
+          "order": 0,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        }
+      },
+      "categories": {
+        "cat_qa_1": {
+          "id": "cat_qa_1",
+          "name": "QA Food",
+          "description": "QA Items",
+          "order": 0,
+          "subcategoryIds": [
+            "subcat_qa_1"
+          ]
+        }
+      },
+      "subcategories": {
+        "subcat_qa_1": {
+          "id": "subcat_qa_1",
+          "name": "QA Burgers",
+          "description": "Test Burgers",
+          "parentCategoryId": "cat_qa_1",
+          "order": 0,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        }
+      },
+      "menuItems": {
+        "item_qa_burger_1": {
+          "menuItemId": "item_qa_burger_1",
+          "categoryId": "cat_qa_1",
+          "primarySubcategoryId": "subcat_qa_1",
+          "subcategoryIds": [
+            "subcat_qa_1"
+          ],
+          "meta": {
+            "name": "QA Burger (Customizable)",
+            "description": "Burger with Size variant",
+            "categoryName": "QA Food",
+            "primarySubcategoryName": "QA Burgers",
+            "image": "https://example.com/images/burger.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 100,
+            "discount": 0,
+            "finalPrice": 100
+          },
+          "variants": [
+            {
+              "id": "var_size_1",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_cheese_1"
+          ],
+          "nutritionalInfo": {},
+          "allergenTags": [],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_qa_salad_1": {
+          "menuItemId": "item_qa_salad_1",
+          "categoryId": "cat_qa_1",
+          "primarySubcategoryId": "subcat_qa_1",
+          "subcategoryIds": [
+            "subcat_qa_1"
+          ],
+          "meta": {
+            "name": "QA Salad (Simple)",
+            "description": "No variants",
+            "categoryName": "QA Food",
+            "primarySubcategoryName": "QA Burgers",
+            "image": "https://example.com/images/salad.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 50,
+            "discount": 0,
+            "finalPrice": 50
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {},
+          "allergenTags": [],
+          "isInStock": true,
+          "isCustomizable": false
+        }
+      },
+      "variants": {
+        "var_size_1": {
+          "id": "var_size_1",
+          "meta": {
+            "name": "Size",
+            "description": "Size choice"
+          },
+          "options": [
+            {
+              "id": "opt_small_1",
+              "name": "Small",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "opt_med_1",
+              "name": "Medium",
+              "priceInfo": {
+                "basePrice": 20,
+                "finalPrice": 20,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_qa_burger_1"
+          ]
+        }
+      },
+      "addons": {
+        "addon_cheese_1": {
+          "id": "addon_cheese_1",
+          "meta": {
+            "name": "Extra Cheese"
+          },
+          "priceInfo": {
+            "basePrice": 10,
+            "finalPrice": 10,
+            "discount": 0
+          },
+          "respectParentDiscount": true,
+          "isInStock": true,
+          "itemsAssociatedWith": [
+            "item_qa_burger_1"
+          ],
+          "isMandatory": false
+        }
+      },
+      "tables": {
+        "t1": {
+          "number": "T1",
+          "capacity": 4,
+          "status": "vacant",
+          "assignedServerId": "s1",
+          "currentOTP": {
+            "code": "",
+            "createdAt": null,
+            "expiresAt": null
+          },
+          "session": null,
+          "occupiedBy": [],
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          }
+        }
+      },
+      "servers": {
+        "s1": {
+          "name": "QA Server",
+          "role": "waiter",
+          "status": "active",
+          "assignedTables": [
+            "t1"
+          ]
+        }
+      },
+      "kitchens": {
+        "k1": {
+          "name": "QA Kitchen",
+          "status": "active"
+        }
+      },
+      "sessions": {},
+      "carts": {},
+      "orders": {}
+    },
+    "rest_flag_fallback_config_false": {
+      "info": {
+        "name": "QA - Fallback Config (FALSE)",
+        "address": "42 QA Blvd",
+        "location": {
+          "_latitude": 40.7128,
+          "_longitude": -74.006
+        }
+      },
+      "menus": {
+        "menu_qa_2": {
+          "menuId": "menu_qa_2",
+          "name": "QA Menu 2",
+          "description": "Menu for Flag False Test",
+          "isActive": true,
+          "isDefault": true,
+          "categoryIds": [
+            "cat_qa_2"
+          ],
+          "menuItemIds": [
+            "item_qa_pizza_2"
+          ],
+          "order": 0,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        }
+      },
+      "categories": {
+        "cat_qa_2": {
+          "id": "cat_qa_2",
+          "name": "QA Food 2",
+          "description": "QA Items 2",
+          "order": 0,
+          "subcategoryIds": [
+            "subcat_qa_2"
+          ]
+        }
+      },
+      "subcategories": {
+        "subcat_qa_2": {
+          "id": "subcat_qa_2",
+          "name": "QA Pizzas",
+          "description": "Test Pizzas",
+          "parentCategoryId": "cat_qa_2",
+          "order": 0,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        }
+      },
+      "menuItems": {
+        "item_qa_pizza_2": {
+          "menuItemId": "item_qa_pizza_2",
+          "categoryId": "cat_qa_2",
+          "primarySubcategoryId": "subcat_qa_2",
+          "subcategoryIds": [
+            "subcat_qa_2"
+          ],
+          "meta": {
+            "name": "QA Pizza (Customizable)",
+            "description": "Pizza with Crust variant",
+            "categoryName": "QA Food 2",
+            "primarySubcategoryName": "QA Pizzas",
+            "image": "https://example.com/images/pizza.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 200,
+            "discount": 0,
+            "finalPrice": 200
+          },
+          "variants": [
+            {
+              "id": "var_crust_2",
+              "name": "Crust"
+            }
+          ],
+          "addons": [
+            "addon_dip_2"
+          ],
+          "nutritionalInfo": {},
+          "allergenTags": [],
+          "isInStock": true,
+          "isCustomizable": true
+        }
+      },
+      "variants": {
+        "var_crust_2": {
+          "id": "var_crust_2",
+          "meta": {
+            "name": "Crust",
+            "description": "Crust choice"
+          },
+          "options": [
+            {
+              "id": "opt_thin_2",
+              "name": "Thin",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "opt_thick_2",
+              "name": "Thick",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_qa_pizza_2"
+          ]
+        }
+      },
+      "addons": {
+        "addon_dip_2": {
+          "id": "addon_dip_2",
+          "meta": {
+            "name": "Extra Dip"
+          },
+          "priceInfo": {
+            "basePrice": 20,
+            "finalPrice": 20,
+            "discount": 0
+          },
+          "respectParentDiscount": true,
+          "isInStock": true,
+          "itemsAssociatedWith": [
+            "item_qa_pizza_2"
+          ],
+          "isMandatory": false
+        }
+      },
+      "tables": {
+        "t1": {
+          "number": "T1",
+          "capacity": 4,
+          "status": "vacant",
+          "assignedServerId": "s2",
+          "currentOTP": {
+            "code": "",
+            "createdAt": null,
+            "expiresAt": null
+          },
+          "session": null,
+          "occupiedBy": [],
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          }
+        }
+      },
+      "servers": {
+        "s2": {
+          "name": "QA Server 2",
+          "role": "waiter",
+          "status": "active",
+          "assignedTables": [
+            "t1"
+          ]
+        }
+      },
+      "kitchens": {
+        "k2": {
+          "name": "QA Kitchen 2",
           "status": "active"
         }
       },
