@@ -18,7 +18,10 @@ const offersFunctions = require('./offers/indexOffers');
 exports.table = tableFunctions;
 exports.server = serverFunctions;
 exports.customer = customerFunctions;
-exports.cart = cartFunctions;
+exports.cart = {
+  ...cartFunctions,
+  updateCartStatus: orderFunctions.updateCartStatus
+};
 exports.menu = menuFunctions;
 exports.dev = devFunctions;
 exports.offers = offersFunctions;
@@ -27,7 +30,7 @@ exports.offers = offersFunctions;
 exports.order = {
   getOrder: orderFunctions.getOrder,
   createOrder: orderFunctions.createOrUpdateOrder,
-  updateCartStatus: orderFunctions.updateCartStatus,
+  updateOrderStatus: orderFunctions.updateOrderStatus,
   getActiveOrdersForRestaurant: orderFunctions.getActiveOrdersForRestaurant
 };
 

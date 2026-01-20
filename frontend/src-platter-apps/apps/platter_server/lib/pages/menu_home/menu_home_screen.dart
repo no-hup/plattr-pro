@@ -181,7 +181,29 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
   
   Widget _buildMenuItem(MenuItem item) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      leading: SizedBox(
+        width: 56,
+        height: 56,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: item.meta.image.isNotEmpty
+              ? Image.network(
+                  item.meta.image,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey.shade200,
+                      child: const Icon(Icons.fastfood, color: Colors.grey),
+                    );
+                  },
+                )
+              : Container(
+                  color: Colors.grey.shade200,
+                  child: const Icon(Icons.fastfood, color: Colors.grey),
+                ),
+        ),
+      ),
       title: Text(
         item.meta.name,
         style: TextStyle(
