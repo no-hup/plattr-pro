@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'login_provider.dart'; // DataState will be accessible from here
 import 'repository/login_api_service.dart';
@@ -153,10 +154,84 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                           textAlign: TextAlign.center,
                         ),
                       ),
+                      if (kDebugMode) ...[
+                        const SizedBox(height: 32),
+                        const Divider(),
+                        const Text(
+                          'Debug Credentials',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        _DebugCredentialCard(
+                          name: 'Full Hierarchy Rest',
+                          id: 'res_full',
+                          phone: '1111111111',
+                          pass: '1234',
+                          onTap: (id, phone, pass) {
+                            _restaurantIdController.text = id;
+                            _usernameController.text = phone;
+                            _passwordController.text = pass;
+                          },
+                        ),
+                        _DebugCredentialCard(
+                          name: 'Menus Only Rest',
+                          id: 'res_menus',
+                          phone: '2222222222',
+                          pass: '1234',
+                          onTap: (id, phone, pass) {
+                            _restaurantIdController.text = id;
+                            _usernameController.text = phone;
+                            _passwordController.text = pass;
+                          },
+                        ),
+                      ],
                   ],
                 );
               },
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DebugCredentialCard extends StatelessWidget {
+  final String name;
+  final String id;
+  final String phone;
+  final String pass;
+  final Function(String, String, String) onTap;
+
+  const _DebugCredentialCard({
+    required this.name,
+    required this.id,
+    required this.phone,
+    required this.pass,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: InkWell(
+        onTap: () => onTap(id, phone, pass),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text('ID: $id'),
+              Text('Phone: $phone'),
+              Text('Pass: $pass'),
+            ],
           ),
         ),
       ),

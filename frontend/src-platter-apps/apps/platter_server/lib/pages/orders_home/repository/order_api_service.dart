@@ -86,37 +86,33 @@ class OrderApiService {
     }
   }
   
-  /// Updates the status of an order
+  /// Updates the status of an order (e.g., marking as COMPLETED)
   /// 
   /// Changes the status of the order with [orderId] to [newStatus].
-  /// Returns the updated order details on success.
+  /// Valid statuses: PENDING, IN_PROGRESS, COMPLETED, CANCELLED
   Future<ApiResponse<bool>> updateOrderStatus({
     required String restaurantId,
     required String orderId,
-    required String newStatus,
+    required String orderStatus,
     required String sessionId,
   }) async {
     try {
-      // Note: This is a placeholder for the actual API endpoint
-      // Implement when the backend endpoint is available
       final response = await _dio.post(
-        ApiConstants.getOrder, // Replace with actual endpoint
+        ApiConstants.updateOrderStatus,
         data: {
           'data': {
             'restaurantId': restaurantId,
             'orderId': orderId,
-            'status': newStatus,
+            'orderStatus': orderStatus,
             'sessionId': sessionId,
           }
         },
       );
       
-      // Simplified response handling for the placeholder
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return ApiResponse<bool>.success(true, message: 'Order status updated successfully');
-      } else {
-        return ApiResponse<bool>.error('Failed to update order status', errorCode: 'api_error');
-      }
+      return ResponseParser.parse<bool>(
+        response,
+        (_) => true,
+      );
     } on DioException catch (e) {
       final code = e.response?.statusCode?.toString() ?? 'dio_error';
       final msg = e.message ?? 'Failed to update order status';
@@ -131,4 +127,84 @@ class OrderApiService {
       );
     }
   }
+
+  /// Updates the status of a cart within an order
+  /// 
+  /// Used to mark cart items as delivered (SERVED), accepted, etc.
+  /// Valid transitions: PENDING → ACCEPTED → PREPARING → READY → SERVED
+  /// 
+  /// [cartIndex] is the zero-based index of the cart in the order's carts array.
+  /// [newStatus] should be one of: PENDING, ACCEPTED, PREPARING, READY, SERVED, CANCELLED, RETURNED
+  Future<ApiResponse<bool>> updateCartStatus({
+    required String restaurantId,
+    required String orderId,
+    required int cartIndex,
+    required String newStatus,
+    String? sessionId,
+    String? notes,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.updateCartStatus,
+        data: {
+          'data': {
+            'restaurantId': restaurantId,
+            'orderId': orderId,
+            'cartIndex': cartIndex,
+            'newStatus': newStatus,
+            if (sessionId != null) 'sessionId': sessionId,
+            if (notes != null) 'notes': notes,
+          }
+        },
+      );
+      
+      return ResponseParser.parse<bool>(
+        response,
+        (_) => true,
+      );
+    } on DioException catch (e) {
+      final code = e.response?.statusCode?.toString() ?? 'dio_error';
+      final msg = e.message ?? 'Failed to update cart status';
+      return ApiResponse<bool>.error(
+        'Network error: $msg',
+        errorCode: code,
+      );
+    } catch (e) {
+      return ApiResponse<bool>.error(
+        'Unexpected error while updating cart status: $e',
+        errorCode: 'parsing_error',
+      );
+    }
+  }
+
+  /// Convenience method to mark a cart as delivered (SERVED)
+  Future<ApiResponse<bool>> markCartAsDelivered({
+    required String restaurantId,
+    required String orderId,
+    required int cartIndex,
+    String? sessionId,
+  }) {
+    return updateCartStatus(
+      restaurantId: restaurantId,
+      orderId: orderId,
+      cartIndex: cartIndex,
+      newStatus: 'SERVED',
+      sessionId: sessionId,
+    );
+  }
+
+  /// Convenience method to mark an order as completed
+  Future<ApiResponse<bool>> markOrderAsDone({
+    required String restaurantId,
+    required String orderId,
+    required String sessionId,
+  }) {
+    return updateOrderStatus(
+      restaurantId: restaurantId,
+      orderId: orderId,
+      orderStatus: 'COMPLETED',
+      sessionId: sessionId,
+    );
+  }
 }
+

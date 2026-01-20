@@ -13,7 +13,7 @@
         "_nanoseconds": 0
       },
       "currentVisit": {
-        "restaurantId": "rest_full_hierarchy",
+        "restaurantId": "res_full",
         "tableId": "table001",
         "startTime": {
           "_seconds": 1678901234,
@@ -22,7 +22,7 @@
       },
       "visits": [
         {
-          "restaurantId": "rest_full_hierarchy",
+          "restaurantId": "res_full",
           "tableId": "table001",
           "startTime": {
             "_seconds": 1678901234,
@@ -73,7 +73,7 @@
     }
   },
   "restaurants": {
-    "rest_full_hierarchy": {
+    "res_full": {
       "info": {
         "name": "FULL HIERARCHY - Day & Night Kitchen (Menus + Subcategories)",
         "address": "42 All-Day Avenue, Foodville, FV 12345",
@@ -1238,7 +1238,7 @@
       "carts": {},
       "orders": {}
     },
-    "rest_menus_only": {
+    "res_menus": {
       "info": {
         "name": "MENUS ONLY - Express Cafe (Menus, NO Subcategories)",
         "address": "456 Quick Street, Foodville, FV 12345",
@@ -1619,7 +1619,7 @@
       "carts": {},
       "orders": {}
     },
-    "rest_legacy": {
+    "res_legacy": {
       "info": {
         "name": "LEGACY - Classic Diner (NO Menus, NO Subcategories)",
         "address": "789 Traditional Road, Foodville, FV 12345",
@@ -2100,7 +2100,7 @@
       "carts": {},
       "orders": {}
     },
-    "rest_flag_multi_variant_true": {
+    "res_mv": {
       "info": {
         "name": "QA - Multi Variant Supported (TRUE)",
         "address": "42 QA Blvd",
@@ -2311,7 +2311,7 @@
       "carts": {},
       "orders": {}
     },
-    "rest_flag_fallback_config_false": {
+    "res_fc": {
       "info": {
         "name": "QA - Fallback Config (FALSE)",
         "address": "42 QA Blvd",

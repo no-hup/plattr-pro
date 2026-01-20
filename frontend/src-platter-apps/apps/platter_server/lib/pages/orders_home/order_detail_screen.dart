@@ -284,44 +284,89 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
     
     try {
-      final response = await _apiService.updateOrderStatus(
-        restaurantId: widget.restaurantId,
-        orderId: widget.orderId,
-        newStatus: newStatus,
-        sessionId: widget.sessionId,
-      );
+      ApiResponse<bool> response;
+
+      // Special handling for "ready" status to support multi-cart backend
+      if (newStatus.toLowerCase() == 'ready') {
+        bool allSuccessful = true;
+        String? firstErrorMessage;
+
+        // Iterate through all carts and mark them as READY
+        if (_orderDetail != null && _orderDetail!.carts.isNotEmpty) {
+          for (int i = 0; i < _orderDetail!.carts.length; i++) {
+            final cart = _orderDetail!.carts[i];
+            final cartStatus = (cart['status'] ?? '').toString().toLowerCase();
+            
+            // Only update active carts that aren't already served or ready
+            if (cartStatus != 'served' && cartStatus != 'ready' && cartStatus != 'cancelled') {
+              final cartResponse = await _apiService.updateCartStatus(
+                restaurantId: widget.restaurantId,
+                orderId: widget.orderId,
+                cartIndex: i,
+                newStatus: 'READY',
+                sessionId: widget.sessionId,
+              );
+              
+              if (!cartResponse.success) {
+                allSuccessful = false;
+                firstErrorMessage ??= cartResponse.message;
+              }
+            }
+          }
+        }
+
+        if (allSuccessful) {
+          response = ApiResponse<bool>.success(true, message: 'All items marked as ready');
+        } else {
+          response = ApiResponse<bool>.error(firstErrorMessage ?? 'Failed to update some items');
+        }
+      } else {
+        // Standard order-level status update (e.g., cancelled)
+        response = await _apiService.updateOrderStatus(
+          restaurantId: widget.restaurantId,
+          orderId: widget.orderId,
+          orderStatus: newStatus.toUpperCase(),
+          sessionId: widget.sessionId,
+        );
+      }
       
       // Close loading dialog
-      Navigator.of(context).pop();
+      if (mounted) Navigator.of(context).pop();
       
       if (response.success) {
         // Refresh order details after status update
         await _fetchOrderDetail();
         
         // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response.message ?? 'Order status updated')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(response.message ?? 'Status updated')),
+          );
+        }
       } else {
         // Show error message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response.message ?? 'Failed to update status'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+      
+      // Show error message
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response.message ?? 'Failed to update order status'),
+            content: Text('Error: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (e) {
-      // Close loading dialog
-      Navigator.of(context).pop();
-      
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
   

@@ -5,6 +5,7 @@ class ApiConstants {
   // Base URL is now managed by AppConfig
   static const String getOrder = '/order-getOrder';
   static const String getActiveOrdersForRestaurant = '/order-getActiveOrdersForRestaurant';
+  static const String updateOrderStatus = '/order-updateOrderStatus';
   static const String serverLogin = '/server-serverLogin';
   
   // Table endpoints (cloud functions)
@@ -14,7 +15,12 @@ class ApiConstants {
   static const String updateTableStatus = '/table-updateTableStatus';
   static const String generateTableOTP = '/table-generateTableOTP';
   
+  // Cart endpoints
+  static const String updateCartStatus = '/cart-updateCartStatus';
+  static const String removeItemFromCart = '/cart-removeItemFromCart';
+  
   // Menu endpoints
   static const String getRestaurantMenu = '/menu-getRestaurantMenu';
   static const String updateMenuItemAvailability = '/menu-updateMenuItemAvailability';
 }
+

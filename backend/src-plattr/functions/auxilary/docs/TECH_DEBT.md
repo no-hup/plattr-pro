@@ -1,4 +1,4 @@
-scro# Technical Debt & Pending Improvements
+# Technical Debt & Pending Improvements
 
 ## Backend
 
@@ -33,7 +33,136 @@ module.exports = {
 };
 ```
 
-## Frontend
+### 3. Location Proximity Check (isWithinRadius) Not Implemented
+**Priority:** Low  
+**Source:** Server App Gap Analysis (Jan 2026)
+**Files:** `table/table.js` → `isWithinRadius()` function (line 639)
+**Description:**
+The `isWithinRadius` function is meant to verify that users are physically within the restaurant premises when scanning tables or performing location-sensitive operations. Currently, it always returns `true` as a placeholder.
+
+**Current Implementation:**
+```javascript
+function isWithinRadius(point1, point2, radius) {
+    return true; // Simplified implementation
+}
+```
+
+**Intended Behavior:**
+- Calculate haversine distance between user location and restaurant location
+- Return `true` only if user is within specified radius (default 100 meters)
+- Used in `scanTable` function to prevent remote table access
+
+**Action:**
+- Implement proper geolocation distance calculation using Haversine formula
+- Consider using a library like `geolib` for accuracy
+- Add unit tests for edge cases (GPS inaccuracy, boundary conditions)
+
+**Note:** For now, keeping `return true` for server-related operations is acceptable for B2B app.
+
+### 4. Order Pagination for Previous Orders Page
+**Priority:** Low
+**Source:** Server App Feature Enhancement
+**Files:** `table/table.js` → `getTableDetails()` (line 945-947)
+**Description:**
+The "Previous Orders" page in the Server App currently limits display to 10 orders per table. The `getTableDetails` function only fetches the last 3 orders.
+
+**Current Implementation:**
+```javascript
+.orderBy('createdAt', 'desc')
+.limit(3)
+```
+
+**Requirements:**
+- Backend needs to support `pageSize` and `pageToken` parameters
+- Frontend needs infinite scroll or "Load More" functionality
+- Consider separate endpoint for paginated order history: `getTableOrderHistory`
+
+**Action:**
+- Add pagination support to order fetching for tables
+- Implement cursor-based pagination for efficient querying
+- Update FE docs when implemented
+
+### 5. Firebase Trigger Implementation Status (Partial)
+**Priority:** Medium
+**Source:** Server App Documentation Review (Jan 2026)
+**Files:** 
+- `cart/triggers/orderTriggers.js` (partially implemented)
+- FE docs mention recommended triggers that may not be fully implemented
+
+**Description:**
+The server app documentation lists several "recommended Firebase triggers" but their implementation status is unclear:
+
+| Trigger | Status | Location |
+|---------|--------|----------|
+| **Order Ready for Pickup** | ✅ Implemented | `orderTriggers.js` → `onOrderUpdate` |
+| **New Order Assignment** | ⚠️ Needs Review | Triggers exist but notification delivery unclear |
+| **Table Status Update** | ❓ Not Found | No trigger found for customer service requests |
+| **Item Out of Stock** | ❓ Not Found | No trigger for menu item availability changes |
+
+**Implemented Trigger (READY status):**
+```javascript
+// Find carts that transitioned to READY status
+if (cart.status === CART_STATUS.READY && (!beforeCart || beforeCart.status !== CART_STATUS.READY)) {
+    // Notifies assigned server
+}
+```
+
+**Action:**
+- Audit all trigger implementations
+- Document which triggers are production-ready
+- Implement missing triggers if needed for waiter workflow
+- Add proper notification channels (FCM tokens, etc.)
+
+### 6. Automated Session/Cart Cleanup Enhancement
+**Priority:** Low
+**Source:** Server App Gap Analysis (Jan 2026)
+**Files:** `table/table.js` → `cleanupInactiveSessions()`
+**Description:**
+Current implementation cleans up sessions after 1 hour of inactivity, but there's a TODO to enhance this:
+
+```javascript
+// TODO: Shaurya - Implement cleanup for tables where there hasn't been any cart or order 
+// placed in the last 2 hours. Current implementation only checks for general inactivity.
+```
+
+**Action:**
+- Consider cart/order activity in addition to general table activity
+- May want different thresholds for different scenarios
+
+### 7. Notification Delivery Mechanism (FCM Setup)
+**Priority:** Medium
+**Source:** Server App Gap Analysis (Jan 2026)
+**Files:** 
+- `notifications/sendNotification.js` - FCM send function exists
+- `orders/updateOrderStatus.js` - Uses `sendFCMNotification` (line 87)
+- `cart/triggers/orderTriggers.js` - READY status detection exists
+
+**Description:**
+The notification infrastructure exists but requires proper FCM token management:
+
+1. **FCM Token Storage**: Server profiles need `fcmToken` field populated
+2. **Token Refresh**: No mechanism to update tokens when they expire
+3. **Token Acquisition**: Frontend needs to request FCM permission and send token to backend
+4. **Fallback**: No fallback if FCM delivery fails
+
+**Current Flow (updateOrderStatus):**
+```javascript
+const token = serverDoc.data().fcmToken;
+if (token) {
+  await sendFCMNotification(token, { ... });
+}
+```
+
+**Missing Pieces:**
+- Frontend code to request notification permission
+- API endpoint to register/update FCM token for servers
+- Token expiry handling
+- Notification history/status tracking
+
+**Action:**
+- Add `server-updateFcmToken` endpoint
+- Implement frontend FCM permission request flow
+- Consider web push notifications for PWA support
 
 ### 1. Mock Data Injection in Production Code (Critical)
 **Source:** `lib/pages/menuListing/menu_response.dart`
@@ -61,3 +190,36 @@ final name = (mutableJson['meta'] as Map<String, dynamic>)['name'].toString().to
 **Action:**
 - Add defensive null checks: `(mutableJson['meta'] as Map<String, dynamic>?)?['name']`.
 - This is part of the mock data removal task above.
+
+### 3. Server App `updateOrderStatus` API Placeholder
+**Priority:** Medium
+**Source:** Server App Gap Analysis (Jan 2026)
+**Files:** `platter_server/lib/pages/orders_home/repository/order_api_service.dart`
+**Description:**
+The `updateOrderStatus` method is a placeholder that doesn't call the correct backend endpoint:
+
+```dart
+// Note: This is a placeholder for the actual API endpoint
+// Implement when the backend endpoint is available
+final response = await _dio.post(
+  ApiConstants.getOrder, // Replace with actual endpoint
+```
+
+**Action:**
+- Verify which backend endpoint handles order status updates
+- Update to call `cart-updateCartStatus` or appropriate endpoint
+- Test the complete flow
+
+---
+
+## Changelog
+
+| Date | Item | Change |
+|------|------|--------|
+| 2026-01-20 | #3 Legacy Server CRUD | RESOLVED - Removed legacy functions from `serverIndex.js` |
+| 2026-01-20 | #3 isWithinRadius | Added - Location proximity check placeholder |
+| 2026-01-20 | #4 Order Pagination | Added - Previous orders page needs pagination |
+| 2026-01-20 | #5 Firebase Triggers | Added - Trigger implementation status audit |
+| 2026-01-20 | #6 Session Cleanup | Added - Enhancement for cart/order based cleanup |
+| 2026-01-20 | FE #3 updateOrderStatus | Added - API placeholder in server app |
+
