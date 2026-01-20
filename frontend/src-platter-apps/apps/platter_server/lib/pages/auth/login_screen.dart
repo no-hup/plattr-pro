@@ -28,13 +28,13 @@ class _LoginScreenContent extends StatefulWidget {
 
 class _LoginScreenContentState extends State<_LoginScreenContent> {
   final _formKey = GlobalKey<FormState>();
-  // final _restaurantIdController = TextEditingController(text: 'rest001'); // Removed
+  final _restaurantIdController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
 
   @override
   void dispose() {
-    // _restaurantIdController.dispose(); // Removed
+    _restaurantIdController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -43,8 +43,10 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       final provider = Provider.of<LoginProvider>(context, listen: false);
+      final restaurantId = _restaurantIdController.text.trim();
+      
       await provider.loginUser(
-        restaurantId: _defaultRestaurantId, // Use hardcoded ID
+        restaurantId: restaurantId,
         username: _usernameController.text.trim(),
         password: _passwordController.text.trim(),
       );
@@ -54,7 +56,7 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (context) => MainNavigation(
-                restaurantId: _defaultRestaurantId, // Use hardcoded ID
+                restaurantId: restaurantId,
                 sessionId: provider.loginData!.sessionId,
               ),
             ),
@@ -85,7 +87,21 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24.0),
-                    // Restaurant ID TextFormField removed
+                    TextFormField(
+                      controller: _restaurantIdController,
+                      decoration: const InputDecoration(
+                        labelText: 'Restaurant ID',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.restaurant),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter Restaurant ID';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16.0),
                     TextFormField(
                       controller: _usernameController,
                       decoration: const InputDecoration(

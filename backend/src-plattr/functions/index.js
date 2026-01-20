@@ -1,4 +1,8 @@
 const functions = require("firebase-functions");
+// Support for newer Node versions (21+) where SlowBuffer is removed but legacy packages still expect it
+if (!require('buffer').SlowBuffer) {
+  require('buffer').SlowBuffer = require('buffer').Buffer;
+}
 const admin = require('./admin/admin');
 
 // Import and export functions from other files

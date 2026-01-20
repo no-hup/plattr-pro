@@ -1,6 +1,7 @@
 # TODOs for Cart Functions
 
 - Implement functionality to clear the cart when an order is placed or when checkout is done.
+- Low Priority: Fix Stock Check Race Condition in checkoutCart.js
 - Ensure that carts are properly managed, including handling expiry and activation status.  
 
 Simple - have a constants file for collections names. would be easier in future

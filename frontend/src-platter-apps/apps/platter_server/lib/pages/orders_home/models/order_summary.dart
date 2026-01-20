@@ -1,6 +1,8 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'cart_summary.dart';
 
+part 'order_summary.g.dart';
+
 enum OrderStatus {
   pending,
   inProgress,
@@ -149,8 +151,6 @@ String mapOrderStatusToDisplay(String status) {
 
 CartStatus parseCartItemStatus(String value) => parseCartStatus(value);
 OrderStatus parseOrderSummaryStatus(String value) => parseOrderStatus(value);
-
-part 'order_summary.g.dart';
 
 @JsonSerializable()
 class OrderSummary {

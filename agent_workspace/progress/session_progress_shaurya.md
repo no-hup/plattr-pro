@@ -15,3 +15,9 @@ todo - post migration make stragegy for design and theming changes to accomodate
 15th Jan
 
 How does offer actually get applied on backend and its realtion with prices.
+
+20th jan
+
+move from branch - 9-jan-db-schema-change-subcategory-menu
+
+to 20-jan-server-app-resume
