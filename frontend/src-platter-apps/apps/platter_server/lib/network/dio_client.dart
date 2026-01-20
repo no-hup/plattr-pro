@@ -28,7 +28,7 @@ class DioClient {
     );
     
     // Add interceptors in correct order
-    dio.interceptors.add(UserAgentInterceptor()); // Sets User-Agent header
+    // dio.interceptors.add(UserAgentInterceptor()); // Sets User-Agent header - causes issues in Web
     //dio.interceptors.add(AuthInterceptor());      // Handles Authorization
     dio.interceptors.add(ErrorInterceptor());     // Handles error logic (e.g., 401 refresh)
     dio.interceptors.add(LogInterceptor(

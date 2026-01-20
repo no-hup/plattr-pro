@@ -20,7 +20,7 @@ exports.serverLogin = functions.https.onCall(async (request, context) => {
   const data = request.data;
   let stage = 'init';
   const setStage = s => (stage = s);
-  
+
   try {
     // Get restaurantId which is always required
     setStage('parse-request');
@@ -33,18 +33,18 @@ exports.serverLogin = functions.https.onCall(async (request, context) => {
     setStage('fetch-restaurant');
     const restaurantRef = db.collection('restaurants').doc(restaurantId);
     const restaurantDoc = await restaurantRef.get();
-    
+
     if (!restaurantDoc.exists) {
       errorHandler.notFound('Restaurant not found', { restaurantId });
     }
-    
+
     const restaurantData = restaurantDoc.data();
-    const restaurantName = restaurantData.info?.name || 'Unknown Restaurant';
+    const restaurantName = restaurantData.name || 'Unknown Restaurant';
 
     // Login path based on provided parameters
     let serverDoc, serverData, session;
     let isNewSession = false;
-    
+
     // Path 1: Login with existing sessionId
     if (sessionId) {
       setStage('session-auth');
@@ -58,7 +58,7 @@ exports.serverLogin = functions.https.onCall(async (request, context) => {
     else if (username && password) {
       setStage('credential-auth');
       console.log(`Server login with credentials: ${username}`);
-      
+
       // Find server by email or phoneNumber in the correct restaurant
       setStage('find-server');
       let serverSnap = await db.collection('restaurants').doc(restaurantId).collection('servers').where('email', '==', username).limit(1).get();
@@ -93,7 +93,7 @@ exports.serverLogin = functions.https.onCall(async (request, context) => {
     // No valid auth mechanism provided
     else {
       throw new functions.https.HttpsError(
-        'invalid-argument', 
+        'invalid-argument',
         'Either sessionId or both username and password are required'
       );
     }
@@ -102,10 +102,10 @@ exports.serverLogin = functions.https.onCall(async (request, context) => {
     setStage('prepare-response');
     return {
       success: true,
-      message: sessionId 
-        ? 'Server login successful with existing session' 
-        : (isNewSession 
-          ? 'Server login successful with new session' 
+      message: sessionId
+        ? 'Server login successful with existing session'
+        : (isNewSession
+          ? 'Server login successful with new session'
           : 'Server login successful with existing session'),
       data: {
         sessionId: session.sessionId,
@@ -118,10 +118,10 @@ exports.serverLogin = functions.https.onCall(async (request, context) => {
       }
     };
   } catch (error) {
-    console.error(`[serverLogin][stage=${stage}]`, error, { 
+    console.error(`[serverLogin][stage=${stage}]`, error, {
       sessionId: data?.sessionId,
-      username: data?.username, 
-      restaurantId: data?.restaurantId 
+      username: data?.username,
+      restaurantId: data?.restaurantId
     });
     errorHandler.handleError(error, `serverLogin[stage=${stage}]`, {
       sessionId: data?.sessionId,
@@ -185,56 +185,56 @@ async function validateServerSession(restaurantId, sessionId) {
   // 1. Get the session document
   const sessionRef = db.collection('restaurants').doc(restaurantId).collection('sessions').doc(sessionId);
   const sessionDoc = await sessionRef.get();
-  
+
   // 2. Verify session exists
   if (!sessionDoc.exists) {
     errorHandler.unauthorized('Invalid session', { restaurantId, sessionId });
   }
-  
+
   const sessionData = sessionDoc.data();
-  
+
   // 3. Verify this is a server session
   if (sessionData.entity !== 'server') {
     errorHandler.unauthorized('Invalid server session', { restaurantId, sessionId });
   }
-  
+
   // 4. Verify session is active
   if (sessionData.status !== SERVER_STATUS.ACTIVE) {
     errorHandler.unauthorized('Session is not active', { restaurantId, sessionId });
   }
-  
+
   // 5. Verify session is not expired
   const now = new Date();
   if (sessionData.expiresAt && timestamp.safeToDate(sessionData.expiresAt) < now) {
     errorHandler.unauthorized('Session has expired', { restaurantId, sessionId });
   }
-  
+
   // 6. Get the server document
   const serverId = sessionData.serverId;
   const serverRef = db.collection('restaurants').doc(restaurantId).collection('servers').doc(serverId);
   const serverDoc = await serverRef.get();
-  
+
   // 7. Verify server exists
   if (!serverDoc.exists) {
     errorHandler.unauthorized('Server not found', { restaurantId, serverId });
   }
-  
+
   const serverData = serverDoc.data();
-  
+
   // 8. Verify server is active
   if (serverData.status !== SERVER_STATUS.ACTIVE) {
     errorHandler.unauthorized('Server is not active', { serverId, status: serverData.status });
   }
-  
+
   // 9. Update session timestamps - extend expiry by 12 hours and refresh updatedAt
   const expiresAt = timestamp.fromDate(new Date(now.getTime() + 12 * 60 * 60 * 1000)); // 12 hours from now
-  await sessionRef.update({ 
+  await sessionRef.update({
     updatedAt: timestamp.serverTimestamp(),
     expiresAt: expiresAt
   });
-  
-  return { 
-    serverDoc, 
+
+  return {
+    serverDoc,
     serverData
   };
 }

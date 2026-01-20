@@ -93,3 +93,18 @@ The following files are large and should NOT be read or included in context unle
 
 ### Primary Focus
 **`lib/`**: This directory contains the source code for the Flutter applications. Please prioritize searching and editing files within `lib/`.
+
+
+## Handling Edge Cases in B2B-Facing Apps (Only for - Flutter Admin, Flutter Kitchen, Flutter Server)
+
+When writing code for the source Flutter apps like **Flutter Admin**, **Flutter Kitchen**, and **Flutter Server** (which are B2B-facing apps), please follow the guidelines below:
+
+- **Edge Cases**: It’s acceptable to **ignore** or **defer** certain rare edge cases if fixing them requires large code changes (e.g., over 20 lines) for issues that occur in **1-2%** of use cases. In these cases, staff or admins can simply **kill and relaunch the app** to resolve the issue.
+  
+- **Small Fixes**: If the fix for an edge case is a **small change** (less than **3-4 lines** of code), it should be **implemented**.
+
+- **Tech Debt**: For edge cases not addressed immediately, document them as **to-dos** in the `tech-debt.md` file. Example to-dos:
+  - *Passwords are checked as plain text.*
+  - *The `generateTableOTP` function fails if the table is not vacant, meaning a waiter cannot regenerate an OTP for an active table without resetting it first.*
+
+- **Code Quality**: Maintain **simple**, **readable**, and **maintainable** code. Only address small, rare fixes that do not complicate the codebase unnecessarily.

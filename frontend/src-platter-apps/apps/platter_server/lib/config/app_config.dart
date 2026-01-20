@@ -8,7 +8,7 @@ class AppConfig {
   static const String _prodBaseUrl = 'https://us-central1-rms-app-dd875.cloudfunctions.net';
 
   // Your current emulator URL (adjust if needed, e.g., for Android emulator use 10.0.2.2)
-  static const String _devBaseUrl = 'http://127.0.0.1:5002/rms-app-dd875/us-central1';
+  static const String _devBaseUrl = 'http://localhost:5002/rms-app-dd875/us-central1';
 
   static String get firebaseFunctionsBaseUrl {
     switch (currentEnvironment) {
