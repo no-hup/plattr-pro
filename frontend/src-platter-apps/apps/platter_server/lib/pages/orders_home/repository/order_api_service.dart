@@ -130,11 +130,11 @@ class OrderApiService {
 
   /// Updates the status of a cart within an order
   /// 
-  /// Used to mark cart items as delivered (SERVED), accepted, etc.
-  /// Valid transitions: PENDING → ACCEPTED → PREPARING → READY → SERVED
+  /// Used to mark cart items as delivered (SERVED), preparing, etc.
+  /// Valid transitions: PENDING → PREPARING → READY → SERVED
   /// 
   /// [cartIndex] is the zero-based index of the cart in the order's carts array.
-  /// [newStatus] should be one of: PENDING, ACCEPTED, PREPARING, READY, SERVED, CANCELLED, RETURNED
+  /// [newStatus] should be one of: PENDING, PREPARING, READY, SERVED, CANCELLED, RETURNED
   Future<ApiResponse<bool>> updateCartStatus({
     required String restaurantId,
     required String orderId,
@@ -207,4 +207,3 @@ class OrderApiService {
     );
   }
 }
-

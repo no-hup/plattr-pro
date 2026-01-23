@@ -13,7 +13,6 @@ enum OrderStatus {
 
 enum CartStatus {
   pending,
-  accepted,
   preparing,
   ready,
   served,
@@ -49,10 +48,6 @@ String normalizeCartStatus(String value) {
     case 'PENDING':
     case 'ORDERED':
       return 'PENDING';
-    case 'ACCEPTED':
-    case 'ACCEPT':
-    case 'ACKNOWLEDGED':
-      return 'ACCEPTED';
     case 'PREPARING':
     case 'COOKING':
       return 'PREPARING';
@@ -94,8 +89,6 @@ CartStatus parseCartStatus(String? value) {
   switch (normalizeCartStatus(value)) {
     case 'PENDING':
       return CartStatus.pending;
-    case 'ACCEPTED':
-      return CartStatus.accepted;
     case 'PREPARING':
       return CartStatus.preparing;
     case 'READY':
@@ -115,8 +108,6 @@ String mapCartStatusToDisplay(String status) {
   switch (parseCartStatus(status)) {
     case CartStatus.pending:
       return 'Pending';
-    case CartStatus.accepted:
-      return 'Accepted';
     case CartStatus.preparing:
       return 'Preparing';
     case CartStatus.ready:

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
+import '../../widgets/server_app_bar_configuration.dart';
 import 'repository/table_api_service.dart';
 import 'tables_provider.dart';
 import 'models/table_models.dart';
@@ -9,12 +9,14 @@ import 'table_detail_dialog.dart';
 class TablesHomeScreen extends StatefulWidget {
   final String restaurantId;
   final String sessionId;
+  final ValueChanged<ServerAppBarConfiguration>? onAppBarConfigChanged;
   
   const TablesHomeScreen({
-    Key? key,
+    super.key,
     required this.restaurantId,
     required this.sessionId,
-  }) : super(key: key);
+    this.onAppBarConfigChanged,
+  });
 
   @override
   State<TablesHomeScreen> createState() => _TablesHomeScreenState();
@@ -36,6 +38,7 @@ class _TablesHomeScreenState extends State<TablesHomeScreen> {
     // Fetch tables when screen is first loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchTables();
+      _updateAppBarConfig();
     });
   }
   
@@ -52,6 +55,20 @@ class _TablesHomeScreenState extends State<TablesHomeScreen> {
     setState(() {});
   }
   
+  void _updateAppBarConfig() {
+    widget.onAppBarConfigChanged?.call(
+      ServerAppBarConfiguration(
+        additionalActions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshTables,
+            tooltip: 'Refresh Tables',
+          ),
+        ],
+      ),
+    );
+  }
+  
   Future<void> _fetchTables() async {
     await _tablesProvider.fetchTables(
       restaurantId: widget.restaurantId,
@@ -66,18 +83,8 @@ class _TablesHomeScreenState extends State<TablesHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tables'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshTables,
-          ),
-        ],
-      ),
-      body: _buildContent(_tablesProvider),
-    );
+    // No Scaffold - shell provides it
+    return _buildContent(_tablesProvider);
   }
   
   Widget _buildContent(TablesProvider provider) {
@@ -290,4 +297,4 @@ class _TablesHomeScreenState extends State<TablesHomeScreen> {
       ),
     );
   }
-} 
+}

@@ -1,7 +1,7 @@
 const functions = require("firebase-functions");
 const admin = require('../admin/initializeAdmin');
 const db = admin.firestore();
-const { ORDER_STATUS, CART_STATUS } = require('./orderConstants');
+const { ORDER_STATUS, FULFILLMENT_STATUS } = require('./orderConstants');
 const { mapOrderStatus, mapCartStatus } = require('../utils/statusUtils');
 const OrderInputValidation = require('./orderInputValidation');
 const timestamp = require('../utils/timestamp');
@@ -103,7 +103,7 @@ async function getActiveOrdersForRestaurant(data, context) {
 function sanitizeOrderData(id, orderData) {
   // Only include carts that are not served, but keep all other fields
   const carts = Array.isArray(orderData.carts)
-    ? orderData.carts.filter(cart => mapCartStatus(cart.status) !== CART_STATUS.SERVED)
+    ? orderData.carts.filter(cart => mapCartStatus(cart.status) !== FULFILLMENT_STATUS.SERVED)
     : orderData.carts;
 
   // Sort items in each cart to prioritize 'READY' status items
@@ -113,9 +113,9 @@ function sanitizeOrderData(id, orderData) {
         cart.items.sort((a, b) => {
           const statusA = mapCartStatus(a.status);
           const statusB = mapCartStatus(b.status);
-          return (statusA === CART_STATUS.READY ? -1 : 0) - (statusB === CART_STATUS.READY ? -1 : 0);
+          return (statusA === FULFILLMENT_STATUS.READY ? -1 : 0) - (statusB === FULFILLMENT_STATUS.READY ? -1 : 0);
         });
-        cart.status = mapCartStatus(cart.status) || CART_STATUS.PENDING;
+        cart.status = mapCartStatus(cart.status) || FULFILLMENT_STATUS.PENDING;
       }
     });
   }

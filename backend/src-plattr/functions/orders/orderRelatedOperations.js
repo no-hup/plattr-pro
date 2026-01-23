@@ -2,7 +2,7 @@ const functions = require('firebase-functions');
 const admin = require('../admin/admin');
 const db = admin.firestore();
 const { Timestamp } = require("firebase-admin/firestore");
-const { CART_STATUS, ORDER_STATUS, PAYMENT_STATUS } = require('./orderConstants');
+const { FULFILLMENT_STATUS, ORDER_STATUS, PAYMENT_STATUS } = require('./orderConstants');
 const featureFlags = require('../singleton/FeatureFlags');
 const { calculateCartValue } = require('../cart/calculateCartValue');
 const OrderInputValidation = require('./orderInputValidation');
@@ -70,7 +70,7 @@ const updateMenuItemStatus = functions.https.onCall(async (data, context) => {
           itemFound = true;
           
           // Special handling for cancelled items
-          if (newStatus === CART_STATUS.CANCELLED) {
+          if (newStatus === FULFILLMENT_STATUS.CANCELLED) {
             // Mark this item as cancelled in all relevant cart items too
             let needsPriceRecalculation = false;
             
@@ -84,7 +84,7 @@ const updateMenuItemStatus = functions.https.onCall(async (data, context) => {
                 
                 if (cartItemIndex !== -1) {
                   // Update the status in cart.items
-                  updatedOrder.carts[cartIndex].items[cartItemIndex].status = CART_STATUS.CANCELLED;
+                  updatedOrder.carts[cartIndex].items[cartItemIndex].status = FULFILLMENT_STATUS.CANCELLED;
                   updatedOrder.carts[cartIndex].items[cartItemIndex].statusUpdatedAt = timestamp.now();
                   updatedOrder.carts[cartIndex].items[cartItemIndex].statusUpdatedBy = context.auth.uid;
                   needsPriceRecalculation = true;

@@ -106,7 +106,7 @@ const functions = require("firebase-functions");
 const admin = require('./initializeAdmin');
 const db = admin.firestore();
 const { Timestamp } = require("firebase-admin/firestore");
-const { ORDER_STATUS, PAYMENT_STATUS, CART_STATUS } = require('./orderConstants');
+const { ORDER_STATUS, PAYMENT_STATUS, FULFILLMENT_STATUS } = require('./orderConstants');
 const OrderInputValidation = require('./orderInputValidation');
 const { validateCheckoutSession } = require('../cart/cartInputValidation');
 const { timestamp } = require('../utils/timestamp');
@@ -141,9 +141,9 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
   // Prepare cart snapshot to add to order
   const cartSnapshot = {
     ...cart,
-    status: CART_STATUS.PENDING,
+    status: FULFILLMENT_STATUS.PENDING,
     statusHistory: [{
-      status: CART_STATUS.PENDING,
+      status: FULFILLMENT_STATUS.PENDING,
       timestamp: timestamp.now(),
       userId
     }],

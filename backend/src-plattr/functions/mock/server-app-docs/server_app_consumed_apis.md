@@ -85,7 +85,7 @@ This document lists the backend API endpoints consumed by the server (waiter) ap
 
 **Cart Status Transitions:**
 ```
-PENDING → ACCEPTED → PREPARING → READY → SERVED
+PENDING → PREPARING/READY → SERVED
            ↓            ↓          ↓        ↓
         CANCELLED    CANCELLED  CANCELLED  RETURNED
 ```

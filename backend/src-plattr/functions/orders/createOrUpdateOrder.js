@@ -1,6 +1,6 @@
 const functions = require("firebase-functions");
 const { admin, db } = require("../admin/admin");
-const { ORDER_STATUS, PAYMENT_STATUS, CART_STATUS } = require('./orderConstants');
+const { ORDER_STATUS, PAYMENT_STATUS, FULFILLMENT_STATUS } = require('./orderConstants');
 const OrderInputValidation = require('./orderInputValidation');
 const { validateCheckoutSession } = require('../cart/cartInputValidation');
 const timestamp = require('../utils/timestamp');
@@ -38,9 +38,9 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
   const cartSnapshot = {
     ...cart,
     cartId: `${restaurantId}_${tableId}_${uuidv4().substring(0, 8)}`, // Add a unique cartId with restaurant and table prefix
-    status: CART_STATUS.PENDING,
+    status: FULFILLMENT_STATUS.PENDING,
     statusHistory: [{
-      status: CART_STATUS.PENDING,
+      status: FULFILLMENT_STATUS.PENDING,
       timestamp: timestamp.serverTimestamp(),
       userId
     }],
@@ -149,7 +149,7 @@ function normalizeCartItemsForOrder(cart) {
       selectedAddonsDetails: Array.isArray(item.selectedAddonsDetails) ? item.selectedAddonsDetails : [],
       cartItemId: item.cartItemId || 0,
       checkoutTime: timestamp.serverTimestamp(),
-      status: CART_STATUS.PENDING,
+      status: FULFILLMENT_STATUS.PENDING,
     };
   }).filter(Boolean); // Remove null items
 }

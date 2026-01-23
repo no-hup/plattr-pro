@@ -2,6 +2,8 @@
 
 A lean LLM-integrated package for monitoring backend-frontend response adherence in the Plattr Pro app.
 
+> **Note**: This project is under active development. Breaking changes may be introduced without backward compatibility guarantees as the application has not yet launched.
+
 ## Log Capture Methods
 
 ### How Logs Are Captured

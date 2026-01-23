@@ -114,20 +114,15 @@ class OrderListingState extends ChangeNotifier {
     switch (_order!.orderStatus.toLowerCase()) {
       case 'pending':
         return 'Pending';
-      case 'processing':
-        return 'Processing';
-      case 'confirmed':
-        return 'Confirmed';
-      case 'preparing':
-        return 'Preparing';
-      case 'ready':
-        return 'Ready for Pickup';
+      case 'in_progress':
+        return 'In Progress';
       case 'completed':
         return 'Completed';
       case 'cancelled':
         return 'Cancelled';
       default:
-        return _order!.orderStatus;
+        // Handle other statuses for backward compatibility or future expansion
+        return _order!.orderStatus[0].toUpperCase() + _order!.orderStatus.substring(1).toLowerCase();
     }
   }
 
@@ -138,14 +133,8 @@ class OrderListingState extends ChangeNotifier {
     switch (_order!.orderStatus.toLowerCase()) {
       case 'pending':
         return Colors.orange;
-      case 'processing':
-        return const Color(0xFF1A2E4A); // AppColors.primary (navy) for processing
-      case 'confirmed':
-        return Colors.green;
-      case 'preparing':
-        return Colors.purple;
-      case 'ready':
-        return Colors.teal;
+      case 'in_progress':
+        return const Color(0xFF1A2E4A); // Navy blue for in progress
       case 'completed':
         return Colors.green.shade800;
       case 'cancelled':

@@ -7,7 +7,7 @@ const featureFlags = require('../singleton/FeatureFlags');
 const errorMessages = require('../singleton/ErrorMessages');
 const { compareArraysIgnoringOrder } = require('../utils/arrayUtils');
 const { BasicPriceInfo, CartItemPriceInfo, CartTotalPriceInfo } = require('../genericModels/priceinfo');
-const { CART_ITEM_STATUS, CART_STATUS } = require('../orders/orderConstants');
+const { FULFILLMENT_STATUS } = require('../orders/orderConstants');
 
 /**
  * Gets a reference to a cart document in Firestore
@@ -486,7 +486,7 @@ function createCartItem(menuItemId, menuItem, selectedVariantsDetails, selectedA
     quantity: sanitizeNumber(quantity, 1),
     priceInfo: standardizedPriceInfo,
     cartItemId,
-    status: CART_ITEM_STATUS.PENDING
+    status: FULFILLMENT_STATUS.PENDING
   };
 }
 
@@ -528,7 +528,7 @@ function checkDifferentConfigExists(cartItems, menuItemId, errorMessages, saniti
   // Return error response
   return {
     message: `${errorMessages.get('CART_DIFFERENT_VARIANT_EXISTS')}: ${existingItem.menuItem?.meta?.name || 'Unknown item'} with ${existingConfig.variantNames || 'no variants'} and ${existingConfig.addonNames || 'no addons'}`,
-    status: CART_STATUS.PENDING,
+    status: FULFILLMENT_STATUS.PENDING,
     data: {
       existingItem: sanitizeCart(existingItem)
     }
