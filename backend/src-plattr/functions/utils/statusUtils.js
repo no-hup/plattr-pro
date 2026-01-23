@@ -1,4 +1,4 @@
-const { ORDER_STATUS, CART_STATUS } = require('../orders/orderConstants');
+const { ORDER_STATUS, FULFILLMENT_STATUS } = require('../orders/orderConstants');
 
 function normalizeStatusString(value) {
   if (!value || typeof value !== 'string') {
@@ -40,34 +40,29 @@ function mapCartStatus(value) {
   const normalized = normalizeStatusString(value);
 
   switch (normalized) {
-    case CART_STATUS.PENDING:
+    case FULFILLMENT_STATUS.PENDING:
     case 'ORDERED':
-      return CART_STATUS.PENDING;
+      return FULFILLMENT_STATUS.PENDING;
 
-    case CART_STATUS.ACCEPTED:
-    case 'ACCEPT':
-    case 'ACKNOWLEDGED':
-      return CART_STATUS.ACCEPTED;
-
-    case CART_STATUS.PREPARING:
+    case FULFILLMENT_STATUS.PREPARING:
     case 'COOKING':
-      return CART_STATUS.PREPARING;
+      return FULFILLMENT_STATUS.PREPARING;
 
-    case CART_STATUS.READY:
+    case FULFILLMENT_STATUS.READY:
     case 'READY_FOR_PICKUP':
-      return CART_STATUS.READY;
+      return FULFILLMENT_STATUS.READY;
 
-    case CART_STATUS.SERVED:
+    case FULFILLMENT_STATUS.SERVED:
     case 'COMPLETED':
     case 'SERVED_TO_CUSTOMER':
-      return CART_STATUS.SERVED;
+      return FULFILLMENT_STATUS.SERVED;
 
-    case CART_STATUS.RETURNED:
-      return CART_STATUS.RETURNED;
+    case FULFILLMENT_STATUS.RETURNED:
+      return FULFILLMENT_STATUS.RETURNED;
 
-    case CART_STATUS.CANCELLED:
+    case FULFILLMENT_STATUS.CANCELLED:
     case 'CANCELED':
-      return CART_STATUS.CANCELLED;
+      return FULFILLMENT_STATUS.CANCELLED;
 
     default:
       return normalized || '';
@@ -79,4 +74,3 @@ module.exports = {
   mapOrderStatus,
   mapCartStatus,
 };
-

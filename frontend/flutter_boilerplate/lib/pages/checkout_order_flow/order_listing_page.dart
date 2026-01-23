@@ -193,7 +193,7 @@ class _OrderListingPageState extends State<OrderListingPage> {
       ),
       onPressed: () {
         // Show a dialog to toggle the feature flag
-        showDialog(
+        showDialog<void>(
           context: context,
           builder: (BuildContext dialogContext) {
             // Using StatefulBuilder to update the dialog content when the switch changes
@@ -268,7 +268,6 @@ class OrderDetailsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     // Feature flag to determine how to display order items
     final featureFlags = FeatureFlags();
     final showCartBreakup = featureFlags.showCartLevelBreakupForOrder;
@@ -301,8 +300,6 @@ class OrderDetailsView extends StatelessWidget {
   }
   
   Widget _buildOrderHeader(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Container(
       padding: AppSpacing.pagePadding,
       decoration: const BoxDecoration(
@@ -366,8 +363,6 @@ class OrderDetailsView extends StatelessWidget {
   }
   
   Widget _buildOrderSummary(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Container(
       padding: AppSpacing.pagePadding,
       decoration: const BoxDecoration(
@@ -662,7 +657,6 @@ class CartHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final dateFormat = DateFormat('MMM d, yyyy • h:mm a');
     final checkoutTimeString = cart.checkoutTime != null 
         ? dateFormat.format(cart.checkoutTime!) 
@@ -760,14 +754,17 @@ class CartHistoryCard extends StatelessWidget {
     switch (status.toLowerCase()) {
       case 'pending':
         return Colors.orange;
-      case 'processing':
-        return const Color(0xFF1A2E4A); // AppColors.primary (navy) for processing
-      case 'confirmed':
-        return Colors.green;
+      case 'preparing':
+        return Colors.purple;
+      case 'ready':
+        return Colors.teal;
+      case 'served':
       case 'completed':
         return Colors.green.shade800;
       case 'cancelled':
         return Colors.red;
+      case 'returned':
+        return Colors.brown;
       default:
         return Colors.grey;
     }

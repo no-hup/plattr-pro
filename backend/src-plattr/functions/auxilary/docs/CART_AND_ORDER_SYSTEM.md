@@ -279,11 +279,10 @@ When adding a new cart to an existing order:
 | `COMPLETED` | Order finished and paid |
 | `CANCELLED` | Order was cancelled |
 
-### Cart Status (within Order)
+### Cart and Item Status (Fulfillment)
 | Status | Description |
 |--------|-------------|
 | `PENDING` | Initial state when placed |
-| `ACCEPTED` | Kitchen has accepted |
 | `PREPARING` | Kitchen is preparing |
 | `READY` | Ready for serving |
 | `SERVED` | Delivered to customer |
@@ -292,7 +291,7 @@ When adding a new cart to an existing order:
 
 ### Status Flow
 ```
-pending → preparing → ready → served → complete
+pending → preparing/ready → served → complete
 ```
 
 ---

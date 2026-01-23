@@ -37,3 +37,20 @@ Cart vs Order Status Strategy: The UI only exposes "Mark Ready" at the order lev
 
 
 mock data for testing end to end flow
+
+23rd Jan 26
+
+**What's Done:**
+• Consolidated `CART_STATUS` and `CART_ITEM_STATUS` into a unified `FULFILLMENT_STATUS` in the backend.
+• Simplified fulfillment flow by removing the redundant `ACCEPTED` status. New flow: `PENDING` → `PREPARING`/`READY` → `SERVED`.
+• Refactored Server App shell to include a global `ServerAppBarWidget` and `NoInternetBannerWidget` using `connectivity_plus`.
+• Updated Server App L0 screens (`Orders`, `Tables`, `Menu`) to integrate with the new shell and support dynamic app bar actions.
+• Added `profileImageUrl` to server login response and updated the UI to display it in the app bar.
+• Synchronized Consumer App status handling and UI colors with the new backend fulfillment statuses.
+
+**Things to Test in UI (Manual):**
+• **Server App Login**: Verify successful login and check if the profile image and restaurant name appear correctly in the new app bar.
+• **Server App Navigation**: Switch between Orders, Tables, and Menu tabs; ensure the app bar title and actions (refresh button) update correctly.
+• **Server App Connectivity**: Toggle internet connection and verify that the "No Internet" banner appears/disappears smoothly.
+• **Server App Order Status**: Mark a cart as "Preparing" or "Ready" and verify the status update reflects in the UI without the `ACCEPTED` step.
+• **Consumer App Order History**: Check if the order and cart statuses (`Preparing`, `Ready`, `Served`) are displayed with correct colors in the order history.

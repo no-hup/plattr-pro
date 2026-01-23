@@ -15,6 +15,7 @@ LoginResponseData _$LoginResponseDataFromJson(Map<String, dynamic> json) =>
       role: json['role'] as String? ?? '',
       restaurantId: json['restaurantId'] as String? ?? '',
       restaurantName: json['restaurantName'] as String? ?? '',
+      profileImageUrl: json['profileImageUrl'] as String? ?? '',
     );
 
 Map<String, dynamic> _$LoginResponseDataToJson(LoginResponseData instance) =>
@@ -26,4 +27,5 @@ Map<String, dynamic> _$LoginResponseDataToJson(LoginResponseData instance) =>
       'role': instance.role,
       'restaurantId': instance.restaurantId,
       'restaurantName': instance.restaurantName,
+      'profileImageUrl': instance.profileImageUrl,
     };

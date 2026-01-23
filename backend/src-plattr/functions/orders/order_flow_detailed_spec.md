@@ -29,27 +29,24 @@ stateDiagram-v2
 - **IMP**: `COMPLETED` implies payment is settled (`paymentStatus` set to `PAID`).
 
 ### 2.2 Cart Status Lifecycle
-Each cart within an order has its own independent status (`CART_STATUS/CART_ITEM_STATUS`).
+Each cart (and its items) uses `FULFILLMENT_STATUS`.
 
 ```mermaid
 stateDiagram-v2
     [*] --> PENDING: Checkout (Cart Snapshot Created)
-    PENDING --> ACCEPTED: Kitchen/Admin Accepts
+    PENDING --> PREPARING: Cooking Started
+    PENDING --> READY: Ready for Pickup (fast flow)
     PENDING --> CANCELLED: Kitchen/Admin Cancels
-    
-    ACCEPTED --> PREPARING: Cooking Started
-    ACCEPTED --> CANCELLED: Cancelled
-    ACCEPTED --> RETURNED: Returned
-    
+
     PREPARING --> READY: Ready for Pickup
     PREPARING --> CANCELLED: Cancelled
-    
+
     READY --> SERVED: Delivered to Table
     READY --> CANCELLED: Cancelled
-    
+
     SERVED --> RETURNED: Item Returned
     SERVED --> [*]
-    
+
     CANCELLED --> [*]
     RETURNED --> [*]
 ```
@@ -67,7 +64,7 @@ Triggered internally by `checkoutCart`.
 1. **Input Validation**: Validates `restaurantId`, `tableId`, and `cart` structure.
 2. **Snapshot Creation**: 
    - A unique `cartId` is generated: `${restaurantId}_${tableId}_${uuid_fragment}`.
-   - Status set to `CART_STATUS.PENDING`.
+   - Status set to `FULFILLMENT_STATUS.PENDING`.
    - `checkoutTime` timestamp recorded.
    - `estimatedPrepTime` calculated (Base 10m + 2m/item).
 3. **Item Normalization**: 
@@ -134,7 +131,7 @@ Flexible retrieval based on context:
     - **Notification**: Finds the table's `assignedServerId` and sends an FCM notification ("Order Completed").
 
 ### 6.2 `updateCartStatus`
-- **Purpose**: Manage kitchen workflow (Accept -> Prepare -> Serve).
+- **Purpose**: Manage kitchen workflow (Prepare optional -> Serve).
 - **Granularity**: Updates status of a specific **Cart** within the Order (identified by `cartIndex`).
 - **Validation**: Checks `VALID_TRANSITIONS` (e.g., cannot go `PENDING` -> `SERVED` directly).
 - **History**: Appends to `statusHistory` array with timestamp and user.
@@ -175,7 +172,7 @@ Flexible retrieval based on context:
     {
       "cartId": "...",
       "items": [...],
-      "status": "ACCEPTED",
+      "status": "PREPARING",
       "priceInfo": {...},
       "checkoutTime": Timestamp
     },

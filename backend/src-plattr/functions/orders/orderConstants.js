@@ -17,19 +17,8 @@ exports.PAYMENT_STATUS = {
   PAID: 'paid'
 };
 
-// Cart status enum
-exports.CART_STATUS = {
-  PENDING: 'PENDING',
-  ACCEPTED: 'ACCEPTED',
-  PREPARING: 'PREPARING',
-  READY: 'READY',
-  SERVED: 'SERVED',
-  RETURNED: 'RETURNED',
-  CANCELLED: 'CANCELLED'
-}; 
-
-// Cart item status enum
-exports.CART_ITEM_STATUS = {
+// Fulfillment status enum used for both carts and cart items
+exports.FULFILLMENT_STATUS = {
   PENDING: 'PENDING',
   PREPARING: 'PREPARING',
   READY: 'READY',
@@ -37,4 +26,3 @@ exports.CART_ITEM_STATUS = {
   RETURNED: 'RETURNED',
   CANCELLED: 'CANCELLED'
 };
-

@@ -166,18 +166,16 @@ stateDiagram-v2
     
     state "CART STATUS (within Order)" as CS {
         [*] --> PENDING_C: Created
-        PENDING_C --> ACCEPTED: Kitchen Sees
-        ACCEPTED --> PREPARING: Cooking Started
+        PENDING_C --> PREPARING: Cooking Started
+        PENDING_C --> READY: Ready for Pickup (fast flow)
         PREPARING --> READY: Ready for Pickup
         READY --> SERVED: Delivered to Table
         SERVED --> [*]
         
         PENDING_C --> CANCELLED_C: Cancelled
-        ACCEPTED --> CANCELLED_C: Cancelled
         CANCELLED_C --> [*]
         
         PENDING_C --> RETURNED: Item Returned
-        ACCEPTED --> RETURNED: Item Returned
         RETURNED --> [*]
     }
 ```

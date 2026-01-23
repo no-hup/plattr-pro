@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../widgets/server_app_bar_configuration.dart';
 import 'models/menu_item.dart';
 import 'models/menu_category.dart';
 import 'repository/menu_api_service.dart';
@@ -8,12 +9,14 @@ import 'menu_provider.dart';
 class MenuHomeScreen extends StatefulWidget {
   final String restaurantId;
   final String sessionId;
+  final ValueChanged<ServerAppBarConfiguration>? onAppBarConfigChanged;
   
   const MenuHomeScreen({
-    Key? key,
+    super.key,
     required this.restaurantId,
     required this.sessionId,
-  }) : super(key: key);
+    this.onAppBarConfigChanged,
+  });
 
   @override
   State<MenuHomeScreen> createState() => _MenuHomeScreenState();
@@ -35,6 +38,7 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
     // Fetch menu when screen is first loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchMenu();
+      _updateAppBarConfig();
     });
   }
   
@@ -48,6 +52,20 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
   void _handleProviderUpdate() {
     // Force rebuild when provider state changes
     setState(() {});
+  }
+  
+  void _updateAppBarConfig() {
+    widget.onAppBarConfigChanged?.call(
+      ServerAppBarConfiguration(
+        additionalActions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshMenu,
+            tooltip: 'Refresh Menu',
+          ),
+        ],
+      ),
+    );
   }
   
   Future<void> _fetchMenu() async {
@@ -66,22 +84,12 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Restaurant Menu'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshMenu,
-          ),
-        ],
-      ),
-      body: AnimatedBuilder(
-        animation: _menuProvider,
-        builder: (context, child) {
-          return _buildContent(_menuProvider);
-        },
-      ),
+    // No Scaffold - shell provides it
+    return AnimatedBuilder(
+      animation: _menuProvider,
+      builder: (context, child) {
+        return _buildContent(_menuProvider);
+      },
     );
   }
   
@@ -173,7 +181,7 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
             ),
           ),
         const SizedBox(height: 8),
-        ..._getMenuItemsForCategory(category).map((item) => _buildMenuItem(item)).toList(),
+        ..._getMenuItemsForCategory(category).map((item) => _buildMenuItem(item)),
         const Divider(thickness: 1),
       ],
     );

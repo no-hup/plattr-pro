@@ -17,7 +17,6 @@ The waiter-facing app is designed for restaurant staff to efficiently manage in-
 - **Features**: 
   - Color-coded background based on cart status:
     - `PENDING` - Awaiting kitchen acceptance
-    - `ACCEPTED` - Order accepted by kitchen
     - `PREPARING` - Being prepared
     - `READY` - Ready for pickup (highlighted)
     - `SERVED` - Delivered to customer
@@ -66,7 +65,7 @@ The waiter-facing app is designed for restaurant staff to efficiently manage in-
   - Add notes for specific items as requested by customers
 - **Cart Statuses** (state machine):
   ```
-  PENDING → ACCEPTED → PREPARING → READY → SERVED
+  PENDING → PREPARING/READY → SERVED
                 ↓          ↓          ↓        ↓
              CANCELLED  CANCELLED  CANCELLED  RETURNED
   ```

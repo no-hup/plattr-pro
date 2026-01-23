@@ -114,7 +114,8 @@ exports.serverLogin = functions.https.onCall(async (request, context) => {
         entity: 'server',
         role: serverData.role,
         restaurantId,
-        restaurantName
+        restaurantName,
+        profileImageUrl: serverData.profileImageUrl || ''
       }
     };
   } catch (error) {

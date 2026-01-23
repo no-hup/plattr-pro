@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../widgets/server_app_bar_configuration.dart';
 import 'models/order_summary.dart';
 import 'repository/order_api_service.dart';
 import 'orders_provider.dart';
@@ -8,12 +9,14 @@ import 'order_detail_screen.dart';
 class OrdersHomeScreen extends StatefulWidget {
   final String restaurantId;
   final String sessionId;
+  final ValueChanged<ServerAppBarConfiguration>? onAppBarConfigChanged;
   
   const OrdersHomeScreen({
-    Key? key,
+    super.key,
     required this.restaurantId,
     required this.sessionId,
-  }) : super(key: key);
+    this.onAppBarConfigChanged,
+  });
 
   @override
   State<OrdersHomeScreen> createState() => _OrdersHomeScreenState();
@@ -35,6 +38,7 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen> {
     // Fetch orders when screen is first loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchOrders();
+      _updateAppBarConfig();
     });
   }
   
@@ -49,6 +53,20 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen> {
   void _handleProviderUpdate() {
     // Force rebuild when provider state changes
     setState(() {});
+  }
+  
+  void _updateAppBarConfig() {
+    widget.onAppBarConfigChanged?.call(
+      ServerAppBarConfiguration(
+        additionalActions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshOrders,
+            tooltip: 'Refresh Orders',
+          ),
+        ],
+      ),
+    );
   }
   
   Future<void> _fetchOrders() async {
@@ -67,22 +85,12 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Active Orders'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshOrders,
-          ),
-        ],
-      ),
-      body: AnimatedBuilder(
-        animation: _ordersProvider,
-        builder: (context, child) {
-          return _buildContent(_ordersProvider);
-        },
-      ),
+    // No Scaffold - shell provides it
+    return AnimatedBuilder(
+      animation: _ordersProvider,
+      builder: (context, child) {
+        return _buildContent(_ordersProvider);
+      },
     );
   }
   
@@ -149,7 +157,7 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen> {
     final allItems = order.carts.expand((cart) => cart.items).toList();
 
     // Helper to determine pill color based on status
-    Color _getPillColor(String status) {
+    Color getPillColor(String status) {
       switch (status.toLowerCase()) {
         case 'ready':
           return Colors.green.shade100;
@@ -161,7 +169,7 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen> {
     }
 
     // Helper to determine text color for better contrast
-    Color _getTextColor(String status) {
+    Color getTextColor(String status) {
       switch (status.toLowerCase()) {
         case 'ready':
           return Colors.green.shade800;
@@ -188,13 +196,13 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen> {
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
                   decoration: BoxDecoration(
-                    color: _getPillColor(item.status),
+                    color: getPillColor(item.status),
                     borderRadius: BorderRadius.circular(20.0), // Cylindrical shape
                   ),
                   child: Text(
                     '${item.quantity}× ${item.name}',
                     style: TextStyle(
-                      color: _getTextColor(item.status),
+                      color: getTextColor(item.status),
                       fontSize: 12,
                     ),
                   ),

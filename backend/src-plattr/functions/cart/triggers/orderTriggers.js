@@ -3,7 +3,7 @@ const { admin, db } = require('../../admin/admin');
 const featureFlags = require('../../singleton/FeatureFlags');
 const environment = require('../../singleton/Environment');
 const { sendFCMNotification } = require('../../notifications/sendNotification');
-const { CART_STATUS } = require('../../orders/orderConstants');
+const { FULFILLMENT_STATUS } = require('../../orders/orderConstants');
 const { safeArrayUnion } = require('../../utils/arrayOperations');
 
 /**
@@ -159,7 +159,7 @@ const onOrderUpdated = onDocumentUpdated('restaurants/{restaurantId}/orders/{ord
     const readyCartIndices = afterCarts.reduce((indices, cart, index) => {
         const beforeCart = beforeCarts[index];
         // Check if status changed specifically TO ready
-        if (cart.status === CART_STATUS.READY && (!beforeCart || beforeCart.status !== CART_STATUS.READY)) {
+        if (cart.status === FULFILLMENT_STATUS.READY && (!beforeCart || beforeCart.status !== FULFILLMENT_STATUS.READY)) {
             indices.push(index);
         }
         return indices;

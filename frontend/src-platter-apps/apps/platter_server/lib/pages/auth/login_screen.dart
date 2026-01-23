@@ -54,11 +54,17 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
 
       if (provider.state == DataState.loaded && provider.loginData != null) {
         if (mounted) { 
+          final loginData = provider.loginData!;
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (context) => MainNavigation(
                 restaurantId: restaurantId,
-                sessionId: provider.loginData!.sessionId,
+                sessionId: loginData.sessionId,
+                restaurantName: loginData.restaurantName,
+                serverName: loginData.name,
+                serverProfileImageUrl: loginData.profileImageUrl.isNotEmpty 
+                    ? loginData.profileImageUrl 
+                    : null,
               ),
             ),
           );

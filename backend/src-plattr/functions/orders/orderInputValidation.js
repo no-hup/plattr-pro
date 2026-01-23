@@ -1,5 +1,5 @@
 const functions = require("firebase-functions");
-const { ORDER_STATUS, PAYMENT_STATUS, CART_STATUS } = require('./orderConstants');
+const { ORDER_STATUS, PAYMENT_STATUS, FULFILLMENT_STATUS } = require('./orderConstants');
 const { mapOrderStatus, mapCartStatus } = require('../utils/statusUtils');
 
 /**
@@ -96,7 +96,7 @@ class OrderInputValidation {
       );
     }
 
-    const allowedStatuses = Object.values(CART_STATUS);
+    const allowedStatuses = Object.values(FULFILLMENT_STATUS);
     const normalizedStatus = mapCartStatus(status);
     if (!allowedStatuses.includes(normalizedStatus)) {
       throw new functions.https.HttpsError(
@@ -237,13 +237,12 @@ class OrderInputValidation {
     }
     
     const validStatuses = [
-      CART_STATUS.PENDING,
-      CART_STATUS.ACCEPTED,
-      CART_STATUS.PREPARING,
-      CART_STATUS.READY,
-      CART_STATUS.SERVED,
-      CART_STATUS.RETURNED,
-      CART_STATUS.CANCELLED
+      FULFILLMENT_STATUS.PENDING,
+      FULFILLMENT_STATUS.PREPARING,
+      FULFILLMENT_STATUS.READY,
+      FULFILLMENT_STATUS.SERVED,
+      FULFILLMENT_STATUS.RETURNED,
+      FULFILLMENT_STATUS.CANCELLED
     ];
     
     const normalizedStatus = mapCartStatus(newStatus);

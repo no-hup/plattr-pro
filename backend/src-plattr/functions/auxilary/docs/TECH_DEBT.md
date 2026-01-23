@@ -102,7 +102,7 @@ The server app documentation lists several "recommended Firebase triggers" but t
 **Implemented Trigger (READY status):**
 ```javascript
 // Find carts that transitioned to READY status
-if (cart.status === CART_STATUS.READY && (!beforeCart || beforeCart.status !== CART_STATUS.READY)) {
+if (cart.status === FULFILLMENT_STATUS.READY && (!beforeCart || beforeCart.status !== FULFILLMENT_STATUS.READY)) {
     // Notifies assigned server
 }
 ```
@@ -222,4 +222,3 @@ final response = await _dio.post(
 | 2026-01-20 | #5 Firebase Triggers | Added - Trigger implementation status audit |
 | 2026-01-20 | #6 Session Cleanup | Added - Enhancement for cart/order based cleanup |
 | 2026-01-20 | FE #3 updateOrderStatus | Added - API placeholder in server app |
-

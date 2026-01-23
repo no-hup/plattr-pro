@@ -2,20 +2,19 @@ const functions = require("firebase-functions");
 const admin = require('../admin/initializeAdmin');
 const db = admin.firestore();
 const { Timestamp } = require("firebase-admin/firestore");
-const { CART_STATUS } = require('../orders/orderConstants');
+const { FULFILLMENT_STATUS } = require('../orders/orderConstants');
 const { mapCartStatus } = require('../utils/statusUtils');
 const OrderInputValidation = require('../orders/orderInputValidation');
 const { timestamp } = require('../utils/timestamp');
 
 // Valid status transitions map
 const VALID_TRANSITIONS = {
-  [CART_STATUS.PENDING]: [CART_STATUS.ACCEPTED, CART_STATUS.CANCELLED],
-  [CART_STATUS.ACCEPTED]: [CART_STATUS.PREPARING, CART_STATUS.CANCELLED],
-  [CART_STATUS.PREPARING]: [CART_STATUS.READY, CART_STATUS.CANCELLED],
-  [CART_STATUS.READY]: [CART_STATUS.SERVED, CART_STATUS.CANCELLED],
-  [CART_STATUS.SERVED]: [CART_STATUS.RETURNED],
-  [CART_STATUS.RETURNED]: [],
-  [CART_STATUS.CANCELLED]: []
+  [FULFILLMENT_STATUS.PENDING]: [FULFILLMENT_STATUS.PREPARING, FULFILLMENT_STATUS.READY, FULFILLMENT_STATUS.CANCELLED],
+  [FULFILLMENT_STATUS.PREPARING]: [FULFILLMENT_STATUS.READY, FULFILLMENT_STATUS.CANCELLED],
+  [FULFILLMENT_STATUS.READY]: [FULFILLMENT_STATUS.SERVED, FULFILLMENT_STATUS.CANCELLED],
+  [FULFILLMENT_STATUS.SERVED]: [FULFILLMENT_STATUS.RETURNED],
+  [FULFILLMENT_STATUS.RETURNED]: [],
+  [FULFILLMENT_STATUS.CANCELLED]: []
 };
 
 /**
@@ -151,8 +150,8 @@ async function _updateCartStatus(
         statusHistory: [...(cart.statusHistory || []), statusEntry]
       };
       
-      // Update assigned staff if status is accepted
-      if (normalizedNewStatus === CART_STATUS.ACCEPTED) {
+      // Update assigned staff when work starts on a cart
+      if (normalizedNewStatus === FULFILLMENT_STATUS.PREPARING || normalizedNewStatus === FULFILLMENT_STATUS.READY) {
         updatedCart.assignedTo = userId;
       }
       
@@ -167,11 +166,11 @@ async function _updateCartStatus(
       };
       
       // Check if all active items are now served
-      if (normalizedNewStatus === CART_STATUS.SERVED) {
+      if (normalizedNewStatus === FULFILLMENT_STATUS.SERVED) {
         const allActiveCartsServed = updatedCarts.every(c => 
-          OrderInputValidation.validateCartStatus(c.status) === CART_STATUS.SERVED || 
-          OrderInputValidation.validateCartStatus(c.status) === CART_STATUS.CANCELLED || 
-          OrderInputValidation.validateCartStatus(c.status) === CART_STATUS.RETURNED
+          OrderInputValidation.validateCartStatus(c.status) === FULFILLMENT_STATUS.SERVED || 
+          OrderInputValidation.validateCartStatus(c.status) === FULFILLMENT_STATUS.CANCELLED || 
+          OrderInputValidation.validateCartStatus(c.status) === FULFILLMENT_STATUS.RETURNED
         );
         
         if (allActiveCartsServed) {

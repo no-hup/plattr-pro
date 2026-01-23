@@ -277,7 +277,7 @@ Replace `[FLOW_NAME]` with: **Order Lifecycle**
 
 Additional focus areas:
 - Order status transitions (PENDING → IN_PROGRESS → COMPLETED)
-- Cart status within orders (PENDING → ACCEPTED → PREPARING → READY → SERVED)
+- Cart status within orders (PENDING → PREPARING/READY → SERVED)
 - Item-level status tracking
 - Server/kitchen interactions
 - Real-time updates (Firestore listeners)

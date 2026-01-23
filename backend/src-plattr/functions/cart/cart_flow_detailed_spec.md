@@ -69,7 +69,7 @@
   menuItem: object,           // Snapshot of menu item data
   quantity: number,           // Item quantity (>= 1)
   cartItemId: number,         // Unique ID within cart (auto-incremented)
-  status: CART_ITEM_STATUS,   // Item status (PENDING initially)
+  status: FULFILLMENT_STATUS,   // Item status (PENDING initially)
   
   // Customization Details
   selectedVariantsDetails: [{
@@ -388,7 +388,7 @@
   restaurantId: string,      // Required
   orderId: string,           // Required
   cartIndex: number,         // Required (0-based index in order.carts[])
-  newStatus: CART_STATUS,    // Required
+  newStatus: FULFILLMENT_STATUS,    // Required
   notes: string,             // Optional
   sessionId: string          // Optional
 }
@@ -403,14 +403,13 @@
    - **Validate status transition** via `isValidStatusTransition()`
    - Create status history entry
    - Update cart status
-   - If status = ACCEPTED: set `assignedTo` to userId
+   - If status = PREPARING or READY: set `assignedTo` to userId
    - Check if all carts served (for order completion logic)
    - Update order document
 
 #### Valid Status Transitions
 ```
-PENDING    → ACCEPTED, CANCELLED
-ACCEPTED   → PREPARING, CANCELLED
+PENDING    → PREPARING, READY, CANCELLED
 PREPARING  → READY, CANCELLED
 READY      → SERVED, CANCELLED
 SERVED     → RETURNED
@@ -422,7 +421,7 @@ CANCELLED  → (terminal)
 ```javascript
 {
   success: true,
-  message: "Cart status updated to ACCEPTED",
+  message: "Cart status updated to PREPARING",
   data: OrderDocument
 }
 ```
@@ -486,10 +485,9 @@ Items are created with status: PENDING
 ```mermaid
 stateDiagram-v2
     [*] --> PENDING: Created at checkout
-    PENDING --> ACCEPTED: Kitchen acknowledges
+    PENDING --> PREPARING: Cooking starts
+    PENDING --> READY: Ready for pickup (fast flow)
     PENDING --> CANCELLED: Kitchen cancels
-    ACCEPTED --> PREPARING: Cooking starts
-    ACCEPTED --> CANCELLED: Kitchen cancels
     PREPARING --> READY: Ready for pickup
     PREPARING --> CANCELLED: Kitchen cancels
     READY --> SERVED: Delivered to table
