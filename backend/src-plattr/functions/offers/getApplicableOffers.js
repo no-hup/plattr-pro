@@ -17,6 +17,8 @@ const { db } = require('../admin/admin');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 const errorHandler = require('../singleton/ErrorHandler');
 const timestamp = require('../utils/timestamp');
+const { validateOfferApplication } = require('./offerEngine');
+const { isOffersEnabled } = require('./offerFeatureGuard');
 
 /**
  * Evaluates if an offer's conditions are met
@@ -26,157 +28,12 @@ const timestamp = require('../utils/timestamp');
  * @returns {Object} { isApplicable: boolean, reason: string, potentialSaving: number }
  */
 function evaluateOfferConditions(offer, cart, sessionData) {
-    const conditions = offer.conditions || {};
-    const benefit = offer.benefit || {};
-    const cartItems = cart?.items || [];
-    const cartPriceInfo = cart?.priceInfo || {};
-
-    // Calculate cart total
-    const cartTotal = cartPriceInfo.basePrice || 0;
-
-    // Check validity dates
-    const now = new Date();
-    if (offer.validity) {
-        if (offer.validity.startDate && new Date(offer.validity.startDate) > now) {
-            return { isApplicable: false, reason: 'Offer not yet active', potentialSaving: 0 };
-        }
-        if (offer.validity.endDate && new Date(offer.validity.endDate) < now) {
-            return { isApplicable: false, reason: 'Offer has expired', potentialSaving: 0 };
-        }
-    }
-
-    // Check minimum cart value
-    if (conditions.minCartValue && cartTotal < conditions.minCartValue) {
-        const remaining = conditions.minCartValue - cartTotal;
-        return {
-            isApplicable: false,
-            reason: `Add ₹${remaining.toFixed(2)} more to unlock this offer`,
-            potentialSaving: 0
-        };
-    }
-
-    // Check required items (for BOGO and item-based offers)
-    if (conditions.requiredItems && conditions.requiredItems.length > 0) {
-        for (const required of conditions.requiredItems) {
-            const cartItem = cartItems.find(item => item.menuItemId === required.menuItemId);
-            const cartQuantity = cartItem?.quantity || 0;
-
-            if (cartQuantity < required.quantity) {
-                return {
-                    isApplicable: false,
-                    reason: `Add required items to unlock this offer`,
-                    potentialSaving: 0
-                };
-            }
-        }
-    }
-
-    // Check user history conditions
-    if (conditions.userHistory) {
-        const { minOrderCount, activeSessionOrderCount } = conditions.userHistory;
-
-        if (minOrderCount && (sessionData?.totalOrderCount || 0) < minOrderCount) {
-            return {
-                isApplicable: false,
-                reason: `Complete ${minOrderCount - (sessionData?.totalOrderCount || 0)} more orders to unlock`,
-                potentialSaving: 0
-            };
-        }
-
-        if (activeSessionOrderCount && (sessionData?.sessionOrderCount || 0) < activeSessionOrderCount - 1) {
-            return {
-                isApplicable: false,
-                reason: `Order ${activeSessionOrderCount - (sessionData?.sessionOrderCount || 0)} more items this session`,
-                potentialSaving: 0
-            };
-        }
-    }
-
-    // Calculate potential saving
-    let potentialSaving = 0;
-
-    // Check target categories presence (if specified as a condition)
-    if (conditions.targetCategories && conditions.targetCategories.length > 0) {
-        const hasCategoryItems = cartItems.some(item =>
-            item.status !== 'cancelled' && (
-                conditions.targetCategories.includes(item.categoryId) ||
-                (item.subcategoryIds && item.subcategoryIds.some(id => conditions.targetCategories.includes(id)))
-            )
-        );
-
-        if (!hasCategoryItems) {
-            return {
-                isApplicable: false,
-                reason: `Add items from eligible categories to apply`,
-                potentialSaving: 0
-            };
-        }
-    }
-
-    switch (benefit.type) {
-        case 'DISCOUNT_AMOUNT':
-            potentialSaving = Math.min(benefit.value || 0, cartTotal);
-            break;
-
-        case 'DISCOUNT_PERCENTAGE':
-            potentialSaving = (cartTotal * (benefit.value || 0)) / 100;
-            if (benefit.maxDiscount) {
-                potentialSaving = Math.min(potentialSaving, benefit.maxDiscount);
-            }
-            break;
-
-        case 'DISCOUNT_PERCENTAGE_ON_CATEGORY': {
-            const targetCategories = benefit.targetCategories || [];
-            let totalDiscount = 0;
-
-            cartItems.forEach(item => {
-                if (item.status === 'cancelled') return;
-
-                const categoryId = item.categoryId;
-                const subcategoryIds = item.subcategoryIds || [];
-
-                const isMatch = targetCategories.includes(categoryId) ||
-                    subcategoryIds.some(id => targetCategories.includes(id));
-
-                if (isMatch) {
-                    const itemTotalPrice = item.priceInfo?.finalPrice || 0;
-                    totalDiscount += (itemTotalPrice * (benefit.value || 0)) / 100;
-                }
-            });
-
-            if (benefit.maxDiscount) {
-                totalDiscount = Math.min(totalDiscount, benefit.maxDiscount);
-            }
-
-            potentialSaving = totalDiscount;
-            break;
-        }
-
-        case 'FREE_ITEM': {
-            const targetItem = benefit.targetItem;
-            const freeQuantity = benefit.value || 1;
-
-            const matches = cartItems.filter(item =>
-                item.menuItemId === targetItem && item.status !== 'cancelled'
-            );
-
-            if (matches.length > 0) {
-                const match = matches[0];
-                const unitPrice = (match.priceInfo?.finalPrice || 0) / (match.quantity || 1);
-                const quantityToDiscount = Math.min(freeQuantity, match.quantity);
-                potentialSaving = unitPrice * quantityToDiscount;
-            }
-            break;
-        }
-
-        default:
-            potentialSaving = 0;
-    }
+    const result = validateOfferApplication(offer, cart, sessionData);
 
     return {
-        isApplicable: true,
-        reason: 'Offer is applicable!',
-        potentialSaving: Math.round(potentialSaving * 100) / 100
+        isApplicable: result.isValid,
+        reason: result.reason,
+        potentialSaving: result.potentialSaving
     };
 }
 
@@ -243,6 +100,16 @@ const getApplicableOffers = functions.https.onCall(async (data, context) => {
         // Validate required fields
         if (!restaurantId) {
             errorHandler.badRequest('Restaurant ID is required');
+        }
+
+        // Check if offers are enabled for this restaurant (killswitch)
+        const offersEnabled = await isOffersEnabled(restaurantId);
+        if (!offersEnabled) {
+            console.log(`📢 OFFERS: Offers disabled for restaurant ${restaurantId}, returning empty`);
+            return ResponseBuilder.success(
+                { offers: [] },
+                'Offers not available for this restaurant'
+            );
         }
 
         // Fetch cart if not provided

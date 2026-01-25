@@ -22,16 +22,24 @@ class MenuCustomizationSheet extends StatefulWidget {
 }
 
 class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
-  late Map<String, String> _selectedVariants;
-  late Set<String> _selectedAddons;
+  // Maps variant.id -> option.id (for API)
+  late Map<String, String> _selectedVariantIds;
+  // Maps variant.id -> option.name (for display/price calculation)
+  late Map<String, String> _selectedVariantNames;
+  // Set of addon IDs (for API)
+  late Set<String> _selectedAddonIds;
+  // Set of addon names (for display/price calculation)
+  late Set<String> _selectedAddonNames;
   bool _imageLoadFailed = false;
   int _quantity = 1;
 
   @override
   void initState() {
     super.initState();
-    _selectedVariants = {};
-    _selectedAddons = {};
+    _selectedVariantIds = {};
+    _selectedVariantNames = {};
+    _selectedAddonIds = {};
+    _selectedAddonNames = {};
     _initializeDefaults();
   }
 
@@ -39,7 +47,9 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
     for (final variant in widget.item.variants) {
       if (variant.options.isNotEmpty) {
         // Default to first option -> Logic can be improved to check 'isMandatory'
-        _selectedVariants[variant.name] = variant.options.first.name;
+        final firstOption = variant.options.first;
+        _selectedVariantIds[variant.id] = firstOption.id;
+        _selectedVariantNames[variant.id] = firstOption.name;
       }
     }
   }
@@ -49,7 +59,7 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
 
     // Add variants cost
     for (final variant in widget.item.variants) {
-      final selectedOptionName = _selectedVariants[variant.name];
+      final selectedOptionName = _selectedVariantNames[variant.id];
       if (selectedOptionName != null) {
         final option = variant.options.firstWhere(
           (o) => o.name == selectedOptionName,
@@ -61,7 +71,7 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
 
     // Add addons cost
     for (final addon in widget.item.addons) {
-      if (_selectedAddons.contains(addon.meta.name)) {
+      if (_selectedAddonNames.contains(addon.meta.name)) {
         total += addon.priceInfo.finalPrice;
       }
     }
@@ -260,11 +270,12 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
           ),
           const Divider(height: 1, color: AppColors.divider),
           ...variant.options.map((option) {
-            final isSelected = _selectedVariants[variant.name] == option.name;
+            final isSelected = _selectedVariantNames[variant.id] == option.name;
             return InkWell(
               onTap: () {
                 setState(() {
-                  _selectedVariants[variant.name] = option.name;
+                  _selectedVariantIds[variant.id] = option.id;
+                  _selectedVariantNames[variant.id] = option.name;
                 });
               },
               child: Container(
@@ -277,11 +288,12 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
                   children: [
                     Radio<String>(
                       value: option.name,
-                      groupValue: _selectedVariants[variant.name],
+                      groupValue: _selectedVariantNames[variant.id],
                       onChanged: (value) {
                          if (value != null) {
                            setState(() {
-                             _selectedVariants[variant.name] = value;
+                             _selectedVariantIds[variant.id] = option.id;
+                             _selectedVariantNames[variant.id] = value;
                            });
                          }
                       },
@@ -333,16 +345,18 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
           ),
           const Divider(height: 1, color: AppColors.divider),
           ...addons.map((addon) {
-            final isSelected = _selectedAddons.contains(addon.meta.name);
+            final isSelected = _selectedAddonNames.contains(addon.meta.name);
             final price = addon.priceInfo.finalPrice;
             
             return InkWell(
               onTap: () {
                 setState(() {
                   if (isSelected) {
-                    _selectedAddons.remove(addon.meta.name);
+                    _selectedAddonIds.remove(addon.id);
+                    _selectedAddonNames.remove(addon.meta.name);
                   } else {
-                    _selectedAddons.add(addon.meta.name);
+                    _selectedAddonIds.add(addon.id);
+                    _selectedAddonNames.add(addon.meta.name);
                   }
                 });
               },
@@ -359,9 +373,11 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
                       onChanged: (value) {
                         setState(() {
                           if (value ?? false) {
-                            _selectedAddons.add(addon.meta.name);
+                            _selectedAddonIds.add(addon.id);
+                            _selectedAddonNames.add(addon.meta.name);
                           } else {
-                            _selectedAddons.remove(addon.meta.name);
+                            _selectedAddonIds.remove(addon.id);
+                            _selectedAddonNames.remove(addon.meta.name);
                           }
                         });
                       },
@@ -416,7 +432,8 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
               child: PrimaryActionButton(
                 label: 'ADD ₹${_totalPrice.toStringAsFixed(0)}',
                 onPressed: () {
-                  widget.onConfirm(_selectedVariants, _selectedAddons);
+                  // Pass IDs to onConfirm for the API
+                  widget.onConfirm(_selectedVariantIds, _selectedAddonIds);
                   Navigator.pop(context);
                 },
               ),

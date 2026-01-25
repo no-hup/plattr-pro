@@ -20,6 +20,7 @@ class RestaurantMenu {
     this.lastUpdated = '',
   });
 
-  factory RestaurantMenu.fromJson(Map<String, dynamic> json) => _$RestaurantMenuFromJson(json);
+  factory RestaurantMenu.fromJson(Map<String, dynamic> json) =>
+      _$RestaurantMenuFromJson(json);
   Map<String, dynamic> toJson() => _$RestaurantMenuToJson(this);
 }

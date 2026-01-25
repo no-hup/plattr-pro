@@ -4,7 +4,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 class UserAgentInterceptor extends Interceptor {
   @override
-  Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  Future<void> onRequest(
+      RequestOptions options, RequestInterceptorHandler handler) async {
     String userAgent = 'PlatterApp/unknown';
     if (kIsWeb) {
       userAgent = 'PlatterApp/Web';

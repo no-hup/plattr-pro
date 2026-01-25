@@ -48,7 +48,8 @@ void main() {
         'getRestaurantMenu invalid restaurant',
         'success=false, errorCode=not-found',
         () async {
-          AppState.instance.restaurantId = ContractTestConfig.invalidRestaurantId;
+          AppState.instance.restaurantId =
+              ContractTestConfig.invalidRestaurantId;
           AppState.instance.sessionId = ContractTestConfig.sessionId;
           print(
             '[contract] getRestaurantMenu invalid: restaurantId='

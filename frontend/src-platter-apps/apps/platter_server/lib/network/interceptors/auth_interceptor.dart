@@ -12,7 +12,8 @@ class AuthInterceptor extends Interceptor {
   }
 
   @override
-  Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  Future<void> onRequest(
+      RequestOptions options, RequestInterceptorHandler handler) async {
     if (!_isPublicEndpoint(options.path)) {
       final storage = SecureStorageService();
       final token = await storage.getToken();

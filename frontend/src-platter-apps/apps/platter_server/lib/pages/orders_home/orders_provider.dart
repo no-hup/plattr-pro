@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../shared/status_utils.dart';
 import 'models/order_summary.dart';
 import 'models/cart_summary.dart';
 import 'models/cart_item_summary.dart';
@@ -28,7 +29,7 @@ class CartCard {
   final String cartStatusColorHex;
   final num finalPrice;
   final List<CartItemSummary> items;
-  
+
   CartCard({
     required this.orderId,
     required this.tableId,
@@ -40,7 +41,7 @@ class CartCard {
     required this.finalPrice,
     required this.items,
   });
-  
+
   /// Create a CartCard from an OrderSummary and CartSummary
   factory CartCard.fromOrderAndCart(OrderSummary order, CartSummary cart) {
     return CartCard(
@@ -55,7 +56,7 @@ class CartCard {
       items: cart.items,
     );
   }
-  
+
   /// Create a CartCard from a ServedCart
   factory CartCard.fromServedCart(ServedCart served) {
     return CartCard(
@@ -74,7 +75,7 @@ class CartCard {
 
 class OrdersProvider extends ChangeNotifier {
   final OrderApiService _apiService;
-  
+
   // State variables
   DataState _state = DataState.initial;
   List<OrderSummary> _orders = [];
@@ -83,7 +84,7 @@ class OrdersProvider extends ChangeNotifier {
   bool _isRefreshing = false;
   String _currentServerId = '';
   UiFlags _uiFlags = UiFlags.defaults();
-  
+
   // Public getters
   DataState get state => _state;
   List<OrderSummary> get orders => _orders;
@@ -93,9 +94,10 @@ class OrdersProvider extends ChangeNotifier {
   bool get hasOrders => _orders.isNotEmpty;
   String get currentServerId => _currentServerId;
   UiFlags get uiFlags => _uiFlags;
-  
-  OrdersProvider({required OrderApiService apiService}) : _apiService = apiService;
-  
+
+  OrdersProvider({required OrderApiService apiService})
+      : _apiService = apiService;
+
   /// Flatten orders into cart cards for grid display
   List<CartCard> get allCartCards {
     final cards = <CartCard>[];
@@ -106,7 +108,7 @@ class OrdersProvider extends ChangeNotifier {
     }
     return cards;
   }
-  
+
   /// Get cart cards filtered by tab
   List<CartCard> getCardsForTab(OrderTab tab) {
     switch (tab) {
@@ -115,12 +117,13 @@ class OrdersProvider extends ChangeNotifier {
         // My Orders and All Orders show all cards (data already scoped server-side)
         return allCartCards;
       case OrderTab.ready:
-        return allCartCards.where((card) => 
-          normalizeCartStatus(card.cartStatus) == 'READY'
-        ).toList();
+        return allCartCards
+            .where((card) =>
+                StatusUtils.normalizeCartStatus(card.cartStatus) == 'READY')
+            .toList();
       case OrderTab.pending:
         return allCartCards.where((card) {
-          final status = normalizeCartStatus(card.cartStatus);
+          final status = StatusUtils.normalizeCartStatus(card.cartStatus);
           return status == 'PENDING' || status == 'PREPARING';
         }).toList();
       case OrderTab.served:
@@ -135,14 +138,14 @@ class OrdersProvider extends ChangeNotifier {
     String? serverId,
   }) async {
     if (_state == DataState.loading && !_isRefreshing) return;
-    
+
     // Set loading state
     _state = DataState.loading;
     if (!_isRefreshing) {
       _errorMessage = null;
       notifyListeners();
     }
-    
+
     try {
       // Call API service
       final response = await _apiService.getActiveOrdersForRestaurant(
@@ -150,38 +153,44 @@ class OrdersProvider extends ChangeNotifier {
         sessionId: sessionId,
         serverId: serverId,
       );
-      
+
       // Handle response
       if (response.success && response.data != null) {
         final data = response.data!;
         _currentServerId = data.currentServerId;
         _uiFlags = data.effectiveUiFlags;
-        
-        // Filter out cart items with status 'completed' or 'cancelled'
-        _orders = data.orders.map((order) {
-          // Filter carts to include only items that are not completed or cancelled
-          final filteredCarts = order.carts.map((cart) {
-            // Backend now filters cancelled/returned items, so we use all items returned
-            return CartSummary(
-              cartId: cart.cartId,
-              status: cart.status,
-              statusColorHex: cart.statusColorHex,
-              cartIndex: cart.cartIndex,
-              items: cart.items,
-            );
-          }).where((cart) => cart.items.isNotEmpty).toList();
 
-          // Return new order containing only active carts
-          return OrderSummary(
-            orderId: order.orderId,
-            tableId: order.tableId,
-            status: order.status,
-            statusColorHex: order.statusColorHex,
-            carts: filteredCarts,
-            assignedTo: order.assignedTo,
-            priceInfo: order.priceInfo,
-          );
-        }).where((order) => order.carts.isNotEmpty).toList();
+        // Filter out cart items with status 'completed' or 'cancelled'
+        _orders = data.orders
+            .map((order) {
+              // Filter carts to include only items that are not completed or cancelled
+              final filteredCarts = order.carts
+                  .map((cart) {
+                    // Backend now filters cancelled/returned items, so we use all items returned
+                    return CartSummary(
+                      cartId: cart.cartId,
+                      status: cart.status,
+                      statusColorHex: cart.statusColorHex,
+                      cartIndex: cart.cartIndex,
+                      items: cart.items,
+                    );
+                  })
+                  .where((cart) => cart.items.isNotEmpty)
+                  .toList();
+
+              // Return new order containing only active carts
+              return OrderSummary(
+                orderId: order.orderId,
+                tableId: order.tableId,
+                status: order.status,
+                statusColorHex: order.statusColorHex,
+                carts: filteredCarts,
+                assignedTo: order.assignedTo,
+                priceInfo: order.priceInfo,
+              );
+            })
+            .where((order) => order.carts.isNotEmpty)
+            .toList();
         _state = DataState.loaded;
         _errorMessage = null;
       } else {
@@ -196,7 +205,7 @@ class OrdersProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
+
   /// Fetch served carts for the Served tab
   Future<void> fetchServedCarts({
     required String restaurantId,
@@ -207,7 +216,7 @@ class OrdersProvider extends ChangeNotifier {
         restaurantId: restaurantId,
         sessionId: sessionId,
       );
-      
+
       if (response.success && response.data != null) {
         _servedCarts = response.data!.servedCarts;
         notifyListeners();
@@ -217,7 +226,7 @@ class OrdersProvider extends ChangeNotifier {
       debugPrint('Failed to fetch served carts: $e');
     }
   }
-  
+
   Future<void> refreshOrders({
     required String restaurantId,
     required String sessionId,
@@ -236,7 +245,7 @@ class OrdersProvider extends ChangeNotifier {
       ),
     ]);
   }
-  
+
   /// Mark a cart as served
   Future<bool> markCartAsServed({
     required String restaurantId,
@@ -251,7 +260,7 @@ class OrdersProvider extends ChangeNotifier {
         cartIndex: cartIndex,
         sessionId: sessionId,
       );
-      
+
       if (response.success) {
         // Refresh orders to update the UI
         await refreshOrders(
@@ -281,13 +290,13 @@ class OrdersProvider extends ChangeNotifier {
       // You would typically call an API here
       // For now, just update local state for demo
       // final response = await _apiService.updateOrderStatus(...);
-      
+
       // Create a new list to trigger UI updates
       final updatedOrders = List<OrderSummary>.from(_orders);
       // This is a simplistic approach - in real implementation,
       // we would create a new OrderSummary object with updated status
       // updatedOrders[index] = OrderSummary(...);
-      
+
       // For demonstration only - you'd replace this with actual API integration
       _orders = updatedOrders;
       notifyListeners();

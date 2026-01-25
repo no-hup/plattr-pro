@@ -9,8 +9,10 @@
 
 const getApplicableOffers = require('./getApplicableOffers');
 const applyOffer = require('./applyOffer');
+const removeOffer = require('./removeOffer');
 
 module.exports = {
     getApplicableOffers,
     applyOffer,
+    removeOffer,
 };

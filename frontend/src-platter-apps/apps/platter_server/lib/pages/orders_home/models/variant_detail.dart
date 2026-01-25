@@ -14,7 +14,8 @@ class VariantDetail {
     required this.respectParentDiscount,
   });
 
-  factory VariantDetail.fromJson(Map<String, dynamic> json) => _$VariantDetailFromJson(json);
+  factory VariantDetail.fromJson(Map<String, dynamic> json) =>
+      _$VariantDetailFromJson(json);
 
   Map<String, dynamic> toJson() => _$VariantDetailToJson(this);
 }

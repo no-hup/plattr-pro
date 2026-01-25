@@ -52,13 +52,14 @@ class ServedCart {
     required this.items,
   });
 
-  factory ServedCart.fromJson(Map<String, dynamic> json) => _$ServedCartFromJson(json);
+  factory ServedCart.fromJson(Map<String, dynamic> json) =>
+      _$ServedCartFromJson(json);
 
   Map<String, dynamic> toJson() => _$ServedCartToJson(this);
 
   /// Get the served timestamp as a DateTime, or null if not available
-  DateTime? get servedAt => servedAtMs != null 
-      ? DateTime.fromMillisecondsSinceEpoch(servedAtMs!) 
+  DateTime? get servedAt => servedAtMs != null
+      ? DateTime.fromMillisecondsSinceEpoch(servedAtMs!)
       : null;
 
   /// Get the final price from priceInfo, or 0 if not available
@@ -74,7 +75,7 @@ class ServedCartPriceInfo {
     required this.finalPrice,
   });
 
-  factory ServedCartPriceInfo.fromJson(Map<String, dynamic> json) => 
+  factory ServedCartPriceInfo.fromJson(Map<String, dynamic> json) =>
       _$ServedCartPriceInfoFromJson(json);
 
   Map<String, dynamic> toJson() => _$ServedCartPriceInfoToJson(this);
@@ -97,7 +98,7 @@ class ServedCartsResponse {
     this.lookbackHours = 6,
   });
 
-  factory ServedCartsResponse.fromJson(Map<String, dynamic> json) => 
+  factory ServedCartsResponse.fromJson(Map<String, dynamic> json) =>
       _$ServedCartsResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$ServedCartsResponseToJson(this);

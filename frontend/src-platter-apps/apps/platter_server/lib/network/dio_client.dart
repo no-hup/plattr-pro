@@ -11,7 +11,7 @@ class DioClient {
   factory DioClient() => _instance;
 
   late final Dio dio;
-  
+
   DioClient._internal() {
     dio = Dio(
       BaseOptions(
@@ -26,23 +26,24 @@ class DioClient {
         },
       ),
     );
-    
+
     // Add interceptors in correct order
     // dio.interceptors.add(UserAgentInterceptor()); // Sets User-Agent header - causes issues in Web
     //dio.interceptors.add(AuthInterceptor());      // Handles Authorization
-    dio.interceptors.add(ErrorInterceptor());     // Handles error logic (e.g., 401 refresh)
+    dio.interceptors
+        .add(ErrorInterceptor()); // Handles error logic (e.g., 401 refresh)
     dio.interceptors.add(LogInterceptor(
       requestBody: true,
       responseBody: true,
       error: true,
     )); // Logging should be last
   }
-  
+
   /// Standard error handler for Dio exceptions
   static (String, String) handleDioError(DioException e, {String? context}) {
     String errorCode;
     String errorMessage;
-    
+
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
@@ -68,12 +69,12 @@ class DioClient {
         errorCode = 'unknown_error';
         errorMessage = e.message ?? 'An unknown error occurred';
     }
-    
+
     // Add context to the error for better debugging
     if (context != null) {
       errorMessage = '[$context] $errorMessage';
     }
-    
+
     return (errorCode, errorMessage);
   }
 

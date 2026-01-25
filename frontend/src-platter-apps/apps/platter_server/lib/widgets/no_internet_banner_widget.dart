@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// A subtle, animated banner that displays "No internet available" message.
-/// 
+///
 /// Designed to slide in/out below the app bar with smooth animation.
 /// Uses a muted orange color scheme for non-intrusive visibility.
 class NoInternetBannerWidget extends StatelessWidget {

@@ -867,8 +867,16 @@
             "discount": 10,
             "finalPrice": 126
           },
-          "variants": [],
-          "addons": [],
+          "variants": [
+            {
+              "id": "var_burger_size",
+              "name": "Burger Size"
+            }
+          ],
+          "addons": [
+            "addon_burger_fries",
+            "addon_burger_cheese"
+          ],
           "nutritionalInfo": {
             "calories": 650,
             "protein": 35,
@@ -880,7 +888,7 @@
             "dairy"
           ],
           "isInStock": true,
-          "isCustomizable": false
+          "isCustomizable": true
         },
         "item_bs_margherita": {
           "menuItemId": "item_bs_margherita",
@@ -896,8 +904,20 @@
             "discount": 0,
             "finalPrice": 180
           },
-          "variants": [],
-          "addons": [],
+          "variants": [
+            {
+              "id": "var_pizza_size",
+              "name": "Pizza Size"
+            },
+            {
+              "id": "var_pizza_crust",
+              "name": "Crust Type"
+            }
+          ],
+          "addons": [
+            "addon_extra_cheese",
+            "addon_olives"
+          ],
           "nutritionalInfo": {
             "calories": 800,
             "protein": 30,
@@ -909,7 +929,7 @@
             "dairy"
           ],
           "isInStock": true,
-          "isCustomizable": false
+          "isCustomizable": true
         },
         "item_bs_chocolate_cake": {
           "menuItemId": "item_bs_chocolate_cake",
@@ -925,8 +945,15 @@
             "discount": 0,
             "finalPrice": 80
           },
-          "variants": [],
-          "addons": [],
+          "variants": [
+            {
+              "id": "var_dessert_size",
+              "name": "Dessert Size"
+            }
+          ],
+          "addons": [
+            "addon_ice_cream"
+          ],
           "nutritionalInfo": {
             "calories": 450,
             "protein": 6,
@@ -939,7 +966,7 @@
             "eggs"
           ],
           "isInStock": true,
-          "isCustomizable": false
+          "isCustomizable": true
         },
         "item_bs_cappuccino": {
           "menuItemId": "item_bs_cappuccino",
@@ -955,8 +982,15 @@
             "discount": 0,
             "finalPrice": 60
           },
-          "variants": [],
-          "addons": [],
+          "variants": [
+            {
+              "id": "var_coffee_size",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_vanilla_syrup"
+          ],
           "nutritionalInfo": {
             "calories": 80,
             "protein": 4,
@@ -967,7 +1001,7 @@
             "dairy"
           ],
           "isInStock": true,
-          "isCustomizable": false
+          "isCustomizable": true
         }
       },
       "variants": {
@@ -1236,7 +1270,79 @@
       },
       "sessions": {},
       "carts": {},
-      "orders": {}
+      "orders": {},
+      "offers": {
+        "offer_dessert_50": {
+          "id": "offer_dessert_50",
+          "title": "50% Off Desserts",
+          "description": "Get 50% off on all dessert items when cart value is ₹1000 or more",
+          "type": "PERCENTAGE",
+          "scope": "CATEGORY",
+          "targetIds": [
+            "subcat_desserts"
+          ],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {
+            "minCartValue": 1000
+          },
+          "benefit": {
+            "value": 50,
+            "maxDiscount": 500
+          }
+        },
+        "offer_flat_100": {
+          "id": "offer_flat_100",
+          "title": "Flat ₹100 Off",
+          "description": "Get flat ₹100 off on orders above ₹500",
+          "type": "FLAT",
+          "scope": "CART",
+          "targetIds": [],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {
+            "minCartValue": 500
+          },
+          "benefit": {
+            "value": 100,
+            "maxDiscount": 100
+          }
+        },
+        "offer_bogo_cappuccino": {
+          "id": "offer_bogo_cappuccino",
+          "title": "Buy 1 Get 1 Cappuccino",
+          "description": "Buy a Cappuccino, get another one free (Add 2 to cart)",
+          "type": "BOGO",
+          "scope": "ITEM",
+          "targetIds": [
+            "item_cappuccino"
+          ],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {
+            "requiredItems": [
+              {
+                "menuItemId": "item_cappuccino",
+                "quantity": 2
+              }
+            ]
+          },
+          "benefit": {
+            "buyQty": 1,
+            "getQty": 1,
+            "maxDiscount": 500
+          }
+        }
+      }
     },
     "res_menus": {
       "info": {

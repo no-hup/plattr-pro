@@ -75,7 +75,8 @@ void main() {
         'getTablesForRestaurant empty restaurant',
         'success=false, errorCode=invalid-argument',
         () async {
-          print('[contract] getTablesForRestaurant invalid: restaurantId=<empty>');
+          print(
+              '[contract] getTablesForRestaurant invalid: restaurantId=<empty>');
           final response = await apiService.getRestaurantTables(
             restaurantId: '',
           );

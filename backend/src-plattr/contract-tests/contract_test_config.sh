@@ -15,3 +15,6 @@ EXPECTED_ORDER_PRICE=80
 
 SERVER_USERNAME="alex@daynightkitchen.com"
 SERVER_PASSWORD="1234"
+
+# Mock data import script (repo-root relative path)
+MOCK_IMPORT_SCRIPT="backend/src-plattr/functions/mock/importMockDataV3.js"

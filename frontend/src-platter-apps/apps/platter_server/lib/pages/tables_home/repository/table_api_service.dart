@@ -29,7 +29,8 @@ class TableApiService {
           : envelope['success'] as bool? ?? false;
       final message = envelope['message'] as String? ?? '';
       if (!success) {
-        final code = envelope['code']?.toString() ?? envelope['errorCode']?.toString();
+        final code =
+            envelope['code']?.toString() ?? envelope['errorCode']?.toString();
         return ApiResponse<List<TableModel>>.error(message, errorCode: code);
       }
       final tablesJson = (envelope['data']?['tables'] as List<dynamic>?) ?? [];
@@ -38,10 +39,12 @@ class TableApiService {
           .toList();
       return ApiResponse.success(tables, message: message);
     } on DioException catch (e) {
-      final (code, msg) = DioClient.handleDioError(e, context: 'getRestaurantTables');
+      final (code, msg) =
+          DioClient.handleDioError(e, context: 'getRestaurantTables');
       return ApiResponse<List<TableModel>>.error(msg, errorCode: code);
     } catch (e) {
-      return ApiResponse<List<TableModel>>.error(e.toString(), errorCode: 'parsing_error');
+      return ApiResponse<List<TableModel>>.error(e.toString(),
+          errorCode: 'parsing_error');
     }
   }
 
@@ -65,13 +68,16 @@ class TableApiService {
       // Use ResponseParser to parse generically
       return ResponseParser.parse<UpdateTableStatusResponse>(
         response,
-        (json) => UpdateTableStatusResponse.fromJson(json as Map<String, dynamic>),
+        (json) =>
+            UpdateTableStatusResponse.fromJson(json as Map<String, dynamic>),
       );
     } on DioException catch (e) {
-      final (code, msg) = DioClient.handleDioError(e, context: 'updateTableStatus');
+      final (code, msg) =
+          DioClient.handleDioError(e, context: 'updateTableStatus');
       return ApiResponse<UpdateTableStatusResponse>.error(msg, errorCode: code);
     } catch (e) {
-      return ApiResponse<UpdateTableStatusResponse>.error(e.toString(), errorCode: 'parsing_error');
+      return ApiResponse<UpdateTableStatusResponse>.error(e.toString(),
+          errorCode: 'parsing_error');
     }
   }
 
@@ -97,20 +103,24 @@ class TableApiService {
           : envelope['success'] as bool? ?? false;
       final message = envelope['message'] as String? ?? '';
       if (!success) {
-        final code = envelope['code']?.toString() ?? envelope['errorCode']?.toString();
+        final code =
+            envelope['code']?.toString() ?? envelope['errorCode']?.toString();
         return ApiResponse<TableModel>.error(message, errorCode: code);
       }
       final tableJson = envelope['data'] as Map<String, dynamic>?;
       if (tableJson == null) {
-        return ApiResponse<TableModel>.error('No table data', errorCode: 'parsing_error');
+        return ApiResponse<TableModel>.error('No table data',
+            errorCode: 'parsing_error');
       }
       final table = TableModel.fromJson(tableJson);
       return ApiResponse.success(table, message: message);
     } on DioException catch (e) {
-      final (code, msg) = DioClient.handleDioError(e, context: 'getTableDetails');
+      final (code, msg) =
+          DioClient.handleDioError(e, context: 'getTableDetails');
       return ApiResponse<TableModel>.error(msg, errorCode: code);
     } catch (e) {
-      return ApiResponse<TableModel>.error(e.toString(), errorCode: 'parsing_error');
+      return ApiResponse<TableModel>.error(e.toString(),
+          errorCode: 'parsing_error');
     }
   }
 
@@ -130,7 +140,7 @@ class TableApiService {
           }
         },
       );
-      
+
       // Parse the response
       final map = response.data["result"];
       if (map is Map<String, dynamic>) {
@@ -139,13 +149,14 @@ class TableApiService {
             ? statusValue.toLowerCase() == 'success'
             : map['success'] as bool? ?? false;
         final message = map['message'] as String? ?? '';
-        
+
         if (success) {
           final data = map['data'] as Map<String, dynamic>?;
           if (data == null) {
-            return ApiResponse.error('No data in response', errorCode: 'parsing_error');
+            return ApiResponse.error('No data in response',
+                errorCode: 'parsing_error');
           }
-          
+
           final tableOtpResponse = TableOtpResponse(
             success: success,
             message: message,
@@ -155,21 +166,25 @@ class TableApiService {
             otpGeneratedAt: data['otpGeneratedAt'] as String? ?? '',
             otpExpiresAt: data['otpExpiresAt'] as String? ?? '',
           );
-          
+
           return ApiResponse.success(tableOtpResponse, message: message);
         } else {
-          return ApiResponse.error(message, errorCode: map['errorCode']?.toString());
+          return ApiResponse.error(message,
+              errorCode: map['errorCode']?.toString());
         }
       }
-      return ApiResponse.error('Invalid response format', errorCode: 'format_error');
+      return ApiResponse.error('Invalid response format',
+          errorCode: 'format_error');
     } on DioException catch (e) {
-      final (code, msg) = DioClient.handleDioError(e, context: 'generateTableOTP');
+      final (code, msg) =
+          DioClient.handleDioError(e, context: 'generateTableOTP');
       return ApiResponse<TableOtpResponse>.error(msg, errorCode: code);
     } catch (e) {
-      return ApiResponse<TableOtpResponse>.error(e.toString(), errorCode: 'parsing_error');
+      return ApiResponse<TableOtpResponse>.error(e.toString(),
+          errorCode: 'parsing_error');
     }
   }
-  
+
   /// Legacy method maintained for backward compatibility
   @Deprecated('Use generateTableOTP instead')
   Future<ApiResponse<String>> refreshTableOtp({
@@ -180,11 +195,13 @@ class TableApiService {
       restaurantId: restaurantId,
       tableId: tableId,
     );
-    
+
     if (response.success && response.data != null) {
       return ApiResponse.success(response.data!.otp, message: response.message);
     } else {
-      return ApiResponse<String>.error(response.message ?? 'Failed to refresh OTP', errorCode: response.errorCode);
+      return ApiResponse<String>.error(
+          response.message ?? 'Failed to refresh OTP',
+          errorCode: response.errorCode);
     }
   }
-} 
+}

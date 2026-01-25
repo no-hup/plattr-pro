@@ -20,6 +20,7 @@ class VariantOption {
     required this.priceInfo,
   });
 
-  factory VariantOption.fromJson(Map<String, dynamic> json) => _$VariantOptionFromJson(json);
+  factory VariantOption.fromJson(Map<String, dynamic> json) =>
+      _$VariantOptionFromJson(json);
   Map<String, dynamic> toJson() => _$VariantOptionToJson(this);
 }

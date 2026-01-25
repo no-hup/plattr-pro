@@ -177,3 +177,61 @@ Examples:
 - `cart-addItemToCart`
 - `menu-fetchMenu`
 - `order-cancelOrder`
+
+---
+
+## Mock Data Guidelines
+
+### ⚠️ IMPORTANT: Bestseller/Carousel Items
+
+When creating menu items for special categories like "Best Sellers" (`cat_bestsellers`) that use `viewType: "carousel"`:
+
+**❌ WRONG - Creates broken customization:**
+```json
+"item_bs_cappuccino": {
+  "menuItemId": "item_bs_cappuccino",
+  "categoryId": "cat_bestsellers",
+  "variants": [],          // ← MISSING variants!
+  "addons": [],            // ← MISSING addons!
+  "isCustomizable": false  // ← Wrong!
+}
+```
+
+**✅ CORRECT - Matches real item configuration:**
+```json
+"item_bs_cappuccino": {
+  "menuItemId": "item_bs_cappuccino",
+  "categoryId": "cat_bestsellers",
+  "variants": [
+    { "id": "var_coffee_size", "name": "Size" }  // Same as item_cappuccino
+  ],
+  "addons": ["addon_vanilla_syrup"],              // Same as item_cappuccino
+  "isCustomizable": true                          // Same as item_cappuccino
+}
+```
+
+### Why This Matters
+
+1. **Customization Sheet**: If `isCustomizable: false`, the app won't show the variant/addon selection sheet
+2. **API Calls**: The backend expects variant IDs (e.g., `var_coffee_size`) - empty variants cause "Variant not found" errors
+3. **Cart State**: Mismatched item IDs between bestseller and regular items cause cart quantity sync issues
+
+### Cross-Listing Alternative
+
+Instead of duplicate items, you can cross-list existing items using `subcategoryIds`:
+
+```json
+"item_cappuccino": {
+  "menuItemId": "item_cappuccino",
+  "categoryId": "cat_beverages",
+  "subcategoryIds": [
+    "subcat_hot_drinks",
+    "subcat_bestsellers"   // ← Appears in bestsellers too
+  ],
+  "variants": [...],
+  "isCustomizable": true
+}
+```
+
+This approach uses the SAME item in multiple places, avoiding duplication bugs.
+

@@ -1,0 +1,25 @@
+# Strict invariants for agent-run contract testing.
+# Update only when schema or test fixtures change.
+
+emulator:
+  base_url: "http://127.0.0.1:5002/rms-app-dd875/us-central1"
+
+backend_flow:
+  restaurant_id: "res_server-consumer_order_flow"
+  table:
+    id: "table003"
+    otp: "654321"
+  customer:
+    phone: "1234567890"
+    name: "John Customer"
+  menu_item:
+    id: "item_pancakes"
+    expected_price: 80
+  server_login:
+    username: "alex@daynightkitchen.com"
+    password: "1234"
+
+flutter_contract_defaults:
+  restaurant_id: "res_server-consumer_order_flow"
+  session_id: "session_server001__preseed"
+  order_id: "order_active_multi_cart__amc"

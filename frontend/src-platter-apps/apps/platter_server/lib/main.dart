@@ -9,21 +9,23 @@ import './config/app_config.dart'; // Import AppConfig
 void main() async {
   // Global error handler for errors caught by the Flutter framework
   FlutterError.onError = (FlutterErrorDetails details) {
-    print('Caught FlutterError: \n  Exception: ${details.exceptionAsString()}\n');
+    print(
+        'Caught FlutterError: \n  Exception: ${details.exceptionAsString()}\n');
     final List<String> filteredStackLines = details.stack
         .toString()
         .split('\n')
-        .where((line) => 
-            line.contains('package:platter_server/') || 
+        .where((line) =>
+            line.contains('package:platter_server/') ||
             (!line.contains('package:') && line.trim().isNotEmpty) ||
-            line.contains(RegExp(r'main\.dart'))
-        )
+            line.contains(RegExp(r'main\.dart')))
         .toList();
-    
+
     if (filteredStackLines.isNotEmpty) {
-      print('Filtered Stack trace (FlutterError):\n${filteredStackLines.join('\n')}\n');
+      print(
+          'Filtered Stack trace (FlutterError):\n${filteredStackLines.join('\n')}\n');
     } else {
-      print('Stack trace (FlutterError - compact):\n${details.stack.toString().split('\n').take(10).join('\n')}\n...');
+      print(
+          'Stack trace (FlutterError - compact):\n${details.stack.toString().split('\n').take(10).join('\n')}\n...');
     }
   };
 
@@ -38,24 +40,25 @@ void main() async {
     } else {
       AppConfig.initialize(Environment.dev);
     }
-    
+
     runApp(const MyApp());
   }, (error, stackTrace) {
     print('Caught unhandled Dart error: \n  Error: $error\n');
     final List<String> filteredStackLines = stackTrace
         .toString()
         .split('\n')
-        .where((line) => 
-            line.contains('package:platter_server/') || 
+        .where((line) =>
+            line.contains('package:platter_server/') ||
             (!line.contains('package:') && line.trim().isNotEmpty) ||
-            line.contains(RegExp(r'main\.dart'))
-        )
+            line.contains(RegExp(r'main\.dart')))
         .toList();
 
     if (filteredStackLines.isNotEmpty) {
-      print('Filtered Stack trace (runZonedGuarded):\n${filteredStackLines.join('\n')}\n');
+      print(
+          'Filtered Stack trace (runZonedGuarded):\n${filteredStackLines.join('\n')}\n');
     } else {
-      print('Stack trace (runZonedGuarded - compact):\n${stackTrace.toString().split('\n').take(10).join('\n')}\n...');
+      print(
+          'Stack trace (runZonedGuarded - compact):\n${stackTrace.toString().split('\n').take(10).join('\n')}\n...');
     }
   });
 }

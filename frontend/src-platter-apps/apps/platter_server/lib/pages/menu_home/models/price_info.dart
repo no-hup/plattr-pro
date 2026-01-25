@@ -19,6 +19,7 @@ class PriceInfo {
     required this.discount,
   });
 
-  factory PriceInfo.fromJson(Map<String, dynamic> json) => _$PriceInfoFromJson(json);
+  factory PriceInfo.fromJson(Map<String, dynamic> json) =>
+      _$PriceInfoFromJson(json);
   Map<String, dynamic> toJson() => _$PriceInfoToJson(this);
 }

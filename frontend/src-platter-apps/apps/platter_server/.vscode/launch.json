@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "platter_server",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "args": [
+        "--web-renderer", "html",
+        "--web-hostname", "127.0.0.1",
+        "--web-port", "5050"
+      ],
+      "dart.debugSdkLibraries": false,
+      "dart.debugExternalLibraries": false
+    },
+    {
+      "name": "platter_server (profile mode)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "args": [
+        "--web-renderer", "html",
+        "--web-hostname", "127.0.0.1",
+        "--web-port", "5050"
+      ]
+    }
+  ]
+}
