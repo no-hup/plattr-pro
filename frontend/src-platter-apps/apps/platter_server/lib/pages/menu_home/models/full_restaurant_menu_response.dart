@@ -16,6 +16,7 @@ class FullRestaurantMenuResponse {
     this.metadata,
   });
 
-  factory FullRestaurantMenuResponse.fromJson(Map<String, dynamic> json) => _$FullRestaurantMenuResponseFromJson(json);
+  factory FullRestaurantMenuResponse.fromJson(Map<String, dynamic> json) =>
+      _$FullRestaurantMenuResponseFromJson(json);
   Map<String, dynamic> toJson() => _$FullRestaurantMenuResponseToJson(this);
 }

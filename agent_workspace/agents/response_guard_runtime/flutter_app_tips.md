@@ -10,8 +10,11 @@
 
 | Need | Command / Location |
 |------|-------------------|
-| **Consumer App (Boilerplate)** | `bash backend/flutter-app-logs/run_consumer.sh` |
-| **Server App** | `bash backend/flutter-app-logs/run_server.sh` |
+| **🚀 Full Dev Environment** | `zsh backend/flutter-app-logs/god-level-script-to-run-everything.sh` |
+| **Consumer App (VS Code)** | Press `F5` → Select `flutter_boilerplate` |
+| **Server App (VS Code)** | Press `F5` → Select `platter_server` |
+| **Consumer App (Terminal)** | `bash backend/flutter-app-logs/run_consumer.sh` |
+| **Server App (Terminal)** | `bash backend/flutter-app-logs/run_server.sh` |
 | **Log Dir** | `backend/flutter-app-logs/` |
 | **Kill Flutter/Dart** | `pkill -9 -f flutter; pkill -9 -f dart` |
 | **ResponseGuard Interceptor** | `agent_workspace/agents/response_guard_runtime/flutter/response_guard_interceptor.dart` |
@@ -22,9 +25,54 @@
 
 To provide clean logs for coding agents, redirect Flutter's output to the central log directory while filtering out noise.
 
-### **Recommended Method: Use Shell Scripts**
+### **Recommended Method: God-Level Script (iTerm2)**
 
-The easiest way to run the apps with logging is to use the provided shell scripts:
+The easiest way to launch the entire development environment:
+
+```zsh
+# From project root
+zsh backend/flutter-app-logs/god-level-script-to-run-everything.sh
+# OR simply:
+./backend/flutter-app-logs/god-level-script-to-run-everything.sh
+```
+
+This script will:
+1. Prompt you to select which mock data to import (V2, V3, quick imports, or skip)
+2. Kill any existing Flutter/Dart/Firebase processes
+3. Launch Firebase Emulator in a new iTerm tab
+4. Wait for emulator to be ready (30s timeout with error logging)
+5. Import the selected mock data
+6. Launch Server App in a new iTerm tab (port 5050)
+7. Launch Consumer App in a new iTerm tab (port 5051)
+8. Display a summary with all URLs and log file locations
+
+**Requirements:** iTerm2 + zsh
+
+> ⚠️ **Note for LLM Agents:** This script is for manual use only. Do NOT run this script automatically. Use the individual `run_server.sh` or `run_consumer.sh` scripts if you need to launch apps programmatically.
+
+---
+
+### **Alternative Method 1: VS Code Launch (Auto Hot Reload)**
+
+The easiest way to run apps with automatic hot reload on file save:
+
+#### Using VS Code/Cursor
+1. Open the app folder in VS Code/Cursor
+2. Press `F5` or go to Run & Debug panel
+3. Select the configuration:
+   - **Consumer App**: `flutter_boilerplate` 
+   - **Server App**: `platter_server`
+4. Hot reload happens automatically when you save files (`Cmd+S` / `Ctrl+S`)
+
+**Benefits:**
+- ✅ Automatic hot reload on save (no terminal access needed)
+- ✅ Integrated debugging with breakpoints
+- ✅ Console output visible in Debug Console
+- ✅ Stop/restart from VS Code UI
+
+### **Alternative Method 2: Shell Scripts (Individual Apps)**
+
+If you have terminal access and want centralized logging:
 
 #### Consumer App (Boilerplate)
 ```bash
@@ -43,6 +91,7 @@ These scripts automatically:
 - Truncate the log file for a fresh start
 - Run Flutter with full output logging
 - Display output in terminal AND save to file
+- **Enable hot reload** - press `r` to hot reload, `R` to hot restart, `q` to quit
 
 ---
 
@@ -100,7 +149,9 @@ This usually means the **Firebase Emulator** is stuck.
 **Fix**: `lsof -t -i:8080 -i:5002 | xargs kill -9`
 
 ### Issue: Flutter app not picking up changes
-**Fix**: Press `R` in the terminal running the app (Hot Restart) or `q` and restart.
+**Hot Reload**: Press `r` in the terminal for hot reload (preserves app state)  
+**Hot Restart**: Press `R` for full restart (resets app state)  
+**Full Restart**: Press `q` to quit and restart the script
 
 ### Issue: Logs are empty
 **Fix**: Ensure `LogInterceptor` is enabled in `lib/network/dio_client.dart`.

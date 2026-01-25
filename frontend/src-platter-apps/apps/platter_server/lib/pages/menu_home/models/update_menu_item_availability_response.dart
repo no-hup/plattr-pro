@@ -16,13 +16,15 @@ class UpdateMenuItemAvailabilityResponse {
     required this.isAvailable,
   });
 
-  factory UpdateMenuItemAvailabilityResponse.fromJson(Map<String, dynamic> json) => UpdateMenuItemAvailabilityResponse(
-    menuItemId: json['menuItemId'] as String,
-    isAvailable: json['isAvailable'] as bool,
-  );
+  factory UpdateMenuItemAvailabilityResponse.fromJson(
+          Map<String, dynamic> json) =>
+      UpdateMenuItemAvailabilityResponse(
+        menuItemId: json['menuItemId'] as String,
+        isAvailable: json['isAvailable'] as bool,
+      );
 
   Map<String, dynamic> toJson() => {
-    'menuItemId': menuItemId,
-    'isAvailable': isAvailable,
-  };
+        'menuItemId': menuItemId,
+        'isAvailable': isAvailable,
+      };
 }

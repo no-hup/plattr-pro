@@ -37,6 +37,7 @@ class Variant {
     required this.name,
   });
 
-  factory Variant.fromJson(Map<String, dynamic> json) => _$VariantFromJson(json);
+  factory Variant.fromJson(Map<String, dynamic> json) =>
+      _$VariantFromJson(json);
   Map<String, dynamic> toJson() => _$VariantToJson(this);
 }

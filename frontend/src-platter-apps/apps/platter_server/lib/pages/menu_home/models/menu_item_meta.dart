@@ -23,6 +23,7 @@ class MenuItemMeta {
     this.image = '',
   });
 
-  factory MenuItemMeta.fromJson(Map<String, dynamic> json) => _$MenuItemMetaFromJson(json);
+  factory MenuItemMeta.fromJson(Map<String, dynamic> json) =>
+      _$MenuItemMetaFromJson(json);
   Map<String, dynamic> toJson() => _$MenuItemMetaToJson(this);
 }

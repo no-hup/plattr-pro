@@ -11,7 +11,7 @@ import 'pages/menu_home/menu_home_screen.dart';
 
 /// Shell widget that provides the shared app bar and connectivity banner
 /// for all home-level (L0) screens.
-/// 
+///
 /// This is the main navigation container after login, hosting:
 /// - Shared [ServerAppBarWidget] with profile, restaurant name, notifications
 /// - [NoInternetBannerWidget] for offline status
@@ -39,31 +39,33 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
-  
+
   // Connectivity state
   StreamSubscription<bool>? _connectivitySubscription;
   bool _isOnline = true;
-  
+
   // Current app bar configuration (updated by child screens)
-  ServerAppBarConfiguration _currentAppBarConfig = const ServerAppBarConfiguration();
-  
+  ServerAppBarConfiguration _currentAppBarConfig =
+      const ServerAppBarConfiguration();
+
   @override
   void initState() {
     super.initState();
     _subscribeToConnectivity();
   }
-  
+
   @override
   void dispose() {
     _connectivitySubscription?.cancel();
     super.dispose();
   }
-  
+
   void _subscribeToConnectivity() {
     final service = NetworkConnectivityService();
     _isOnline = service.isOnline;
-    
-    _connectivitySubscription = service.onConnectivityChanged.listen((isOnline) {
+
+    _connectivitySubscription =
+        service.onConnectivityChanged.listen((isOnline) {
       if (mounted && _isOnline != isOnline) {
         setState(() {
           _isOnline = isOnline;
@@ -94,7 +96,7 @@ class _MainNavigationState extends State<MainNavigation> {
         children: [
           // Connectivity banner (animates in/out)
           NoInternetBannerWidget(isVisible: !_isOnline),
-          
+
           // Tab content
           Expanded(
             child: IndexedStack(

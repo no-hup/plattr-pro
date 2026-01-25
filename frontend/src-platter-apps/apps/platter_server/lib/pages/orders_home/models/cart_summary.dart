@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'cart_item_summary.dart';
-import 'order_summary.dart'; // For StatusColors
+import '../../../shared/status_utils.dart'; // For StatusColors and parsing
 
 part 'cart_summary.g.dart';
 
@@ -12,12 +12,12 @@ class CartSummary {
 
   @JsonKey(defaultValue: '')
   final String status;
-  
+
   /// Hex color for status (e.g., "#4CAF50")
   /// Falls back to StatusColors if not provided
   @JsonKey(defaultValue: '')
   final String statusColorHex;
-  
+
   /// Index of this cart in the order's carts array (for API calls)
   @JsonKey(defaultValue: 0)
   final int cartIndex;
@@ -43,12 +43,12 @@ class CartSummary {
   }
 
   Map<String, dynamic> toJson() => _$CartSummaryToJson(this);
-  
+
   /// Get the status color, preferring backend-provided hex, falling back to constants
   Color get statusColor {
     if (statusColorHex.isNotEmpty) {
       return StatusColors.parseHexColor(statusColorHex);
     }
-    return StatusColors.getColorForStatus(parseCartStatus(status));
+    return StatusColors.getColorForStatus(StatusUtils.parseCartStatus(status));
   }
 }

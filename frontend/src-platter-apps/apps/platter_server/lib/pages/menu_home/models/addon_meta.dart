@@ -19,6 +19,7 @@ class AddonMeta {
     this.categoryAssociatedWith = const [],
   });
 
-  factory AddonMeta.fromJson(Map<String, dynamic> json) => _$AddonMetaFromJson(json);
+  factory AddonMeta.fromJson(Map<String, dynamic> json) =>
+      _$AddonMetaFromJson(json);
   Map<String, dynamic> toJson() => _$AddonMetaToJson(this);
 }

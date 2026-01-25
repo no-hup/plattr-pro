@@ -13,7 +13,8 @@ class OrderDetail {
     required this.items,
   });
 
-  factory OrderDetail.fromJson(Map<String, dynamic> json) => _$OrderDetailFromJson(json);
+  factory OrderDetail.fromJson(Map<String, dynamic> json) =>
+      _$OrderDetailFromJson(json);
 
   Map<String, dynamic> toJson() => _$OrderDetailToJson(this);
 }

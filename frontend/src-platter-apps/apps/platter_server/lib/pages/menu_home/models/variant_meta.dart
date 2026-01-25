@@ -19,6 +19,7 @@ class VariantMeta {
     this.categoryAssociatedWith = const [],
   });
 
-  factory VariantMeta.fromJson(Map<String, dynamic> json) => _$VariantMetaFromJson(json);
+  factory VariantMeta.fromJson(Map<String, dynamic> json) =>
+      _$VariantMetaFromJson(json);
   Map<String, dynamic> toJson() => _$VariantMetaToJson(this);
 }

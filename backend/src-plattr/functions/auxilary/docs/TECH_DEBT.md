@@ -262,6 +262,9 @@ The "All Orders" tab in the Server App currently displays the same data as "My O
 | 2026-01-20 | #6 Session Cleanup | Added - Enhancement for cart/order based cleanup |
 | 2026-01-20 | FE #3 updateOrderStatus | Added - API placeholder in server app |
 | 2026-01-23 | #9 All Orders Tab | Added - All Orders tab equals My Orders due to server-side scoping |
+| 2026-01-25 | #15 Centralize Price | RESOLVED - Implemented in `cart/PriceCalculator.js` |
+| 2026-01-25 | #16 Strategy Pattern | RESOLVED - Implemented in `offers/strategies/` folder |
+| 2026-01-25 | #17 Lazy Revalidation | RESOLVED - Implemented in `createOrUpdateOrder.js` |
 
 ### 10. Missing Edge Case Logs (Backend)
 **Priority:** Low  
@@ -292,3 +295,59 @@ In `orders_provider.dart`, `fetchServedCarts` fails silently (only `debugPrint`)
 - **Good to Have Things:** Order-level `statusColorHex` is derived from cart-status mapping, so `IN_PROGRESS` ends up grey. If order-level coloring is needed, add a dedicated order-status color map.
 - **Good to Have Things:** `orders_provider.dart` shows `orderId` as order number. If `orderNumber` exists in backend, include it in `OrderSummary` so UI doesn’t show long IDs.
 - **Add Logs for Edge Case:** `orders/markCartAsServed.js` should log when `sessionDoc.data().serverId` is empty to debug cases where served carts never appear.
+
+### 14. Offer System Limitations
+**Priority:** Medium
+**Source:** Feature Implementation (Offers Phase 1)
+**Description:**
+- **Offer Stacking**: Current system supports single offer only. Future goal: Support stacking (e.g., specific item offer + cart total offer).
+- **Post-Discount Eligibility**: Currently eligibility is checked against pre-discount base price. Future: logic for "value after other discounts".
+
+### 15. Centralize Price Calculation ✅ RESOLVED
+**Priority:** Medium
+**Source:** Code Review (Junior Dev Verification)
+**Files:** `cart/PriceCalculator.js`
+**Status:** ✅ **IMPLEMENTED** - Created centralized `PriceCalculator` service that handles all priceInfo computation.
+
+**Implementation:**
+- `calculatePriceWithOffer(cart, offer)` - Calculates complete priceInfo with an offer applied
+- `calculatePriceWithoutOffer(cart)` - Calculates complete priceInfo with no offer (preserves item discounts)
+- `recalculateCartPrice(cart, offer)` - Convenience wrapper that calls appropriate method
+- Used by `applyOffer.js`, `removeOffer.js`, and `createOrUpdateOrder.js` (lazy revalidation)
+- Eliminates duplicated price logic and ensures consistency across checkout/validation flows
+
+### 16. Strategy Pattern for Offer Types ✅ RESOLVED
+**Priority:** Low
+**Source:** Code Review (Offers Phase 1)
+**Files:** `offers/strategies/` folder
+**Status:** ✅ **IMPLEMENTED** - Created `BaseOfferStrategy.js`, `BogoStrategy.js`, `PercentageStrategy.js`, `FlatStrategy.js`, and `OfferStrategyFactory.js`. Refactored `offerEngine.js` to delegate type-specific logic to strategies.
+
+**Implementation:**
+- `BaseOfferStrategy` - Interface with `validateTypeSpecific()` and `calculate()` methods
+- `BogoStrategy` - BOGO/FREE_ITEM with cheapest-item-free logic
+- `PercentageStrategy` - Percentage discounts for CART/CATEGORY/ITEM scopes
+- `FlatStrategy` - Flat discounts with proportional distribution for CATEGORY/ITEM
+- `OfferStrategyFactory` - Factory to get strategy by offer type
+
+### 17. Lazy Offer Revalidation Before Checkout ✅ RESOLVED
+**Priority:** Medium
+**Source:** Code Review (Offers Phase 1)
+**Files:** `orders/createOrUpdateOrder.js`
+**Status:** ✅ **IMPLEMENTED** - Added lazy revalidation block that runs before checkout.
+
+**Implementation:**
+- Before creating `cartSnapshot`, checks if `appliedOfferId` exists
+- Fetches offer document and validates using `validateOfferApplication()`
+- If invalid (e.g., user removed required items), auto-clears offer and recalculates cart
+- Updates Firestore cart to maintain consistency
+- Gracefully handles edge cases (offer deleted, validation errors)
+
+### 18. Offer Price Recalculation Gaps
+**Priority:** Important
+**Source:** Code Review (Offers Phase 1)
+**Files:** `orders/createOrUpdateOrder.js`, `cart/PriceCalculator.js`
+**Status:** ⚠️ **OPEN**
+
+**Details:**
+- **Offer cleared without recomputation:** In the offer-missing / error branches during checkout, offer fields are cleared without recomputing totals, so `finalPrice` and `totalDiscountAmount` can still reflect the old offer. Use `calculatePriceWithoutOffer` and persist the recomputed priceInfo in those branches.
+- **Total discount percentage not recomputed:** `PriceCalculator` updates `totalDiscountAmount` after applying an offer, but leaves `totalDiscount` as item-only. Update `totalDiscount` to reflect the new `totalDiscountAmount`.

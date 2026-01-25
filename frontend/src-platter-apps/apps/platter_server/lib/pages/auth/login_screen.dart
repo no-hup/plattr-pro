@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'login_provider.dart'; // DataState will be accessible from here
 import 'repository/login_api_service.dart';
 // import '../../models/data_state.dart'; // Removed incorrect import
-import '../../main_navigation.dart'; 
+import '../../main_navigation.dart';
 
 const String _defaultRestaurantId = 'rest001'; // Hardcoded Restaurant ID
 
@@ -45,7 +45,7 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
     if (_formKey.currentState!.validate()) {
       final provider = Provider.of<LoginProvider>(context, listen: false);
       final restaurantId = _restaurantIdController.text.trim();
-      
+
       await provider.loginUser(
         restaurantId: restaurantId,
         username: _usernameController.text.trim(),
@@ -53,7 +53,7 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
       );
 
       if (provider.state == DataState.loaded && provider.loginData != null) {
-        if (mounted) { 
+        if (mounted) {
           final loginData = provider.loginData!;
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
@@ -62,8 +62,8 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                 sessionId: loginData.sessionId,
                 restaurantName: loginData.restaurantName,
                 serverName: loginData.name,
-                serverProfileImageUrl: loginData.profileImageUrl.isNotEmpty 
-                    ? loginData.profileImageUrl 
+                serverProfileImageUrl: loginData.profileImageUrl.isNotEmpty
+                    ? loginData.profileImageUrl
                     : null,
               ),
             ),
@@ -151,61 +151,63 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                         ),
                         child: const Text('Login'),
                       ),
-                    if (provider.state == DataState.error && provider.errorMessage != null)
+                    if (provider.state == DataState.error &&
+                        provider.errorMessage != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 16.0),
                         child: Text(
                           provider.errorMessage!,
-                          style: const TextStyle(color: Colors.red, fontSize: 14.0),
+                          style: const TextStyle(
+                              color: Colors.red, fontSize: 14.0),
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      if (kDebugMode) ...[
-                        const SizedBox(height: 32),
-                        const Divider(),
-                        const Text(
-                          'Debug Credentials',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
+                    if (kDebugMode) ...[
+                      const SizedBox(height: 32),
+                      const Divider(),
+                      const Text(
+                        'Debug Credentials',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(height: 16),
-                        _DebugCredentialCard(
-                          name: 'Full Hierarchy Rest',
-                          id: 'res_full',
-                          phone: '1111111111',
-                          pass: '1234',
-                          onTap: (id, phone, pass) {
-                            _restaurantIdController.text = id;
-                            _usernameController.text = phone;
-                            _passwordController.text = pass;
-                          },
-                        ),
-                        _DebugCredentialCard(
-                          name: 'Server+Consumer Flow Rest',
-                          id: 'res_server-consumer_order_flow',
-                          phone: '1111111111',
-                          pass: '1234',
-                          onTap: (id, phone, pass) {
-                            _restaurantIdController.text = id;
-                            _usernameController.text = phone;
-                            _passwordController.text = pass;
-                          },
-                        ),
-                        _DebugCredentialCard(
-                          name: 'Menus Only Rest',
-                          id: 'res_menus',
-                          phone: '2222222222',
-                          pass: '1234',
-                          onTap: (id, phone, pass) {
-                            _restaurantIdController.text = id;
-                            _usernameController.text = phone;
-                            _passwordController.text = pass;
-                          },
-                        ),
-                      ],
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      _DebugCredentialCard(
+                        name: 'Full Hierarchy Rest',
+                        id: 'res_full',
+                        phone: '1111111111',
+                        pass: '1234',
+                        onTap: (id, phone, pass) {
+                          _restaurantIdController.text = id;
+                          _usernameController.text = phone;
+                          _passwordController.text = pass;
+                        },
+                      ),
+                      _DebugCredentialCard(
+                        name: 'Server+Consumer Flow Rest',
+                        id: 'res_server-consumer_order_flow',
+                        phone: '1111111111',
+                        pass: '1234',
+                        onTap: (id, phone, pass) {
+                          _restaurantIdController.text = id;
+                          _usernameController.text = phone;
+                          _passwordController.text = pass;
+                        },
+                      ),
+                      _DebugCredentialCard(
+                        name: 'Menus Only Rest',
+                        id: 'res_menus',
+                        phone: '2222222222',
+                        pass: '1234',
+                        onTap: (id, phone, pass) {
+                          _restaurantIdController.text = id;
+                          _usernameController.text = phone;
+                          _passwordController.text = pass;
+                        },
+                      ),
+                    ],
                   ],
                 );
               },

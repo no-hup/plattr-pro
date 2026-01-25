@@ -23,6 +23,7 @@ class NutritionalInfo {
     this.calories = 0,
   });
 
-  factory NutritionalInfo.fromJson(Map<String, dynamic> json) => _$NutritionalInfoFromJson(json);
+  factory NutritionalInfo.fromJson(Map<String, dynamic> json) =>
+      _$NutritionalInfoFromJson(json);
   Map<String, dynamic> toJson() => _$NutritionalInfoToJson(this);
 }

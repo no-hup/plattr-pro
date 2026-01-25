@@ -52,11 +52,14 @@ function validateCart(cart) {
     });
 
     // Validate cart-level totals
+    const offerDiscount = cart.priceInfo?.offerDiscount || 0;
+    const expectedFinalPrice = Math.max(0, totalFinalPrice - offerDiscount);
+
     if (
       Math.abs((cart.priceInfo.basePrice || 0) - totalBasePrice) > 0.01 ||
       Math.abs((cart.priceInfo.totalVariantBasePrice || 0) - totalVariantBasePrice) > 0.01 ||
       Math.abs((cart.priceInfo.totalAddonBasePrice || 0) - totalAddonBasePrice) > 0.01 ||
-      Math.abs((cart.priceInfo.finalPrice || 0) - totalFinalPrice) > 0.01
+      Math.abs((cart.priceInfo.finalPrice || 0) - expectedFinalPrice) > 0.01
     ) {
       console.error('Validation failed for cart-level totals.');
       return false;

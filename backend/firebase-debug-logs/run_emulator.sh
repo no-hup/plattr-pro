@@ -15,8 +15,9 @@ mkdir -p "$LOG_DIR"
 # Truncate log file (create fresh)
 : > "$LOG_FILE"
 
-echo "Starting Firebase Emulator..."
+echo "Starting Firebase Emulator (firestore + functions)..."
 echo "Logs are being written to: $LOG_FILE"
+echo "Tip: Use backend/flutter-app-logs/run_consumer.sh to launch the consumer app."
 
 # Navigate to backend directory and run
 cd "$BACKEND_DIR"

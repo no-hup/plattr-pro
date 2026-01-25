@@ -41,7 +41,7 @@ async function importData() {
         await restaurantRef.set(transformedInfo, { merge: true });
 
         // menus and subcategories added for multi-menu hierarchy support
-        const subCollections = ['menus', 'subcategories', 'menuItems', 'categories', 'variants', 'tables', 'servers', 'orders', 'addons', 'kitchens', 'sessions', 'carts'];
+        const subCollections = ['menus', 'subcategories', 'menuItems', 'categories', 'variants', 'tables', 'servers', 'orders', 'addons', 'kitchens', 'sessions', 'carts', 'offers'];
         for (const subCollection of subCollections) {
           if (!restaurantData[subCollection]) continue;
           const subCollectionRef = restaurantRef.collection(subCollection);

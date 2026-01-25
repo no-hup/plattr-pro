@@ -5,12 +5,14 @@ import 'models/menu_item.dart';
 import 'models/menu_category.dart';
 import 'repository/menu_api_service.dart';
 import 'menu_provider.dart';
+import '../../widgets/menu_item_card.dart';
+import '../../widgets/state_views.dart';
 
 class MenuHomeScreen extends StatefulWidget {
   final String restaurantId;
   final String sessionId;
   final ValueChanged<ServerAppBarConfiguration>? onAppBarConfigChanged;
-  
+
   const MenuHomeScreen({
     super.key,
     required this.restaurantId,
@@ -25,35 +27,35 @@ class MenuHomeScreen extends StatefulWidget {
 class _MenuHomeScreenState extends State<MenuHomeScreen> {
   late final ScrollController _scrollController;
   late final MenuProvider _menuProvider;
-  
+
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _menuProvider = MenuProvider(apiService: MenuApiService());
-    
+
     // Listen for state changes in the provider
     _menuProvider.addListener(_handleProviderUpdate);
-    
+
     // Fetch menu when screen is first loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchMenu();
       _updateAppBarConfig();
     });
   }
-  
+
   @override
   void dispose() {
     _menuProvider.removeListener(_handleProviderUpdate);
     _scrollController.dispose();
     super.dispose();
   }
-  
+
   void _handleProviderUpdate() {
     // Force rebuild when provider state changes
     setState(() {});
   }
-  
+
   void _updateAppBarConfig() {
     widget.onAppBarConfigChanged?.call(
       ServerAppBarConfiguration(
@@ -67,14 +69,14 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
       ),
     );
   }
-  
+
   Future<void> _fetchMenu() async {
     await _menuProvider.fetchRestaurantMenu(
       restaurantId: widget.restaurantId,
       sessionId: widget.sessionId,
     );
   }
-  
+
   Future<void> _refreshMenu() async {
     await _menuProvider.refreshMenu(
       restaurantId: widget.restaurantId,
@@ -92,7 +94,7 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
       },
     );
   }
-  
+
   Widget _buildContent(MenuProvider provider) {
     // Handle different states
     switch (provider.state) {
@@ -103,14 +105,14 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
         }
         // Fall through to show content with refresh indicator
         return _buildMenuList(provider, isRefreshing: true);
-        
+
       case DataState.error:
         if (provider.hasMenu) {
           // Show error but still display menu
           return _buildMenuList(provider, hasError: true);
         }
         return _buildErrorState(provider.errorMessage);
-        
+
       case DataState.loaded:
         if (!provider.hasMenu) {
           return _buildEmptyState();
@@ -118,8 +120,9 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
         return _buildMenuList(provider);
     }
   }
-  
-  Widget _buildMenuList(MenuProvider provider, {bool isRefreshing = false, bool hasError = false}) {
+
+  Widget _buildMenuList(MenuProvider provider,
+      {bool isRefreshing = false, bool hasError = false}) {
     return RefreshIndicator(
       onRefresh: _refreshMenu,
       child: Column(
@@ -148,7 +151,7 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
       ),
     );
   }
-  
+
   List<MenuItem> _getMenuItemsForCategory(MenuCategory category) {
     final menu = _menuProvider.menu;
     if (menu == null) return [];
@@ -181,91 +184,45 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
             ),
           ),
         const SizedBox(height: 8),
-        ..._getMenuItemsForCategory(category).map((item) => _buildMenuItem(item)),
+        ..._getMenuItemsForCategory(category)
+            .map((item) => _buildMenuItem(item)),
         const Divider(thickness: 1),
       ],
     );
   }
-  
-  Widget _buildMenuItem(MenuItem item) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: SizedBox(
-        width: 56,
-        height: 56,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: item.meta.image.isNotEmpty
-              ? Image.network(
-                  item.meta.image,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey.shade200,
-                      child: const Icon(Icons.fastfood, color: Colors.grey),
-                    );
-                  },
-                )
-              : Container(
-                  color: Colors.grey.shade200,
-                  child: const Icon(Icons.fastfood, color: Colors.grey),
-                ),
-        ),
-      ),
-      title: Text(
-        item.meta.name,
-        style: TextStyle(
-          decoration: !item.isAvailable ? TextDecoration.lineThrough : null,
-          color: !item.isAvailable ? Colors.grey : Colors.black,
-        ),
-      ),
 
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '₹${item.priceInfo.finalPrice.toStringAsFixed(2)}',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
+  Widget _buildMenuItem(MenuItem item) {
+    return MenuItemCard(
+      item: item,
+      onAvailabilityChanged: (val) async {
+        final shouldUpdate = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(
+              val ? 'Mark item as Available?' : 'Mark item as Unavailable?',
             ),
+            content: Text(val
+                ? 'This item will be visible to customers.'
+                : 'This item will be hidden from customers.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Confirm'),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-          Switch(
-            value: item.isAvailable,
-            onChanged: (value) async {
-              final shouldUpdate = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: Text(
-                    value ? 'Mark item as Available?' : 'Mark item as Unavailable?',
-                  ),
-                  content: Text(
-                    value
-                        ? 'This item will be visible to customers.'
-                        : 'This item will be hidden from customers.'
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(false),
-                      child: const Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(ctx).pop(true),
-                      child: const Text('Confirm'),
-                    ),
-                  ],
-                ),
-              );
-              if (shouldUpdate == true) {
-                await _updateItemAvailability(item, value);
-              }
-            },
-          ),
-        ],
-      ),
+        );
+        if (shouldUpdate == true) {
+          await _updateItemAvailability(item, val);
+        }
+      },
     );
   }
-  
+
   Future<void> _updateItemAvailability(MenuItem item, bool isAvailable) async {
     final success = await _menuProvider.updateMenuItemAvailability(
       restaurantId: widget.restaurantId,
@@ -273,7 +230,7 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
       menuItemId: item.id,
       isAvailable: isAvailable,
     );
-    
+
     if (!success) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -285,57 +242,20 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
       }
     }
   }
-  
+
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.restaurant_menu, size: 64, color: Colors.grey),
-          const SizedBox(height: 16),
-          const Text(
-            'No menu items available',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Menu items will appear here once added',
-            style: TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _refreshMenu,
-            child: const Text('Refresh'),
-          ),
-        ],
-      ),
+    return EmptyStateWidget(
+      icon: Icons.restaurant_menu,
+      title: 'No menu items available',
+      subtitle: 'Menu items will appear here once added',
+      onRefresh: _refreshMenu,
     );
   }
-  
+
   Widget _buildErrorState(String? errorMessage) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 64, color: Colors.red),
-          const SizedBox(height: 16),
-          const Text(
-            'Failed to load menu',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            errorMessage ?? 'Unknown error occurred',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.red),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _fetchMenu,
-            child: const Text('Try Again'),
-          ),
-        ],
-      ),
+    return ErrorStateWidget(
+      message: errorMessage ?? 'Unknown error occurred',
+      onRetry: _fetchMenu,
     );
   }
 }

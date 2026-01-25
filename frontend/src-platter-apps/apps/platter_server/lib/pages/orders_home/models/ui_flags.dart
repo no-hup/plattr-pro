@@ -26,14 +26,15 @@ class UiFlags {
     required this.confirmServeCartAction,
   });
 
-  factory UiFlags.fromJson(Map<String, dynamic> json) => _$UiFlagsFromJson(json);
+  factory UiFlags.fromJson(Map<String, dynamic> json) =>
+      _$UiFlagsFromJson(json);
 
   Map<String, dynamic> toJson() => _$UiFlagsToJson(this);
-  
+
   /// Default UiFlags when not provided by backend
   factory UiFlags.defaults() => UiFlags(
-    showAllOrdersTab: true,
-    maxItemsInOrderCard: 3,
-    confirmServeCartAction: true,
-  );
+        showAllOrdersTab: true,
+        maxItemsInOrderCard: 3,
+        confirmServeCartAction: true,
+      );
 }

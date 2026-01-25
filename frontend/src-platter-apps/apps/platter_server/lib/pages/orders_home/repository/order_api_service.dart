@@ -11,7 +11,7 @@ class OrderApiService {
   final Dio _dio = DioClient().dio;
 
   /// Fetches active orders for a restaurant
-  /// 
+  ///
   /// Returns a list of active orders for the given restaurant.
   /// Orders are filtered server-side to include only those:
   /// - Assigned to the current server
@@ -35,7 +35,8 @@ class OrderApiService {
       );
       return ResponseParser.parse<OrderListResponse>(
         response,
-        (jsonData) => OrderListResponse.fromJson(jsonData as Map<String, dynamic>),
+        (jsonData) =>
+            OrderListResponse.fromJson(jsonData as Map<String, dynamic>),
       );
     } on DioException catch (e) {
       final (code, msg) = DioClient.handleDioError(
@@ -48,14 +49,14 @@ class OrderApiService {
       );
     } catch (e) {
       return ApiResponse<OrderListResponse>.error(
-        'Unexpected error while fetching orders: $e', 
+        'Unexpected error while fetching orders: $e',
         errorCode: 'parsing_error',
       );
     }
   }
 
   /// Fetches server-enriched details for a specific order
-  /// 
+  ///
   /// Returns detailed information about the order with [orderId]
   /// from the restaurant with [restaurantId], including server name.
   Future<ApiResponse<OrderDetailResponse>> getOrder({
@@ -74,7 +75,8 @@ class OrderApiService {
       );
       return ResponseParser.parse<OrderDetailResponse>(
         response,
-        (jsonData) => OrderDetailResponse.fromJson(jsonData as Map<String, dynamic>),
+        (jsonData) =>
+            OrderDetailResponse.fromJson(jsonData as Map<String, dynamic>),
       );
     } on DioException catch (e) {
       final (code, msg) = DioClient.handleDioError(
@@ -94,7 +96,7 @@ class OrderApiService {
   }
 
   /// Mark a specific item as served (server-only endpoint)
-  /// 
+  ///
   /// Requires [menuItemId] and optionally [cartItemId] for precise matching.
   Future<ApiResponse<bool>> markItemAsServed({
     required String restaurantId,
@@ -114,7 +116,7 @@ class OrderApiService {
           }
         },
       );
-      
+
       return ResponseParser.parse<bool>(
         response,
         (_) => true,
@@ -135,9 +137,9 @@ class OrderApiService {
       );
     }
   }
-  
+
   /// Updates the status of an order (e.g., marking as COMPLETED)
-  /// 
+  ///
   /// Changes the status of the order with [orderId] to [newStatus].
   /// Valid statuses: PENDING, IN_PROGRESS, COMPLETED, CANCELLED
   Future<ApiResponse<bool>> updateOrderStatus({
@@ -158,7 +160,7 @@ class OrderApiService {
           }
         },
       );
-      
+
       return ResponseParser.parse<bool>(
         response,
         (_) => true,
@@ -181,10 +183,10 @@ class OrderApiService {
   }
 
   /// Updates the status of a cart within an order
-  /// 
+  ///
   /// Used to mark cart items as delivered (SERVED), preparing, etc.
   /// Valid transitions: PENDING → PREPARING → READY → SERVED
-  /// 
+  ///
   /// [cartIndex] is the zero-based index of the cart in the order's carts array.
   /// [newStatus] should be one of: PENDING, PREPARING, READY, SERVED, CANCELLED, RETURNED
   Future<ApiResponse<bool>> updateCartStatus({
@@ -209,7 +211,7 @@ class OrderApiService {
           }
         },
       );
-      
+
       return ResponseParser.parse<bool>(
         response,
         (_) => true,
@@ -232,7 +234,7 @@ class OrderApiService {
   }
 
   /// Mark a cart as served using the dedicated endpoint
-  /// 
+  ///
   /// This endpoint:
   /// - Updates cart status to SERVED
   /// - Assigns the current server to the cart (for served tab filtering)
@@ -256,7 +258,7 @@ class OrderApiService {
           }
         },
       );
-      
+
       return ResponseParser.parse<bool>(
         response,
         (_) => true,
@@ -279,7 +281,7 @@ class OrderApiService {
   }
 
   /// Fetch served carts for the current server
-  /// 
+  ///
   /// Returns carts that were served by or assigned to the current server
   /// within the last 6 hours (configurable via SERVED_CARTS_LOOKBACK_HOURS).
   Future<ApiResponse<ServedCartsResponse>> getServedCartsForServer({
@@ -296,10 +298,11 @@ class OrderApiService {
           }
         },
       );
-      
+
       return ResponseParser.parse<ServedCartsResponse>(
         response,
-        (jsonData) => ServedCartsResponse.fromJson(jsonData as Map<String, dynamic>),
+        (jsonData) =>
+            ServedCartsResponse.fromJson(jsonData as Map<String, dynamic>),
       );
     } on DioException catch (e) {
       final (code, msg) = DioClient.handleDioError(

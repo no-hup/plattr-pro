@@ -6,16 +6,16 @@ part 'price_info.g.dart';
 class PriceInfo {
   @JsonKey(defaultValue: 0)
   final num basePrice;
-  
+
   @JsonKey(defaultValue: 0)
   final num finalPrice;
-  
+
   @JsonKey(defaultValue: 0)
   final num totalDiscount;
 
   @JsonKey(defaultValue: 0)
   final num totalDiscountAmount;
-  
+
   /// Discount percentage (0-100). Backend sends totalDiscount instead.
   /// This field is optional for backward compatibility.
   @JsonKey(defaultValue: 0)
@@ -29,7 +29,8 @@ class PriceInfo {
     this.discount = 0,
   });
 
-  factory PriceInfo.fromJson(Map<String, dynamic> json) => _$PriceInfoFromJson(json);
+  factory PriceInfo.fromJson(Map<String, dynamic> json) =>
+      _$PriceInfoFromJson(json);
 
   Map<String, dynamic> toJson() => _$PriceInfoToJson(this);
 }

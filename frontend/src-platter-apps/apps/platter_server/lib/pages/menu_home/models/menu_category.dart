@@ -27,6 +27,7 @@ class MenuCategory {
     this.order = 0,
   });
 
-  factory MenuCategory.fromJson(Map<String, dynamic> json) => _$MenuCategoryFromJson(json);
+  factory MenuCategory.fromJson(Map<String, dynamic> json) =>
+      _$MenuCategoryFromJson(json);
   Map<String, dynamic> toJson() => _$MenuCategoryToJson(this);
 }

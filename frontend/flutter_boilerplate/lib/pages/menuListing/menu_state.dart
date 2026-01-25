@@ -253,12 +253,10 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
           // Even if there's an error, don't revert as we've already done an optimistic update
         }
       }
-
-      // Update complete
-      _isUpdatingCart = false;
-      notifyListeners();
     } catch (e) {
       _handleApiError(previousCart, itemId, e.toString(), context);
+    } finally {
+      // CRITICAL: Always release the lock, even if exceptions occur
       _isUpdatingCart = false;
       notifyListeners();
     }
@@ -577,14 +575,26 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
   void _showErrorToast(BuildContext? context, String message) {
     if (context == null) return;
     
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    // Safely check if the context is still mounted before showing snackbar
+    try {
+      // Check if the context's element is still mounted in the widget tree
+      if (!context.mounted) {
+        AppLogger.log('⚠️ TOAST: Context unmounted, skipping error toast');
+        return;
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      // Silently handle if context is no longer valid (widget unmounted)
+      AppLogger.log('⚠️ TOAST: Could not show error toast: $e');
+    }
   }
 
   int getItemQuantity(String itemId) {

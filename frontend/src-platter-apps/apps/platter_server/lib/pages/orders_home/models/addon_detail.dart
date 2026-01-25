@@ -14,7 +14,8 @@ class AddonDetail {
     required this.price,
   });
 
-  factory AddonDetail.fromJson(Map<String, dynamic> json) => _$AddonDetailFromJson(json);
+  factory AddonDetail.fromJson(Map<String, dynamic> json) =>
+      _$AddonDetailFromJson(json);
 
   Map<String, dynamic> toJson() => _$AddonDetailToJson(this);
 }

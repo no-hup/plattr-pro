@@ -44,11 +44,13 @@ void main() {
           expect(
             orderResponse.success,
             isTrue,
-            reason: orderResponse.message ?? 'Expected order details after serving cart.',
+            reason: orderResponse.message ??
+                'Expected order details after serving cart.',
           );
           final carts = orderResponse.data!.carts;
           expect(carts.length, greaterThan(ContractTestConfig.cartIndexReady));
-          final cart = carts[ContractTestConfig.cartIndexReady] as Map<String, dynamic>;
+          final cart =
+              carts[ContractTestConfig.cartIndexReady] as Map<String, dynamic>;
           print(
             '[contract] markCartAsServed: cartId=${cart['cartId']}, '
             'status=${cart['status']}',

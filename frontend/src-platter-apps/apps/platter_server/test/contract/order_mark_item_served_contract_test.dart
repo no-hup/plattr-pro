@@ -45,7 +45,8 @@ void main() {
           expect(
             orderResponse.success,
             isTrue,
-            reason: orderResponse.message ?? 'Expected order details after serving item.',
+            reason: orderResponse.message ??
+                'Expected order details after serving item.',
           );
           final carts = orderResponse.data!.carts;
           final servedItem = carts

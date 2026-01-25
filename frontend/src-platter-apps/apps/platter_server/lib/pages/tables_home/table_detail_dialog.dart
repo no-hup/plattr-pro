@@ -57,7 +57,8 @@ class _TableDetailDialogState extends State<TableDetailDialog> {
     setState(() {
       _isUpdatingStatus = false;
       if (!success) {
-        _errorMessage = widget.tablesProvider.errorMessage ?? 'Failed to update status';
+        _errorMessage =
+            widget.tablesProvider.errorMessage ?? 'Failed to update status';
       }
     });
 
@@ -80,14 +81,15 @@ class _TableDetailDialogState extends State<TableDetailDialog> {
     setState(() {
       _isRefreshingOtp = false;
       if (newOtp == null) {
-        _errorMessage = widget.tablesProvider.errorMessage ?? 'Failed to generate table OTP';
+        _errorMessage = widget.tablesProvider.errorMessage ??
+            'Failed to generate table OTP';
       }
     });
   }
 
   Future<void> _viewOrderDetails(String orderId) async {
     Navigator.of(context).pop(); // Close dialog first
-    
+
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -237,7 +239,7 @@ class _TableDetailDialogState extends State<TableDetailDialog> {
 
   Widget _buildStatusButtons(TableModel table) {
     final currentStatus = table.status.toLowerCase();
-    
+
     return _isUpdatingStatus
         ? const Center(child: CircularProgressIndicator())
         : Wrap(
@@ -283,4 +285,4 @@ class _TableDetailDialogState extends State<TableDetailDialog> {
       child: Text(label),
     );
   }
-} 
+}

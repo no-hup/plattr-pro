@@ -101,6 +101,16 @@ class ErrorHandler {
   }
 
   /**
+   * Throws a 409 Conflict error
+   * @param {string} [message] - Error message, defaults to a standard message
+   * @param {Object} [details] - Additional error details
+   * @throws {functions.https.HttpsError} Firebase HttpsError with already-exists code
+   */
+  conflict(message = 'Resource already exists', details = null) {
+    this.throwError('already-exists', message, details);
+  }
+
+  /**
    * Throws a 500 Internal Server Error
    * @param {string} [message] - Error message, defaults to a standard message
    * @param {Object} [details] - Additional error details

@@ -6,22 +6,22 @@ part 'table_models.g.dart';
 class TableModel {
   @JsonKey(name: 'number', required: true, disallowNullValue: true)
   final String tableNumber;
-  
+
   @JsonKey(name: 'id', required: true, disallowNullValue: true)
   final String tableId;
-  
+
   @JsonKey(required: true, disallowNullValue: true)
   final int capacity;
-  
+
   @JsonKey(required: true, disallowNullValue: true)
   final String status;
-  
+
   @JsonKey(defaultValue: false, name: 'isDisabled')
   final bool isDisabled;
-  
+
   @JsonKey(defaultValue: '', name: 'activeOrderId')
   final String currentOrderId;
-  
+
   @JsonKey(defaultValue: '', name: 'otp')
   final String tableOtp;
 
@@ -35,7 +35,8 @@ class TableModel {
     this.tableOtp = '',
   });
 
-  factory TableModel.fromJson(Map<String, dynamic> json) => _$TableModelFromJson(json);
+  factory TableModel.fromJson(Map<String, dynamic> json) =>
+      _$TableModelFromJson(json);
   Map<String, dynamic> toJson() => _$TableModelToJson(this);
 }
 
@@ -46,7 +47,8 @@ class TableListResponse {
 
   TableListResponse({required this.tables});
 
-  factory TableListResponse.fromJson(Map<String, dynamic> json) => _$TableListResponseFromJson(json);
+  factory TableListResponse.fromJson(Map<String, dynamic> json) =>
+      _$TableListResponseFromJson(json);
   Map<String, dynamic> toJson() => _$TableListResponseToJson(this);
 }
 
@@ -54,10 +56,10 @@ class TableListResponse {
 class TableDetailResponse {
   @JsonKey(defaultValue: true)
   final bool success;
-  
+
   @JsonKey(defaultValue: '')
   final String message;
-  
+
   final TableModel? data;
 
   TableDetailResponse({
@@ -66,7 +68,8 @@ class TableDetailResponse {
     this.data,
   });
 
-  factory TableDetailResponse.fromJson(Map<String, dynamic> json) => _$TableDetailResponseFromJson(json);
+  factory TableDetailResponse.fromJson(Map<String, dynamic> json) =>
+      _$TableDetailResponseFromJson(json);
   Map<String, dynamic> toJson() => _$TableDetailResponseToJson(this);
 }
 
@@ -91,7 +94,8 @@ class UpdateTableStatusResponse {
     required this.changed,
   });
 
-  factory UpdateTableStatusResponse.fromJson(Map<String, dynamic> json) => _$UpdateTableStatusResponseFromJson(json);
+  factory UpdateTableStatusResponse.fromJson(Map<String, dynamic> json) =>
+      _$UpdateTableStatusResponseFromJson(json);
   Map<String, dynamic> toJson() => _$UpdateTableStatusResponseToJson(this);
 }
 
@@ -99,22 +103,22 @@ class UpdateTableStatusResponse {
 class TableOtpResponse {
   @JsonKey(defaultValue: true)
   final bool success;
-  
+
   @JsonKey(defaultValue: '')
   final String message;
-  
+
   @JsonKey(defaultValue: '')
   final String otp;
-  
+
   @JsonKey(defaultValue: '')
   final String tableId;
-  
+
   @JsonKey(defaultValue: '')
   final String tableNumber;
-  
+
   @JsonKey(defaultValue: '')
   final String otpGeneratedAt;
-  
+
   @JsonKey(defaultValue: '')
   final String otpExpiresAt;
 
@@ -128,7 +132,8 @@ class TableOtpResponse {
     this.otpExpiresAt = '',
   });
 
-  factory TableOtpResponse.fromJson(Map<String, dynamic> json) => _$TableOtpResponseFromJson(json);
+  factory TableOtpResponse.fromJson(Map<String, dynamic> json) =>
+      _$TableOtpResponseFromJson(json);
   Map<String, dynamic> toJson() => _$TableOtpResponseToJson(this);
 }
 
@@ -136,10 +141,10 @@ class TableOtpResponse {
 class TableStatusUpdateRequest {
   @JsonKey(required: true)
   final String restaurantId;
-  
+
   @JsonKey(required: true)
   final String tableId;
-  
+
   @JsonKey(required: true)
   final String status;
 
@@ -149,6 +154,7 @@ class TableStatusUpdateRequest {
     required this.status,
   });
 
-  factory TableStatusUpdateRequest.fromJson(Map<String, dynamic> json) => _$TableStatusUpdateRequestFromJson(json);
+  factory TableStatusUpdateRequest.fromJson(Map<String, dynamic> json) =>
+      _$TableStatusUpdateRequestFromJson(json);
   Map<String, dynamic> toJson() => _$TableStatusUpdateRequestToJson(this);
-} 
+}

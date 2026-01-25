@@ -165,20 +165,40 @@ async function calculateCartValue(cart) {
       addonTotalPrice += itemPriceInfo.totalAddonBasePrice;
     }
 
-    const totalDiscountAmount = Math.max(0, basePrice - finalPrice);
+    const itemDiscountAmount = Math.max(0, basePrice - finalPrice);
+
+    // Check for applied offer to preserve it
+    const offerDiscount = cart.priceInfo?.offerDiscount || 0;
+    const appliedOfferId = cart.priceInfo?.appliedOfferId;
+
+    // Final price subtracts offer discount
+    const cartFinalPrice = Math.max(0, finalPrice - offerDiscount);
+
+    // Total discount includes item discounts + offer discount
+    const totalDiscountAmount = itemDiscountAmount + offerDiscount;
     const totalDiscountPercentage = basePrice > 0 ? (totalDiscountAmount / basePrice) * 100 : 0;
 
     // Create cart total price info using our model
     const cartTotalPriceInfo = new CartTotalPriceInfo({
       basePrice: roundPrice(basePrice),
-      finalPrice: roundPrice(finalPrice),
+      finalPrice: roundPrice(cartFinalPrice),
       totalVariantBasePrice: roundPrice(variantTotalPrice),
       totalAddonBasePrice: roundPrice(addonTotalPrice),
       totalDiscount: roundPrice(totalDiscountPercentage),
       totalDiscountAmount: roundPrice(totalDiscountAmount)
     });
 
-    return cartTotalPriceInfo.toObject();
+    const result = cartTotalPriceInfo.toObject();
+
+    // Preserve offer fields
+    if (appliedOfferId) {
+      result.appliedOfferId = appliedOfferId;
+      result.appliedOfferTitle = cart.priceInfo?.appliedOfferTitle;
+      result.offerDiscount = offerDiscount;
+      result.appliedOfferItems = cart.priceInfo?.appliedOfferItems || [];
+    }
+
+    return result;
   } catch (error) {
     console.error("Error calculating cart value:", error);
     throw new Error("Failed to calculate cart value.");

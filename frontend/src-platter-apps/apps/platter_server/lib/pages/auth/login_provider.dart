@@ -10,7 +10,8 @@ enum DataState { initial, loading, loaded, error }
 class LoginProvider extends ChangeNotifier {
   final LoginApiService _apiService;
 
-  LoginProvider({required LoginApiService apiService}) : _apiService = apiService;
+  LoginProvider({required LoginApiService apiService})
+      : _apiService = apiService;
 
   DataState _state = DataState.initial;
   LoginResponseData? _loginData;
@@ -41,7 +42,8 @@ class LoginProvider extends ChangeNotifier {
     );
 
     try {
-      final ApiResponse<LoginResponseData> response = await _apiService.login(request);
+      final ApiResponse<LoginResponseData> response =
+          await _apiService.login(request);
 
       if (response.success && response.data != null) {
         _loginData = response.data;

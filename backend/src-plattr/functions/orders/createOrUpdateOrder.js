@@ -9,6 +9,8 @@ const { OrderPriceInfo, CartTotalPriceInfo } = require('../genericModels/pricein
 const { BasicPriceInfo } = require('../genericModels/priceinfo');
 const { v4: uuidv4 } = require('uuid');
 const { mapOrderStatus, mapCartStatus } = require('../utils/statusUtils');
+const { validateOfferApplication } = require('../offers/offerEngine');
+const { calculatePriceWithoutOffer } = require('../cart/PriceCalculator');
 
 
 /**
@@ -34,9 +36,78 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
     errorHandler.handleError(error, 'createOrUpdateOrder');
   }
 
+  // ========================================
+  // LAZY OFFER REVALIDATION BEFORE CHECKOUT
+  // ========================================
+  // If an offer is applied to the cart, validate it's still eligible.
+  // If not (e.g., user removed items after applying offer), auto-remove the invalid offer.
+  // Only run if offers feature is enabled for this restaurant.
+  let workingCart = { ...cart };
+
+  const { isOffersEnabled } = require('../offers/offerFeatureGuard');
+  const offersEnabled = await isOffersEnabled(restaurantId);
+
+  if (workingCart.priceInfo?.appliedOfferId && offersEnabled) {
+    try {
+      // Fetch the offer to validate
+      const offerDoc = await db
+        .collection('restaurants')
+        .doc(restaurantId)
+        .collection('offers')
+        .doc(workingCart.priceInfo.appliedOfferId)
+        .get();
+
+      if (offerDoc.exists) {
+        const offer = { id: offerDoc.id, ...offerDoc.data() };
+        const validation = validateOfferApplication(offer, workingCart);
+
+        if (!validation.isValid) {
+          console.warn(`⚠️ CHECKOUT: Offer ${offer.id} no longer valid (${validation.reason}), auto-removing before checkout`);
+
+          // Recalculate cart value without offer using centralized PriceCalculator
+          const recalculatedPriceInfo = await calculatePriceWithoutOffer(workingCart);
+
+          workingCart.priceInfo = recalculatedPriceInfo;
+
+          // Also update the cart in Firestore so it's consistent
+          const cartRef = db
+            .collection('restaurants')
+            .doc(restaurantId)
+            .collection('carts')
+            .doc(tableId);
+
+          await cartRef.update({
+            priceInfo: recalculatedPriceInfo,
+            lastUpdated: timestamp.now()
+          });
+        }
+      } else {
+        // Offer document doesn't exist anymore - clear it
+        console.warn(`⚠️ CHECKOUT: Applied offer ${workingCart.priceInfo.appliedOfferId} not found, clearing`);
+        workingCart.priceInfo = {
+          ...workingCart.priceInfo,
+          appliedOfferId: null,
+          appliedOfferTitle: null,
+          offerDiscount: 0,
+          appliedOfferItems: []
+        };
+      }
+    } catch (offerValidationError) {
+      console.error('Error during offer revalidation, proceeding without offer:', offerValidationError);
+      // On error, clear the offer to be safe
+      workingCart.priceInfo = {
+        ...workingCart.priceInfo,
+        appliedOfferId: null,
+        appliedOfferTitle: null,
+        offerDiscount: 0,
+        appliedOfferItems: []
+      };
+    }
+  }
+
   // Prepare cart snapshot to add to order
   const cartSnapshot = {
-    ...cart,
+    ...workingCart,
     cartId: `${restaurantId}_${tableId}_${uuidv4().substring(0, 8)}`, // Add a unique cartId with restaurant and table prefix
     status: FULFILLMENT_STATUS.PENDING,
     statusHistory: [{
@@ -46,9 +117,17 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
     }],
     checkoutTime: timestamp.serverTimestamp(),
     notes,
-    estimatedPrepTime: calculateEstimatedPrepTime(cart.items),
+    estimatedPrepTime: calculateEstimatedPrepTime(workingCart.items),
     assignedTo: null
   };
+
+  // Extract offer details if present (using workingCart which may have had offer cleared by revalidation)
+  const appliedOffer = workingCart.priceInfo?.appliedOfferId ? {
+    id: workingCart.priceInfo.appliedOfferId,
+    title: workingCart.priceInfo.appliedOfferTitle,
+    discount: workingCart.priceInfo.offerDiscount || 0,
+    // We can store item breakdown here or keep it in cartSnapshot
+  } : null;
 
   // sanitise the format of the cart items for the order
   const orderItems = normalizeCartItemsForOrder(cart);
@@ -82,7 +161,8 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
           orderItems,
           orderNumber,
           userId,
-          sessionId
+          sessionId,
+          appliedOffer // Pass appliedOffer
         );
       } else {
         // Update existing order
@@ -95,7 +175,8 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
           orderDoc.data(),
           cartSnapshot,
           orderItems,
-          sessionId
+          sessionId,
+          appliedOffer // Pass appliedOffer
         );
       }
 
@@ -166,7 +247,7 @@ function normalizeCartItemsForOrder(cart) {
  * @param {string} sessionId - ID of the session (optional)
  * @returns {Object} The created order
  */
-async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, orderItems, orderNumber, userId, sessionId = null) {
+async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, orderItems, orderNumber, userId, sessionId = null, appliedOffer = null) {
   // Fetch table doc to get assignedServerId
   const tableRef = db.collection('restaurants').doc(restaurantId).collection('tables').doc(tableId);
   const tableDoc = await transaction.get(tableRef);
@@ -195,7 +276,8 @@ async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, 
     isActive: true,
     assignedServer, // Use server assigned to table, not checkout user
     notes: cartSnapshot.notes || '',
-    sessionId  // Include sessionId in new order
+    sessionId,  // Include sessionId in new order
+    appliedOffer // Include offer details
   };
 
   // Add order to collection
@@ -227,7 +309,7 @@ async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, 
  * @param {string} sessionId - ID of the session (optional)
  * @returns {Object} The updated order
  */
-async function updateExistingOrder(transaction, restaurantId, orderId, existingOrder, cartSnapshot, orderItems, sessionId = null) {
+async function updateExistingOrder(transaction, restaurantId, orderId, existingOrder, cartSnapshot, orderItems, sessionId = null, appliedOffer = null) {
   // Ensure arrays exist with fallbacks
   const existingCarts = Array.isArray(existingOrder.carts) ? existingOrder.carts : [];
   const existingItems = Array.isArray(existingOrder.items) ? existingOrder.items : [];
@@ -279,6 +361,11 @@ async function updateExistingOrder(transaction, restaurantId, orderId, existingO
   // Add sessionId to updates if provided
   if (sessionId) {
     updates.sessionId = sessionId;
+  }
+
+  // Add appliedOffer to updates if provided
+  if (appliedOffer) {
+    updates.appliedOffer = appliedOffer;
   }
 
   // Apply updates to document
