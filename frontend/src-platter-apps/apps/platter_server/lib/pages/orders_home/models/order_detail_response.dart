@@ -32,6 +32,8 @@ class OrderDetailResponse {
   final List<dynamic> items;
   final String notes;
   final List<dynamic> carts;
+  final String? assignedServerName;
+  final String? assignedServerId;
 
   OrderDetailResponse({
     required this.id,
@@ -46,6 +48,8 @@ class OrderDetailResponse {
     required this.items,
     required this.notes,
     required this.carts,
+    this.assignedServerName,
+    this.assignedServerId,
   });
 
   factory OrderDetailResponse.fromJson(Map<String, dynamic> json) {

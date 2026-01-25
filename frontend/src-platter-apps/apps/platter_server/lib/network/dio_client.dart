@@ -51,8 +51,10 @@ class DioClient {
         errorMessage = 'Connection timed out. Please try again.';
         break;
       case DioExceptionType.badResponse:
-        errorCode = 'server_error_${e.response?.statusCode ?? "unknown"}';
-        errorMessage = e.response?.data?['message'] ?? 'Server error occurred';
+        final extracted = _extractErrorDetails(e.response?.data);
+        errorCode = extracted['code'] ??
+            'server_error_${e.response?.statusCode ?? "unknown"}';
+        errorMessage = extracted['message'] ?? 'Server error occurred';
         break;
       case DioExceptionType.cancel:
         errorCode = 'request_cancelled';
@@ -74,4 +76,87 @@ class DioClient {
     
     return (errorCode, errorMessage);
   }
-} 
+
+  static Map<String, String?> _extractErrorDetails(dynamic data) {
+    String? code;
+    String? message;
+
+    if (data is Map<String, dynamic>) {
+      final result = data['result'];
+      if (result is Map<String, dynamic>) {
+        final status = result['status'];
+        final success = result['success'];
+        if (status == 'error' || success == false) {
+          final resultMessage = result['message'];
+          if (resultMessage is String) {
+            message ??= resultMessage;
+          }
+          final resultData = result['data'];
+          if (resultData is Map<String, dynamic>) {
+            final resultCode = resultData['code'];
+            if (resultCode is String) {
+              code ??= resultCode;
+            }
+          }
+        }
+      }
+
+      final error = data['error'];
+      if (error is Map<String, dynamic>) {
+        final errorStatus = error['status'];
+        if (errorStatus is String) {
+          code ??= errorStatus.toLowerCase().replaceAll('_', '-');
+        }
+        final details = error['details'];
+        if (details is Map<String, dynamic>) {
+          final detailsCode = details['code'];
+          if (detailsCode is String) {
+            code ??= detailsCode;
+          }
+          final detailsData = details['data'];
+          if (detailsData is Map<String, dynamic>) {
+            final detailsCode = detailsData['code'];
+            if (detailsCode is String) {
+              code ??= detailsCode;
+            }
+          }
+          final detailsMessage = details['message'];
+          if (detailsMessage is String) {
+            message ??= detailsMessage;
+          }
+        }
+
+        final errorCode = error['code'];
+        if (errorCode is String) {
+          code ??= errorCode;
+        }
+
+        final errorMessage = error['message'];
+        if (errorMessage is String) {
+          message ??= errorMessage;
+        }
+      }
+
+      final status = data['status'];
+      if (status == 'error') {
+        final dataMessage = data['message'];
+        if (dataMessage is String) {
+          message ??= dataMessage;
+        }
+        final dataError = data['error'];
+        if (dataError is Map<String, dynamic>) {
+          final dataCode = dataError['code'];
+          if (dataCode is String) {
+            code ??= dataCode;
+          }
+          final dataErrorMessage = dataError['message'];
+          if (dataErrorMessage is String) {
+            message ??= dataErrorMessage;
+          }
+        }
+      }
+    }
+
+    return {'code': code, 'message': message};
+  }
+}

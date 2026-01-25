@@ -10,6 +10,43 @@ All agents share these rules regardless of their specialized role. The directory
 - `progress/` – per-session work logs (`MM-DD_<module>_<task>.md`).
 - `learnings/` – shared knowledge base for all agents.
 
+## 🚀 One-Click Run Scripts (Recommended)
+
+Use these specialized scripts to run the environment with clean, agent-friendly logging.
+
+### 1. Firebase Emulator
+Run this first. It cleans logs, starts emulator, and filters noise.
+```bash
+# Path: backend/firebase-debug-logs/run_emulator.sh
+backend/firebase-debug-logs/run_emulator.sh
+```
+
+### 2. Mock Data Import (V3)
+Run this after the emulator is ready.
+```bash
+# Path: backend/src-plattr/functions/mock/quickImportV3.js
+# Imports mockDataV3.json
+cd backend/src-plattr/functions && node mock/quickImportV3.js
+```
+*(Use `node mock/quickImport.js` for older V2 data)*
+
+### 3. Flutter Apps
+Run these in separate terminals.
+
+**Server App:**
+```bash
+# Path: backend/flutter-app-logs/run_server.sh
+backend/flutter-app-logs/run_server.sh
+```
+
+**Consumer App (Boilerplate):**
+```bash
+# Path: backend/flutter-app-logs/run_consumer.sh
+backend/flutter-app-logs/run_consumer.sh
+```
+
+---
+
 ## Mandatory Behaviors
 
 ### 1. Session Work Tracking
