@@ -4,6 +4,7 @@ A lean LLM-integrated package for monitoring backend-frontend response adherence
 
 > **Note**: This project is under active development. Breaking changes may be introduced without backward compatibility guarantees as the application has not yet launched.
 
+never upgrade node version
 ## Log Capture Methods
 
 ### How Logs Are Captured
@@ -129,7 +130,7 @@ cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/agent_workspace/agents/response_
 ```
 
 ## Firebase Emulator Logs (Backend)
-
+refer this file - firebase_emulator_tips
 Capture backend logs alongside Flutter logs for complete visibility:
 
 ```bash
@@ -171,6 +172,10 @@ For Flutter web, we wrap the terminal to capture [ResponseGuard] logs:
 ./scripts/capture_flutter_web.sh       # Run Flutter web with log capture
 ./scripts/capture_flutter_web.sh --status  # Check captured logs
 ```
+
+### General Flutter App Logging (Agent Friendly)
+For optimized general development logs (Dio, Exceptions, Crashes) redirected to a file:
+See [Flutter App Tips & Best Practices](flutter_app_tips.md)
 
 ## Package Structure
 

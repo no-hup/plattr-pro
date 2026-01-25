@@ -11,11 +11,13 @@
 | Need | Command / Location |
 |------|-------------------|
 | Start emulator | `cd backend/src-plattr && npm run emulators` |
+| **Clean Logs for Agent** | `cd backend/src-plattr && mkdir -p ../firebase-debug-logs && > ../firebase-debug-logs/emulator.log && npm run emulators 2>&1 \| grep -vE "\[debug\]" \| tee ../firebase-debug-logs/emulator.log` |
 | Import mock data | `cd backend/src-plattr/functions && node mock/quickImport.js` |
-| Kill stuck ports | `lsof -t -i:8080 -i:5002 -i:4001 | xargs kill -9` |
+| Kill stuck ports | `lsof -t -i:8080 -i:5002 -i:4001 \| xargs kill -9` |
 | Check if running | `curl -s http://127.0.0.1:5002/rms-app-dd875/us-central1/dev-listRestaurants` |
 | Service account | `backend/src-plattr/secure_stuff/service-account.json` |
 | Mock data file | `backend/src-plattr/functions/mock/mockDataV2.json` |
+| **Log Dir** | `backend/firebase-debug-logs/` |
 
 ---
 
@@ -37,8 +39,26 @@ This command:
 ```bash
 cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr
 export GOOGLE_APPLICATION_CREDENTIALS="./secure_stuff/service-account.json"
-firebase emulators:start --project rms-app-dd875 --only firestore,functions --debug
+firebase emulators:start --only firestore,functions --debug
 ```
+
+### 🤖 Agent-Friendly Logging (Recommended for Debugging)
+To provide clean, network-focused logs for coding agents while still seeing everything in your terminal:
+
+```bash
+# Run this from backend/src-plattr - creates log directory and truncates log file before starting
+mkdir -p ../firebase-debug-logs && \
+> ../firebase-debug-logs/emulator.log && \
+npm run emulators 2>&1 | grep -vE "\[debug\]|work-queue" | tee ../firebase-debug-logs/emulator.log
+```
+
+**What this does:**
+1.  **`mkdir -p`**: Ensures the log folder exists at `backend/firebase-debug-logs/`.
+2.  **`> emulator.log`**: Truncates the log file to zero bytes (creates it if it doesn't exist), ensuring a fresh start.
+3.  **`2>&1`**: Redirects errors to the same stream as standard output.
+4.  **`grep -vE`**: Filters out noisy `[debug]` and `work-queue` lines that clutter the logs.
+5.  **`tee`**: Simultaneously shows the output in your terminal and writes it to `backend/firebase-debug-logs/emulator.log`.
+6.  **Log file**: Emulator logs are saved to `backend/firebase-debug-logs/emulator.log`.
 
 ---
 
@@ -291,6 +311,35 @@ npm run build
 npm run lint
 ```
 
+## 🚨 Critical Troubleshooting Learnings (Avoid These Pitfalls)
+
+### 1. Node.js Version Incompatibility
+**Symptom**: `TypeError: Cannot read properties of undefined (reading 'prototype')` in `buffer-equal-constant-time` or similar unexpected crashes during startup.
+**Cause**: Using bleeding-edge Node versions (e.g., v25+).
+**Fix**: ALWAYS ensure you are using the LTS version defined in `engines` (currently v22 or v18).
+```bash
+# Check version
+node -v 
+
+# Switch to LTS if using nvm
+nvm use 22
+```
+
+### 2. "Failed to parse build specification"
+**Symptom**: Emulator starts but functions return `404` and logs show `Failed to parse build specification`.
+**Cause**: `console.log` statements executing at the global scope (outside of functions) in `index.js`, `admin/admin.js`, or their imports. This pollutes the stdout that the emulator parser reads.
+**Fix**: 
+- Remove or comment out top-level `console.log` calls.
+- Use `console.error` for debug logs if absolutely necessary (stderr is ignored by the parser).
+
+### 3. Flutter Web "Method not found" / Exit Code 64
+**Symptom**: `flutter run -d chrome` exits immediately with code 64.
+**Cause**: Using deprecated flags like `--web-renderer html`.
+**Fix**: Run the standard command without renderer flags unless specifically required by a recent flutter update.
+```bash
+flutter run -d chrome --verbose
+```
+
 ### Issue: Mock data not appearing
 ```bash
 # Verify FIRESTORE_EMULATOR_HOST is set
@@ -330,11 +379,12 @@ export GOOGLE_APPLICATION_CREDENTIALS="/Users/shauryajaiswal/Desktop/dev/plattr-
 Before running any Firebase emulator commands, LLM agents should:
 
 - [ ] **Check if emulator already running**: `curl -s http://127.0.0.1:5002/` 
-- [ ] **If not running**, start with: `cd backend/src-plattr && npm run emulators`
+- [ ] **If not running**, start with clean logs from `backend/src-plattr`: `mkdir -p ../firebase-debug-logs && > ../firebase-debug-logs/emulator.log && npm run emulators 2>&1 | grep -vE "\[debug\]" | tee ../firebase-debug-logs/emulator.log`
 - [ ] **If port conflict**, kill ports: `lsof -t -i:8080 -i:5002 | xargs kill -9`
 - [ ] **Import mock data** (if needed): `node functions/mock/quickImport.js`
 - [ ] **Verify environment**: Check console shows `Environment mode: emulator`
 - [ ] **Never start duplicate emulators**: This causes cascading failures
+- [ ] **Check logs**: Logs are saved to `backend/firebase-debug-logs/emulator.log`
 
 ---
 

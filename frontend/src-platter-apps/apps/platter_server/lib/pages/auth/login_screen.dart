@@ -184,6 +184,17 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                           },
                         ),
                         _DebugCredentialCard(
+                          name: 'Server+Consumer Flow Rest',
+                          id: 'res_server-consumer_order_flow',
+                          phone: '1111111111',
+                          pass: '1234',
+                          onTap: (id, phone, pass) {
+                            _restaurantIdController.text = id;
+                            _usernameController.text = phone;
+                            _passwordController.text = pass;
+                          },
+                        ),
+                        _DebugCredentialCard(
                           name: 'Menus Only Rest',
                           id: 'res_menus',
                           phone: '2222222222',

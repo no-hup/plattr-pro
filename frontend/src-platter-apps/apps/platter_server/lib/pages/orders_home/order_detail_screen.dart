@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'models/order_item_detail.dart';
 import 'models/order_detail_response.dart';
 import 'repository/order_api_service.dart';
+import '../../network/api_response.dart';
 
 class OrderDetailScreen extends StatefulWidget {
   final String restaurantId;

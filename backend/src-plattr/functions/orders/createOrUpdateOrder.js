@@ -33,7 +33,7 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
     console.error(`createOrUpdateOrder: ${error.message}`);
     errorHandler.handleError(error, 'createOrUpdateOrder');
   }
-  
+
   // Prepare cart snapshot to add to order
   const cartSnapshot = {
     ...cart,
@@ -49,10 +49,10 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
     estimatedPrepTime: calculateEstimatedPrepTime(cart.items),
     assignedTo: null
   };
-  
+
   // sanitise the format of the cart items for the order
   const orderItems = normalizeCartItemsForOrder(cart);
-  
+
   try {
     // Begin a transaction to ensure data consistency
     return await db.runTransaction(async (transaction) => {
@@ -75,10 +75,10 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
         const orderNumber = await generateOrderNumber(transaction, restaurantId);
         console.log(`poopoo Creating new order for table ${tableId} with order number ${orderNumber}`);
         orderResult = await createNewOrder(
-          transaction, 
-          restaurantId, 
-          tableId, 
-          cartSnapshot, 
+          transaction,
+          restaurantId,
+          tableId,
+          cartSnapshot,
           orderItems,
           orderNumber,
           userId,
@@ -98,7 +98,7 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
           sessionId
         );
       }
-      
+
       return orderResult;
     });
   } catch (error) {
@@ -121,14 +121,14 @@ function normalizeCartItemsForOrder(cart) {
     console.warn('Invalid cart structure or missing items array');
     return [];
   }
-  
+
   return cart.items.map(item => {
     // Skip cancelled items
     if (item.status === 'cancelled') return null;
-    
+
     // Skip items without menuItemId
     if (!item.menuItemId) return null;
-    
+
     // Create a simplified version of the cart item for the order using BasicPriceInfo
     // to ensure proper price validation and standardization
     const priceInfo = new BasicPriceInfo(
@@ -136,7 +136,7 @@ function normalizeCartItemsForOrder(cart) {
       item.priceInfo?.discount,
       item.priceInfo?.itemFinalPrice
     ).toObject();
-    
+
     return {
       menuItemId: item.menuItemId,
       name: item.menuItem?.meta?.name || 'Unknown Item',
@@ -167,6 +167,11 @@ function normalizeCartItemsForOrder(cart) {
  * @returns {Object} The created order
  */
 async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, orderItems, orderNumber, userId, sessionId = null) {
+  // Fetch table doc to get assignedServerId
+  const tableRef = db.collection('restaurants').doc(restaurantId).collection('tables').doc(tableId);
+  const tableDoc = await transaction.get(tableRef);
+  const assignedServer = tableDoc.exists ? (tableDoc.data().assignedServerId || null) : null;
+
   // Calculate order price info from cart using our OrderPriceInfo model
   const orderPriceInfo = new OrderPriceInfo({
     basePrice: cartSnapshot.priceInfo?.basePrice,
@@ -174,7 +179,7 @@ async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, 
     totalDiscount: cartSnapshot.priceInfo?.totalDiscount,
     totalDiscountAmount: cartSnapshot.priceInfo?.totalDiscountAmount
   }).toObject();
-  
+
   // Create new order document
   const newOrder = {
     restaurantId,
@@ -188,19 +193,19 @@ async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, 
     createdAt: timestamp.serverTimestamp(),
     updatedAt: timestamp.serverTimestamp(),
     isActive: true,
-    assignedServer: userId,
+    assignedServer, // Use server assigned to table, not checkout user
     notes: cartSnapshot.notes || '',
     sessionId  // Include sessionId in new order
   };
-  
+
   // Add order to collection
   const newOrderRef = db.collection("restaurants").doc(restaurantId)
     .collection("orders").doc();
-  
+
   transaction.set(newOrderRef, newOrder);
-  
+
   console.log(`poopoo Created new order for table ${tableId} with ID ${newOrderRef.id}`);
-  
+
   // Return the order with actual Timestamp objects (not serverTimestamp placeholders)
   return {
     id: newOrderRef.id,
@@ -226,16 +231,16 @@ async function updateExistingOrder(transaction, restaurantId, orderId, existingO
   // Ensure arrays exist with fallbacks
   const existingCarts = Array.isArray(existingOrder.carts) ? existingOrder.carts : [];
   const existingItems = Array.isArray(existingOrder.items) ? existingOrder.items : [];
-  
+
   // Add new cart to existing carts
   const updatedCarts = [...existingCarts, cartSnapshot];
-  
+
   // Merge new items with existing items
   const updatedItems = [...existingItems, ...orderItems];
-  
+
   // Calculate updated price info across all carts
   const updatedPriceInfo = calculateTotalPriceInfo(updatedCarts);
-  
+
   // Handle notes concatenation
   let updatedNotes = existingOrder.notes || '';
   if (cartSnapshot.notes) {
@@ -256,25 +261,34 @@ async function updateExistingOrder(transaction, restaurantId, orderId, existingO
     ...(existingCreatedAt ? { createdAt: existingCreatedAt } : { createdAt: timestamp.serverTimestamp() })
   };
 
+  // If order has no assignedServer, fill from table at cart append time
+  if (!existingOrder.assignedServer) {
+    const tableRef = db.collection('restaurants').doc(restaurantId).collection('tables').doc(existingOrder.tableId);
+    const tableDoc = await transaction.get(tableRef);
+    if (tableDoc.exists && tableDoc.data().assignedServerId) {
+      updates.assignedServer = tableDoc.data().assignedServerId;
+    }
+  }
+
   let effectiveOrderNumber = existingOrder.orderNumber || existingOrder.order_number || null;
   if (!effectiveOrderNumber) {
     effectiveOrderNumber = await generateOrderNumber(transaction, restaurantId);
     updates.orderNumber = effectiveOrderNumber;
   }
-  
+
   // Add sessionId to updates if provided
   if (sessionId) {
     updates.sessionId = sessionId;
   }
-  
+
   // Apply updates to document
   const orderRef = db.collection("restaurants").doc(restaurantId)
     .collection("orders").doc(orderId);
-  
+
   transaction.update(orderRef, updates);
-  
+
   console.log(`poopoo Updated existing order ${orderId} with new cart`);
-  
+
   // Return the order with actual Timestamp objects (not serverTimestamp placeholders)
   return {
     id: orderId,
@@ -298,16 +312,16 @@ async function updateExistingOrder(transaction, restaurantId, orderId, existingO
 async function generateOrderNumber(transaction, restaurantId) {
   const counterRef = db.collection("restaurants").doc(restaurantId)
     .collection("counters").doc("orders");
-  
+
   const counterDoc = await transaction.get(counterRef);
-  
+
   let nextCount = 1;
   if (counterDoc.exists) {
     nextCount = counterDoc.data().currentCount + 1;
   }
-  
+
   transaction.set(counterRef, { currentCount: nextCount });
-  
+
   // Format with leading zeros, e.g. ORD-00001
   return `ORD-${nextCount.toString().padStart(5, '0')}`;
 }
@@ -321,12 +335,12 @@ function calculateTotalPriceInfo(carts) {
   if (!carts || !Array.isArray(carts) || carts.length === 0) {
     return new OrderPriceInfo().toObject();
   }
-  
+
   // Convert all cart price infos into CartTotalPriceInfo objects
-  const cartPriceInfos = carts.map(cart => 
+  const cartPriceInfos = carts.map(cart =>
     cart && cart.priceInfo ? new CartTotalPriceInfo(cart.priceInfo) : new CartTotalPriceInfo()
   );
-  
+
   // Accumulate values
   const totalPriceInfo = new OrderPriceInfo({
     basePrice: cartPriceInfos.reduce((sum, info) => sum + info.basePrice, 0),
@@ -334,7 +348,7 @@ function calculateTotalPriceInfo(carts) {
     totalDiscount: cartPriceInfos.reduce((sum, info) => sum + info.totalDiscount, 0) / carts.length, // Average discount
     totalDiscountAmount: cartPriceInfos.reduce((sum, info) => sum + info.totalDiscountAmount, 0)
   });
-  
+
   return totalPriceInfo.toObject();
 }
 
@@ -345,13 +359,13 @@ function calculateTotalPriceInfo(carts) {
  */
 function calculateEstimatedPrepTime(items) {
   if (!items || items.length === 0) return 10; // Default prep time
-  
+
   // Base time is 10 minutes
   let baseTime = 10;
-  
+
   // Add 2 minutes per item, can adjust based on business logic
   const itemCount = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
-  
+
   return baseTime + (itemCount * 2);
 }
 

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../models/order_list_response.dart';
 import '../models/order_detail_response.dart';
+import '../models/served_cart.dart';
 import '../../../network/api_constants.dart';
 import '../../../network/response_parser.dart';
 import '../../../network/api_response.dart';
@@ -12,7 +13,10 @@ class OrderApiService {
   /// Fetches active orders for a restaurant
   /// 
   /// Returns a list of active orders for the given restaurant.
-  /// If [serverId] is provided, returns only orders assigned to that server.
+  /// Orders are filtered server-side to include only those:
+  /// - Assigned to the current server
+  /// - OR unassigned (no server)
+  /// - OR with carts assigned to the current server
   Future<ApiResponse<OrderListResponse>> getActiveOrdersForRestaurant({
     required String restaurantId,
     required String sessionId,
@@ -32,7 +36,6 @@ class OrderApiService {
       return ResponseParser.parse<OrderListResponse>(
         response,
         (jsonData) => OrderListResponse.fromJson(jsonData as Map<String, dynamic>),
-        dataExtractor: (envelope) => {'orders': envelope['data']},
       );
     } on DioException catch (e) {
       final code = e.response?.statusCode?.toString() ?? 'dio_error';
@@ -177,7 +180,91 @@ class OrderApiService {
     }
   }
 
+  /// Mark a cart as served using the dedicated endpoint
+  /// 
+  /// This endpoint:
+  /// - Updates cart status to SERVED
+  /// - Assigns the current server to the cart (for served tab filtering)
+  /// - Marks all non-cancelled items as SERVED
+  /// - Updates status history
+  Future<ApiResponse<bool>> markCartAsServed({
+    required String restaurantId,
+    required String orderId,
+    required int cartIndex,
+    required String sessionId,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.markCartAsServed,
+        data: {
+          'data': {
+            'restaurantId': restaurantId,
+            'orderId': orderId,
+            'cartIndex': cartIndex,
+            'sessionId': sessionId,
+          }
+        },
+      );
+      
+      return ResponseParser.parse<bool>(
+        response,
+        (_) => true,
+      );
+    } on DioException catch (e) {
+      final code = e.response?.statusCode?.toString() ?? 'dio_error';
+      final msg = e.message ?? 'Failed to mark cart as served';
+      return ApiResponse<bool>.error(
+        'Network error: $msg',
+        errorCode: code,
+      );
+    } catch (e) {
+      return ApiResponse<bool>.error(
+        'Unexpected error while marking cart as served: $e',
+        errorCode: 'parsing_error',
+      );
+    }
+  }
+
+  /// Fetch served carts for the current server
+  /// 
+  /// Returns carts that were served by or assigned to the current server
+  /// within the last 6 hours (configurable via SERVED_CARTS_LOOKBACK_HOURS).
+  Future<ApiResponse<ServedCartsResponse>> getServedCartsForServer({
+    required String restaurantId,
+    required String sessionId,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.getServedCartsForServer,
+        data: {
+          'data': {
+            'restaurantId': restaurantId,
+            'sessionId': sessionId,
+          }
+        },
+      );
+      
+      return ResponseParser.parse<ServedCartsResponse>(
+        response,
+        (jsonData) => ServedCartsResponse.fromJson(jsonData as Map<String, dynamic>),
+      );
+    } on DioException catch (e) {
+      final code = e.response?.statusCode?.toString() ?? 'dio_error';
+      final msg = e.message ?? 'Failed to fetch served carts';
+      return ApiResponse<ServedCartsResponse>.error(
+        'Network error: $msg',
+        errorCode: code,
+      );
+    } catch (e) {
+      return ApiResponse<ServedCartsResponse>.error(
+        'Unexpected error while fetching served carts: $e',
+        errorCode: 'parsing_error',
+      );
+    }
+  }
+
   /// Convenience method to mark a cart as delivered (SERVED)
+  /// @deprecated Use markCartAsServed instead for better served tab tracking
   Future<ApiResponse<bool>> markCartAsDelivered({
     required String restaurantId,
     required String orderId,

@@ -6,6 +6,8 @@ class ApiConstants {
   static const String getOrder = '/order-getOrder';
   static const String getActiveOrdersForRestaurant = '/order-getActiveOrdersForRestaurant';
   static const String updateOrderStatus = '/order-updateOrderStatus';
+  static const String markCartAsServed = '/order-markCartAsServed';
+  static const String getServedCartsForServer = '/order-getServedCartsForServer';
   static const String serverLogin = '/server-serverLogin';
   
   // Table endpoints (cloud functions)
@@ -23,4 +25,5 @@ class ApiConstants {
   static const String getRestaurantMenu = '/menu-getRestaurantMenu';
   static const String updateMenuItemAvailability = '/menu-updateMenuItemAvailability';
 }
+
 

@@ -17,7 +17,7 @@ class LoginApiService {
       );
       final data =  ResponseParser.parse<LoginResponseData>(
         response,
-        (jsonData) => LoginResponseData.fromJson(jsonData['data'] as Map<String, dynamic>),
+        (jsonData) => LoginResponseData.fromJson(jsonData as Map<String, dynamic>),
         dataExtractor: (jsonEnvelope) {
           // Assuming jsonEnvelope is from response.data which is already a Map<String, dynamic>
           // or from e.response.data which can also be a Map.

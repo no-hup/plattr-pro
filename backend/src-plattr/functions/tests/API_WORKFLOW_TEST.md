@@ -236,29 +236,52 @@ curl --location 'http://127.0.0.1:5001/rms-app-dd875/us-central1/cart-checkoutCa
 
 **Command**:
 ```bash
-curl -X GET "http://127.0.0.1:5001/rms-app-dd875/us-central1/orders-getOrder?orderId={orderId}"
+curl --location 'http://127.0.0.1:5001/rms-app-dd875/us-central1/orders-getOrder' \
+--header 'Content-Type: application/json' \
+--data '{
+  "data": {
+    "restaurantId": "rest001",
+    "orderId": "{orderId}"
+  }
+}'
 ```
 
 [Include expected response and verification points]
 
-#### 6.2 Get Restaurant Orders
+#### 6.2 Get Active Orders for Restaurant (Server App)
 
-**Purpose**: Retrieve all orders for a specific restaurant
+**Purpose**: Retrieve active orders relevant to the current server session for a restaurant
 
 **Command**:
 ```bash
-curl -X GET "http://127.0.0.1:5001/rms-app-dd875/us-central1/orders-getRestaurantOrders?restaurantId=rest123"
+curl --location 'http://127.0.0.1:5001/rms-app-dd875/us-central1/orders-getActiveOrdersForRestaurant' \
+--header 'Content-Type: application/json' \
+--data '{
+  "data": {
+    "restaurantId": "rest001",
+    "sessionId": "server-session-001"
+  }
+}'
 ```
 
 [Include expected response and verification points]
 
-#### 6.3 Get Customer Orders
+#### 6.3 Get Orders for Table (Consumer App)
 
-**Purpose**: Retrieve all orders for a specific customer
+**Purpose**: Retrieve the current active order for a table, or all orders for that table
 
 **Command**:
 ```bash
-curl -X GET "http://127.0.0.1:5001/rms-app-dd875/us-central1/orders-getCustomerOrders?userId=user456"
+curl --location 'http://127.0.0.1:5001/rms-app-dd875/us-central1/orders-getOrder' \
+--header 'Content-Type: application/json' \
+--data '{
+  "data": {
+    "restaurantId": "rest001",
+    "tableId": "table001",
+    "getAllOrders": false,
+    "activeOnly": true
+  }
+}'
 ```
 
 [Include expected response and verification points]
@@ -301,4 +324,3 @@ When adding new API endpoints, add corresponding test cases following this forma
 2. Complete curl command with all required parameters
 3. Expected response file or structure
 4. Specific verification points
-

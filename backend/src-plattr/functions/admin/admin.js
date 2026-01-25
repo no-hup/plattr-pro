@@ -4,7 +4,7 @@ let db;
 
 // Initialize Firebase Admin first
 if (!admin.apps.length) {
-  console.log(`Initializing Firebase Admin SDK in ${environment.mode} mode`);
+  // console.log(`Initializing Firebase Admin SDK in ${environment.mode} mode`);
 
   // Initialize with project ID
   admin.initializeApp({
@@ -23,8 +23,8 @@ if (!admin.apps.length) {
   db.settings(environment.getFirestoreSettings());
 
   // Verify FieldValue is working
-  console.log('FieldValue available:', !!FieldValue);
-  console.log('serverTimestamp available:', !!FieldValue?.serverTimestamp);
+  // console.log('FieldValue available:', !!FieldValue);
+  // console.log('serverTimestamp available:', !!FieldValue?.serverTimestamp);
 
   // Re-export the initialized objects
   module.exports = {
@@ -35,7 +35,7 @@ if (!admin.apps.length) {
   };
 } else {
   // If already initialized, just re-export the existing references
-  console.log('Firebase Admin SDK already initialized');
+  // console.log('Firebase Admin SDK already initialized');
   db = admin.firestore();
   const FieldValue = admin.firestore.FieldValue;
   const Timestamp = admin.firestore.Timestamp;
