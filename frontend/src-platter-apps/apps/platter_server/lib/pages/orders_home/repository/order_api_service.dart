@@ -38,10 +38,12 @@ class OrderApiService {
         (jsonData) => OrderListResponse.fromJson(jsonData as Map<String, dynamic>),
       );
     } on DioException catch (e) {
-      final code = e.response?.statusCode?.toString() ?? 'dio_error';
-      final msg = e.message ?? 'Failed to fetch orders';
+      final (code, msg) = DioClient.handleDioError(
+        e,
+        context: 'getActiveOrdersForRestaurant',
+      );
       return ApiResponse<OrderListResponse>.error(
-        'Network error: $msg', 
+        msg,
         errorCode: code,
       );
     } catch (e) {
@@ -52,17 +54,17 @@ class OrderApiService {
     }
   }
 
-  /// Fetches details for a specific order
+  /// Fetches server-enriched details for a specific order
   /// 
   /// Returns detailed information about the order with [orderId]
-  /// from the restaurant with [restaurantId].
+  /// from the restaurant with [restaurantId], including server name.
   Future<ApiResponse<OrderDetailResponse>> getOrder({
     required String restaurantId,
     required String orderId,
   }) async {
     try {
       final response = await _dio.post(
-        ApiConstants.getOrder,
+        ApiConstants.getOrderDetails,
         data: {
           'data': {
             'restaurantId': restaurantId,
@@ -75,15 +77,60 @@ class OrderApiService {
         (jsonData) => OrderDetailResponse.fromJson(jsonData as Map<String, dynamic>),
       );
     } on DioException catch (e) {
-      final code = e.response?.statusCode?.toString() ?? 'dio_error';
-      final msg = e.message ?? 'Failed to fetch order details';
+      final (code, msg) = DioClient.handleDioError(
+        e,
+        context: 'getOrder',
+      );
       return ApiResponse<OrderDetailResponse>.error(
-        'Network error: $msg',
+        msg,
         errorCode: code,
       );
     } catch (e) {
       return ApiResponse<OrderDetailResponse>.error(
         'Unexpected error while fetching order details: $e',
+        errorCode: 'parsing_error',
+      );
+    }
+  }
+
+  /// Mark a specific item as served (server-only endpoint)
+  /// 
+  /// Requires [menuItemId] and optionally [cartItemId] for precise matching.
+  Future<ApiResponse<bool>> markItemAsServed({
+    required String restaurantId,
+    required String orderId,
+    required String menuItemId,
+    int? cartItemId,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.markItemServed,
+        data: {
+          'data': {
+            'restaurantId': restaurantId,
+            'orderId': orderId,
+            'menuItemId': menuItemId,
+            if (cartItemId != null) 'cartItemId': cartItemId,
+          }
+        },
+      );
+      
+      return ResponseParser.parse<bool>(
+        response,
+        (_) => true,
+      );
+    } on DioException catch (e) {
+      final (code, msg) = DioClient.handleDioError(
+        e,
+        context: 'markItemAsServed',
+      );
+      return ApiResponse<bool>.error(
+        msg,
+        errorCode: code,
+      );
+    } catch (e) {
+      return ApiResponse<bool>.error(
+        'Unexpected error while marking item as served: $e',
         errorCode: 'parsing_error',
       );
     }
@@ -117,10 +164,12 @@ class OrderApiService {
         (_) => true,
       );
     } on DioException catch (e) {
-      final code = e.response?.statusCode?.toString() ?? 'dio_error';
-      final msg = e.message ?? 'Failed to update order status';
+      final (code, msg) = DioClient.handleDioError(
+        e,
+        context: 'updateOrderStatus',
+      );
       return ApiResponse<bool>.error(
-        'Network error: $msg',
+        msg,
         errorCode: code,
       );
     } catch (e) {
@@ -166,10 +215,12 @@ class OrderApiService {
         (_) => true,
       );
     } on DioException catch (e) {
-      final code = e.response?.statusCode?.toString() ?? 'dio_error';
-      final msg = e.message ?? 'Failed to update cart status';
+      final (code, msg) = DioClient.handleDioError(
+        e,
+        context: 'updateCartStatus',
+      );
       return ApiResponse<bool>.error(
-        'Network error: $msg',
+        msg,
         errorCode: code,
       );
     } catch (e) {
@@ -211,10 +262,12 @@ class OrderApiService {
         (_) => true,
       );
     } on DioException catch (e) {
-      final code = e.response?.statusCode?.toString() ?? 'dio_error';
-      final msg = e.message ?? 'Failed to mark cart as served';
+      final (code, msg) = DioClient.handleDioError(
+        e,
+        context: 'markCartAsServed',
+      );
       return ApiResponse<bool>.error(
-        'Network error: $msg',
+        msg,
         errorCode: code,
       );
     } catch (e) {
@@ -249,10 +302,12 @@ class OrderApiService {
         (jsonData) => ServedCartsResponse.fromJson(jsonData as Map<String, dynamic>),
       );
     } on DioException catch (e) {
-      final code = e.response?.statusCode?.toString() ?? 'dio_error';
-      final msg = e.message ?? 'Failed to fetch served carts';
+      final (code, msg) = DioClient.handleDioError(
+        e,
+        context: 'getServedCartsForServer',
+      );
       return ApiResponse<ServedCartsResponse>.error(
-        'Network error: $msg',
+        msg,
         errorCode: code,
       );
     } catch (e) {

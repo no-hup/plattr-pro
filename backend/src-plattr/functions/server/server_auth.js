@@ -6,6 +6,14 @@ const timestamp = require('../utils/timestamp');
 const { SERVER_STATUS } = require('./serverEnums');
 // const { comparePassword } = require('../utils/passwordUtils'); // TODO: Use hash compare in future
 
+function createAuthError(message, details = {}) {
+  const error = new Error(message);
+  error.httpStatus = 401;
+  error.code = 'unauthenticated';
+  error.details = details;
+  return error;
+}
+
 
 
 /**
@@ -198,21 +206,21 @@ exports.serverLogin = functions.https.onRequest(withCors(async (req, res) => {
       restaurantId: data?.restaurantId
     });
 
-    // Handle auth errors with 401
-    const authErrors = [
-      'Invalid session',
-      'Invalid server session',
-      'Session is not active',
-      'Session has expired',
-      'Server not found',
-      'Server is not active'
-    ];
-    // Also catch 'Invalid credentials' just in case, though it's usually handled before throw
-    const isAuthError = authErrors.includes(error.message) || error.message.includes('not active');
-    const statusCode = isAuthError ? 401 : 500;
+    if (error?.httpStatus) {
+      res.status(error.httpStatus).json({
+        error: {
+          message: error.message || 'Authentication failed',
+          details: {
+            code: error.code || 'unauthenticated',
+            ...error.details
+          }
+        }
+      });
+      return;
+    }
 
     // Standard error response
-    res.status(statusCode).json({
+    res.status(500).json({
       error: {
         message: error.message || 'An internal error occurred',
         details: {
@@ -283,25 +291,25 @@ async function validateServerSession(restaurantId, sessionId) {
 
   // 2. Verify session exists
   if (!sessionDoc.exists) {
-    throw new Error('Invalid session');
+    throw createAuthError('Invalid session', { restaurantId, sessionId });
   }
 
   const sessionData = sessionDoc.data();
 
   // 3. Verify this is a server session
   if (sessionData.entity !== 'server') {
-    throw new Error('Invalid server session');
+    throw createAuthError('Invalid server session', { restaurantId, sessionId });
   }
 
   // 4. Verify session is active
   if (sessionData.status !== SERVER_STATUS.ACTIVE) {
-    throw new Error('Session is not active');
+    throw createAuthError('Session is not active', { restaurantId, sessionId, status: sessionData.status });
   }
 
   // 5. Verify session is not expired
   const now = new Date();
   if (sessionData.expiresAt && timestamp.safeToDate(sessionData.expiresAt) < now) {
-    throw new Error('Session has expired');
+    throw createAuthError('Session has expired', { restaurantId, sessionId });
   }
 
   // 6. Get the server document
@@ -311,14 +319,14 @@ async function validateServerSession(restaurantId, sessionId) {
 
   // 7. Verify server exists
   if (!serverDoc.exists) {
-    throw new Error('Server not found');
+    throw createAuthError('Server not found', { restaurantId, serverId });
   }
 
   const serverData = serverDoc.data();
 
   // 8. Verify server is active
   if (serverData.status !== SERVER_STATUS.ACTIVE) {
-    throw new Error('Server is not active');
+    throw createAuthError('Server is not active', { serverId, status: serverData.status });
   }
 
   // 9. Update session timestamps - extend expiry by 12 hours and refresh updatedAt

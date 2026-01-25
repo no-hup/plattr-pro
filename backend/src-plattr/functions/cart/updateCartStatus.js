@@ -5,7 +5,7 @@ const { Timestamp } = require("firebase-admin/firestore");
 const { FULFILLMENT_STATUS } = require('../orders/orderConstants');
 const { mapCartStatus } = require('../utils/statusUtils');
 const OrderInputValidation = require('../orders/orderInputValidation');
-const { timestamp } = require('../utils/timestamp');
+const timestamp = require('../utils/timestamp');
 
 // Valid status transitions map
 const VALID_TRANSITIONS = {
@@ -25,7 +25,15 @@ const VALID_TRANSITIONS = {
  */
 const updateCartStatus = functions.https.onCall(async (data, context) => {
   try {
-    console.log("poopoo Received updateCartStatus request:", JSON.stringify(data));
+    const requestData = data?.data || data;
+    let safeRequestLog = '[unserializable]';
+    try {
+      safeRequestLog = JSON.stringify(requestData);
+    } catch (e) {
+      // Keep log minimal to avoid crashing on circular structures.
+      safeRequestLog = '[circular]';
+    }
+    console.log("poopoo Received updateCartStatus request:", safeRequestLog);
     // TODO: Re-enable auth check when ready
     // if (!context.auth) {
     //   throw new functions.https.HttpsError(
@@ -34,9 +42,9 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
     //   );
     // }
     
-    OrderInputValidation.validateUpdateCartStatusFields(data);
+    OrderInputValidation.validateUpdateCartStatusFields(requestData);
     
-    const { restaurantId, orderId, cartIndex, newStatus, notes = '', sessionId } = data;
+    const { restaurantId, orderId, cartIndex, newStatus, notes = '', sessionId } = requestData;
     const mappedStatus = OrderInputValidation.validateCartStatus(newStatus);
     const userId = context.auth?.uid || 'system';  // Fallback to 'system' if no auth
 

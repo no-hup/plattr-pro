@@ -192,3 +192,4 @@ For now, we will proceed with the **nested structure** as requested, but we mark
 3.  **Wire Up Listener**: Add the listener in `initState` to update `MenuState.activeCategoryId`.
 4.  **Wire Up Scroll Action**: Connect tab taps to `_itemScrollController.scrollTo`.
 5.  **Clean State**: Remove unused caching logic from `MenuState`.
+

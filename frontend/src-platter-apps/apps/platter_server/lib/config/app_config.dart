@@ -2,6 +2,7 @@ enum Environment { dev, prod }
 
 class AppConfig {
   static Environment currentEnvironment = Environment.dev; // Default to development
+  static String? _overrideBaseUrl;
 
   // Placeholder for your actual production Firebase Functions URL
   // Example: https://<region>-<project-id>.cloudfunctions.net
@@ -11,6 +12,10 @@ class AppConfig {
   static const String _devBaseUrl = 'http://localhost:5002/rms-app-dd875/us-central1';
 
   static String get firebaseFunctionsBaseUrl {
+    final override = _overrideBaseUrl;
+    if (override != null && override.isNotEmpty) {
+      return override;
+    }
     switch (currentEnvironment) {
       case Environment.prod:
         return _prodBaseUrl;
@@ -25,5 +30,10 @@ class AppConfig {
   static void initialize(Environment env) {
     currentEnvironment = env;
     // You could add more environment-specific initializations here if needed
+  }
+
+  /// Overrides the base URL used by the network layer (useful for tests).
+  static void setOverrideBaseUrl(String? url) {
+    _overrideBaseUrl = url;
   }
 }

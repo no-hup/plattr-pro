@@ -338,3 +338,4 @@ class _CarouselItemCardState extends State<_CarouselItemCard> {
     );
   }
 }
+

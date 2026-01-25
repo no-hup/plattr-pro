@@ -98,28 +98,13 @@
           "isActive": true,
           "isDefault": true,
           "categoryIds": [
-            "cat_bestsellers",
             "cat_food",
             "cat_beverages"
           ],
           "menuItemIds": [
             "item_pancakes",
-            "item_eggs_benedict",
             "item_classic_burger",
-            "item_veggie_burger",
-            "item_margherita",
-            "item_pepperoni",
-            "item_caesar_salad",
-            "item_chocolate_cake",
-            "item_cappuccino",
-            "item_espresso",
-            "item_iced_lemonade",
-            "item_iced_coffee",
-            "item_berry_smoothie",
-            "item_bs_classic_burger",
-            "item_bs_margherita",
-            "item_bs_chocolate_cake",
-            "item_bs_cappuccino"
+            "item_iced_coffee"
           ],
           "order": 0,
           "createdAt": {
@@ -143,11 +128,7 @@
           ],
           "menuItemIds": [
             "item_pancakes",
-            "item_eggs_benedict",
-            "item_cappuccino",
-            "item_espresso",
-            "item_iced_coffee",
-            "item_berry_smoothie"
+            "item_iced_coffee"
           ],
           "order": 1,
           "createdAt": {
@@ -171,11 +152,6 @@
           ],
           "menuItemIds": [
             "item_classic_burger",
-            "item_veggie_burger",
-            "item_margherita",
-            "item_pepperoni",
-            "item_caesar_salad",
-            "item_iced_lemonade",
             "item_iced_coffee"
           ],
           "order": 2,
@@ -200,15 +176,7 @@
           ],
           "menuItemIds": [
             "item_classic_burger",
-            "item_veggie_burger",
-            "item_margherita",
-            "item_pepperoni",
-            "item_caesar_salad",
-            "item_chocolate_cake",
-            "item_iced_lemonade",
-            "item_iced_coffee",
-            "item_cappuccino",
-            "item_espresso"
+            "item_iced_coffee"
           ],
           "order": 3,
           "createdAt": {
@@ -222,14 +190,6 @@
         }
       },
       "categories": {
-        "cat_bestsellers": {
-          "id": "cat_bestsellers",
-          "name": "Best Sellers \u2b50",
-          "description": "Our most popular items",
-          "image": "https://example.com/images/bestsellers.jpg",
-          "order": 0,
-          "viewType": "carousel"
-        },
         "cat_food": {
           "id": "cat_food",
           "name": "Food",
@@ -237,12 +197,8 @@
           "image": "https://example.com/images/cat-food.jpg",
           "order": 1,
           "subcategoryIds": [
-            "subcat_bestsellers",
             "subcat_breakfast",
-            "subcat_burgers",
-            "subcat_pizzas",
-            "subcat_salads",
-            "subcat_desserts"
+            "subcat_burgers"
           ]
         },
         "cat_beverages": {
@@ -251,27 +207,10 @@
           "description": "Hot and cold drinks",
           "image": "https://example.com/images/cat-beverages.jpg",
           "order": 2,
-          "defaultExpanded": false,
-          "subcategoryIds": [
-            "subcat_hot_drinks",
-            "subcat_cold_drinks",
-            "subcat_smoothies"
-          ]
+          "defaultExpanded": false
         }
       },
       "subcategories": {
-        "subcat_bestsellers": {
-          "id": "subcat_bestsellers",
-          "name": "Best Sellers",
-          "description": "Our most popular items",
-          "image": "https://example.com/images/bestsellers.jpg",
-          "parentCategoryId": "cat_food",
-          "order": 0,
-          "createdAt": {
-            "_seconds": 1678901234,
-            "_nanoseconds": 0
-          }
-        },
         "subcat_breakfast": {
           "id": "subcat_breakfast",
           "name": "Breakfast",
@@ -295,78 +234,6 @@
             "_seconds": 1678901234,
             "_nanoseconds": 0
           }
-        },
-        "subcat_pizzas": {
-          "id": "subcat_pizzas",
-          "name": "Pizzas",
-          "description": "Wood-fired artisan pizzas",
-          "image": "https://example.com/images/pizzas.jpg",
-          "parentCategoryId": "cat_food",
-          "order": 3,
-          "createdAt": {
-            "_seconds": 1678901234,
-            "_nanoseconds": 0
-          }
-        },
-        "subcat_salads": {
-          "id": "subcat_salads",
-          "name": "Salads",
-          "description": "Fresh and healthy options",
-          "image": "https://example.com/images/salads.jpg",
-          "parentCategoryId": "cat_food",
-          "order": 4,
-          "createdAt": {
-            "_seconds": 1678901234,
-            "_nanoseconds": 0
-          }
-        },
-        "subcat_desserts": {
-          "id": "subcat_desserts",
-          "name": "Desserts",
-          "description": "Sweet endings",
-          "image": "https://example.com/images/desserts.jpg",
-          "parentCategoryId": "cat_food",
-          "order": 5,
-          "createdAt": {
-            "_seconds": 1678901234,
-            "_nanoseconds": 0
-          }
-        },
-        "subcat_hot_drinks": {
-          "id": "subcat_hot_drinks",
-          "name": "Hot Drinks",
-          "description": "Warm beverages",
-          "image": "https://example.com/images/hot-drinks.jpg",
-          "parentCategoryId": "cat_beverages",
-          "order": 0,
-          "createdAt": {
-            "_seconds": 1678901234,
-            "_nanoseconds": 0
-          }
-        },
-        "subcat_cold_drinks": {
-          "id": "subcat_cold_drinks",
-          "name": "Cold Drinks",
-          "description": "Refreshing cold beverages",
-          "image": "https://example.com/images/cold-drinks.jpg",
-          "parentCategoryId": "cat_beverages",
-          "order": 1,
-          "createdAt": {
-            "_seconds": 1678901234,
-            "_nanoseconds": 0
-          }
-        },
-        "subcat_smoothies": {
-          "id": "subcat_smoothies",
-          "name": "Smoothies",
-          "description": "Blended fruit goodness",
-          "image": "https://example.com/images/smoothies.jpg",
-          "parentCategoryId": "cat_beverages",
-          "order": 2,
-          "createdAt": {
-            "_seconds": 1678901234,
-            "_nanoseconds": 0
-          }
         }
       },
       "menuItems": {
@@ -375,8 +242,7 @@
           "categoryId": "cat_food",
           "primarySubcategoryId": "subcat_breakfast",
           "subcategoryIds": [
-            "subcat_breakfast",
-            "subcat_bestsellers"
+            "subcat_breakfast"
           ],
           "meta": {
             "name": "Fluffy Pancakes",
@@ -392,8 +258,7 @@
           },
           "variants": [],
           "addons": [
-            "addon_bacon",
-            "addon_berries"
+            "addon_bacon"
           ],
           "nutritionalInfo": {
             "calories": 450,
@@ -409,48 +274,12 @@
           "isInStock": true,
           "isCustomizable": true
         },
-        "item_eggs_benedict": {
-          "menuItemId": "item_eggs_benedict",
-          "categoryId": "cat_food",
-          "primarySubcategoryId": "subcat_breakfast",
-          "subcategoryIds": [
-            "subcat_breakfast"
-          ],
-          "meta": {
-            "name": "Eggs Benedict",
-            "description": "Poached eggs with hollandaise on English muffin",
-            "categoryName": "Food",
-            "primarySubcategoryName": "Breakfast",
-            "image": "https://example.com/images/eggs-benedict.jpg"
-          },
-          "priceInfo": {
-            "basePrice": 120,
-            "discount": 0,
-            "finalPrice": 120
-          },
-          "variants": [],
-          "addons": [],
-          "nutritionalInfo": {
-            "calories": 550,
-            "protein": 25,
-            "carbs": 30,
-            "fat": 35
-          },
-          "allergenTags": [
-            "gluten",
-            "dairy",
-            "eggs"
-          ],
-          "isInStock": true,
-          "isCustomizable": false
-        },
         "item_classic_burger": {
           "menuItemId": "item_classic_burger",
           "categoryId": "cat_food",
           "primarySubcategoryId": "subcat_burgers",
           "subcategoryIds": [
-            "subcat_burgers",
-            "subcat_bestsellers"
+            "subcat_burgers"
           ],
           "meta": {
             "name": "Classic Cheeseburger",
@@ -487,319 +316,15 @@
           "isInStock": true,
           "isCustomizable": true
         },
-        "item_veggie_burger": {
-          "menuItemId": "item_veggie_burger",
-          "categoryId": "cat_food",
-          "primarySubcategoryId": "subcat_burgers",
-          "subcategoryIds": [
-            "subcat_burgers"
-          ],
-          "meta": {
-            "name": "Garden Veggie Burger",
-            "description": "Plant-based patty with fresh vegetables",
-            "categoryName": "Food",
-            "primarySubcategoryName": "Burgers",
-            "image": "https://example.com/images/veggie-burger.jpg"
-          },
-          "priceInfo": {
-            "basePrice": 130,
-            "discount": 0,
-            "finalPrice": 130
-          },
-          "variants": [
-            {
-              "id": "var_burger_size",
-              "name": "Size"
-            }
-          ],
-          "addons": [
-            "addon_fries"
-          ],
-          "nutritionalInfo": {
-            "calories": 480,
-            "protein": 22,
-            "carbs": 50,
-            "fat": 18
-          },
-          "allergenTags": [
-            "gluten"
-          ],
-          "isInStock": true,
-          "isCustomizable": true
-        },
-        "item_margherita": {
-          "menuItemId": "item_margherita",
-          "categoryId": "cat_food",
-          "primarySubcategoryId": "subcat_pizzas",
-          "subcategoryIds": [
-            "subcat_pizzas",
-            "subcat_bestsellers"
-          ],
-          "meta": {
-            "name": "Margherita Pizza",
-            "description": "Fresh mozzarella, tomato sauce, basil",
-            "categoryName": "Food",
-            "primarySubcategoryName": "Pizzas",
-            "image": "https://example.com/images/margherita.jpg"
-          },
-          "priceInfo": {
-            "basePrice": 180,
-            "discount": 0,
-            "finalPrice": 180
-          },
-          "variants": [
-            {
-              "id": "var_pizza_size",
-              "name": "Size"
-            }
-          ],
-          "addons": [
-            "addon_extra_cheese"
-          ],
-          "nutritionalInfo": {
-            "calories": 800,
-            "protein": 30,
-            "carbs": 90,
-            "fat": 35
-          },
-          "allergenTags": [
-            "gluten",
-            "dairy"
-          ],
-          "isInStock": true,
-          "isCustomizable": true
-        },
-        "item_pepperoni": {
-          "menuItemId": "item_pepperoni",
-          "categoryId": "cat_food",
-          "primarySubcategoryId": "subcat_pizzas",
-          "subcategoryIds": [
-            "subcat_pizzas"
-          ],
-          "meta": {
-            "name": "Pepperoni Pizza",
-            "description": "Loaded with premium pepperoni slices",
-            "categoryName": "Food",
-            "primarySubcategoryName": "Pizzas",
-            "image": "https://example.com/images/pepperoni.jpg"
-          },
-          "priceInfo": {
-            "basePrice": 200,
-            "discount": 10,
-            "finalPrice": 180
-          },
-          "variants": [
-            {
-              "id": "var_pizza_size",
-              "name": "Size"
-            }
-          ],
-          "addons": [
-            "addon_jalapenos"
-          ],
-          "nutritionalInfo": {
-            "calories": 950,
-            "protein": 40,
-            "carbs": 85,
-            "fat": 45
-          },
-          "allergenTags": [
-            "gluten",
-            "dairy"
-          ],
-          "isInStock": true,
-          "isCustomizable": true
-        },
-        "item_caesar_salad": {
-          "menuItemId": "item_caesar_salad",
-          "categoryId": "cat_food",
-          "primarySubcategoryId": "subcat_salads",
-          "subcategoryIds": [
-            "subcat_salads"
-          ],
-          "meta": {
-            "name": "Caesar Salad",
-            "description": "Romaine lettuce, parmesan, croutons, Caesar dressing",
-            "categoryName": "Food",
-            "primarySubcategoryName": "Salads",
-            "image": "https://example.com/images/caesar-salad.jpg"
-          },
-          "priceInfo": {
-            "basePrice": 100,
-            "discount": 0,
-            "finalPrice": 100
-          },
-          "variants": [],
-          "addons": [
-            "addon_grilled_chicken"
-          ],
-          "nutritionalInfo": {
-            "calories": 350,
-            "protein": 12,
-            "carbs": 20,
-            "fat": 25
-          },
-          "allergenTags": [
-            "gluten",
-            "dairy",
-            "eggs"
-          ],
-          "isInStock": true,
-          "isCustomizable": true
-        },
-        "item_chocolate_cake": {
-          "menuItemId": "item_chocolate_cake",
-          "categoryId": "cat_food",
-          "primarySubcategoryId": "subcat_desserts",
-          "subcategoryIds": [
-            "subcat_desserts",
-            "subcat_bestsellers"
-          ],
-          "meta": {
-            "name": "Chocolate Lava Cake",
-            "description": "Warm chocolate cake with molten center",
-            "categoryName": "Food",
-            "primarySubcategoryName": "Desserts",
-            "image": "https://example.com/images/chocolate-cake.jpg"
-          },
-          "priceInfo": {
-            "basePrice": 80,
-            "discount": 0,
-            "finalPrice": 80
-          },
-          "variants": [],
-          "addons": [
-            "addon_ice_cream"
-          ],
-          "nutritionalInfo": {
-            "calories": 450,
-            "protein": 6,
-            "carbs": 55,
-            "fat": 25
-          },
-          "allergenTags": [
-            "gluten",
-            "dairy",
-            "eggs"
-          ],
-          "isInStock": true,
-          "isCustomizable": true
-        },
-        "item_cappuccino": {
-          "menuItemId": "item_cappuccino",
-          "categoryId": "cat_beverages",
-          "primarySubcategoryId": "subcat_hot_drinks",
-          "subcategoryIds": [
-            "subcat_hot_drinks",
-            "subcat_bestsellers"
-          ],
-          "meta": {
-            "name": "Cappuccino",
-            "description": "Espresso with steamed milk foam",
-            "categoryName": "Beverages",
-            "primarySubcategoryName": "Hot Drinks",
-            "image": "https://example.com/images/cappuccino.jpg"
-          },
-          "priceInfo": {
-            "basePrice": 60,
-            "discount": 0,
-            "finalPrice": 60
-          },
-          "variants": [
-            {
-              "id": "var_coffee_size",
-              "name": "Size"
-            }
-          ],
-          "addons": [
-            "addon_vanilla_syrup"
-          ],
-          "nutritionalInfo": {
-            "calories": 80,
-            "protein": 4,
-            "carbs": 8,
-            "fat": 4
-          },
-          "allergenTags": [
-            "dairy"
-          ],
-          "isInStock": true,
-          "isCustomizable": true
-        },
-        "item_espresso": {
-          "menuItemId": "item_espresso",
-          "categoryId": "cat_beverages",
-          "primarySubcategoryId": "subcat_hot_drinks",
-          "subcategoryIds": [
-            "subcat_hot_drinks"
-          ],
-          "meta": {
-            "name": "Espresso",
-            "description": "Rich double shot espresso",
-            "categoryName": "Beverages",
-            "primarySubcategoryName": "Hot Drinks",
-            "image": "https://example.com/images/espresso.jpg"
-          },
-          "priceInfo": {
-            "basePrice": 40,
-            "discount": 0,
-            "finalPrice": 40
-          },
-          "variants": [],
-          "addons": [],
-          "nutritionalInfo": {
-            "calories": 5,
-            "protein": 0,
-            "carbs": 1,
-            "fat": 0
-          },
-          "allergenTags": [],
-          "isInStock": true,
-          "isCustomizable": false
-        },
-        "item_iced_lemonade": {
-          "menuItemId": "item_iced_lemonade",
-          "categoryId": "cat_beverages",
-          "primarySubcategoryId": "subcat_cold_drinks",
-          "subcategoryIds": [
-            "subcat_cold_drinks"
-          ],
-          "meta": {
-            "name": "Fresh Lemonade",
-            "description": "Freshly squeezed lemonade with ice",
-            "categoryName": "Beverages",
-            "primarySubcategoryName": "Cold Drinks",
-            "image": "https://example.com/images/lemonade.jpg"
-          },
-          "priceInfo": {
-            "basePrice": 45,
-            "discount": 0,
-            "finalPrice": 45
-          },
-          "variants": [],
-          "addons": [],
-          "nutritionalInfo": {
-            "calories": 100,
-            "protein": 0,
-            "carbs": 25,
-            "fat": 0
-          },
-          "allergenTags": [],
-          "isInStock": true,
-          "isCustomizable": false
-        },
         "item_iced_coffee": {
           "menuItemId": "item_iced_coffee",
           "categoryId": "cat_beverages",
-          "primarySubcategoryId": "subcat_cold_drinks",
-          "subcategoryIds": [
-            "subcat_cold_drinks"
-          ],
+          "subcategoryIds": [],
           "meta": {
             "name": "Iced Coffee",
             "description": "Cold brew coffee on ice",
             "categoryName": "Beverages",
-            "primarySubcategoryName": "Cold Drinks",
+            "primarySubcategoryName": "",
             "image": "https://example.com/images/iced-coffee.jpg"
           },
           "priceInfo": {
@@ -825,155 +350,6 @@
           "allergenTags": [],
           "isInStock": true,
           "isCustomizable": true
-        },
-        "item_berry_smoothie": {
-          "menuItemId": "item_berry_smoothie",
-          "categoryId": "cat_beverages",
-          "primarySubcategoryId": "subcat_smoothies",
-          "subcategoryIds": [
-            "subcat_smoothies"
-          ],
-          "meta": {
-            "name": "Mixed Berry Smoothie",
-            "description": "Strawberry, blueberry, raspberry blend",
-            "categoryName": "Beverages",
-            "primarySubcategoryName": "Smoothies",
-            "image": "https://example.com/images/berry-smoothie.jpg"
-          },
-          "priceInfo": {
-            "basePrice": 70,
-            "discount": 0,
-            "finalPrice": 70
-          },
-          "variants": [],
-          "addons": [
-            "addon_protein"
-          ],
-          "nutritionalInfo": {
-            "calories": 180,
-            "protein": 3,
-            "carbs": 40,
-            "fat": 2
-          },
-          "allergenTags": [],
-          "isInStock": true,
-          "isCustomizable": true
-        },
-        "item_bs_classic_burger": {
-          "menuItemId": "item_bs_classic_burger",
-          "categoryId": "cat_bestsellers",
-          "meta": {
-            "name": "Classic Cheeseburger",
-            "description": "Angus beef patty with cheddar, lettuce, tomato",
-            "categoryName": "Best Sellers",
-            "image": "https://example.com/images/classic-burger.jpg"
-          },
-          "priceInfo": {
-            "basePrice": 140,
-            "discount": 10,
-            "finalPrice": 126
-          },
-          "variants": [],
-          "addons": [],
-          "nutritionalInfo": {
-            "calories": 650,
-            "protein": 35,
-            "carbs": 45,
-            "fat": 38
-          },
-          "allergenTags": [
-            "gluten",
-            "dairy"
-          ],
-          "isInStock": true,
-          "isCustomizable": false
-        },
-        "item_bs_margherita": {
-          "menuItemId": "item_bs_margherita",
-          "categoryId": "cat_bestsellers",
-          "meta": {
-            "name": "Margherita Pizza",
-            "description": "Fresh mozzarella, tomato sauce, basil",
-            "categoryName": "Best Sellers",
-            "image": "https://example.com/images/margherita.jpg"
-          },
-          "priceInfo": {
-            "basePrice": 180,
-            "discount": 0,
-            "finalPrice": 180
-          },
-          "variants": [],
-          "addons": [],
-          "nutritionalInfo": {
-            "calories": 800,
-            "protein": 30,
-            "carbs": 90,
-            "fat": 35
-          },
-          "allergenTags": [
-            "gluten",
-            "dairy"
-          ],
-          "isInStock": true,
-          "isCustomizable": false
-        },
-        "item_bs_chocolate_cake": {
-          "menuItemId": "item_bs_chocolate_cake",
-          "categoryId": "cat_bestsellers",
-          "meta": {
-            "name": "Chocolate Lava Cake",
-            "description": "Warm chocolate cake with molten center",
-            "categoryName": "Best Sellers",
-            "image": "https://example.com/images/chocolate-cake.jpg"
-          },
-          "priceInfo": {
-            "basePrice": 80,
-            "discount": 0,
-            "finalPrice": 80
-          },
-          "variants": [],
-          "addons": [],
-          "nutritionalInfo": {
-            "calories": 450,
-            "protein": 6,
-            "carbs": 55,
-            "fat": 25
-          },
-          "allergenTags": [
-            "gluten",
-            "dairy",
-            "eggs"
-          ],
-          "isInStock": true,
-          "isCustomizable": false
-        },
-        "item_bs_cappuccino": {
-          "menuItemId": "item_bs_cappuccino",
-          "categoryId": "cat_bestsellers",
-          "meta": {
-            "name": "Cappuccino",
-            "description": "Espresso with steamed milk foam",
-            "categoryName": "Best Sellers",
-            "image": "https://example.com/images/cappuccino.jpg"
-          },
-          "priceInfo": {
-            "basePrice": 60,
-            "discount": 0,
-            "finalPrice": 60
-          },
-          "variants": [],
-          "addons": [],
-          "nutritionalInfo": {
-            "calories": 80,
-            "protein": 4,
-            "carbs": 8,
-            "fat": 4
-          },
-          "allergenTags": [
-            "dairy"
-          ],
-          "isInStock": true,
-          "isCustomizable": false
         }
       },
       "variants": {
@@ -1009,44 +385,7 @@
           "isMandatory": true,
           "respectParentDiscount": true,
           "itemsAssociatedWith": [
-            "item_classic_burger",
-            "item_veggie_burger"
-          ]
-        },
-        "var_pizza_size": {
-          "id": "var_pizza_size",
-          "meta": {
-            "name": "Pizza Size",
-            "description": "Choose pizza size",
-            "categoryAssociatedWith": [
-              "cat_food"
-            ]
-          },
-          "options": [
-            {
-              "id": "pizza_regular",
-              "name": "Regular (10\")",
-              "priceInfo": {
-                "basePrice": 0,
-                "finalPrice": 0,
-                "discount": 0
-              }
-            },
-            {
-              "id": "pizza_large",
-              "name": "Large (14\")",
-              "priceInfo": {
-                "basePrice": 50,
-                "finalPrice": 50,
-                "discount": 0
-              }
-            }
-          ],
-          "isMandatory": true,
-          "respectParentDiscount": true,
-          "itemsAssociatedWith": [
-            "item_margherita",
-            "item_pepperoni"
+            "item_classic_burger"
           ]
         },
         "var_coffee_size": {
@@ -1081,7 +420,6 @@
           "isMandatory": true,
           "respectParentDiscount": true,
           "itemsAssociatedWith": [
-            "item_cappuccino",
             "item_iced_coffee"
           ]
         }
@@ -1104,8 +442,7 @@
           "respectParentDiscount": true,
           "isInStock": true,
           "itemsAssociatedWith": [
-            "item_classic_burger",
-            "item_veggie_burger"
+            "item_classic_burger"
           ],
           "isMandatory": false
         },
@@ -1148,50 +485,7 @@
           "respectParentDiscount": false,
           "isInStock": true,
           "itemsAssociatedWith": [
-            "item_cappuccino",
             "item_iced_coffee"
-          ],
-          "isMandatory": false
-        },
-        "addon_ice_cream": {
-          "id": "addon_ice_cream",
-          "meta": {
-            "name": "Vanilla Ice Cream",
-            "description": "Creamy vanilla ice cream",
-            "categoryAssociatedWith": [
-              "cat_food"
-            ]
-          },
-          "priceInfo": {
-            "basePrice": 20,
-            "finalPrice": 20,
-            "discount": 0
-          },
-          "respectParentDiscount": false,
-          "isInStock": true,
-          "itemsAssociatedWith": [
-            "item_chocolate_cake"
-          ],
-          "isMandatory": false
-        },
-        "addon_berries": {
-          "id": "addon_berries",
-          "meta": {
-            "name": "Fresh Berries",
-            "description": "Seasonal mixed berries",
-            "categoryAssociatedWith": [
-              "cat_food"
-            ]
-          },
-          "priceInfo": {
-            "basePrice": 15,
-            "finalPrice": 15,
-            "discount": 0
-          },
-          "respectParentDiscount": true,
-          "isInStock": true,
-          "itemsAssociatedWith": [
-            "item_pancakes"
           ],
           "isMandatory": false
         }

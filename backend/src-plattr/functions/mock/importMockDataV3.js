@@ -1,4 +1,8 @@
-// Set emulator environment variables BEFORE importing admin
+// Force emulator environment before importing admin/singletons.
+process.env.FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080';
+process.env.FUNCTIONS_EMULATOR = 'true';
+process.env.NODE_ENV = 'development';
+
 const environment = require('../singleton/Environment');
 environment.configureEnvironment(false);
 const { admin, db } = require('../admin/admin');

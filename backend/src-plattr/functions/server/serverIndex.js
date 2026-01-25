@@ -7,11 +7,15 @@ const ResponseBuilder = require('../utils/ResponseBuilder');
 // Import modular server logic
 const tablesFetch = require('./tables_fetch');
 const tableOTP = require('./table_otp');
+const { serverGetOrderDetails } = require('../orders/serverGetOrderDetails');
+const { serverMarkItemServed } = require('../orders/serverMarkItemServed');
 
 // --- Exported Functions ---
 // Table-related (using restaurant-scoped collections)
 exports.getTables = tablesFetch.getTables;
 exports.generateTableOTP = tableOTP.generateTableOTP;
+exports.getOrderDetails = serverGetOrderDetails;
+exports.markItemServed = serverMarkItemServed;
 
 // --- Server Authentication ---
 // Server login/session management is handled by server_auth.js

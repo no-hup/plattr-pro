@@ -10,13 +10,12 @@
 
 | Need | Command / Location |
 |------|-------------------|
-| Start emulator | `cd backend/src-plattr && npm run emulators` |
-| **Clean Logs for Agent** | `cd backend/src-plattr && mkdir -p ../firebase-debug-logs && > ../firebase-debug-logs/emulator.log && npm run emulators 2>&1 \| grep -vE "\[debug\]" \| tee ../firebase-debug-logs/emulator.log` |
-| Import mock data | `cd backend/src-plattr/functions && node mock/quickImport.js` |
+| **One-Click Start** | `backend/firebase-debug-logs/run_emulator.sh` |
+| Import mock data (V3) | `cd backend/src-plattr/functions && node mock/quickImportV3.js` |
 | Kill stuck ports | `lsof -t -i:8080 -i:5002 -i:4001 \| xargs kill -9` |
 | Check if running | `curl -s http://127.0.0.1:5002/rms-app-dd875/us-central1/dev-listRestaurants` |
 | Service account | `backend/src-plattr/secure_stuff/service-account.json` |
-| Mock data file | `backend/src-plattr/functions/mock/mockDataV2.json` |
+| Mock data file | `backend/src-plattr/functions/mock/mockDataV3.json` |
 | **Log Dir** | `backend/firebase-debug-logs/` |
 
 ---

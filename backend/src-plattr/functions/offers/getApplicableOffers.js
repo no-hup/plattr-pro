@@ -95,20 +95,80 @@ function evaluateOfferConditions(offer, cart, sessionData) {
     // Calculate potential saving
     let potentialSaving = 0;
 
+    // Check target categories presence (if specified as a condition)
+    if (conditions.targetCategories && conditions.targetCategories.length > 0) {
+        const hasCategoryItems = cartItems.some(item =>
+            item.status !== 'cancelled' && (
+                conditions.targetCategories.includes(item.categoryId) ||
+                (item.subcategoryIds && item.subcategoryIds.some(id => conditions.targetCategories.includes(id)))
+            )
+        );
+
+        if (!hasCategoryItems) {
+            return {
+                isApplicable: false,
+                reason: `Add items from eligible categories to apply`,
+                potentialSaving: 0
+            };
+        }
+    }
+
     switch (benefit.type) {
         case 'DISCOUNT_AMOUNT':
             potentialSaving = Math.min(benefit.value || 0, cartTotal);
             break;
+
         case 'DISCOUNT_PERCENTAGE':
             potentialSaving = (cartTotal * (benefit.value || 0)) / 100;
             if (benefit.maxDiscount) {
                 potentialSaving = Math.min(potentialSaving, benefit.maxDiscount);
             }
             break;
-        case 'FREE_ITEM':
-            // For free item, we could look up the item price, but for now estimate 0
-            potentialSaving = 0; // Would need menu item lookup for actual value
+
+        case 'DISCOUNT_PERCENTAGE_ON_CATEGORY': {
+            const targetCategories = benefit.targetCategories || [];
+            let totalDiscount = 0;
+
+            cartItems.forEach(item => {
+                if (item.status === 'cancelled') return;
+
+                const categoryId = item.categoryId;
+                const subcategoryIds = item.subcategoryIds || [];
+
+                const isMatch = targetCategories.includes(categoryId) ||
+                    subcategoryIds.some(id => targetCategories.includes(id));
+
+                if (isMatch) {
+                    const itemTotalPrice = item.priceInfo?.finalPrice || 0;
+                    totalDiscount += (itemTotalPrice * (benefit.value || 0)) / 100;
+                }
+            });
+
+            if (benefit.maxDiscount) {
+                totalDiscount = Math.min(totalDiscount, benefit.maxDiscount);
+            }
+
+            potentialSaving = totalDiscount;
             break;
+        }
+
+        case 'FREE_ITEM': {
+            const targetItem = benefit.targetItem;
+            const freeQuantity = benefit.value || 1;
+
+            const matches = cartItems.filter(item =>
+                item.menuItemId === targetItem && item.status !== 'cancelled'
+            );
+
+            if (matches.length > 0) {
+                const match = matches[0];
+                const unitPrice = (match.priceInfo?.finalPrice || 0) / (match.quantity || 1);
+                const quantityToDiscount = Math.min(freeQuantity, match.quantity);
+                potentialSaving = unitPrice * quantityToDiscount;
+            }
+            break;
+        }
+
         default:
             potentialSaving = 0;
     }
