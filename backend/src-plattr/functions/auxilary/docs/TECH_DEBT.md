@@ -210,6 +210,45 @@ final response = await _dio.post(
 - Update to call `cart-updateCartStatus` or appropriate endpoint
 - Test the complete flow
 
+### 8. Orders List Pagination for High-Volume Restaurants
+**Priority:** Low
+**Source:** Server App Orders Home Redesign (Jan 2026)
+**Files:** `orders/getActiveOrdersForRestaurant.js`
+**Description:**
+The `getActiveOrdersForRestaurant` function returns all active orders in a single response. For high-volume restaurants with 50+ active tables, this could lead to large payloads.
+
+**Current Implementation:**
+- All active orders fetched in single query
+- No pagination or cursor-based fetching
+- Frontend filters results by category tabs
+
+**Action:**
+- Consider pagination if performance issues arise
+- Implement cursor-based pagination with `pageSize` and `pageToken` parameters
+- Consider splitting "All Orders" tab into paginated fetch
+- Monitor payload sizes in production
+
+### 9. "All Orders" Tab Equals "My Orders" (Server-Side Scoping)
+**Priority:** Low
+**Source:** Orders Home Screen Redesign (Jan 2026)
+**Files:** `orders/getActiveOrdersForRestaurant.js`, `platter_server orders_home_screen.dart`
+**Description:**
+The "All Orders" tab in the Server App currently displays the same data as "My Orders" because the active orders API filters data server-side to only return orders relevant to the current server.
+
+**Current Implementation:**
+- `getActiveOrdersForRestaurant` filters orders where:
+  - `assignedServer == currentServerId`
+  - OR `assignedServer` is null/empty (unassigned)
+  - OR any cart has `assignedTo == currentServerId`
+
+**Future Enhancement:**
+- If restaurant admins need to see ALL orders regardless of server assignment, create a separate endpoint like `getAllActiveOrdersForRestaurant` that doesn't apply server filtering.
+- Add a role-based check to determine which endpoint to call.
+
+**Action:**
+- Document this limitation in frontend UI (tooltip/info icon)
+- Implement separate endpoint if restaurant-wide view is required
+
 ---
 
 ## Changelog
@@ -222,3 +261,34 @@ final response = await _dio.post(
 | 2026-01-20 | #5 Firebase Triggers | Added - Trigger implementation status audit |
 | 2026-01-20 | #6 Session Cleanup | Added - Enhancement for cart/order based cleanup |
 | 2026-01-20 | FE #3 updateOrderStatus | Added - API placeholder in server app |
+| 2026-01-23 | #9 All Orders Tab | Added - All Orders tab equals My Orders due to server-side scoping |
+
+### 10. Missing Edge Case Logs (Backend)
+**Priority:** Low  
+**Source:** Code Review (Jan 2026)  
+**Description:**
+Missing logs for key edge cases in order processing:
+- `createOrUpdateOrder`: No warning when a new order is created for a table with no assigned server.
+- `markCartAsServed`: No specific warning log when idempotent check fails (`alreadyServed: true`), which would help debug potential frontend double-submission issues.
+
+### 11. Deprecation Cleanup (Frontend)
+**Priority:** Low  
+**Source:** Code Review (Jan 2026)  
+**Description:**
+In `order_api_service.dart`, the method `markCartAsDelivered` is redundant now that `markCartAsServed` is the standard. It should be verified for usage and removed.
+
+### 12. Type Safety & Error Feedback (Frontend)
+**Priority:** Low  
+**Source:** Code Review (Jan 2026)  
+**Description:**
+In `orders_provider.dart`, `fetchServedCarts` fails silently (only `debugPrint`). The UI should show a user-visible indication (e.g., snackbar) if the "Served" tab content fails to load.
+
+### 13. Orders Home Coupling & UI Mapping (Backend + Server App)
+**Priority:** Medium  
+**Source:** Code Review (Feb 2026)  
+**Files:** `orders/getActiveOrdersForRestaurant.js`, `orders/markCartAsServed.js`, `platter_server orders_provider.dart`, `utils/statusUtils.js`
+**Description:**
+- **Too Much Coupling in Code, Cleaner Organisation Possible With Independent:** `orders/getActiveOrdersForRestaurant.js` and `orders/markCartAsServed.js` rely on `cartIndex`, and `orders_provider.dart` uses that index for actions. Any filtering/reordering breaks updates. Prefer a stable identifier like `cartId` for API calls and update carts by ID.
+- **Good to Have Things:** Order-level `statusColorHex` is derived from cart-status mapping, so `IN_PROGRESS` ends up grey. If order-level coloring is needed, add a dedicated order-status color map.
+- **Good to Have Things:** `orders_provider.dart` shows `orderId` as order number. If `orderNumber` exists in backend, include it in `OrderSummary` so UI doesn’t show long IDs.
+- **Add Logs for Edge Case:** `orders/markCartAsServed.js` should log when `sessionDoc.data().serverId` is empty to debug cases where served carts never appear.

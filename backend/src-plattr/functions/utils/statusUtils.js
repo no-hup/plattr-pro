@@ -1,4 +1,4 @@
-const { ORDER_STATUS, FULFILLMENT_STATUS } = require('../orders/orderConstants');
+const { ORDER_STATUS, FULFILLMENT_STATUS, STATUS_COLOR_HEX } = require('../orders/orderConstants');
 
 function normalizeStatusString(value) {
   if (!value || typeof value !== 'string') {
@@ -69,8 +69,19 @@ function mapCartStatus(value) {
   }
 }
 
+/**
+ * Gets the hex color code for a given fulfillment status
+ * @param {string} status - The raw status string
+ * @returns {string} Hex color code for the status
+ */
+function getStatusColorHex(status) {
+  const mapped = mapCartStatus(status);
+  return STATUS_COLOR_HEX[mapped] || '#9E9E9E'; // Grey fallback
+}
+
 module.exports = {
   normalizeStatusString,
   mapOrderStatus,
   mapCartStatus,
+  getStatusColorHex,
 };

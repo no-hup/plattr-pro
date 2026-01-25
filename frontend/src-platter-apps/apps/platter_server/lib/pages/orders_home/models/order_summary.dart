@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'cart_summary.dart';
+import 'price_info.dart';
 
 part 'order_summary.g.dart';
 
@@ -143,6 +145,58 @@ String mapOrderStatusToDisplay(String status) {
 CartStatus parseCartItemStatus(String value) => parseCartStatus(value);
 OrderStatus parseOrderSummaryStatus(String value) => parseOrderStatus(value);
 
+/// Default status colors (fallback when backend doesn't provide color)
+class StatusColors {
+  static const Color pendingColor = Color(0xFFFFC107);    // Yellow
+  static const Color preparingColor = Color(0xFFFFC107);  // Yellow
+  static const Color readyColor = Color(0xFF4CAF50);      // Green
+  static const Color servedColor = Color(0xFF4CAF50);     // Green
+  static const Color cancelledColor = Color(0xFFF44336); // Red
+  static const Color returnedColor = Color(0xFFF44336);   // Red
+  static const Color unknownColor = Color(0xFF9E9E9E);    // Grey
+  
+  /// Get color for a cart status
+  static Color getColorForStatus(CartStatus status) {
+    switch (status) {
+      case CartStatus.pending:
+        return pendingColor;
+      case CartStatus.preparing:
+        return preparingColor;
+      case CartStatus.ready:
+        return readyColor;
+      case CartStatus.served:
+        return servedColor;
+      case CartStatus.cancelled:
+        return cancelledColor;
+      case CartStatus.returned:
+        return returnedColor;
+      case CartStatus.unknown:
+      default:
+        return unknownColor;
+    }
+  }
+  
+  /// Parse a hex color string to Color (fallback to grey if invalid)
+  static Color parseHexColor(String? hexColor) {
+    if (hexColor == null || hexColor.isEmpty) return unknownColor;
+    try {
+      // Remove leading # if present
+      final hex = hexColor.startsWith('#') ? hexColor.substring(1) : hexColor;
+      // Parse 6-character hex (RGB)
+      if (hex.length == 6) {
+        return Color(int.parse('FF$hex', radix: 16));
+      }
+      // Parse 8-character hex (ARGB)
+      if (hex.length == 8) {
+        return Color(int.parse(hex, radix: 16));
+      }
+      return unknownColor;
+    } catch (e) {
+      return unknownColor;
+    }
+  }
+}
+
 @JsonSerializable()
 class OrderSummary {
   @JsonKey(defaultValue: '')
@@ -153,22 +207,44 @@ class OrderSummary {
 
   @JsonKey(defaultValue: '')
   final String status;
+  
+  /// Hex color for status (e.g., "#4CAF50")
+  /// Falls back to StatusColors if not provided
+  @JsonKey(defaultValue: '')
+  final String statusColorHex;
 
   @JsonKey(defaultValue: [])
   final List<CartSummary> carts;
 
   @JsonKey(name: 'assignedServer', defaultValue: '')
   final String assignedTo;
+  
+  /// Price information for this order
+  @JsonKey(name: 'priceInfo')
+  final PriceInfo? priceInfo;
 
   OrderSummary({
     required this.orderId,
     required this.tableId,
     required this.status,
+    this.statusColorHex = '',
     required this.carts,
     required this.assignedTo,
+    this.priceInfo,
   });
 
   factory OrderSummary.fromJson(Map<String, dynamic> json) => _$OrderSummaryFromJson(json);
 
   Map<String, dynamic> toJson() => _$OrderSummaryToJson(this);
+  
+  /// Get the status color, preferring backend-provided hex, falling back to constants
+  Color get statusColor {
+    if (statusColorHex.isNotEmpty) {
+      return StatusColors.parseHexColor(statusColorHex);
+    }
+    return StatusColors.getColorForStatus(parseCartStatus(status));
+  }
+  
+  /// Get the final price from priceInfo, or 0 if not available
+  num get finalPrice => priceInfo?.finalPrice ?? 0;
 }

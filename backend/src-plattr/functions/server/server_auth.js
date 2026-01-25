@@ -16,8 +16,32 @@ const { SERVER_STATUS } = require('./serverEnums');
  * 
  * Returns a session token and server info on success
  */
-exports.serverLogin = functions.https.onCall(async (request, context) => {
-  const data = request.data;
+const { withCors } = require('../utils/cors');
+
+/**
+ * Server login function
+ * Accepts either:
+ * - restaurantId, username, password (for credential-based login)
+ * - restaurantId, sessionId (for token-based login)
+ * 
+ * Returns a session token and server info on success
+ */
+exports.serverLogin = functions.https.onRequest(withCors(async (req, res) => {
+  // Only allow POST
+  if (req.method !== 'POST') {
+    res.status(405).json({
+      error: {
+        message: 'Method not allowed',
+        details: { code: 'invalid-argument' }
+      }
+    });
+    return;
+  }
+
+  // Extract data from the "data" field (mimicking onCall format) or body directly
+  // Dio client sends { data: { ... } } so we look for req.body.data
+  const data = req.body.data || req.body;
+
   let stage = 'init';
   const setStage = s => (stage = s);
 
@@ -26,7 +50,13 @@ exports.serverLogin = functions.https.onCall(async (request, context) => {
     setStage('parse-request');
     const { restaurantId, sessionId, username, password } = data;
     if (!restaurantId) {
-      throw new functions.https.HttpsError('invalid-argument', 'Restaurant ID is required');
+      res.status(400).json({
+        error: {
+          message: 'Restaurant ID is required',
+          details: { code: 'invalid-argument' }
+        }
+      });
+      return;
     }
 
     // Get restaurant document first as it's needed in both login paths
@@ -35,7 +65,13 @@ exports.serverLogin = functions.https.onCall(async (request, context) => {
     const restaurantDoc = await restaurantRef.get();
 
     if (!restaurantDoc.exists) {
-      errorHandler.notFound('Restaurant not found', { restaurantId });
+      res.status(404).json({
+        error: {
+          message: 'Restaurant not found',
+          details: { code: 'not-found', restaurantId }
+        }
+      });
+      return;
     }
 
     const restaurantData = restaurantDoc.data();
@@ -66,7 +102,13 @@ exports.serverLogin = functions.https.onCall(async (request, context) => {
         serverSnap = await db.collection('restaurants').doc(restaurantId).collection('servers').where('phoneNumber', '==', username).limit(1).get();
       }
       if (serverSnap.empty) {
-        errorHandler.unauthorized('Invalid credentials', { restaurantId, username });
+        res.status(401).json({
+          error: {
+            message: 'Invalid credentials',
+            details: { code: 'unauthenticated', restaurantId, username }
+          }
+        });
+        return;
       }
       serverDoc = serverSnap.docs[0];
       serverData = serverDoc.data();
@@ -74,14 +116,26 @@ exports.serverLogin = functions.https.onCall(async (request, context) => {
       // Check status
       setStage('validate-server-status');
       if (serverData.status !== SERVER_STATUS.ACTIVE) {
-        errorHandler.unauthorized('Server is not active', { serverId: serverDoc.id, status: serverData.status });
+        res.status(401).json({
+          error: {
+            message: 'Server is not active',
+            details: { code: 'unauthenticated', serverId: serverDoc.id, status: serverData.status }
+          }
+        });
+        return;
       }
 
       // Compare password (plain text for now)
       setStage('validate-password');
       // TODO: Use hash compare in future
       if (serverData.password !== password) {
-        errorHandler.unauthorized('Invalid credentials', { restaurantId, username });
+        res.status(401).json({
+          error: {
+            message: 'Invalid credentials',
+            details: { code: 'unauthenticated', restaurantId, username }
+          }
+        });
+        return;
       }
 
       // Create or update session using helper
@@ -92,46 +146,86 @@ exports.serverLogin = functions.https.onCall(async (request, context) => {
     }
     // No valid auth mechanism provided
     else {
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        'Either sessionId or both username and password are required'
-      );
+      res.status(400).json({
+        error: {
+          message: 'Either sessionId or both username and password are required',
+          details: { code: 'invalid-argument' }
+        }
+      });
+      return;
     }
 
     // Return session token with standardized response format
+    // Mimic the "result" wrapper if needed or just return data directly.
+    // Since we're moving away from onCall, let's return a clean JSON structure.
+    // BUT the frontend expects { result: { data: ... } } because of ResponseParser logic for "callable-like" responses?
+    // Let's verify ResponseParser again.
+    // ResponseParser: if (result is Map ... && result.containsKey('data')) return result['data'];
+    // So if we return { result: { data: { ... } } }, it works with existing parser *if* it treats it as callable.
+    // But LoginApiService uses `response.data`.
+    // If we return { result: { ... } }, Dio response.data will have { result: ... }.
+    // LoginApiService parses it.
+
+    // Let's send a standard { data: ... } format and ensure frontend can handle it.
+    // Or better, wrap in "result" to be safe with existing parser logic which seems to handle both.
+
     setStage('prepare-response');
-    return {
-      success: true,
-      message: sessionId
-        ? 'Server login successful with existing session'
-        : (isNewSession
-          ? 'Server login successful with new session'
-          : 'Server login successful with existing session'),
-      data: {
-        sessionId: session.sessionId,
-        serverId: serverDoc.id,
-        name: serverData.name,
-        entity: 'server',
-        role: serverData.role,
-        restaurantId,
-        restaurantName,
-        profileImageUrl: serverData.profileImageUrl || ''
+    res.status(200).json({
+      result: {
+        success: true,
+        message: sessionId
+          ? 'Server login successful with existing session'
+          : (isNewSession
+            ? 'Server login successful with new session'
+            : 'Server login successful with existing session'),
+        data: {
+          sessionId: session.sessionId,
+          serverId: serverDoc.id,
+          name: serverData.name,
+          entity: 'server',
+          role: serverData.role,
+          restaurantId,
+          restaurantName,
+          profileImageUrl: serverData.profileImageUrl || ''
+        }
       }
-    };
+    });
+
   } catch (error) {
     console.error(`[serverLogin][stage=${stage}]`, error, {
       sessionId: data?.sessionId,
       username: data?.username,
       restaurantId: data?.restaurantId
     });
-    errorHandler.handleError(error, `serverLogin[stage=${stage}]`, {
-      sessionId: data?.sessionId,
-      username: data?.username,
-      restaurantId: data?.restaurantId,
-      error: error.message
+
+    // Handle auth errors with 401
+    const authErrors = [
+      'Invalid session',
+      'Invalid server session',
+      'Session is not active',
+      'Session has expired',
+      'Server not found',
+      'Server is not active'
+    ];
+    // Also catch 'Invalid credentials' just in case, though it's usually handled before throw
+    const isAuthError = authErrors.includes(error.message) || error.message.includes('not active');
+    const statusCode = isAuthError ? 401 : 500;
+
+    // Standard error response
+    res.status(statusCode).json({
+      error: {
+        message: error.message || 'An internal error occurred',
+        details: {
+          code: 'internal',
+          stage,
+          sessionId: data?.sessionId,
+          username: data?.username,
+          restaurantId: data?.restaurantId
+        }
+      }
     });
   }
-});
+}));
 
 /**
  * Helper to create or update a server session
@@ -144,7 +238,7 @@ async function createOrUpdateServerSession(restaurantId, serverId) {
     .where('serverId', '==', serverId)
     .limit(1)
     .get();
-  let sessionId;
+
   const now = new Date();
   const expiresAt = timestamp.fromDate(new Date(now.getTime() + 12 * 60 * 60 * 1000)); // 12 hours from now
   if (!existingSessionSnap.empty) {
@@ -180,7 +274,7 @@ async function createOrUpdateServerSession(restaurantId, serverId) {
 /**
  * Validate a server session by sessionId
  * Returns server data if session is valid
- * @throws HttpsError if session is invalid or expired
+ * @throws Error if session is invalid or expired (handled by caller)
  */
 async function validateServerSession(restaurantId, sessionId) {
   // 1. Get the session document
@@ -189,25 +283,25 @@ async function validateServerSession(restaurantId, sessionId) {
 
   // 2. Verify session exists
   if (!sessionDoc.exists) {
-    errorHandler.unauthorized('Invalid session', { restaurantId, sessionId });
+    throw new Error('Invalid session');
   }
 
   const sessionData = sessionDoc.data();
 
   // 3. Verify this is a server session
   if (sessionData.entity !== 'server') {
-    errorHandler.unauthorized('Invalid server session', { restaurantId, sessionId });
+    throw new Error('Invalid server session');
   }
 
   // 4. Verify session is active
   if (sessionData.status !== SERVER_STATUS.ACTIVE) {
-    errorHandler.unauthorized('Session is not active', { restaurantId, sessionId });
+    throw new Error('Session is not active');
   }
 
   // 5. Verify session is not expired
   const now = new Date();
   if (sessionData.expiresAt && timestamp.safeToDate(sessionData.expiresAt) < now) {
-    errorHandler.unauthorized('Session has expired', { restaurantId, sessionId });
+    throw new Error('Session has expired');
   }
 
   // 6. Get the server document
@@ -217,14 +311,14 @@ async function validateServerSession(restaurantId, sessionId) {
 
   // 7. Verify server exists
   if (!serverDoc.exists) {
-    errorHandler.unauthorized('Server not found', { restaurantId, serverId });
+    throw new Error('Server not found');
   }
 
   const serverData = serverDoc.data();
 
   // 8. Verify server is active
   if (serverData.status !== SERVER_STATUS.ACTIVE) {
-    errorHandler.unauthorized('Server is not active', { serverId, status: serverData.status });
+    throw new Error('Server is not active');
   }
 
   // 9. Update session timestamps - extend expiry by 12 hours and refresh updatedAt

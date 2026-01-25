@@ -6,7 +6,7 @@
 class Environment {
   constructor() {
     this._isEmulator = this._detectEmulator();
-    this._logEnvironment(); // Log at startup for debugging
+    // this._logEnvironment(); // Log at startup for debugging
     this._projectId = 'rms-app-dd875'; // Your Firebase project ID
     this._serviceAccountPath = '/Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr/functions/secure_stuff/service-account.json';
 
@@ -126,9 +126,9 @@ class Environment {
   wrapTriggerFunction(functionName, triggerFunction) {
     if (this._restrictedTriggers.includes(functionName)) {
       if (this.isProduction()) {
-        console.warn(`⚠️ Trigger function ${functionName} is restricted in production and will not be deployed`);
+        // console.warn(`⚠️ Trigger function ${functionName} is restricted in production and will not be deployed`);
         return () => {
-          console.warn(`Trigger function ${functionName} is disabled in production`);
+          // console.warn(`Trigger function ${functionName} is disabled in production`);
           return null;
         };
       }

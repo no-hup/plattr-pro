@@ -26,3 +26,16 @@ exports.FULFILLMENT_STATUS = {
   RETURNED: 'RETURNED',
   CANCELLED: 'CANCELLED'
 };
+
+// Status color hex mapping for UI
+exports.STATUS_COLOR_HEX = {
+  PENDING: '#FFC107',    // Yellow
+  PREPARING: '#FFC107',  // Yellow
+  READY: '#4CAF50',      // Green
+  SERVED: '#4CAF50',     // Green
+  CANCELLED: '#F44336',  // Red
+  RETURNED: '#F44336'    // Red
+};
+
+// Lookback period for served carts query (in hours)
+exports.SERVED_CARTS_LOOKBACK_HOURS = 6;

@@ -50,8 +50,38 @@ Before calling a task done:
 - Response Guard outputs → `agents/response_guard_runtime/output/`
 - Session/progress logs → `progress/`
 - Shared learnings → `learnings/`
+- Firebase Emulator Logs → `backend/firebase-debug-logs/`
+- Flutter App Logs → `backend/flutter-app-logs/`
 
 Always use absolute paths in documentation so sub-agents can navigate without context.
+
+## Periodic Maintenance
+
+### Log File Cleanup
+Emulator and debug logs can grow large over time. Clean them up periodically:
+
+```bash
+# Remove Firebase and Flutter logs (run from project root)
+rm -f backend/firebase-debug-logs/*.log
+rm -f backend/flutter-app-logs/*.log
+rm -f backend/src-plattr/firebase-debug.log
+rm -f backend/src-plattr/firestore-debug.log
+rm -f backend/src-plattr/ui-debug.log
+rm -f backend/src-plattr/emulator*.log
+
+# Remove old debug logs (older than 7 days)
+find backend/ -name "*-debug.log" -mtime +7 -delete
+find backend/flutter-app-logs/ -name "*.log" -mtime +7 -delete
+```
+
+**When to clean:**
+- Before starting a new major feature or debug session
+- When log files exceed ~50MB total
+- Weekly, as part of general workspace hygiene
+
+**Files to preserve:**
+- Do NOT delete `backend/src-plattr/firebase.json` or `firebase.temp.json`
+- Do NOT delete files in `backend/backend-overview/`
 
 ## Project Context Instructions for AI Agents
 

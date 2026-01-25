@@ -1,0 +1,2567 @@
+{
+  "customers": {
+    "1234567890": {
+      "phoneNumber": "1234567890",
+      "name": "John Customer",
+      "email": "john@example.com",
+      "createdAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "currentVisit": {
+        "restaurantId": "res_server-consumer_order_flow",
+        "tableId": "table001",
+        "startTime": {
+          "_seconds": 1678901234,
+          "_nanoseconds": 0
+        }
+      },
+      "visits": [
+        {
+          "restaurantId": "res_server-consumer_order_flow",
+          "tableId": "table001",
+          "startTime": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        }
+      ],
+      "preferences": {
+        "favoriteItems": [],
+        "dietaryRestrictions": []
+      }
+    },
+    "9876543210": {
+      "phoneNumber": "9876543210",
+      "name": "Jane Customer",
+      "email": "jane@example.com",
+      "createdAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "visits": [],
+      "preferences": {
+        "favoriteItems": [],
+        "dietaryRestrictions": []
+      }
+    },
+    "test_customer_001": {
+      "phoneNumber": "test_customer_001",
+      "name": "Test Customer One",
+      "email": "test1@example.com",
+      "createdAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "visits": [],
+      "preferences": {
+        "favoriteItems": [],
+        "dietaryRestrictions": []
+      }
+    }
+  },
+  "restaurants": {
+    "res_server-consumer_order_flow": {
+      "name": "Server+Consumer Flow Test",
+      "info": {
+        "name": "Server+Consumer Flow (active_multi_cart | unassigned_pending | assigned_other | served_recent | otp_status)",
+        "address": "42 All-Day Avenue, Foodville, FV 12345",
+        "phone": "5551234567",
+        "email": "server-consumer-flow@example.com",
+        "location": {
+          "_latitude": 40.7128,
+          "_longitude": -74.006
+        },
+        "uiFlags": {
+          "showAllOrdersTab": true,
+          "maxItemsInOrderCard": 3,
+          "confirmServeCartAction": true
+        }
+      },
+      "menus": {
+        "menu_allday": {
+          "menuId": "menu_allday",
+          "name": "All Day Menu",
+          "description": "Our complete selection available anytime",
+          "isActive": true,
+          "isDefault": true,
+          "categoryIds": [
+            "cat_bestsellers",
+            "cat_food",
+            "cat_beverages"
+          ],
+          "menuItemIds": [
+            "item_pancakes",
+            "item_eggs_benedict",
+            "item_classic_burger",
+            "item_veggie_burger",
+            "item_margherita",
+            "item_pepperoni",
+            "item_caesar_salad",
+            "item_chocolate_cake",
+            "item_cappuccino",
+            "item_espresso",
+            "item_iced_lemonade",
+            "item_iced_coffee",
+            "item_berry_smoothie",
+            "item_bs_classic_burger",
+            "item_bs_margherita",
+            "item_bs_chocolate_cake",
+            "item_bs_cappuccino"
+          ],
+          "order": 0,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "menu_breakfast": {
+          "menuId": "menu_breakfast",
+          "name": "Breakfast Menu",
+          "description": "Available 7am - 11am",
+          "isActive": false,
+          "isDefault": false,
+          "categoryIds": [
+            "cat_food",
+            "cat_beverages"
+          ],
+          "menuItemIds": [
+            "item_pancakes",
+            "item_eggs_benedict",
+            "item_cappuccino",
+            "item_espresso",
+            "item_iced_coffee",
+            "item_berry_smoothie"
+          ],
+          "order": 1,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "menu_lunch": {
+          "menuId": "menu_lunch",
+          "name": "Lunch Menu",
+          "description": "Available 11am - 4pm",
+          "isActive": false,
+          "isDefault": false,
+          "categoryIds": [
+            "cat_food",
+            "cat_beverages"
+          ],
+          "menuItemIds": [
+            "item_classic_burger",
+            "item_veggie_burger",
+            "item_margherita",
+            "item_pepperoni",
+            "item_caesar_salad",
+            "item_iced_lemonade",
+            "item_iced_coffee"
+          ],
+          "order": 2,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "menu_dinner": {
+          "menuId": "menu_dinner",
+          "name": "Dinner Menu",
+          "description": "Available 5pm - 10pm",
+          "isActive": false,
+          "isDefault": false,
+          "categoryIds": [
+            "cat_food",
+            "cat_beverages"
+          ],
+          "menuItemIds": [
+            "item_classic_burger",
+            "item_veggie_burger",
+            "item_margherita",
+            "item_pepperoni",
+            "item_caesar_salad",
+            "item_chocolate_cake",
+            "item_iced_lemonade",
+            "item_iced_coffee",
+            "item_cappuccino",
+            "item_espresso"
+          ],
+          "order": 3,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        }
+      },
+      "categories": {
+        "cat_bestsellers": {
+          "id": "cat_bestsellers",
+          "name": "Best Sellers \u2b50",
+          "description": "Our most popular items",
+          "image": "https://example.com/images/bestsellers.jpg",
+          "order": 0,
+          "viewType": "carousel"
+        },
+        "cat_food": {
+          "id": "cat_food",
+          "name": "Food",
+          "description": "Delicious meals for every appetite",
+          "image": "https://example.com/images/cat-food.jpg",
+          "order": 1,
+          "subcategoryIds": [
+            "subcat_bestsellers",
+            "subcat_breakfast",
+            "subcat_burgers",
+            "subcat_pizzas",
+            "subcat_salads",
+            "subcat_desserts"
+          ]
+        },
+        "cat_beverages": {
+          "id": "cat_beverages",
+          "name": "Beverages",
+          "description": "Hot and cold drinks",
+          "image": "https://example.com/images/cat-beverages.jpg",
+          "order": 2,
+          "defaultExpanded": false,
+          "subcategoryIds": [
+            "subcat_hot_drinks",
+            "subcat_cold_drinks",
+            "subcat_smoothies"
+          ]
+        }
+      },
+      "subcategories": {
+        "subcat_bestsellers": {
+          "id": "subcat_bestsellers",
+          "name": "Best Sellers",
+          "description": "Our most popular items",
+          "image": "https://example.com/images/bestsellers.jpg",
+          "parentCategoryId": "cat_food",
+          "order": 0,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "subcat_breakfast": {
+          "id": "subcat_breakfast",
+          "name": "Breakfast",
+          "description": "Start your day right",
+          "image": "https://example.com/images/breakfast.jpg",
+          "parentCategoryId": "cat_food",
+          "order": 1,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "subcat_burgers": {
+          "id": "subcat_burgers",
+          "name": "Burgers",
+          "description": "Handcrafted gourmet burgers",
+          "image": "https://example.com/images/burgers.jpg",
+          "parentCategoryId": "cat_food",
+          "order": 2,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "subcat_pizzas": {
+          "id": "subcat_pizzas",
+          "name": "Pizzas",
+          "description": "Wood-fired artisan pizzas",
+          "image": "https://example.com/images/pizzas.jpg",
+          "parentCategoryId": "cat_food",
+          "order": 3,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "subcat_salads": {
+          "id": "subcat_salads",
+          "name": "Salads",
+          "description": "Fresh and healthy options",
+          "image": "https://example.com/images/salads.jpg",
+          "parentCategoryId": "cat_food",
+          "order": 4,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "subcat_desserts": {
+          "id": "subcat_desserts",
+          "name": "Desserts",
+          "description": "Sweet endings",
+          "image": "https://example.com/images/desserts.jpg",
+          "parentCategoryId": "cat_food",
+          "order": 5,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "subcat_hot_drinks": {
+          "id": "subcat_hot_drinks",
+          "name": "Hot Drinks",
+          "description": "Warm beverages",
+          "image": "https://example.com/images/hot-drinks.jpg",
+          "parentCategoryId": "cat_beverages",
+          "order": 0,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "subcat_cold_drinks": {
+          "id": "subcat_cold_drinks",
+          "name": "Cold Drinks",
+          "description": "Refreshing cold beverages",
+          "image": "https://example.com/images/cold-drinks.jpg",
+          "parentCategoryId": "cat_beverages",
+          "order": 1,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "subcat_smoothies": {
+          "id": "subcat_smoothies",
+          "name": "Smoothies",
+          "description": "Blended fruit goodness",
+          "image": "https://example.com/images/smoothies.jpg",
+          "parentCategoryId": "cat_beverages",
+          "order": 2,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        }
+      },
+      "menuItems": {
+        "item_pancakes": {
+          "menuItemId": "item_pancakes",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "subcat_breakfast",
+          "subcategoryIds": [
+            "subcat_breakfast",
+            "subcat_bestsellers"
+          ],
+          "meta": {
+            "name": "Fluffy Pancakes",
+            "description": "Stack of three buttermilk pancakes with maple syrup",
+            "categoryName": "Food",
+            "primarySubcategoryName": "Breakfast",
+            "image": "https://example.com/images/pancakes.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 80,
+            "discount": 0,
+            "finalPrice": 80
+          },
+          "variants": [],
+          "addons": [
+            "addon_bacon",
+            "addon_berries"
+          ],
+          "nutritionalInfo": {
+            "calories": 450,
+            "protein": 10,
+            "carbs": 65,
+            "fat": 15
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy",
+            "eggs"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_eggs_benedict": {
+          "menuItemId": "item_eggs_benedict",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "subcat_breakfast",
+          "subcategoryIds": [
+            "subcat_breakfast"
+          ],
+          "meta": {
+            "name": "Eggs Benedict",
+            "description": "Poached eggs with hollandaise on English muffin",
+            "categoryName": "Food",
+            "primarySubcategoryName": "Breakfast",
+            "image": "https://example.com/images/eggs-benedict.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 120,
+            "discount": 0,
+            "finalPrice": 120
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 550,
+            "protein": 25,
+            "carbs": 30,
+            "fat": 35
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy",
+            "eggs"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_classic_burger": {
+          "menuItemId": "item_classic_burger",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "subcat_burgers",
+          "subcategoryIds": [
+            "subcat_burgers",
+            "subcat_bestsellers"
+          ],
+          "meta": {
+            "name": "Classic Cheeseburger",
+            "description": "Angus beef patty with cheddar, lettuce, tomato",
+            "categoryName": "Food",
+            "primarySubcategoryName": "Burgers",
+            "image": "https://example.com/images/classic-burger.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 140,
+            "discount": 10,
+            "finalPrice": 126
+          },
+          "variants": [
+            {
+              "id": "var_burger_size",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_fries",
+            "addon_bacon"
+          ],
+          "nutritionalInfo": {
+            "calories": 650,
+            "protein": 35,
+            "carbs": 45,
+            "fat": 38
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_veggie_burger": {
+          "menuItemId": "item_veggie_burger",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "subcat_burgers",
+          "subcategoryIds": [
+            "subcat_burgers"
+          ],
+          "meta": {
+            "name": "Garden Veggie Burger",
+            "description": "Plant-based patty with fresh vegetables",
+            "categoryName": "Food",
+            "primarySubcategoryName": "Burgers",
+            "image": "https://example.com/images/veggie-burger.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 130,
+            "discount": 0,
+            "finalPrice": 130
+          },
+          "variants": [
+            {
+              "id": "var_burger_size",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_fries"
+          ],
+          "nutritionalInfo": {
+            "calories": 480,
+            "protein": 22,
+            "carbs": 50,
+            "fat": 18
+          },
+          "allergenTags": [
+            "gluten"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_margherita": {
+          "menuItemId": "item_margherita",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "subcat_pizzas",
+          "subcategoryIds": [
+            "subcat_pizzas",
+            "subcat_bestsellers"
+          ],
+          "meta": {
+            "name": "Margherita Pizza",
+            "description": "Fresh mozzarella, tomato sauce, basil",
+            "categoryName": "Food",
+            "primarySubcategoryName": "Pizzas",
+            "image": "https://example.com/images/margherita.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 180,
+            "discount": 0,
+            "finalPrice": 180
+          },
+          "variants": [
+            {
+              "id": "var_pizza_size",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_extra_cheese"
+          ],
+          "nutritionalInfo": {
+            "calories": 800,
+            "protein": 30,
+            "carbs": 90,
+            "fat": 35
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_pepperoni": {
+          "menuItemId": "item_pepperoni",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "subcat_pizzas",
+          "subcategoryIds": [
+            "subcat_pizzas"
+          ],
+          "meta": {
+            "name": "Pepperoni Pizza",
+            "description": "Loaded with premium pepperoni slices",
+            "categoryName": "Food",
+            "primarySubcategoryName": "Pizzas",
+            "image": "https://example.com/images/pepperoni.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 200,
+            "discount": 10,
+            "finalPrice": 180
+          },
+          "variants": [
+            {
+              "id": "var_pizza_size",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_jalapenos"
+          ],
+          "nutritionalInfo": {
+            "calories": 950,
+            "protein": 40,
+            "carbs": 85,
+            "fat": 45
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_caesar_salad": {
+          "menuItemId": "item_caesar_salad",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "subcat_salads",
+          "subcategoryIds": [
+            "subcat_salads"
+          ],
+          "meta": {
+            "name": "Caesar Salad",
+            "description": "Romaine lettuce, parmesan, croutons, Caesar dressing",
+            "categoryName": "Food",
+            "primarySubcategoryName": "Salads",
+            "image": "https://example.com/images/caesar-salad.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 100,
+            "discount": 0,
+            "finalPrice": 100
+          },
+          "variants": [],
+          "addons": [
+            "addon_grilled_chicken"
+          ],
+          "nutritionalInfo": {
+            "calories": 350,
+            "protein": 12,
+            "carbs": 20,
+            "fat": 25
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy",
+            "eggs"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_chocolate_cake": {
+          "menuItemId": "item_chocolate_cake",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "subcat_desserts",
+          "subcategoryIds": [
+            "subcat_desserts",
+            "subcat_bestsellers"
+          ],
+          "meta": {
+            "name": "Chocolate Lava Cake",
+            "description": "Warm chocolate cake with molten center",
+            "categoryName": "Food",
+            "primarySubcategoryName": "Desserts",
+            "image": "https://example.com/images/chocolate-cake.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 80,
+            "discount": 0,
+            "finalPrice": 80
+          },
+          "variants": [],
+          "addons": [
+            "addon_ice_cream"
+          ],
+          "nutritionalInfo": {
+            "calories": 450,
+            "protein": 6,
+            "carbs": 55,
+            "fat": 25
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy",
+            "eggs"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_cappuccino": {
+          "menuItemId": "item_cappuccino",
+          "categoryId": "cat_beverages",
+          "primarySubcategoryId": "subcat_hot_drinks",
+          "subcategoryIds": [
+            "subcat_hot_drinks",
+            "subcat_bestsellers"
+          ],
+          "meta": {
+            "name": "Cappuccino",
+            "description": "Espresso with steamed milk foam",
+            "categoryName": "Beverages",
+            "primarySubcategoryName": "Hot Drinks",
+            "image": "https://example.com/images/cappuccino.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 60,
+            "discount": 0,
+            "finalPrice": 60
+          },
+          "variants": [
+            {
+              "id": "var_coffee_size",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_vanilla_syrup"
+          ],
+          "nutritionalInfo": {
+            "calories": 80,
+            "protein": 4,
+            "carbs": 8,
+            "fat": 4
+          },
+          "allergenTags": [
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_espresso": {
+          "menuItemId": "item_espresso",
+          "categoryId": "cat_beverages",
+          "primarySubcategoryId": "subcat_hot_drinks",
+          "subcategoryIds": [
+            "subcat_hot_drinks"
+          ],
+          "meta": {
+            "name": "Espresso",
+            "description": "Rich double shot espresso",
+            "categoryName": "Beverages",
+            "primarySubcategoryName": "Hot Drinks",
+            "image": "https://example.com/images/espresso.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 40,
+            "discount": 0,
+            "finalPrice": 40
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 5,
+            "protein": 0,
+            "carbs": 1,
+            "fat": 0
+          },
+          "allergenTags": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_iced_lemonade": {
+          "menuItemId": "item_iced_lemonade",
+          "categoryId": "cat_beverages",
+          "primarySubcategoryId": "subcat_cold_drinks",
+          "subcategoryIds": [
+            "subcat_cold_drinks"
+          ],
+          "meta": {
+            "name": "Fresh Lemonade",
+            "description": "Freshly squeezed lemonade with ice",
+            "categoryName": "Beverages",
+            "primarySubcategoryName": "Cold Drinks",
+            "image": "https://example.com/images/lemonade.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 45,
+            "discount": 0,
+            "finalPrice": 45
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 100,
+            "protein": 0,
+            "carbs": 25,
+            "fat": 0
+          },
+          "allergenTags": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_iced_coffee": {
+          "menuItemId": "item_iced_coffee",
+          "categoryId": "cat_beverages",
+          "primarySubcategoryId": "subcat_cold_drinks",
+          "subcategoryIds": [
+            "subcat_cold_drinks"
+          ],
+          "meta": {
+            "name": "Iced Coffee",
+            "description": "Cold brew coffee on ice",
+            "categoryName": "Beverages",
+            "primarySubcategoryName": "Cold Drinks",
+            "image": "https://example.com/images/iced-coffee.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 55,
+            "discount": 0,
+            "finalPrice": 55
+          },
+          "variants": [
+            {
+              "id": "var_coffee_size",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_vanilla_syrup"
+          ],
+          "nutritionalInfo": {
+            "calories": 10,
+            "protein": 0,
+            "carbs": 2,
+            "fat": 0
+          },
+          "allergenTags": [],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_berry_smoothie": {
+          "menuItemId": "item_berry_smoothie",
+          "categoryId": "cat_beverages",
+          "primarySubcategoryId": "subcat_smoothies",
+          "subcategoryIds": [
+            "subcat_smoothies"
+          ],
+          "meta": {
+            "name": "Mixed Berry Smoothie",
+            "description": "Strawberry, blueberry, raspberry blend",
+            "categoryName": "Beverages",
+            "primarySubcategoryName": "Smoothies",
+            "image": "https://example.com/images/berry-smoothie.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 70,
+            "discount": 0,
+            "finalPrice": 70
+          },
+          "variants": [],
+          "addons": [
+            "addon_protein"
+          ],
+          "nutritionalInfo": {
+            "calories": 180,
+            "protein": 3,
+            "carbs": 40,
+            "fat": 2
+          },
+          "allergenTags": [],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_bs_classic_burger": {
+          "menuItemId": "item_bs_classic_burger",
+          "categoryId": "cat_bestsellers",
+          "meta": {
+            "name": "Classic Cheeseburger",
+            "description": "Angus beef patty with cheddar, lettuce, tomato",
+            "categoryName": "Best Sellers",
+            "image": "https://example.com/images/classic-burger.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 140,
+            "discount": 10,
+            "finalPrice": 126
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 650,
+            "protein": 35,
+            "carbs": 45,
+            "fat": 38
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_bs_margherita": {
+          "menuItemId": "item_bs_margherita",
+          "categoryId": "cat_bestsellers",
+          "meta": {
+            "name": "Margherita Pizza",
+            "description": "Fresh mozzarella, tomato sauce, basil",
+            "categoryName": "Best Sellers",
+            "image": "https://example.com/images/margherita.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 180,
+            "discount": 0,
+            "finalPrice": 180
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 800,
+            "protein": 30,
+            "carbs": 90,
+            "fat": 35
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_bs_chocolate_cake": {
+          "menuItemId": "item_bs_chocolate_cake",
+          "categoryId": "cat_bestsellers",
+          "meta": {
+            "name": "Chocolate Lava Cake",
+            "description": "Warm chocolate cake with molten center",
+            "categoryName": "Best Sellers",
+            "image": "https://example.com/images/chocolate-cake.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 80,
+            "discount": 0,
+            "finalPrice": 80
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 450,
+            "protein": 6,
+            "carbs": 55,
+            "fat": 25
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy",
+            "eggs"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_bs_cappuccino": {
+          "menuItemId": "item_bs_cappuccino",
+          "categoryId": "cat_bestsellers",
+          "meta": {
+            "name": "Cappuccino",
+            "description": "Espresso with steamed milk foam",
+            "categoryName": "Best Sellers",
+            "image": "https://example.com/images/cappuccino.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 60,
+            "discount": 0,
+            "finalPrice": 60
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 80,
+            "protein": 4,
+            "carbs": 8,
+            "fat": 4
+          },
+          "allergenTags": [
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        }
+      },
+      "variants": {
+        "var_burger_size": {
+          "id": "var_burger_size",
+          "meta": {
+            "name": "Burger Size",
+            "description": "Choose your preferred size",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ]
+          },
+          "options": [
+            {
+              "id": "size_regular",
+              "name": "Regular",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "size_large",
+              "name": "Large (+20)",
+              "priceInfo": {
+                "basePrice": 20,
+                "finalPrice": 20,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_classic_burger",
+            "item_veggie_burger"
+          ]
+        },
+        "var_pizza_size": {
+          "id": "var_pizza_size",
+          "meta": {
+            "name": "Pizza Size",
+            "description": "Choose pizza size",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ]
+          },
+          "options": [
+            {
+              "id": "pizza_regular",
+              "name": "Regular (10\")",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "pizza_large",
+              "name": "Large (14\")",
+              "priceInfo": {
+                "basePrice": 50,
+                "finalPrice": 50,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_margherita",
+            "item_pepperoni"
+          ]
+        },
+        "var_coffee_size": {
+          "id": "var_coffee_size",
+          "meta": {
+            "name": "Cup Size",
+            "description": "Choose your cup size",
+            "categoryAssociatedWith": [
+              "cat_beverages"
+            ]
+          },
+          "options": [
+            {
+              "id": "cup_regular",
+              "name": "Regular",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "cup_large",
+              "name": "Large (+15)",
+              "priceInfo": {
+                "basePrice": 15,
+                "finalPrice": 15,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_cappuccino",
+            "item_iced_coffee"
+          ]
+        }
+      },
+      "addons": {
+        "addon_fries": {
+          "id": "addon_fries",
+          "meta": {
+            "name": "French Fries",
+            "description": "Crispy golden fries",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ]
+          },
+          "priceInfo": {
+            "basePrice": 30,
+            "finalPrice": 30,
+            "discount": 0
+          },
+          "respectParentDiscount": true,
+          "isInStock": true,
+          "itemsAssociatedWith": [
+            "item_classic_burger",
+            "item_veggie_burger"
+          ],
+          "isMandatory": false
+        },
+        "addon_bacon": {
+          "id": "addon_bacon",
+          "meta": {
+            "name": "Extra Bacon",
+            "description": "Crispy bacon strips",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ]
+          },
+          "priceInfo": {
+            "basePrice": 25,
+            "finalPrice": 25,
+            "discount": 0
+          },
+          "respectParentDiscount": true,
+          "isInStock": true,
+          "itemsAssociatedWith": [
+            "item_classic_burger",
+            "item_pancakes"
+          ],
+          "isMandatory": false
+        },
+        "addon_vanilla_syrup": {
+          "id": "addon_vanilla_syrup",
+          "meta": {
+            "name": "Vanilla Syrup",
+            "description": "Sweet vanilla flavor",
+            "categoryAssociatedWith": [
+              "cat_beverages"
+            ]
+          },
+          "priceInfo": {
+            "basePrice": 10,
+            "finalPrice": 10,
+            "discount": 0
+          },
+          "respectParentDiscount": false,
+          "isInStock": true,
+          "itemsAssociatedWith": [
+            "item_cappuccino",
+            "item_iced_coffee"
+          ],
+          "isMandatory": false
+        },
+        "addon_ice_cream": {
+          "id": "addon_ice_cream",
+          "meta": {
+            "name": "Vanilla Ice Cream",
+            "description": "Creamy vanilla ice cream",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ]
+          },
+          "priceInfo": {
+            "basePrice": 20,
+            "finalPrice": 20,
+            "discount": 0
+          },
+          "respectParentDiscount": false,
+          "isInStock": true,
+          "itemsAssociatedWith": [
+            "item_chocolate_cake"
+          ],
+          "isMandatory": false
+        },
+        "addon_berries": {
+          "id": "addon_berries",
+          "meta": {
+            "name": "Fresh Berries",
+            "description": "Seasonal mixed berries",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ]
+          },
+          "priceInfo": {
+            "basePrice": 15,
+            "finalPrice": 15,
+            "discount": 0
+          },
+          "respectParentDiscount": true,
+          "isInStock": true,
+          "itemsAssociatedWith": [
+            "item_pancakes"
+          ],
+          "isMandatory": false
+        }
+      },
+      "tables": {
+        "table001": {
+          "number": "T1-ACTIVE__amc",
+          "capacity": 4,
+          "status": "active",
+          "currentOTP": {
+            "code": "111111",
+            "createdAt": {
+              "_seconds": 1769286658,
+              "_nanoseconds": 0
+            },
+            "expiresAt": {
+              "_seconds": 1769290258,
+              "_nanoseconds": 0
+            }
+          },
+          "session": null,
+          "occupiedBy": [
+            "1234567890"
+          ],
+          "primaryCustomer": {
+            "phoneNumber": "1234567890",
+            "name": "John Customer"
+          },
+          "assignedServerId": "server001",
+          "lastActivity": {
+            "_seconds": 1769293258,
+            "_nanoseconds": 0
+          },
+          "activeOrderId": "order_active_multi_cart__amc"
+        },
+        "table002": {
+          "number": "T2-VACANT__otp_ready",
+          "capacity": 6,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "",
+            "createdAt": null,
+            "expiresAt": null
+          },
+          "session": null,
+          "occupiedBy": [],
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          },
+          "assignedServerId": "server001",
+          "lastActivity": null
+        },
+        "table003": {
+          "number": "T3-OTP_PENDING__otp_pending",
+          "capacity": 2,
+          "status": "pending",
+          "currentOTP": {
+            "code": "654321",
+            "createdAt": {
+              "_seconds": 1769292058,
+              "_nanoseconds": 0
+            },
+            "expiresAt": {
+              "_seconds": 1769294758,
+              "_nanoseconds": 0
+            }
+          },
+          "session": null,
+          "occupiedBy": [],
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          },
+          "assignedServerId": "server001",
+          "lastActivity": {
+            "_seconds": 1769292058,
+            "_nanoseconds": 0
+          }
+        },
+        "table004": {
+          "number": "T4-DISABLED__disabled",
+          "capacity": 4,
+          "status": "disabled",
+          "currentOTP": {
+            "code": "",
+            "createdAt": null,
+            "expiresAt": null
+          },
+          "session": null,
+          "occupiedBy": [],
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          },
+          "assignedServerId": "server001",
+          "lastActivity": null
+        },
+        "table005": {
+          "number": "T5-ACTIVE__unassigned_pending",
+          "capacity": 4,
+          "status": "active",
+          "currentOTP": {
+            "code": "222222",
+            "createdAt": {
+              "_seconds": 1769290258,
+              "_nanoseconds": 0
+            },
+            "expiresAt": {
+              "_seconds": 1769295658,
+              "_nanoseconds": 0
+            }
+          },
+          "session": null,
+          "occupiedBy": [
+            "9876543210"
+          ],
+          "primaryCustomer": {
+            "phoneNumber": "9876543210",
+            "name": "Jane Customer"
+          },
+          "assignedServerId": "server002",
+          "lastActivity": {
+            "_seconds": 1769292058,
+            "_nanoseconds": 0
+          },
+          "activeOrderId": "order_unassigned_pending__uap"
+        },
+        "table006": {
+          "number": "T6-ACTIVE__assigned_other",
+          "capacity": 4,
+          "status": "active",
+          "currentOTP": {
+            "code": "333333",
+            "createdAt": {
+              "_seconds": 1769290258,
+              "_nanoseconds": 0
+            },
+            "expiresAt": {
+              "_seconds": 1769295658,
+              "_nanoseconds": 0
+            }
+          },
+          "session": null,
+          "occupiedBy": [
+            "test_customer_001"
+          ],
+          "primaryCustomer": {
+            "phoneNumber": "test_customer_001",
+            "name": "Test Customer One"
+          },
+          "assignedServerId": "server002",
+          "lastActivity": {
+            "_seconds": 1769291158,
+            "_nanoseconds": 0
+          },
+          "activeOrderId": "order_assigned_other__ao"
+        }
+      },
+      "servers": {
+        "server001": {
+          "name": "Alex Server - server001__primary",
+          "email": "alex@daynightkitchen.com",
+          "phoneNumber": "1111111111",
+          "role": "waiter",
+          "status": "active",
+          "assignedTables": [
+            "table001",
+            "table002",
+            "table003",
+            "table004"
+          ],
+          "fcmToken": "",
+          "password": "1234"
+        },
+        "server002": {
+          "name": "Jordan Server - server002__assigned_other",
+          "email": "jordan@daynightkitchen.com",
+          "phoneNumber": "2222222222",
+          "role": "waiter",
+          "status": "active",
+          "assignedTables": [
+            "table005",
+            "table006"
+          ],
+          "fcmToken": "",
+          "password": "1234"
+        }
+      },
+      "kitchens": {
+        "kitchen1": {
+          "name": "Main Kitchen",
+          "status": "active"
+        }
+      },
+      "sessions": {
+        "session_server001__preseed": {
+          "entity": "server",
+          "serverId": "server001",
+          "status": "active",
+          "createdAt": {
+            "_seconds": 1769290258,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1769293258,
+            "_nanoseconds": 0
+          },
+          "expiresAt": {
+            "_seconds": 1769337058,
+            "_nanoseconds": 0
+          }
+        },
+        "session_server002__preseed": {
+          "entity": "server",
+          "serverId": "server002",
+          "status": "active",
+          "createdAt": {
+            "_seconds": 1769290258,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1769293258,
+            "_nanoseconds": 0
+          },
+          "expiresAt": {
+            "_seconds": 1769337058,
+            "_nanoseconds": 0
+          }
+        }
+      },
+      "carts": {},
+      "orders": {
+        "order_active_multi_cart__amc": {
+          "restaurantId": "res_server-consumer_order_flow",
+          "tableId": "table001",
+          "orderNumber": "ORD-AMC-0001",
+          "orderStatus": "IN_PROGRESS",
+          "status": "IN_PROGRESS",
+          "paymentStatus": "unpaid",
+          "carts": [
+            {
+              "cartId": "cart_amc_preparing__c1",
+              "status": "PREPARING",
+              "statusHistory": [
+                {
+                  "status": "PENDING",
+                  "timestamp": {
+                    "_seconds": 1769286658,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "system"
+                },
+                {
+                  "status": "PREPARING",
+                  "timestamp": {
+                    "_seconds": 1769290258,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "server001"
+                }
+              ],
+              "checkoutTime": {
+                "_seconds": 1769286658,
+                "_nanoseconds": 0
+              },
+              "notes": "active_multi_cart__amc - first cart",
+              "estimatedPrepTime": 18,
+              "assignedTo": "server001",
+              "items": [
+                {
+                  "menuItemId": "item_classic_burger",
+                  "menuItem": {
+                    "meta": {
+                      "name": "Classic Cheeseburger",
+                      "description": "Angus beef patty with cheddar, lettuce, tomato",
+                      "categoryName": "Food",
+                      "primarySubcategoryName": "Burgers",
+                      "image": "https://example.com/images/classic-burger.jpg"
+                    }
+                  },
+                  "name": "Classic Cheeseburger",
+                  "selectedVariantsDetails": [
+                    {
+                      "id": "var_burger_size",
+                      "name": "Burger Size",
+                      "isMandatory": true,
+                      "respectParentDiscount": true,
+                      "selected_variant_id": "size_large",
+                      "selected_variant_name": "Large (+20)",
+                      "priceInfo": {
+                        "basePrice": 20,
+                        "finalPrice": 20,
+                        "discount": 0
+                      }
+                    }
+                  ],
+                  "selectedAddonsDetails": [
+                    {
+                      "id": "addon_fries",
+                      "name": "French Fries",
+                      "priceInfo": {
+                        "basePrice": 30,
+                        "finalPrice": 30,
+                        "discount": 0
+                      },
+                      "respectParentDiscount": true,
+                      "price": 30
+                    }
+                  ],
+                  "priceInfo": {
+                    "itemBasePrice": 140,
+                    "itemFinalPrice": 190,
+                    "totalVariantBasePrice": 20,
+                    "totalVariantFinalPrice": 20,
+                    "totalAddonBasePrice": 30,
+                    "totalAddonFinalPrice": 30,
+                    "totalBasePrice": 190,
+                    "finalPrice": 190,
+                    "discount": 0,
+                    "discountAmount": 0
+                  },
+                  "quantity": 1,
+                  "status": "PREPARING",
+                  "cartItemId": 1
+                },
+                {
+                  "menuItemId": "item_iced_coffee",
+                  "menuItem": {
+                    "meta": {
+                      "name": "Iced Coffee",
+                      "description": "Cold brew coffee on ice",
+                      "categoryName": "Beverages",
+                      "primarySubcategoryName": "Cold Drinks",
+                      "image": "https://example.com/images/iced-coffee.jpg"
+                    }
+                  },
+                  "name": "Iced Coffee",
+                  "selectedVariantsDetails": [
+                    {
+                      "id": "var_coffee_size",
+                      "name": "Cup Size",
+                      "isMandatory": true,
+                      "respectParentDiscount": true,
+                      "selected_variant_id": "cup_large",
+                      "selected_variant_name": "Large (+15)",
+                      "priceInfo": {
+                        "basePrice": 15,
+                        "finalPrice": 15,
+                        "discount": 0
+                      }
+                    }
+                  ],
+                  "selectedAddonsDetails": [
+                    {
+                      "id": "addon_vanilla_syrup",
+                      "name": "Vanilla Syrup",
+                      "priceInfo": {
+                        "basePrice": 10,
+                        "finalPrice": 10,
+                        "discount": 0
+                      },
+                      "respectParentDiscount": false,
+                      "price": 10
+                    }
+                  ],
+                  "priceInfo": {
+                    "itemBasePrice": 55,
+                    "itemFinalPrice": 80,
+                    "totalVariantBasePrice": 15,
+                    "totalVariantFinalPrice": 15,
+                    "totalAddonBasePrice": 10,
+                    "totalAddonFinalPrice": 10,
+                    "totalBasePrice": 80,
+                    "finalPrice": 80,
+                    "discount": 0,
+                    "discountAmount": 0
+                  },
+                  "quantity": 1,
+                  "status": "READY",
+                  "cartItemId": 2
+                }
+              ],
+              "priceInfo": {
+                "basePrice": 270,
+                "finalPrice": 270,
+                "totalDiscount": 0,
+                "totalDiscountAmount": 0,
+                "totalVariantBasePrice": 35,
+                "totalAddonBasePrice": 40
+              }
+            },
+            {
+              "cartId": "cart_amc_ready__c2",
+              "status": "READY",
+              "statusHistory": [
+                {
+                  "status": "PENDING",
+                  "timestamp": {
+                    "_seconds": 1769286658,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "system"
+                },
+                {
+                  "status": "PREPARING",
+                  "timestamp": {
+                    "_seconds": 1769290258,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "server001"
+                },
+                {
+                  "status": "READY",
+                  "timestamp": {
+                    "_seconds": 1769292058,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "server001"
+                }
+              ],
+              "checkoutTime": {
+                "_seconds": 1769286658,
+                "_nanoseconds": 0
+              },
+              "notes": "active_multi_cart__amc - second cart",
+              "estimatedPrepTime": 20,
+              "assignedTo": "server001",
+              "items": [
+                {
+                  "menuItemId": "item_margherita",
+                  "menuItem": {
+                    "meta": {
+                      "name": "Margherita Pizza",
+                      "description": "Fresh mozzarella, tomato sauce, basil",
+                      "categoryName": "Food",
+                      "primarySubcategoryName": "Pizzas",
+                      "image": "https://example.com/images/margherita.jpg"
+                    }
+                  },
+                  "name": "Margherita Pizza",
+                  "selectedVariantsDetails": [
+                    {
+                      "id": "var_pizza_size",
+                      "name": "Pizza Size",
+                      "isMandatory": true,
+                      "respectParentDiscount": true,
+                      "selected_variant_id": "pizza_large",
+                      "selected_variant_name": "Large (14\")",
+                      "priceInfo": {
+                        "basePrice": 50,
+                        "finalPrice": 50,
+                        "discount": 0
+                      }
+                    }
+                  ],
+                  "selectedAddonsDetails": [],
+                  "priceInfo": {
+                    "itemBasePrice": 180,
+                    "itemFinalPrice": 230,
+                    "totalVariantBasePrice": 50,
+                    "totalVariantFinalPrice": 50,
+                    "totalAddonBasePrice": 0,
+                    "totalAddonFinalPrice": 0,
+                    "totalBasePrice": 230,
+                    "finalPrice": 230,
+                    "discount": 0,
+                    "discountAmount": 0
+                  },
+                  "quantity": 1,
+                  "status": "READY",
+                  "cartItemId": 3
+                },
+                {
+                  "menuItemId": "item_caesar_salad",
+                  "menuItem": {
+                    "meta": {
+                      "name": "Caesar Salad",
+                      "description": "Romaine lettuce, parmesan, croutons, Caesar dressing",
+                      "categoryName": "Food",
+                      "primarySubcategoryName": "Salads",
+                      "image": "https://example.com/images/caesar-salad.jpg"
+                    }
+                  },
+                  "name": "Caesar Salad",
+                  "selectedVariantsDetails": [],
+                  "selectedAddonsDetails": [],
+                  "priceInfo": {
+                    "itemBasePrice": 100,
+                    "itemFinalPrice": 100,
+                    "totalVariantBasePrice": 0,
+                    "totalVariantFinalPrice": 0,
+                    "totalAddonBasePrice": 0,
+                    "totalAddonFinalPrice": 0,
+                    "totalBasePrice": 100,
+                    "finalPrice": 100,
+                    "discount": 0,
+                    "discountAmount": 0
+                  },
+                  "quantity": 1,
+                  "status": "PREPARING",
+                  "cartItemId": 4
+                },
+                {
+                  "menuItemId": "item_espresso",
+                  "menuItem": {
+                    "meta": {
+                      "name": "Espresso",
+                      "description": "Rich double shot espresso",
+                      "categoryName": "Beverages",
+                      "primarySubcategoryName": "Hot Drinks",
+                      "image": "https://example.com/images/espresso.jpg"
+                    }
+                  },
+                  "name": "Espresso",
+                  "selectedVariantsDetails": [],
+                  "selectedAddonsDetails": [],
+                  "priceInfo": {
+                    "itemBasePrice": 40,
+                    "itemFinalPrice": 40,
+                    "totalVariantBasePrice": 0,
+                    "totalVariantFinalPrice": 0,
+                    "totalAddonBasePrice": 0,
+                    "totalAddonFinalPrice": 0,
+                    "totalBasePrice": 40,
+                    "finalPrice": 40,
+                    "discount": 0,
+                    "discountAmount": 0
+                  },
+                  "quantity": 1,
+                  "status": "CANCELLED",
+                  "cartItemId": 5,
+                  "cancelledReason": "Customer changed mind"
+                }
+              ],
+              "priceInfo": {
+                "basePrice": 330,
+                "finalPrice": 330,
+                "totalDiscount": 0,
+                "totalDiscountAmount": 0,
+                "totalVariantBasePrice": 50,
+                "totalAddonBasePrice": 0
+              }
+            }
+          ],
+          "items": [
+            {
+              "menuItemId": "item_classic_burger",
+              "name": "Classic Cheeseburger",
+              "description": "Angus beef patty with cheddar, lettuce, tomato",
+              "quantity": 1,
+              "priceInfo": {
+                "basePrice": 140,
+                "discount": 0,
+                "finalPrice": 190
+              },
+              "selectedVariants": {
+                "var_burger_size": "size_large"
+              },
+              "selectedVariantsDetails": [
+                {
+                  "id": "var_burger_size",
+                  "name": "Burger Size",
+                  "isMandatory": true,
+                  "respectParentDiscount": true,
+                  "selected_variant_id": "size_large",
+                  "selected_variant_name": "Large (+20)",
+                  "priceInfo": {
+                    "basePrice": 20,
+                    "finalPrice": 20,
+                    "discount": 0
+                  }
+                }
+              ],
+              "selectedAddons": [
+                "addon_fries"
+              ],
+              "selectedAddonsDetails": [
+                {
+                  "id": "addon_fries",
+                  "name": "French Fries",
+                  "priceInfo": {
+                    "basePrice": 30,
+                    "finalPrice": 30,
+                    "discount": 0
+                  },
+                  "respectParentDiscount": true,
+                  "price": 30
+                }
+              ],
+              "cartItemId": 0,
+              "checkoutTime": {
+                "_seconds": 1769286658,
+                "_nanoseconds": 0
+              },
+              "status": "PENDING"
+            },
+            {
+              "menuItemId": "item_iced_coffee",
+              "name": "Iced Coffee",
+              "description": "Cold brew coffee on ice",
+              "quantity": 1,
+              "priceInfo": {
+                "basePrice": 55,
+                "discount": 0,
+                "finalPrice": 80
+              },
+              "selectedVariants": {
+                "var_coffee_size": "cup_large"
+              },
+              "selectedVariantsDetails": [
+                {
+                  "id": "var_coffee_size",
+                  "name": "Cup Size",
+                  "isMandatory": true,
+                  "respectParentDiscount": true,
+                  "selected_variant_id": "cup_large",
+                  "selected_variant_name": "Large (+15)",
+                  "priceInfo": {
+                    "basePrice": 15,
+                    "finalPrice": 15,
+                    "discount": 0
+                  }
+                }
+              ],
+              "selectedAddons": [
+                "addon_vanilla_syrup"
+              ],
+              "selectedAddonsDetails": [
+                {
+                  "id": "addon_vanilla_syrup",
+                  "name": "Vanilla Syrup",
+                  "priceInfo": {
+                    "basePrice": 10,
+                    "finalPrice": 10,
+                    "discount": 0
+                  },
+                  "respectParentDiscount": false,
+                  "price": 10
+                }
+              ],
+              "cartItemId": 0,
+              "checkoutTime": {
+                "_seconds": 1769286658,
+                "_nanoseconds": 0
+              },
+              "status": "PENDING"
+            },
+            {
+              "menuItemId": "item_margherita",
+              "name": "Margherita Pizza",
+              "description": "Fresh mozzarella, tomato sauce, basil",
+              "quantity": 1,
+              "priceInfo": {
+                "basePrice": 180,
+                "discount": 0,
+                "finalPrice": 230
+              },
+              "selectedVariants": {
+                "var_pizza_size": "pizza_large"
+              },
+              "selectedVariantsDetails": [
+                {
+                  "id": "var_pizza_size",
+                  "name": "Pizza Size",
+                  "isMandatory": true,
+                  "respectParentDiscount": true,
+                  "selected_variant_id": "pizza_large",
+                  "selected_variant_name": "Large (14\")",
+                  "priceInfo": {
+                    "basePrice": 50,
+                    "finalPrice": 50,
+                    "discount": 0
+                  }
+                }
+              ],
+              "selectedAddons": [],
+              "selectedAddonsDetails": [],
+              "cartItemId": 0,
+              "checkoutTime": {
+                "_seconds": 1769286658,
+                "_nanoseconds": 0
+              },
+              "status": "PENDING"
+            },
+            {
+              "menuItemId": "item_caesar_salad",
+              "name": "Caesar Salad",
+              "description": "Romaine lettuce, parmesan, croutons, Caesar dressing",
+              "quantity": 1,
+              "priceInfo": {
+                "basePrice": 100,
+                "discount": 0,
+                "finalPrice": 100
+              },
+              "selectedVariants": {},
+              "selectedVariantsDetails": [],
+              "selectedAddons": [],
+              "selectedAddonsDetails": [],
+              "cartItemId": 0,
+              "checkoutTime": {
+                "_seconds": 1769286658,
+                "_nanoseconds": 0
+              },
+              "status": "PENDING"
+            }
+          ],
+          "priceInfo": {
+            "basePrice": 600,
+            "finalPrice": 600,
+            "totalDiscount": 0,
+            "totalDiscountAmount": 0,
+            "totalVariantBasePrice": 85,
+            "totalAddonBasePrice": 40
+          },
+          "createdAt": {
+            "_seconds": 1769283058,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1769292058,
+            "_nanoseconds": 0
+          },
+          "isActive": true,
+          "assignedServer": "server001",
+          "notes": "active_multi_cart__amc",
+          "sessionId": "session_server001__preseed"
+        },
+        "order_unassigned_pending__uap": {
+          "restaurantId": "res_server-consumer_order_flow",
+          "tableId": "table005",
+          "orderNumber": "ORD-UAP-0002",
+          "orderStatus": "PENDING",
+          "status": "PENDING",
+          "paymentStatus": "unpaid",
+          "carts": [
+            {
+              "cartId": "cart_unassigned_pending__uap",
+              "status": "PENDING",
+              "statusHistory": [
+                {
+                  "status": "PENDING",
+                  "timestamp": {
+                    "_seconds": 1769290258,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "system"
+                }
+              ],
+              "checkoutTime": {
+                "_seconds": 1769290258,
+                "_nanoseconds": 0
+              },
+              "notes": "unassigned_pending__uap",
+              "estimatedPrepTime": 14,
+              "assignedTo": "",
+              "items": [
+                {
+                  "menuItemId": "item_pancakes",
+                  "menuItem": {
+                    "meta": {
+                      "name": "Fluffy Pancakes",
+                      "description": "Stack of three buttermilk pancakes with maple syrup",
+                      "categoryName": "Food",
+                      "primarySubcategoryName": "Breakfast",
+                      "image": "https://example.com/images/pancakes.jpg"
+                    }
+                  },
+                  "name": "Fluffy Pancakes",
+                  "selectedVariantsDetails": [],
+                  "selectedAddonsDetails": [
+                    {
+                      "id": "addon_bacon",
+                      "name": "Extra Bacon",
+                      "priceInfo": {
+                        "basePrice": 25,
+                        "finalPrice": 25,
+                        "discount": 0
+                      },
+                      "respectParentDiscount": true,
+                      "price": 25
+                    },
+                    {
+                      "id": "addon_berries",
+                      "name": "Fresh Berries",
+                      "priceInfo": {
+                        "basePrice": 15,
+                        "finalPrice": 15,
+                        "discount": 0
+                      },
+                      "respectParentDiscount": true,
+                      "price": 15
+                    }
+                  ],
+                  "priceInfo": {
+                    "itemBasePrice": 80,
+                    "itemFinalPrice": 120,
+                    "totalVariantBasePrice": 0,
+                    "totalVariantFinalPrice": 0,
+                    "totalAddonBasePrice": 40,
+                    "totalAddonFinalPrice": 40,
+                    "totalBasePrice": 240,
+                    "finalPrice": 240,
+                    "discount": 0,
+                    "discountAmount": 0
+                  },
+                  "quantity": 2,
+                  "status": "PENDING",
+                  "cartItemId": 1
+                }
+              ],
+              "priceInfo": {
+                "basePrice": 240,
+                "finalPrice": 240,
+                "totalDiscount": 0,
+                "totalDiscountAmount": 0,
+                "totalVariantBasePrice": 0,
+                "totalAddonBasePrice": 40
+              }
+            }
+          ],
+          "items": [
+            {
+              "menuItemId": "item_pancakes",
+              "name": "Fluffy Pancakes",
+              "description": "Stack of three buttermilk pancakes with maple syrup",
+              "quantity": 2,
+              "priceInfo": {
+                "basePrice": 80,
+                "discount": 0,
+                "finalPrice": 120
+              },
+              "selectedVariants": {},
+              "selectedVariantsDetails": [],
+              "selectedAddons": [
+                "addon_bacon",
+                "addon_berries"
+              ],
+              "selectedAddonsDetails": [
+                {
+                  "id": "addon_bacon",
+                  "name": "Extra Bacon",
+                  "priceInfo": {
+                    "basePrice": 25,
+                    "finalPrice": 25,
+                    "discount": 0
+                  },
+                  "respectParentDiscount": true,
+                  "price": 25
+                },
+                {
+                  "id": "addon_berries",
+                  "name": "Fresh Berries",
+                  "priceInfo": {
+                    "basePrice": 15,
+                    "finalPrice": 15,
+                    "discount": 0
+                  },
+                  "respectParentDiscount": true,
+                  "price": 15
+                }
+              ],
+              "cartItemId": 0,
+              "checkoutTime": {
+                "_seconds": 1769286658,
+                "_nanoseconds": 0
+              },
+              "status": "PENDING"
+            }
+          ],
+          "priceInfo": {
+            "basePrice": 240,
+            "finalPrice": 240,
+            "totalDiscount": 0,
+            "totalDiscountAmount": 0,
+            "totalVariantBasePrice": 0,
+            "totalAddonBasePrice": 40
+          },
+          "createdAt": {
+            "_seconds": 1769286658,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1769291158,
+            "_nanoseconds": 0
+          },
+          "isActive": true,
+          "assignedServer": "",
+          "notes": "unassigned_pending__uap",
+          "sessionId": "session_server001__preseed"
+        },
+        "order_assigned_other__ao": {
+          "restaurantId": "res_server-consumer_order_flow",
+          "tableId": "table006",
+          "orderNumber": "ORD-AO-0003",
+          "orderStatus": "IN_PROGRESS",
+          "status": "IN_PROGRESS",
+          "paymentStatus": "unpaid",
+          "carts": [
+            {
+              "cartId": "cart_assigned_other__ao",
+              "status": "PREPARING",
+              "statusHistory": [
+                {
+                  "status": "PENDING",
+                  "timestamp": {
+                    "_seconds": 1769286658,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "system"
+                },
+                {
+                  "status": "PREPARING",
+                  "timestamp": {
+                    "_seconds": 1769290258,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "server001"
+                }
+              ],
+              "checkoutTime": {
+                "_seconds": 1769286658,
+                "_nanoseconds": 0
+              },
+              "notes": "assigned_other__ao",
+              "estimatedPrepTime": 16,
+              "assignedTo": "server001",
+              "items": [
+                {
+                  "menuItemId": "item_classic_burger",
+                  "menuItem": {
+                    "meta": {
+                      "name": "Classic Cheeseburger",
+                      "description": "Angus beef patty with cheddar, lettuce, tomato",
+                      "categoryName": "Food",
+                      "primarySubcategoryName": "Burgers",
+                      "image": "https://example.com/images/classic-burger.jpg"
+                    }
+                  },
+                  "name": "Classic Cheeseburger",
+                  "selectedVariantsDetails": [
+                    {
+                      "id": "var_burger_size",
+                      "name": "Burger Size",
+                      "isMandatory": true,
+                      "respectParentDiscount": true,
+                      "selected_variant_id": "size_regular",
+                      "selected_variant_name": "Regular",
+                      "priceInfo": {
+                        "basePrice": 0,
+                        "finalPrice": 0,
+                        "discount": 0
+                      }
+                    }
+                  ],
+                  "selectedAddonsDetails": [],
+                  "priceInfo": {
+                    "itemBasePrice": 140,
+                    "itemFinalPrice": 140,
+                    "totalVariantBasePrice": 0,
+                    "totalVariantFinalPrice": 0,
+                    "totalAddonBasePrice": 0,
+                    "totalAddonFinalPrice": 0,
+                    "totalBasePrice": 140,
+                    "finalPrice": 140,
+                    "discount": 0,
+                    "discountAmount": 0
+                  },
+                  "quantity": 1,
+                  "status": "PREPARING",
+                  "cartItemId": 1
+                },
+                {
+                  "menuItemId": "item_cappuccino",
+                  "menuItem": {
+                    "meta": {
+                      "name": "Cappuccino",
+                      "description": "Espresso with steamed milk foam",
+                      "categoryName": "Beverages",
+                      "primarySubcategoryName": "Hot Drinks",
+                      "image": "https://example.com/images/cappuccino.jpg"
+                    }
+                  },
+                  "name": "Cappuccino",
+                  "selectedVariantsDetails": [
+                    {
+                      "id": "var_coffee_size",
+                      "name": "Cup Size",
+                      "isMandatory": true,
+                      "respectParentDiscount": true,
+                      "selected_variant_id": "cup_regular",
+                      "selected_variant_name": "Regular",
+                      "priceInfo": {
+                        "basePrice": 0,
+                        "finalPrice": 0,
+                        "discount": 0
+                      }
+                    }
+                  ],
+                  "selectedAddonsDetails": [],
+                  "priceInfo": {
+                    "itemBasePrice": 60,
+                    "itemFinalPrice": 60,
+                    "totalVariantBasePrice": 0,
+                    "totalVariantFinalPrice": 0,
+                    "totalAddonBasePrice": 0,
+                    "totalAddonFinalPrice": 0,
+                    "totalBasePrice": 60,
+                    "finalPrice": 60,
+                    "discount": 0,
+                    "discountAmount": 0
+                  },
+                  "quantity": 1,
+                  "status": "PENDING",
+                  "cartItemId": 2
+                }
+              ],
+              "priceInfo": {
+                "basePrice": 200,
+                "finalPrice": 200,
+                "totalDiscount": 0,
+                "totalDiscountAmount": 0,
+                "totalVariantBasePrice": 0,
+                "totalAddonBasePrice": 0
+              }
+            }
+          ],
+          "items": [
+            {
+              "menuItemId": "item_classic_burger",
+              "name": "Classic Cheeseburger",
+              "description": "Angus beef patty with cheddar, lettuce, tomato",
+              "quantity": 1,
+              "priceInfo": {
+                "basePrice": 140,
+                "discount": 0,
+                "finalPrice": 140
+              },
+              "selectedVariants": {
+                "var_burger_size": "size_regular"
+              },
+              "selectedVariantsDetails": [
+                {
+                  "id": "var_burger_size",
+                  "name": "Burger Size",
+                  "isMandatory": true,
+                  "respectParentDiscount": true,
+                  "selected_variant_id": "size_regular",
+                  "selected_variant_name": "Regular",
+                  "priceInfo": {
+                    "basePrice": 0,
+                    "finalPrice": 0,
+                    "discount": 0
+                  }
+                }
+              ],
+              "selectedAddons": [],
+              "selectedAddonsDetails": [],
+              "cartItemId": 0,
+              "checkoutTime": {
+                "_seconds": 1769286658,
+                "_nanoseconds": 0
+              },
+              "status": "PENDING"
+            },
+            {
+              "menuItemId": "item_cappuccino",
+              "name": "Cappuccino",
+              "description": "Espresso with steamed milk foam",
+              "quantity": 1,
+              "priceInfo": {
+                "basePrice": 60,
+                "discount": 0,
+                "finalPrice": 60
+              },
+              "selectedVariants": {
+                "var_coffee_size": "cup_regular"
+              },
+              "selectedVariantsDetails": [
+                {
+                  "id": "var_coffee_size",
+                  "name": "Cup Size",
+                  "isMandatory": true,
+                  "respectParentDiscount": true,
+                  "selected_variant_id": "cup_regular",
+                  "selected_variant_name": "Regular",
+                  "priceInfo": {
+                    "basePrice": 0,
+                    "finalPrice": 0,
+                    "discount": 0
+                  }
+                }
+              ],
+              "selectedAddons": [],
+              "selectedAddonsDetails": [],
+              "cartItemId": 0,
+              "checkoutTime": {
+                "_seconds": 1769286658,
+                "_nanoseconds": 0
+              },
+              "status": "PENDING"
+            }
+          ],
+          "priceInfo": {
+            "basePrice": 200,
+            "finalPrice": 200,
+            "totalDiscount": 0,
+            "totalDiscountAmount": 0,
+            "totalVariantBasePrice": 0,
+            "totalAddonBasePrice": 0
+          },
+          "createdAt": {
+            "_seconds": 1769283058,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1769292058,
+            "_nanoseconds": 0
+          },
+          "isActive": true,
+          "assignedServer": "server002",
+          "notes": "assigned_other__ao",
+          "sessionId": "session_server001__preseed"
+        },
+        "order_served_recent__sr": {
+          "restaurantId": "res_server-consumer_order_flow",
+          "tableId": "table001",
+          "orderNumber": "ORD-SR-0004",
+          "orderStatus": "COMPLETED",
+          "status": "COMPLETED",
+          "paymentStatus": "paid",
+          "carts": [
+            {
+              "cartId": "cart_served_recent__sr",
+              "status": "SERVED",
+              "statusHistory": [
+                {
+                  "status": "PENDING",
+                  "timestamp": {
+                    "_seconds": 1769317700,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "system"
+                },
+                {
+                  "status": "PREPARING",
+                  "timestamp": {
+                    "_seconds": 1769318600,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "server001"
+                },
+                {
+                  "status": "READY",
+                  "timestamp": {
+                    "_seconds": 1769320500,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "server001"
+                },
+                {
+                  "status": "SERVED",
+                  "timestamp": {
+                    "_seconds": 1769322300,
+                    "_nanoseconds": 0
+                  },
+                  "userId": "server001"
+                }
+              ],
+              "checkoutTime": {
+                "_seconds": 1769317700,
+                "_nanoseconds": 0
+              },
+              "notes": "served_recent__sr",
+              "estimatedPrepTime": 22,
+              "assignedTo": "server001",
+              "items": [
+                {
+                  "menuItemId": "item_pepperoni",
+                  "menuItem": {
+                    "meta": {
+                      "name": "Pepperoni Pizza",
+                      "description": "Loaded with premium pepperoni slices",
+                      "categoryName": "Food",
+                      "primarySubcategoryName": "Pizzas",
+                      "image": "https://example.com/images/pepperoni.jpg"
+                    }
+                  },
+                  "name": "Pepperoni Pizza",
+                  "selectedVariantsDetails": [
+                    {
+                      "id": "var_pizza_size",
+                      "name": "Pizza Size",
+                      "isMandatory": true,
+                      "respectParentDiscount": true,
+                      "selected_variant_id": "pizza_regular",
+                      "selected_variant_name": "Regular (10\")",
+                      "priceInfo": {
+                        "basePrice": 0,
+                        "finalPrice": 0,
+                        "discount": 0
+                      }
+                    }
+                  ],
+                  "selectedAddonsDetails": [],
+                  "priceInfo": {
+                    "itemBasePrice": 200,
+                    "itemFinalPrice": 200,
+                    "totalVariantBasePrice": 0,
+                    "totalVariantFinalPrice": 0,
+                    "totalAddonBasePrice": 0,
+                    "totalAddonFinalPrice": 0,
+                    "totalBasePrice": 200,
+                    "finalPrice": 200,
+                    "discount": 0,
+                    "discountAmount": 0
+                  },
+                  "quantity": 1,
+                  "status": "SERVED",
+                  "cartItemId": 1
+                },
+                {
+                  "menuItemId": "item_chocolate_cake",
+                  "menuItem": {
+                    "meta": {
+                      "name": "Chocolate Lava Cake",
+                      "description": "Warm chocolate cake with molten center",
+                      "categoryName": "Food",
+                      "primarySubcategoryName": "Desserts",
+                      "image": "https://example.com/images/chocolate-cake.jpg"
+                    }
+                  },
+                  "name": "Chocolate Lava Cake",
+                  "selectedVariantsDetails": [],
+                  "selectedAddonsDetails": [
+                    {
+                      "id": "addon_ice_cream",
+                      "name": "Vanilla Ice Cream",
+                      "priceInfo": {
+                        "basePrice": 20,
+                        "finalPrice": 20,
+                        "discount": 0
+                      },
+                      "respectParentDiscount": false,
+                      "price": 20
+                    }
+                  ],
+                  "priceInfo": {
+                    "itemBasePrice": 80,
+                    "itemFinalPrice": 100,
+                    "totalVariantBasePrice": 0,
+                    "totalVariantFinalPrice": 0,
+                    "totalAddonBasePrice": 20,
+                    "totalAddonFinalPrice": 20,
+                    "totalBasePrice": 100,
+                    "finalPrice": 100,
+                    "discount": 0,
+                    "discountAmount": 0
+                  },
+                  "quantity": 1,
+                  "status": "SERVED",
+                  "cartItemId": 2
+                }
+              ],
+              "priceInfo": {
+                "basePrice": 300,
+                "finalPrice": 300,
+                "totalDiscount": 0,
+                "totalDiscountAmount": 0,
+                "totalVariantBasePrice": 0,
+                "totalAddonBasePrice": 20
+              }
+            }
+          ],
+          "items": [
+            {
+              "menuItemId": "item_pepperoni",
+              "name": "Pepperoni Pizza",
+              "description": "Loaded with premium pepperoni slices",
+              "quantity": 1,
+              "priceInfo": {
+                "basePrice": 200,
+                "discount": 0,
+                "finalPrice": 200
+              },
+              "selectedVariants": {
+                "var_pizza_size": "pizza_regular"
+              },
+              "selectedVariantsDetails": [
+                {
+                  "id": "var_pizza_size",
+                  "name": "Pizza Size",
+                  "isMandatory": true,
+                  "respectParentDiscount": true,
+                  "selected_variant_id": "pizza_regular",
+                  "selected_variant_name": "Regular (10\")",
+                  "priceInfo": {
+                    "basePrice": 0,
+                    "finalPrice": 0,
+                    "discount": 0
+                  }
+                }
+              ],
+              "selectedAddons": [],
+              "selectedAddonsDetails": [],
+              "cartItemId": 0,
+              "checkoutTime": {
+                "_seconds": 1769286658,
+                "_nanoseconds": 0
+              },
+              "status": "PENDING"
+            },
+            {
+              "menuItemId": "item_chocolate_cake",
+              "name": "Chocolate Lava Cake",
+              "description": "Warm chocolate cake with molten center",
+              "quantity": 1,
+              "priceInfo": {
+                "basePrice": 80,
+                "discount": 0,
+                "finalPrice": 100
+              },
+              "selectedVariants": {},
+              "selectedVariantsDetails": [],
+              "selectedAddons": [
+                "addon_ice_cream"
+              ],
+              "selectedAddonsDetails": [
+                {
+                  "id": "addon_ice_cream",
+                  "name": "Vanilla Ice Cream",
+                  "priceInfo": {
+                    "basePrice": 20,
+                    "finalPrice": 20,
+                    "discount": 0
+                  },
+                  "respectParentDiscount": false,
+                  "price": 20
+                }
+              ],
+              "cartItemId": 0,
+              "checkoutTime": {
+                "_seconds": 1769286658,
+                "_nanoseconds": 0
+              },
+              "status": "PENDING"
+            }
+          ],
+          "priceInfo": {
+            "basePrice": 300,
+            "finalPrice": 300,
+            "totalDiscount": 0,
+            "totalDiscountAmount": 0,
+            "totalVariantBasePrice": 0,
+            "totalAddonBasePrice": 20
+          },
+          "createdAt": {
+            "_seconds": 1769317700,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1769322300,
+            "_nanoseconds": 0
+          },
+          "isActive": false,
+          "assignedServer": "server001",
+          "notes": "served_recent__sr",
+          "sessionId": "session_server001__preseed"
+        }
+      }
+    }
+  }
+}
