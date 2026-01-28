@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:platter_core/platter_core.dart';
 import 'login_provider.dart';
-import '../home/home_screen.dart';
+import '../../main_navigation.dart';
 
 /// Login screen for Kitchen app
 class LoginScreen extends StatelessWidget {
@@ -60,11 +60,11 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
         final loginData = provider.loginData!;
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => HomeScreen(
+            builder: (context) => MainNavigation(
               restaurantId: loginData.restaurantId,
               sessionId: loginData.sessionId,
               restaurantName: loginData.restaurantName,
-              staffName: loginData.name,
+              kitchenName: loginData.name, // Staff/Kitchen name
             ),
           ),
         );

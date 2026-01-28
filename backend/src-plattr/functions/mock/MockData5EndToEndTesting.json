@@ -260,7 +260,8 @@
                         "name": "Size",
                         "categoryAssociatedWith": [
                             "cat_food"
-                        ]
+                        ],
+                        "description": "Choose size"
                     },
                     "options": [
                         {
@@ -282,7 +283,11 @@
                             }
                         }
                     ],
-                    "isMandatory": true
+                    "isMandatory": true,
+                    "respectParentDiscount": true,
+                    "itemsAssociatedWith": [
+                        "item_burger_1"
+                    ]
                 },
                 "var_size_pizza": {
                     "id": "var_size_pizza",
@@ -290,7 +295,8 @@
                         "name": "Size",
                         "categoryAssociatedWith": [
                             "cat_food"
-                        ]
+                        ],
+                        "description": "Choose size"
                     },
                     "options": [
                         {
@@ -312,7 +318,11 @@
                             }
                         }
                     ],
-                    "isMandatory": true
+                    "isMandatory": true,
+                    "respectParentDiscount": true,
+                    "itemsAssociatedWith": [
+                        "item_pizza_1"
+                    ]
                 }
             },
             "addons": {
@@ -322,14 +332,20 @@
                         "name": "Extra Cheese",
                         "categoryAssociatedWith": [
                             "cat_food"
-                        ]
+                        ],
+                        "description": "Add extra cheese"
                     },
                     "priceInfo": {
                         "basePrice": 20,
                         "finalPrice": 20,
                         "discount": 0
                     },
-                    "isInStock": true
+                    "isInStock": true,
+                    "respectParentDiscount": false,
+                    "isMandatory": false,
+                    "itemsAssociatedWith": [
+                        "item_burger_1"
+                    ]
                 }
             },
             "kitchens": {
@@ -599,7 +615,8 @@
                         "name": "Size",
                         "categoryAssociatedWith": [
                             "cat_food"
-                        ]
+                        ],
+                        "description": "Choose size"
                     },
                     "options": [
                         {
@@ -621,7 +638,11 @@
                             }
                         }
                     ],
-                    "isMandatory": true
+                    "isMandatory": true,
+                    "respectParentDiscount": true,
+                    "itemsAssociatedWith": [
+                        "item_burger_1"
+                    ]
                 },
                 "var_size_pizza": {
                     "id": "var_size_pizza",
@@ -629,7 +650,8 @@
                         "name": "Size",
                         "categoryAssociatedWith": [
                             "cat_food"
-                        ]
+                        ],
+                        "description": "Choose size"
                     },
                     "options": [
                         {
@@ -651,7 +673,11 @@
                             }
                         }
                     ],
-                    "isMandatory": true
+                    "isMandatory": true,
+                    "respectParentDiscount": true,
+                    "itemsAssociatedWith": [
+                        "item_pizza_1"
+                    ]
                 }
             },
             "addons": {
@@ -661,14 +687,20 @@
                         "name": "Extra Cheese",
                         "categoryAssociatedWith": [
                             "cat_food"
-                        ]
+                        ],
+                        "description": "Add extra cheese"
                     },
                     "priceInfo": {
                         "basePrice": 20,
                         "finalPrice": 20,
                         "discount": 0
                     },
-                    "isInStock": true
+                    "isInStock": true,
+                    "respectParentDiscount": false,
+                    "isMandatory": false,
+                    "itemsAssociatedWith": [
+                        "item_burger_1"
+                    ]
                 }
             },
             "kitchens": {
@@ -938,7 +970,8 @@
                         "name": "Size",
                         "categoryAssociatedWith": [
                             "cat_food"
-                        ]
+                        ],
+                        "description": "Choose size"
                     },
                     "options": [
                         {
@@ -960,7 +993,11 @@
                             }
                         }
                     ],
-                    "isMandatory": true
+                    "isMandatory": true,
+                    "respectParentDiscount": true,
+                    "itemsAssociatedWith": [
+                        "item_burger_1"
+                    ]
                 },
                 "var_size_pizza": {
                     "id": "var_size_pizza",
@@ -968,7 +1005,8 @@
                         "name": "Size",
                         "categoryAssociatedWith": [
                             "cat_food"
-                        ]
+                        ],
+                        "description": "Choose size"
                     },
                     "options": [
                         {
@@ -990,7 +1028,11 @@
                             }
                         }
                     ],
-                    "isMandatory": true
+                    "isMandatory": true,
+                    "respectParentDiscount": true,
+                    "itemsAssociatedWith": [
+                        "item_pizza_1"
+                    ]
                 }
             },
             "addons": {
@@ -1000,14 +1042,20 @@
                         "name": "Extra Cheese",
                         "categoryAssociatedWith": [
                             "cat_food"
-                        ]
+                        ],
+                        "description": "Add extra cheese"
                     },
                     "priceInfo": {
                         "basePrice": 20,
                         "finalPrice": 20,
                         "discount": 0
                     },
-                    "isInStock": true
+                    "isInStock": true,
+                    "respectParentDiscount": false,
+                    "isMandatory": false,
+                    "itemsAssociatedWith": [
+                        "item_burger_1"
+                    ]
                 }
             },
             "kitchens": {

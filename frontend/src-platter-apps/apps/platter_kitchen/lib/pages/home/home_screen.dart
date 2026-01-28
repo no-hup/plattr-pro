@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:platter_core/platter_core.dart';
 
-/// Placeholder home screen after login.
-/// TODO: Replace with tabbed navigation (Live/History) as per Task 03.
+/// @deprecated Use [MainNavigation] instead.
+/// This placeholder home screen has been replaced by the tabbed navigation structure.
+/// See main_navigation.dart for the new implementation.
 class HomeScreen extends StatelessWidget {
   final String restaurantId;
   final String sessionId;
