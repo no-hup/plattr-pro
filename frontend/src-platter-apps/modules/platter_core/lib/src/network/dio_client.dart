@@ -1,9 +1,17 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../config/app_config.dart';
 import '../logging/app_logger.dart';
+import 'response_guard_interceptor.dart';
+import 'interrupt_flow_interceptor.dart';
 
 /// Singleton Dio client for all API calls.
 /// Shared across all Platter apps.
+///
+/// Interceptors (in order of execution):
+/// 1. LogInterceptor - Basic request/response logging
+/// 2. ResponseGuardInterceptor - Detailed logging for debugging (debug only)
+/// 3. InterruptFlowInterceptor - Handles forced update, blocked user, etc.
 class DioClient {
   static DioClient? _instance;
   static DioClient get instance => _instance ??= DioClient._internal();
@@ -27,13 +35,26 @@ class DioClient {
       ),
     );
 
-    // Add logging interceptor
+    _addInterceptors();
+  }
+
+  /// Add all interceptors
+  void _addInterceptors() {
+    // 1. Basic logging interceptor
     dio.interceptors.add(LogInterceptor(
       requestBody: true,
       responseBody: true,
       error: true,
       logPrint: (log) => AppLogger.debug(log.toString()),
     ));
+
+    // 2. Response Guard for detailed debug logging (debug only)
+    if (kDebugMode) {
+      dio.interceptors.add(ResponseGuardInterceptor());
+    }
+
+    // 3. Interrupt Flow interceptor for forced update, blocked user, etc.
+    dio.interceptors.add(InterruptFlowInterceptor.instance);
   }
 
   /// Reset the singleton (useful for testing)

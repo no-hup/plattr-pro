@@ -38,8 +38,31 @@ Establish the main navigation structure for the Kitchen App, consisting of a tab
 -   **Backend**: Kitchen categories list will be included in an existing API response (e.g., login config or active-carts response). No separate endpoint.
 
 ## Acceptance Criteria
--   [ ] App launches into the "Live" tab by default.
--   [ ] User can switch between "Live" and "History".
--   [ ] Header displays correct Restaurant and Kitchen names.
--   [ ] Category selector allows switching between "Bar", "Kitchen", etc.
--   [ ] TODO comment added regarding subcategories.
+-   [x] App launches into the "Live" tab by default.
+-   [x] User can switch between "Live" and "History".
+-   [x] Header displays correct Restaurant and Kitchen names.
+-   [x] Category selector allows switching between "Bar", "Kitchen", etc.
+-   [x] TODO comment added regarding subcategories.
+
+## Implementation Notes (Added during implementation)
+
+### Files Created:
+- `lib/main_navigation.dart` - Main shell with tabbed navigation
+- `lib/widgets/kitchen_app_bar_widget.dart` - Shared app bar with category selector
+- `lib/widgets/kitchen_app_bar_configuration.dart` - Configuration for app bar customization
+- `lib/pages/live/live_orders_screen.dart` - Placeholder for live orders (Task 05)
+- `lib/pages/history/history_screen.dart` - Placeholder for history (Task 07)
+
+### Key Implementation Details:
+- Uses `BottomNavigationBar` for tab navigation (following Server app pattern)
+- Uses `IndexedStack` for persistent tab state (no data reload on tab switch)
+- Category filter persists across tab switches
+- Logout button in header with Yes/No confirmation dialog
+- Categories are configurable via `initialCategories` parameter (defaults to ["Kitchen", "Bar"])
+- `AutomaticKeepAliveClientMixin` used in tab screens for state preservation
+
+### TODO markers added:
+1. Fetch dynamic categories from backend (login config or active-carts response)
+2. Add support for subcategories inside kitchen category
+3. FLAG: Discussion point - "Should there be additional categories for certain restaurant types?"
+

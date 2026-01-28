@@ -5,7 +5,10 @@ import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'pages/auth/login_screen.dart';
 import 'pages/auth/login_provider.dart';
-import 'pages/home/home_screen.dart';
+import 'main_navigation.dart';
+
+/// Global navigator key for showing dialogs from anywhere (e.g., interceptors)
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +21,10 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Set up global interrupt flow handler (for forced update, blocked user, etc.)
+  InterruptFlowInterceptor.navigatorKey = navigatorKey;
+  InterruptFlowInterceptor.registerHandler(DefaultInterruptFlowHandler.handle);
+
   runApp(const KitchenApp());
 }
 
@@ -27,12 +34,13 @@ class KitchenApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey, // Global navigator key for dialogs
       title: 'Kitchen Plattr',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
       debugShowCheckedModeBanner: false,
-      home: const _AuthWrapper(),
+      initialRoute: '/',
       routes: {
         '/': (context) => const _AuthWrapper(),
         '/login': (context) => const LoginScreen(),
@@ -84,11 +92,11 @@ class _AuthWrapperState extends State<_AuthWrapper> {
     }
 
     if (_hasSession && _sessionData != null) {
-      return HomeScreen(
+      return MainNavigation(
         restaurantId: _sessionData!.restaurantId,
         sessionId: _sessionData!.sessionId,
         restaurantName: _sessionData!.restaurantName,
-        staffName: _sessionData!.name,
+        kitchenName: _sessionData!.name, // Staff/Kitchen name
       );
     }
 

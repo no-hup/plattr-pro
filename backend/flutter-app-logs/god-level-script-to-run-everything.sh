@@ -23,10 +23,14 @@ FLUTTER_LOG_DIR="$PROJECT_ROOT/backend/flutter-app-logs"
 EMULATOR_LOG="$EMULATOR_LOG_DIR/emulator.log"
 SERVER_LOG="$FLUTTER_LOG_DIR/server.log"
 CONSUMER_LOG="$FLUTTER_LOG_DIR/consumer.log"
+KITCHEN_LOG="$FLUTTER_LOG_DIR/kitchen.log"
+ADMIN_LOG="$FLUTTER_LOG_DIR/admin.log"
 
 # Flutter app directories
 SERVER_APP_DIR="$PROJECT_ROOT/frontend/src-platter-apps/apps/platter_server"
 CONSUMER_APP_DIR="$PROJECT_ROOT/frontend/flutter_boilerplate"
+KITCHEN_APP_DIR="$PROJECT_ROOT/frontend/src-platter-apps/apps/platter_kitchen"
+ADMIN_APP_DIR="$PROJECT_ROOT/frontend/src-platter-apps/apps/platter_admin"
 
 # Ports
 EMULATOR_FIRESTORE_PORT=8080
@@ -34,6 +38,8 @@ EMULATOR_FUNCTIONS_PORT=5002
 EMULATOR_UI_PORT=4001
 SERVER_APP_PORT=5050
 CONSUMER_APP_PORT=5051
+KITCHEN_APP_PORT=5052
+ADMIN_APP_PORT=5053
 
 # Timing
 EMULATOR_WAIT_SECONDS=30
@@ -99,7 +105,7 @@ cleanup_processes() {
     fi
     
     # Kill processes on specific ports
-    for port in $EMULATOR_FIRESTORE_PORT $EMULATOR_FUNCTIONS_PORT $EMULATOR_UI_PORT $SERVER_APP_PORT $CONSUMER_APP_PORT; do
+    for port in $EMULATOR_FIRESTORE_PORT $EMULATOR_FUNCTIONS_PORT $EMULATOR_UI_PORT $SERVER_APP_PORT $CONSUMER_APP_PORT $KITCHEN_APP_PORT $ADMIN_APP_PORT; do
         if lsof -ti:$port > /dev/null 2>&1; then
             log_info "Killing process on port $port..."
             lsof -ti:$port | xargs kill -9 2>/dev/null || true
@@ -180,11 +186,15 @@ setup_log_dirs() {
     : > "$EMULATOR_LOG"
     : > "$SERVER_LOG"
     : > "$CONSUMER_LOG"
+    : > "$KITCHEN_LOG"
+    : > "$ADMIN_LOG"
     
     log_success "Log directories ready"
     log_info "Emulator logs: $EMULATOR_LOG"
     log_info "Server logs:   $SERVER_LOG"
     log_info "Consumer logs: $CONSUMER_LOG"
+    log_info "Kitchen logs:  $KITCHEN_LOG"
+    log_info "Admin logs:    $ADMIN_LOG"
 }
 
 # -----------------------------------------------------------------------------
@@ -364,6 +374,68 @@ APPLESCRIPT
 }
 
 # -----------------------------------------------------------------------------
+# Launch Flutter Kitchen App in iTerm Tab
+# -----------------------------------------------------------------------------
+launch_kitchen_app_tab() {
+    log_step "Launching Kitchen App in new iTerm tab"
+    
+    local tab_name="Kitchen App ($KITCHEN_APP_PORT)"
+    local flutter_cmd="cd $KITCHEN_APP_DIR && echo Starting Kitchen App... && flutter run -d chrome --web-hostname 127.0.0.1 --web-port $KITCHEN_APP_PORT 2>&1 | tee $KITCHEN_LOG"
+    
+    osascript - "$tab_name" "$flutter_cmd" <<'APPLESCRIPT'
+on run argv
+    set tabName to item 1 of argv
+    set cmd to item 2 of argv
+    tell application "iTerm"
+        tell current window
+            set newTab to (create tab with default profile)
+            tell newTab
+                tell current session
+                    set name to tabName
+                    write text cmd
+                end tell
+            end tell
+        end tell
+    end tell
+end run
+APPLESCRIPT
+    
+    log_success "Kitchen App tab created: $tab_name"
+    log_info "URL: http://127.0.0.1:$KITCHEN_APP_PORT"
+}
+
+# -----------------------------------------------------------------------------
+# Launch Flutter Admin App in iTerm Tab
+# -----------------------------------------------------------------------------
+launch_admin_app_tab() {
+    log_step "Launching Admin App in new iTerm tab"
+    
+    local tab_name="Admin App ($ADMIN_APP_PORT)"
+    local flutter_cmd="cd $ADMIN_APP_DIR && echo Starting Admin App... && flutter run -d chrome --web-hostname 127.0.0.1 --web-port $ADMIN_APP_PORT 2>&1 | tee $ADMIN_LOG"
+    
+    osascript - "$tab_name" "$flutter_cmd" <<'APPLESCRIPT'
+on run argv
+    set tabName to item 1 of argv
+    set cmd to item 2 of argv
+    tell application "iTerm"
+        tell current window
+            set newTab to (create tab with default profile)
+            tell newTab
+                tell current session
+                    set name to tabName
+                    write text cmd
+                end tell
+            end tell
+        end tell
+    end tell
+end run
+APPLESCRIPT
+    
+    log_success "Admin App tab created: $tab_name"
+    log_info "URL: http://127.0.0.1:$ADMIN_APP_PORT"
+}
+
+# -----------------------------------------------------------------------------
 # Print Summary
 # -----------------------------------------------------------------------------
 print_summary() {
@@ -379,6 +451,8 @@ print_summary() {
     echo ""
     echo -e "  ${CYAN}Server App:${NC}           http://127.0.0.1:$SERVER_APP_PORT"
     echo -e "  ${CYAN}Consumer App:${NC}         http://127.0.0.1:$CONSUMER_APP_PORT"
+    echo -e "  ${CYAN}Kitchen App:${NC}          http://127.0.0.1:$KITCHEN_APP_PORT"
+    echo -e "  ${CYAN}Admin App:${NC}            http://127.0.0.1:$ADMIN_APP_PORT"
     echo ""
     echo -e "  ${CYAN}Mock Data:${NC}            $MOCK_NAME"
     echo ""
@@ -389,6 +463,8 @@ print_summary() {
     echo -e "  Emulator:  $EMULATOR_LOG"
     echo -e "  Server:    $SERVER_LOG"
     echo -e "  Consumer:  $CONSUMER_LOG"
+    echo -e "  Kitchen:   $KITCHEN_LOG"
+    echo -e "  Admin:     $ADMIN_LOG"
     echo ""
     echo -e "${MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${MAGENTA}                      HOT RELOAD TIPS${NC}"
@@ -440,6 +516,10 @@ main() {
     launch_server_app_tab
     sleep 1
     launch_consumer_app_tab
+    sleep 1
+    launch_kitchen_app_tab
+    sleep 1
+    launch_admin_app_tab
     
     # Step 8: Print summary
     sleep 2
