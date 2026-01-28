@@ -16,6 +16,7 @@ export 'src/auth/session_storage.dart';
 export 'src/auth/login_request.dart';
 export 'src/auth/login_response_data.dart';
 export 'src/auth/login_api_service.dart';
+export 'src/auth/base_login_provider.dart';
 
 // Logger
 export 'src/logging/app_logger.dart';
@@ -29,4 +30,5 @@ export 'src/models/api_error.dart';
 
 // UI
 export 'src/ui/error_handler.dart';
+export 'src/ui/auth/platter_login_form.dart';
 

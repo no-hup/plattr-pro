@@ -5,6 +5,6 @@
 library models;
 
 // Add model exports here as they are created
-// export 'order.dart';
+export 'order_models.dart';
 // export 'order_item.dart';
 // export 'kitchen_config.dart';

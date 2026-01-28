@@ -362,12 +362,16 @@
                 "server_1": {
                     "name": "Server One",
                     "role": "waiter",
-                    "status": "active"
+                    "status": "active",
+                    "email": "server1@e2e.com",
+                    "password": "1234"
                 },
                 "server_2": {
                     "name": "Server Two",
                     "role": "waiter",
-                    "status": "active"
+                    "status": "active",
+                    "email": "server2@e2e.com",
+                    "password": "1234"
                 }
             },
             "tables": {
@@ -391,7 +395,28 @@
             "sessions": {},
             "carts": {},
             "orders": {},
-            "offers": {}
+            "offers": {
+                "offer_dessert_50": {
+                    "id": "offer_dessert_50",
+                    "title": "50% Off Desserts",
+                    "description": "Get 50% off on all dessert items",
+                    "type": "PERCENTAGE",
+                    "scope": "CATEGORY",
+                    "targetIds": [
+                        "sub_dessert"
+                    ],
+                    "isActive": true,
+                    "validity": {
+                        "startDate": "2024-01-01T00:00:00Z",
+                        "endDate": "2030-12-31T23:59:59Z"
+                    },
+                    "conditions": {},
+                    "benefit": {
+                        "value": 50,
+                        "maxDiscount": 500
+                    }
+                }
+            }
         },
         "res_e2e_multi_variant_off": {
             "info": {
@@ -717,12 +742,16 @@
                 "server_1": {
                     "name": "Server One",
                     "role": "waiter",
-                    "status": "active"
+                    "status": "active",
+                    "email": "server1@e2e-mv.com",
+                    "password": "1234"
                 },
                 "server_2": {
                     "name": "Server Two",
                     "role": "waiter",
-                    "status": "active"
+                    "status": "active",
+                    "email": "server2@e2e-mv.com",
+                    "password": "1234"
                 }
             },
             "tables": {
@@ -746,7 +775,28 @@
             "sessions": {},
             "carts": {},
             "orders": {},
-            "offers": {}
+            "offers": {
+                "offer_dessert_50": {
+                    "id": "offer_dessert_50",
+                    "title": "50% Off Desserts",
+                    "description": "Get 50% off on all dessert items",
+                    "type": "PERCENTAGE",
+                    "scope": "CATEGORY",
+                    "targetIds": [
+                        "sub_dessert"
+                    ],
+                    "isActive": true,
+                    "validity": {
+                        "startDate": "2024-01-01T00:00:00Z",
+                        "endDate": "2030-12-31T23:59:59Z"
+                    },
+                    "conditions": {},
+                    "benefit": {
+                        "value": 50,
+                        "maxDiscount": 500
+                    }
+                }
+            }
         },
         "res_e2e_fallback_off": {
             "info": {
@@ -1072,12 +1122,16 @@
                 "server_1": {
                     "name": "Server One",
                     "role": "waiter",
-                    "status": "active"
+                    "status": "active",
+                    "email": "server1@e2e-fb.com",
+                    "password": "1234"
                 },
                 "server_2": {
                     "name": "Server Two",
                     "role": "waiter",
-                    "status": "active"
+                    "status": "active",
+                    "email": "server2@e2e-fb.com",
+                    "password": "1234"
                 }
             },
             "tables": {
@@ -1101,7 +1155,28 @@
             "sessions": {},
             "carts": {},
             "orders": {},
-            "offers": {}
+            "offers": {
+                "offer_dessert_50": {
+                    "id": "offer_dessert_50",
+                    "title": "50% Off Desserts",
+                    "description": "Get 50% off on all dessert items",
+                    "type": "PERCENTAGE",
+                    "scope": "CATEGORY",
+                    "targetIds": [
+                        "sub_dessert"
+                    ],
+                    "isActive": true,
+                    "validity": {
+                        "startDate": "2024-01-01T00:00:00Z",
+                        "endDate": "2030-12-31T23:59:59Z"
+                    },
+                    "conditions": {},
+                    "benefit": {
+                        "value": 50,
+                        "maxDiscount": 500
+                    }
+                }
+            }
         }
     }
 }

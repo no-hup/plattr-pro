@@ -79,12 +79,23 @@ class AuthPrompt {
       return;
     }
 
+    bool requireName = true;
+    bool requirePhone = true;
+    try {
+      final sessionState =
+          Provider.of<SessionProvider>(ctx, listen: false).state;
+      requireName = sessionState.isUsernameMandatory;
+      requirePhone = sessionState.isPhoneNumberMandatory;
+    } catch (_) {}
+
     _isShowing = true;
     try {
       await showDialog<void>(
         context: ctx,
         builder: (context) => OtpInputDialog(
           handleOtpApi: true,
+          requireName: requireName,
+          requirePhoneNumber: requirePhone,
           restaurantId: rId,
           tableId: tId,
           onOtpSuccess: (OtpValidationResponse resp) {

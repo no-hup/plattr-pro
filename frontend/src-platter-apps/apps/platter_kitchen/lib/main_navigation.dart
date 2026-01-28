@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:platter_core/platter_core.dart';
+import 'state/kitchen_live_provider.dart';
+import 'core/kitchen_repository.dart';
 import 'widgets/kitchen_app_bar_widget.dart';
 import 'widgets/kitchen_app_bar_configuration.dart';
 import 'pages/live/live_orders_screen.dart';
@@ -141,20 +144,27 @@ class _MainNavigationState extends State<MainNavigation> {
           onLogoutTap: _showLogoutConfirmation,
         ),
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          LiveOrdersScreen(
-            restaurantId: widget.restaurantId,
-            sessionId: widget.sessionId,
-            selectedCategory: _selectedCategory,
-          ),
-          HistoryScreen(
-            restaurantId: widget.restaurantId,
-            sessionId: widget.sessionId,
-            selectedCategory: _selectedCategory,
-          ),
-        ],
+      // Provide KitchenLiveProvider at this level so it persists when switching tabs
+      body: ChangeNotifierProvider(
+        create: (_) => KitchenLiveProvider(
+          repository: KitchenRepository(), // In real app, this should come from strict DI
+          restaurantId: widget.restaurantId,
+        )..startPolling(),
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: [
+            LiveOrdersScreen(
+              restaurantId: widget.restaurantId,
+              sessionId: widget.sessionId,
+              selectedCategory: _selectedCategory,
+            ),
+            HistoryScreen(
+              restaurantId: widget.restaurantId,
+              sessionId: widget.sessionId,
+              selectedCategory: _selectedCategory,
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
@@ -176,3 +186,4 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 }
+
