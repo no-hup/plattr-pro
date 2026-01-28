@@ -18,9 +18,24 @@ const serverGetOrderDetails = functions.https.onCall(async (data, context) => {
   try {
     OrderInputValidation.validateGetOrderFields(requestData);
 
-    const { restaurantId, orderId } = requestData;
+    const { restaurantId, orderId, sessionId } = requestData;
     if (!orderId) {
       errorHandler.badRequest('orderId is required', { restaurantId });
+    }
+
+    // Session Validation
+    if (!sessionId || typeof sessionId !== 'string') {
+      errorHandler.badRequest('sessionId is required and must be a string');
+    }
+
+    const sessionRef = db.collection('restaurants').doc(restaurantId).collection('sessions').doc(sessionId);
+    const sessionDoc = await sessionRef.get();
+
+    if (!sessionDoc.exists || sessionDoc.data().status !== 'active') {
+      errorHandler.preconditionFailed('Invalid or inactive session', {
+        restaurantId,
+        sessionId
+      });
     }
 
     const orderRef = db.collection('restaurants')

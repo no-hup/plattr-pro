@@ -25,14 +25,30 @@ const VALID_TRANSITIONS = {
 const serverMarkItemServed = functions.https.onCall(async (data, context) => {
   const requestData = data?.data || data || {};
   try {
+    const { restaurantId, orderId, menuItemId, cartItemId, sessionId } = requestData;
+
+    // Session Validation
+    if (!sessionId || typeof sessionId !== 'string') {
+      errorHandler.badRequest('sessionId is required and must be a string');
+    }
+
+    const sessionRef = db.collection('restaurants').doc(restaurantId).collection('sessions').doc(sessionId);
+    const sessionDoc = await sessionRef.get();
+
+    if (!sessionDoc.exists || sessionDoc.data().status !== 'active') {
+      errorHandler.preconditionFailed('Invalid or inactive session', {
+        restaurantId,
+        sessionId
+      });
+    }
+
+    const userId = sessionDoc.data().serverId || context.auth?.uid || 'system';
+    const hasCartItemId = cartItemId !== undefined && cartItemId !== null;
+
     const normalizedStatus = OrderInputValidation.validateUpdateMenuItemStatusFields({
       ...requestData,
       newStatus: FULFILLMENT_STATUS.SERVED
     });
-
-    const { restaurantId, orderId, menuItemId, cartItemId } = requestData;
-    const hasCartItemId = cartItemId !== undefined && cartItemId !== null;
-    const userId = context.auth?.uid || 'system';
 
     const orderRef = db.collection('restaurants')
       .doc(restaurantId)
@@ -88,16 +104,16 @@ const serverMarkItemServed = functions.https.onCall(async (data, context) => {
       // Update flattened order items if present
       const updatedItems = Array.isArray(orderData.items)
         ? orderData.items.map((item) => {
-            const matches = item.menuItemId === menuItemId &&
-              (hasCartItemId ? item.cartItemId === cartItemId : true);
-            if (!matches) return item;
-            return {
-              ...item,
-              status: normalizedStatus,
-              statusUpdatedAt: timestamp.now(),
-              statusUpdatedBy: userId
-            };
-          })
+          const matches = item.menuItemId === menuItemId &&
+            (hasCartItemId ? item.cartItemId === cartItemId : true);
+          if (!matches) return item;
+          return {
+            ...item,
+            status: normalizedStatus,
+            statusUpdatedAt: timestamp.now(),
+            statusUpdatedBy: userId
+          };
+        })
         : orderData.items;
 
       const updates = {

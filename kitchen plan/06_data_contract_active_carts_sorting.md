@@ -34,10 +34,8 @@ Define the API contract and data requirements for fetching "Active Carts" (the c
 
 ## Dependencies
 -   **Backend**: `GET /active-orders` endpoint tailored for active kitchen display.
--   **Models**: Shared models from Task 04.
 
 ## Acceptance Criteria
 -   [ ] Defined API Contract (Swagger/Docs) for `GET /kitchen/active-carts`.
 -   [ ] Contract includes `tableNumber`, `serverName`, `items`, `status`.
 -   [ ] Sorting is defined (Oldest first).
--   [ ] Response time < 500ms (no heavy computation on read).

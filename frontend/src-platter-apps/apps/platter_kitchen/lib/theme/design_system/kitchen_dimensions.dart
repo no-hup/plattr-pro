@@ -13,6 +13,10 @@ class KitchenDimensions {
   static const double radiusLG = 12.0;
   static const double radiusXL = 16.0;
   static const double radiusPill = 999.0;
+  
+  // Aliases for compatibility
+  static const double radiusSmall = radiusSM;
+  static const double radiusMedium = radiusMD;
 
   // Spacing (Based on 4px grid)
   static const double space2 = 2.0;

@@ -164,6 +164,32 @@ if (token) {
 - Implement frontend FCM permission request flow
 - Consider web push notifications for PWA support
 
+### 8. Server Session Validation Gaps in Orders Endpoints
+**Priority:** High
+**Source:** Backend review (Jan 2026)
+**Files:** `orders/getServedCartsForServer.js`
+**Description:**
+`getServedCartsForServer` validates session by only checking `status === 'active'`. It does not validate:
+- `entity === 'server'`
+- `expiresAt > now`
+
+Expired or non-server sessions can pass and return data.
+
+**Action:**
+- Validate `entity === 'server'` and `expiresAt > now`
+- Consider using a shared validator (e.g., sessionService) to keep rules consistent
+
+### 9. Response Envelope Coupling in Server Auth
+**Priority:** Medium
+**Source:** Backend review (Jan 2026)
+**Files:** `server/server_auth.js`
+**Description:**
+`server_auth.serverLogin` constructs a response shaped for frontend parsing expectations (`result` wrapper). This tightly couples backend response format to client parser assumptions.
+
+**Action:**
+- Standardize a single response envelope in a shared response helper
+- Update server auth and other endpoints to use the shared format
+
 ### 1. Mock Data Injection in Production Code (Critical)
 **Source:** `lib/pages/menuListing/menu_response.dart`
 **Description:**

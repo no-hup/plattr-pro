@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../widgets/widgets.dart';
-import '../../constants/kitchen_constants.dart';
+import '../../models/active_order_models.dart';
+import '../../core/kitchen_repository.dart';
+import '../../widgets/active_cart_card.dart';
+import '../../widgets/empty_state_widget.dart';
+import '../../theme/design_system/kitchen_dimensions.dart';
+import '../../theme/design_system/kitchen_typography.dart';
+import 'package:intl/intl.dart';
 
-/// Placeholder screen for History/Served Orders tab.
-/// TODO: Implement actual history UI as per Task 07.
 class HistoryScreen extends StatefulWidget {
   final String restaurantId;
   final String sessionId;
@@ -21,79 +24,129 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  // AutomaticKeepAliveClientMixin removed as IndexedStack handles state preservation
+  final KitchenRepository _repository = KitchenRepository();
+  bool _isLoading = false;
+  List<ActiveKitchenCart> _historyOrders = [];
+  DateTime _selectedDate = DateTime.now();
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchHistory();
+  }
+
+  Future<void> _fetchHistory() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    
+    try {
+      final orders = await _repository.getHistoryOrders(
+        date: _selectedDate,
+      );
+      if (mounted) {
+        setState(() => _historyOrders = orders);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _error = 'Failed to load history.');
+        ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(content: Text('Failed to fetch history orders')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2024),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() => _selectedDate = picked);
+      _fetchHistory();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    // Filter by category if needed (locally)
+    final displayOrders = _historyOrders; 
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.history,
-              size: 80,
-              color: theme.colorScheme.secondary,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Order History',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+    return Scaffold(
+      body: Column(
+        children: [
+          // Filter Bar
+          Container(
+            padding: const EdgeInsets.all(KitchenDimensions.space16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              border: Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.secondaryContainer,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.check_circle_outline,
-                    size: 48,
-                    color: theme.colorScheme.onSecondaryContainer,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Served Orders',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.onSecondaryContainer,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Completed orders (served within X hours)\nwill appear here.\nImplementation pending (Task 07)',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSecondaryContainer
-                          .withValues(alpha: 0.8),
-                    ),
-                  ),
-                ],
-              ),
+            child: Row(
+              children: [
+                Text(
+                  'Date:',
+                  style: KitchenTypography.bodyBold,
+                ),
+                const SizedBox(width: 8),
+                ActionChip(
+                  avatar: const Icon(Icons.calendar_today, size: 16),
+                  label: Text(DateFormat.yMMMd().format(_selectedDate)),
+                  onPressed: _selectDate,
+                ),
+                const Spacer(),
+                // Summary Stats
+                Text(
+                  '${displayOrders.length} Orders',
+                  style: KitchenTypography.caption,
+                ),
+              ],
             ),
-            if (widget.selectedCategory != null) ...[
-              const SizedBox(height: 16),
-              Chip(
-                avatar: const Icon(Icons.filter_alt, size: 18),
-                label: Text('Filter: ${widget.selectedCategory}'),
-                backgroundColor: theme.colorScheme.tertiaryContainer,
-              ),
-            ],
-            if (KitchenFeatureFlags.showDebugCards)
-              DebugInfoCard(
-                restaurantId: widget.restaurantId,
-                sessionId: widget.sessionId,
-              ),
-          ],
-        ),
+          ),
+
+          // Content
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? EmptyStateWidget.error(
+                        message: _error!,
+                        onRetry: _fetchHistory,
+                      )
+                    : displayOrders.isEmpty
+                        ? const EmptyStateWidget(
+                            title: 'No History',
+                            subtitle: 'No orders found for this date.',
+                            icon: Icons.history_toggle_off,
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.all(KitchenDimensions.space16),
+                            itemCount: displayOrders.length,
+                            separatorBuilder: (ctx, i) => const SizedBox(height: 16),
+                            itemBuilder: (context, index) {
+                              return ActiveCartCard(
+                                cart: displayOrders[index],
+                                onTap: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('History Detail View')),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+          ),
+        ],
       ),
     );
   }

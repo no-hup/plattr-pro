@@ -50,3 +50,20 @@ Similar to variants, addons require specific fields:
 ## 4. Updates & Maintenance
 *   When a new field is added to the backend schema, check if it's required by the frontend.
 *   If you find a "ghost bug" where data exists but doesn't render, check this list for missing fields.
+
+## 5. Server Login + Offers in Mock Data
+
+### Servers (`servers` collection)
+Server login uses `server_auth.js`, which queries servers by `email` or `phoneNumber` and then compares `password`.
+To keep mock login working, each server doc should include:
+*   **`email` or `phoneNumber`** (String)
+*   **`password`** (String)
+
+### Offers (`offers` collection)
+The offers engine expects complete offer objects with:
+*   **`type`**: `PERCENTAGE`, `FLAT`, or `BOGO`
+*   **`scope`**: `CART`, `CATEGORY`, or `ITEM`
+*   **`targetIds`** for `CATEGORY`/`ITEM` scopes (must match category/subcategory/menuItem ids)
+*   **`isActive`**, **`validity`** window, **`conditions`**, and **`benefit`**
+
+If you add a category-scoped percentage offer (e.g., 50% off desserts), ensure `targetIds` references the dessert subcategory id (ex: `sub_dessert`) and the `benefit.value` is the percentage.

@@ -65,6 +65,9 @@ class SessionProvider extends ChangeNotifier {
         isAuthenticated: true,
         userName: response.primaryCustomerName,
         phoneNumber: response.primaryCustomerPhone,
+        isUsernameMandatory: response.isUsernameMandatory,
+        isPhoneNumberMandatory: response.isPhoneNumberMandatory,
+        isMultiUserSupported: response.isMultiUserSupported,
       );
 
       // Save session to storage

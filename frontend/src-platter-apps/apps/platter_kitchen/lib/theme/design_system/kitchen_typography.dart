@@ -118,4 +118,10 @@ class KitchenTypography {
     fontWeight: FontWeight.w600,
     letterSpacing: 0.5,
   );
+
+  // Compatibility / Helpers
+  static const TextStyle cardTitle = h3; 
+  static const TextStyle body = bodyMedium;
+  static TextStyle get bodyBold => bodyMedium.copyWith(fontWeight: FontWeight.bold);
+  static const TextStyle caption = bodySmall;
 }

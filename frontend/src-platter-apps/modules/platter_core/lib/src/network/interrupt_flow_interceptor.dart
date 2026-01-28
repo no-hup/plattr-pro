@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../logging/app_logger.dart';
+import '../auth/session_storage.dart';
 
 /// Callback type for interrupt flow handlers
 typedef InterruptFlowHandler = Future<void> Function(

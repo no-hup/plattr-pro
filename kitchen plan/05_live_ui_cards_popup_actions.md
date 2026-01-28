@@ -41,8 +41,8 @@ Define the behavior of the "Live" tab, which is the core operational view for th
 -   **Backend**: Endpoints for `updateOrderItemStatus`, `updateMenuItemStock`.
 
 ## Acceptance Criteria
--   [ ] Live tab renders list of "Order Cards".
--   [ ] Tapping a card opens a modal/popup with item details.
--   [ ] "Mark Ready" button updates status and closes popup (or updates UI).
--   [ ] "Out of Stock" action updates menu item availability.
--   [ ] "Cancel Dish" flow allows selecting specific items to cancel.
+-   [x] Live tab renders list of "Order Cards".
+-   [x] Tapping a card opens a modal/popup with item details.
+-   [x] "Mark Ready" button updates status and closes popup (or updates UI).
+-   [x] "Out of Stock" action updates menu item availability.
+-   [x] "Cancel Dish" flow allows selecting specific items to cancel.
