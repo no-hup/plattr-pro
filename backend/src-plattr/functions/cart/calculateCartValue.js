@@ -167,15 +167,16 @@ async function calculateCartValue(cart) {
 
     const itemDiscountAmount = Math.max(0, basePrice - finalPrice);
 
-    // Check for applied offer to preserve it
+    // Preserve any applied offer fields, but do not apply them here
     const offerDiscount = cart.priceInfo?.offerDiscount || 0;
+    const applicableOfferDiscount = cart.priceInfo?.applicableOfferDiscount || 0;
     const appliedOfferId = cart.priceInfo?.appliedOfferId;
 
-    // Final price subtracts offer discount
-    const cartFinalPrice = Math.max(0, finalPrice - offerDiscount);
+    // Final price includes only item-level discounts
+    const cartFinalPrice = Math.max(0, finalPrice);
 
-    // Total discount includes item discounts + offer discount
-    const totalDiscountAmount = itemDiscountAmount + offerDiscount;
+    // Total discount reflects only item-level discounts
+    const totalDiscountAmount = itemDiscountAmount;
     const totalDiscountPercentage = basePrice > 0 ? (totalDiscountAmount / basePrice) * 100 : 0;
 
     // Create cart total price info using our model
@@ -195,6 +196,7 @@ async function calculateCartValue(cart) {
       result.appliedOfferId = appliedOfferId;
       result.appliedOfferTitle = cart.priceInfo?.appliedOfferTitle;
       result.offerDiscount = offerDiscount;
+      result.applicableOfferDiscount = applicableOfferDiscount;
       result.appliedOfferItems = cart.priceInfo?.appliedOfferItems || [];
     }
 

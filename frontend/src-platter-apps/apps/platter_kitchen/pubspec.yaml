@@ -30,6 +30,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Shared core module
+  platter_core:
+    path: ../../modules/platter_core
   cupertino_icons: ^1.0.2
   dio: ^5.3.3
   dio_cache_interceptor: ^3.4.4
@@ -42,6 +45,7 @@ dependencies:
   firebase_performance: ^0.9.3+3
   firebase_performance_dio: ^0.6.0
   flutter_native_splash: ^2.3.5
+  flutter_secure_storage: ^9.0.0
   freezed_annotation: ^2.4.1
   json_annotation: ^4.8.1
   get_it: ^7.6.4

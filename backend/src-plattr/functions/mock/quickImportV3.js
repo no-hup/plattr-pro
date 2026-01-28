@@ -24,7 +24,7 @@ async function importData() {
         }
 
         // Import subcollections
-        const subCollections = ['menuItems', 'categories', 'tables', 'sessions', 'servers', 'carts', 'orders', 'uiFlags'];
+        const subCollections = ['menuItems', 'categories', 'subcategories', 'menus', 'variants', 'addons', 'kitchens', 'tables', 'sessions', 'servers', 'carts', 'orders'];
         for (const subCollection of subCollections) {
             if (!restaurantData[subCollection]) continue;
             console.log(`  - ${subCollection}`);

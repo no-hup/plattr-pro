@@ -1,0 +1,1059 @@
+{
+    "customers": {
+        "9876543210": {
+            "phoneNumber": "9876543210",
+            "name": "Customer One",
+            "email": "c1@example.com",
+            "createdAt": {
+                "_seconds": 1700000000,
+                "_nanoseconds": 0
+            },
+            "updatedAt": {
+                "_seconds": 1700000000,
+                "_nanoseconds": 0
+            },
+            "visits": [],
+            "preferences": {
+                "favoriteItems": [],
+                "dietaryRestrictions": []
+            }
+        },
+        "9876543211": {
+            "phoneNumber": "9876543211",
+            "name": "Customer Two",
+            "email": "c2@example.com",
+            "createdAt": {
+                "_seconds": 1700000000,
+                "_nanoseconds": 0
+            },
+            "updatedAt": {
+                "_seconds": 1700000000,
+                "_nanoseconds": 0
+            },
+            "visits": [],
+            "preferences": {
+                "favoriteItems": [],
+                "dietaryRestrictions": []
+            }
+        }
+    },
+    "restaurants": {
+        "res_e2e_all_on": {
+            "info": {
+                "name": "E2E - All Features ON",
+                "address": "123 Testing Lane",
+                "phone": "1234567890",
+                "email": "e2e_all@plattr.com",
+                "location": {
+                    "_latitude": 12.9716,
+                    "_longitude": 77.5946
+                },
+                "isMultipleVariantOrAddonForMenuItemsSupported": true,
+                "fallbackToSameCustomConfigurationForAddItem": true
+            },
+            "menus": {
+                "menu_main": {
+                    "menuId": "menu_main",
+                    "name": "Main Menu",
+                    "isActive": true,
+                    "isDefault": true,
+                    "categoryIds": [
+                        "cat_food",
+                        "cat_bar"
+                    ],
+                    "menuItemIds": [
+                        "item_burger_1",
+                        "item_pizza_1",
+                        "item_tiramisu",
+                        "item_whiskey_1",
+                        "item_beer_1"
+                    ],
+                    "order": 0
+                }
+            },
+            "categories": {
+                "cat_food": {
+                    "id": "cat_food",
+                    "name": "Food",
+                    "order": 0,
+                    "subcategoryIds": [
+                        "sub_burger",
+                        "sub_pizza",
+                        "sub_dessert"
+                    ]
+                },
+                "cat_bar": {
+                    "id": "cat_bar",
+                    "name": "Bar",
+                    "order": 1,
+                    "subcategoryIds": [
+                        "sub_whiskey",
+                        "sub_beer"
+                    ]
+                }
+            },
+            "subcategories": {
+                "sub_burger": {
+                    "id": "sub_burger",
+                    "name": "Burger",
+                    "parentCategoryId": "cat_food",
+                    "order": 0
+                },
+                "sub_pizza": {
+                    "id": "sub_pizza",
+                    "name": "Pizza",
+                    "parentCategoryId": "cat_food",
+                    "order": 1
+                },
+                "sub_dessert": {
+                    "id": "sub_dessert",
+                    "name": "Dessert",
+                    "parentCategoryId": "cat_food",
+                    "order": 2
+                },
+                "sub_whiskey": {
+                    "id": "sub_whiskey",
+                    "name": "Whiskey",
+                    "parentCategoryId": "cat_bar",
+                    "order": 0
+                },
+                "sub_beer": {
+                    "id": "sub_beer",
+                    "name": "Beer",
+                    "parentCategoryId": "cat_bar",
+                    "order": 1
+                }
+            },
+            "menuItems": {
+                "item_burger_1": {
+                    "menuItemId": "item_burger_1",
+                    "categoryId": "cat_food",
+                    "primarySubcategoryId": "sub_burger",
+                    "subcategoryIds": [
+                        "sub_burger"
+                    ],
+                    "meta": {
+                        "name": "Classic Burger",
+                        "description": "Juicy beef burger",
+                        "categoryName": "Food",
+                        "image": ""
+                    },
+                    "priceInfo": {
+                        "basePrice": 200,
+                        "discount": 10,
+                        "finalPrice": 180
+                    },
+                    "variants": [
+                        {
+                            "id": "var_size_burger",
+                            "name": "Size"
+                        }
+                    ],
+                    "addons": [
+                        "addon_cheese"
+                    ],
+                    "isInStock": true,
+                    "isCustomizable": true
+                },
+                "item_pizza_1": {
+                    "menuItemId": "item_pizza_1",
+                    "categoryId": "cat_food",
+                    "primarySubcategoryId": "sub_pizza",
+                    "subcategoryIds": [
+                        "sub_pizza"
+                    ],
+                    "meta": {
+                        "name": "Margherita Pizza",
+                        "description": "Classic cheese pizza",
+                        "categoryName": "Food",
+                        "image": ""
+                    },
+                    "priceInfo": {
+                        "basePrice": 500,
+                        "discount": 10,
+                        "finalPrice": 450
+                    },
+                    "variants": [
+                        {
+                            "id": "var_size_pizza",
+                            "name": "Size"
+                        }
+                    ],
+                    "addons": [],
+                    "isInStock": true,
+                    "isCustomizable": true
+                },
+                "item_tiramisu": {
+                    "menuItemId": "item_tiramisu",
+                    "categoryId": "cat_food",
+                    "primarySubcategoryId": "sub_dessert",
+                    "subcategoryIds": [
+                        "sub_dessert"
+                    ],
+                    "meta": {
+                        "name": "Tiramisu",
+                        "description": "Coffee-flavored Italian dessert",
+                        "categoryName": "Food",
+                        "image": ""
+                    },
+                    "priceInfo": {
+                        "basePrice": 200,
+                        "discount": 0,
+                        "finalPrice": 200
+                    },
+                    "variants": [],
+                    "addons": [],
+                    "isInStock": true,
+                    "isCustomizable": false
+                },
+                "item_whiskey_1": {
+                    "menuItemId": "item_whiskey_1",
+                    "categoryId": "cat_bar",
+                    "primarySubcategoryId": "sub_whiskey",
+                    "subcategoryIds": [
+                        "sub_whiskey"
+                    ],
+                    "meta": {
+                        "name": "Scotch Whiskey",
+                        "description": "Premium aged scotch",
+                        "categoryName": "Bar",
+                        "image": ""
+                    },
+                    "priceInfo": {
+                        "basePrice": 500,
+                        "discount": 0,
+                        "finalPrice": 500
+                    },
+                    "variants": [],
+                    "addons": [],
+                    "isInStock": true,
+                    "isCustomizable": false
+                },
+                "item_beer_1": {
+                    "menuItemId": "item_beer_1",
+                    "categoryId": "cat_bar",
+                    "primarySubcategoryId": "sub_beer",
+                    "subcategoryIds": [
+                        "sub_beer"
+                    ],
+                    "meta": {
+                        "name": "Craft Beer",
+                        "description": "Local brewery special",
+                        "categoryName": "Bar",
+                        "image": ""
+                    },
+                    "priceInfo": {
+                        "basePrice": 100,
+                        "discount": 0,
+                        "finalPrice": 100
+                    },
+                    "variants": [],
+                    "addons": [],
+                    "isInStock": true,
+                    "isCustomizable": false
+                }
+            },
+            "variants": {
+                "var_size_burger": {
+                    "id": "var_size_burger",
+                    "meta": {
+                        "name": "Size",
+                        "categoryAssociatedWith": [
+                            "cat_food"
+                        ]
+                    },
+                    "options": [
+                        {
+                            "id": "opt_reg",
+                            "name": "Regular",
+                            "priceInfo": {
+                                "basePrice": 0,
+                                "finalPrice": 0,
+                                "discount": 0
+                            }
+                        },
+                        {
+                            "id": "opt_large",
+                            "name": "Large",
+                            "priceInfo": {
+                                "basePrice": 50,
+                                "finalPrice": 50,
+                                "discount": 0
+                            }
+                        }
+                    ],
+                    "isMandatory": true
+                },
+                "var_size_pizza": {
+                    "id": "var_size_pizza",
+                    "meta": {
+                        "name": "Size",
+                        "categoryAssociatedWith": [
+                            "cat_food"
+                        ]
+                    },
+                    "options": [
+                        {
+                            "id": "opt_med",
+                            "name": "Medium",
+                            "priceInfo": {
+                                "basePrice": 0,
+                                "finalPrice": 0,
+                                "discount": 0
+                            }
+                        },
+                        {
+                            "id": "opt_lrg",
+                            "name": "Large",
+                            "priceInfo": {
+                                "basePrice": 100,
+                                "finalPrice": 100,
+                                "discount": 0
+                            }
+                        }
+                    ],
+                    "isMandatory": true
+                }
+            },
+            "addons": {
+                "addon_cheese": {
+                    "id": "addon_cheese",
+                    "meta": {
+                        "name": "Extra Cheese",
+                        "categoryAssociatedWith": [
+                            "cat_food"
+                        ]
+                    },
+                    "priceInfo": {
+                        "basePrice": 20,
+                        "finalPrice": 20,
+                        "discount": 0
+                    },
+                    "isInStock": true
+                }
+            },
+            "kitchens": {
+                "kitchen_food": {
+                    "name": "Food Kitchen",
+                    "status": "active"
+                },
+                "kitchen_bar": {
+                    "name": "Bar Kitchen",
+                    "status": "active"
+                }
+            },
+            "servers": {
+                "server_1": {
+                    "name": "Server One",
+                    "role": "waiter",
+                    "status": "active"
+                },
+                "server_2": {
+                    "name": "Server Two",
+                    "role": "waiter",
+                    "status": "active"
+                }
+            },
+            "tables": {
+                "table_1": {
+                    "number": "1",
+                    "capacity": 4,
+                    "status": "vacant",
+                    "currentOTP": {
+                        "code": "1234"
+                    }
+                },
+                "table_2": {
+                    "number": "2",
+                    "capacity": 2,
+                    "status": "vacant",
+                    "currentOTP": {
+                        "code": "1234"
+                    }
+                }
+            },
+            "sessions": {},
+            "carts": {},
+            "orders": {},
+            "offers": {}
+        },
+        "res_e2e_multi_variant_off": {
+            "info": {
+                "name": "E2E - Multi-Variant OFF",
+                "address": "456 Variant Blvd",
+                "phone": "1234567891",
+                "email": "e2e_mv@plattr.com",
+                "location": {
+                    "_latitude": 12.9716,
+                    "_longitude": 77.5946
+                },
+                "isMultipleVariantOrAddonForMenuItemsSupported": false,
+                "fallbackToSameCustomConfigurationForAddItem": true
+            },
+            "menus": {
+                "menu_main": {
+                    "menuId": "menu_main",
+                    "name": "Main Menu",
+                    "isActive": true,
+                    "isDefault": true,
+                    "categoryIds": [
+                        "cat_food",
+                        "cat_bar"
+                    ],
+                    "menuItemIds": [
+                        "item_burger_1",
+                        "item_pizza_1",
+                        "item_tiramisu",
+                        "item_whiskey_1",
+                        "item_beer_1"
+                    ],
+                    "order": 0
+                }
+            },
+            "categories": {
+                "cat_food": {
+                    "id": "cat_food",
+                    "name": "Food",
+                    "order": 0,
+                    "subcategoryIds": [
+                        "sub_burger",
+                        "sub_pizza",
+                        "sub_dessert"
+                    ]
+                },
+                "cat_bar": {
+                    "id": "cat_bar",
+                    "name": "Bar",
+                    "order": 1,
+                    "subcategoryIds": [
+                        "sub_whiskey",
+                        "sub_beer"
+                    ]
+                }
+            },
+            "subcategories": {
+                "sub_burger": {
+                    "id": "sub_burger",
+                    "name": "Burger",
+                    "parentCategoryId": "cat_food",
+                    "order": 0
+                },
+                "sub_pizza": {
+                    "id": "sub_pizza",
+                    "name": "Pizza",
+                    "parentCategoryId": "cat_food",
+                    "order": 1
+                },
+                "sub_dessert": {
+                    "id": "sub_dessert",
+                    "name": "Dessert",
+                    "parentCategoryId": "cat_food",
+                    "order": 2
+                },
+                "sub_whiskey": {
+                    "id": "sub_whiskey",
+                    "name": "Whiskey",
+                    "parentCategoryId": "cat_bar",
+                    "order": 0
+                },
+                "sub_beer": {
+                    "id": "sub_beer",
+                    "name": "Beer",
+                    "parentCategoryId": "cat_bar",
+                    "order": 1
+                }
+            },
+            "menuItems": {
+                "item_burger_1": {
+                    "menuItemId": "item_burger_1",
+                    "categoryId": "cat_food",
+                    "primarySubcategoryId": "sub_burger",
+                    "subcategoryIds": [
+                        "sub_burger"
+                    ],
+                    "meta": {
+                        "name": "Classic Burger",
+                        "description": "Juicy beef burger",
+                        "categoryName": "Food",
+                        "image": ""
+                    },
+                    "priceInfo": {
+                        "basePrice": 200,
+                        "discount": 10,
+                        "finalPrice": 180
+                    },
+                    "variants": [
+                        {
+                            "id": "var_size_burger",
+                            "name": "Size"
+                        }
+                    ],
+                    "addons": [
+                        "addon_cheese"
+                    ],
+                    "isInStock": true,
+                    "isCustomizable": true
+                },
+                "item_pizza_1": {
+                    "menuItemId": "item_pizza_1",
+                    "categoryId": "cat_food",
+                    "primarySubcategoryId": "sub_pizza",
+                    "subcategoryIds": [
+                        "sub_pizza"
+                    ],
+                    "meta": {
+                        "name": "Margherita Pizza",
+                        "description": "Classic cheese pizza",
+                        "categoryName": "Food",
+                        "image": ""
+                    },
+                    "priceInfo": {
+                        "basePrice": 500,
+                        "discount": 10,
+                        "finalPrice": 450
+                    },
+                    "variants": [
+                        {
+                            "id": "var_size_pizza",
+                            "name": "Size"
+                        }
+                    ],
+                    "addons": [],
+                    "isInStock": true,
+                    "isCustomizable": true
+                },
+                "item_tiramisu": {
+                    "menuItemId": "item_tiramisu",
+                    "categoryId": "cat_food",
+                    "primarySubcategoryId": "sub_dessert",
+                    "subcategoryIds": [
+                        "sub_dessert"
+                    ],
+                    "meta": {
+                        "name": "Tiramisu",
+                        "description": "Coffee-flavored Italian dessert",
+                        "categoryName": "Food",
+                        "image": ""
+                    },
+                    "priceInfo": {
+                        "basePrice": 200,
+                        "discount": 0,
+                        "finalPrice": 200
+                    },
+                    "variants": [],
+                    "addons": [],
+                    "isInStock": true,
+                    "isCustomizable": false
+                },
+                "item_whiskey_1": {
+                    "menuItemId": "item_whiskey_1",
+                    "categoryId": "cat_bar",
+                    "primarySubcategoryId": "sub_whiskey",
+                    "subcategoryIds": [
+                        "sub_whiskey"
+                    ],
+                    "meta": {
+                        "name": "Scotch Whiskey",
+                        "description": "Premium aged scotch",
+                        "categoryName": "Bar",
+                        "image": ""
+                    },
+                    "priceInfo": {
+                        "basePrice": 500,
+                        "discount": 0,
+                        "finalPrice": 500
+                    },
+                    "variants": [],
+                    "addons": [],
+                    "isInStock": true,
+                    "isCustomizable": false
+                },
+                "item_beer_1": {
+                    "menuItemId": "item_beer_1",
+                    "categoryId": "cat_bar",
+                    "primarySubcategoryId": "sub_beer",
+                    "subcategoryIds": [
+                        "sub_beer"
+                    ],
+                    "meta": {
+                        "name": "Craft Beer",
+                        "description": "Local brewery special",
+                        "categoryName": "Bar",
+                        "image": ""
+                    },
+                    "priceInfo": {
+                        "basePrice": 100,
+                        "discount": 0,
+                        "finalPrice": 100
+                    },
+                    "variants": [],
+                    "addons": [],
+                    "isInStock": true,
+                    "isCustomizable": false
+                }
+            },
+            "variants": {
+                "var_size_burger": {
+                    "id": "var_size_burger",
+                    "meta": {
+                        "name": "Size",
+                        "categoryAssociatedWith": [
+                            "cat_food"
+                        ]
+                    },
+                    "options": [
+                        {
+                            "id": "opt_reg",
+                            "name": "Regular",
+                            "priceInfo": {
+                                "basePrice": 0,
+                                "finalPrice": 0,
+                                "discount": 0
+                            }
+                        },
+                        {
+                            "id": "opt_large",
+                            "name": "Large",
+                            "priceInfo": {
+                                "basePrice": 50,
+                                "finalPrice": 50,
+                                "discount": 0
+                            }
+                        }
+                    ],
+                    "isMandatory": true
+                },
+                "var_size_pizza": {
+                    "id": "var_size_pizza",
+                    "meta": {
+                        "name": "Size",
+                        "categoryAssociatedWith": [
+                            "cat_food"
+                        ]
+                    },
+                    "options": [
+                        {
+                            "id": "opt_med",
+                            "name": "Medium",
+                            "priceInfo": {
+                                "basePrice": 0,
+                                "finalPrice": 0,
+                                "discount": 0
+                            }
+                        },
+                        {
+                            "id": "opt_lrg",
+                            "name": "Large",
+                            "priceInfo": {
+                                "basePrice": 100,
+                                "finalPrice": 100,
+                                "discount": 0
+                            }
+                        }
+                    ],
+                    "isMandatory": true
+                }
+            },
+            "addons": {
+                "addon_cheese": {
+                    "id": "addon_cheese",
+                    "meta": {
+                        "name": "Extra Cheese",
+                        "categoryAssociatedWith": [
+                            "cat_food"
+                        ]
+                    },
+                    "priceInfo": {
+                        "basePrice": 20,
+                        "finalPrice": 20,
+                        "discount": 0
+                    },
+                    "isInStock": true
+                }
+            },
+            "kitchens": {
+                "kitchen_food": {
+                    "name": "Food Kitchen",
+                    "status": "active"
+                },
+                "kitchen_bar": {
+                    "name": "Bar Kitchen",
+                    "status": "active"
+                }
+            },
+            "servers": {
+                "server_1": {
+                    "name": "Server One",
+                    "role": "waiter",
+                    "status": "active"
+                },
+                "server_2": {
+                    "name": "Server Two",
+                    "role": "waiter",
+                    "status": "active"
+                }
+            },
+            "tables": {
+                "table_1": {
+                    "number": "1",
+                    "capacity": 4,
+                    "status": "vacant",
+                    "currentOTP": {
+                        "code": "1234"
+                    }
+                },
+                "table_2": {
+                    "number": "2",
+                    "capacity": 2,
+                    "status": "vacant",
+                    "currentOTP": {
+                        "code": "1234"
+                    }
+                }
+            },
+            "sessions": {},
+            "carts": {},
+            "orders": {},
+            "offers": {}
+        },
+        "res_e2e_fallback_off": {
+            "info": {
+                "name": "E2E - Fallback Config OFF",
+                "address": "789 Fallback Rd",
+                "phone": "1234567892",
+                "email": "e2e_fb@plattr.com",
+                "location": {
+                    "_latitude": 12.9716,
+                    "_longitude": 77.5946
+                },
+                "isMultipleVariantOrAddonForMenuItemsSupported": true,
+                "fallbackToSameCustomConfigurationForAddItem": false
+            },
+            "menus": {
+                "menu_main": {
+                    "menuId": "menu_main",
+                    "name": "Main Menu",
+                    "isActive": true,
+                    "isDefault": true,
+                    "categoryIds": [
+                        "cat_food",
+                        "cat_bar"
+                    ],
+                    "menuItemIds": [
+                        "item_burger_1",
+                        "item_pizza_1",
+                        "item_tiramisu",
+                        "item_whiskey_1",
+                        "item_beer_1"
+                    ],
+                    "order": 0
+                }
+            },
+            "categories": {
+                "cat_food": {
+                    "id": "cat_food",
+                    "name": "Food",
+                    "order": 0,
+                    "subcategoryIds": [
+                        "sub_burger",
+                        "sub_pizza",
+                        "sub_dessert"
+                    ]
+                },
+                "cat_bar": {
+                    "id": "cat_bar",
+                    "name": "Bar",
+                    "order": 1,
+                    "subcategoryIds": [
+                        "sub_whiskey",
+                        "sub_beer"
+                    ]
+                }
+            },
+            "subcategories": {
+                "sub_burger": {
+                    "id": "sub_burger",
+                    "name": "Burger",
+                    "parentCategoryId": "cat_food",
+                    "order": 0
+                },
+                "sub_pizza": {
+                    "id": "sub_pizza",
+                    "name": "Pizza",
+                    "parentCategoryId": "cat_food",
+                    "order": 1
+                },
+                "sub_dessert": {
+                    "id": "sub_dessert",
+                    "name": "Dessert",
+                    "parentCategoryId": "cat_food",
+                    "order": 2
+                },
+                "sub_whiskey": {
+                    "id": "sub_whiskey",
+                    "name": "Whiskey",
+                    "parentCategoryId": "cat_bar",
+                    "order": 0
+                },
+                "sub_beer": {
+                    "id": "sub_beer",
+                    "name": "Beer",
+                    "parentCategoryId": "cat_bar",
+                    "order": 1
+                }
+            },
+            "menuItems": {
+                "item_burger_1": {
+                    "menuItemId": "item_burger_1",
+                    "categoryId": "cat_food",
+                    "primarySubcategoryId": "sub_burger",
+                    "subcategoryIds": [
+                        "sub_burger"
+                    ],
+                    "meta": {
+                        "name": "Classic Burger",
+                        "description": "Juicy beef burger",
+                        "categoryName": "Food",
+                        "image": ""
+                    },
+                    "priceInfo": {
+                        "basePrice": 200,
+                        "discount": 10,
+                        "finalPrice": 180
+                    },
+                    "variants": [
+                        {
+                            "id": "var_size_burger",
+                            "name": "Size"
+                        }
+                    ],
+                    "addons": [
+                        "addon_cheese"
+                    ],
+                    "isInStock": true,
+                    "isCustomizable": true
+                },
+                "item_pizza_1": {
+                    "menuItemId": "item_pizza_1",
+                    "categoryId": "cat_food",
+                    "primarySubcategoryId": "sub_pizza",
+                    "subcategoryIds": [
+                        "sub_pizza"
+                    ],
+                    "meta": {
+                        "name": "Margherita Pizza",
+                        "description": "Classic cheese pizza",
+                        "categoryName": "Food",
+                        "image": ""
+                    },
+                    "priceInfo": {
+                        "basePrice": 500,
+                        "discount": 10,
+                        "finalPrice": 450
+                    },
+                    "variants": [
+                        {
+                            "id": "var_size_pizza",
+                            "name": "Size"
+                        }
+                    ],
+                    "addons": [],
+                    "isInStock": true,
+                    "isCustomizable": true
+                },
+                "item_tiramisu": {
+                    "menuItemId": "item_tiramisu",
+                    "categoryId": "cat_food",
+                    "primarySubcategoryId": "sub_dessert",
+                    "subcategoryIds": [
+                        "sub_dessert"
+                    ],
+                    "meta": {
+                        "name": "Tiramisu",
+                        "description": "Coffee-flavored Italian dessert",
+                        "categoryName": "Food",
+                        "image": ""
+                    },
+                    "priceInfo": {
+                        "basePrice": 200,
+                        "discount": 0,
+                        "finalPrice": 200
+                    },
+                    "variants": [],
+                    "addons": [],
+                    "isInStock": true,
+                    "isCustomizable": false
+                },
+                "item_whiskey_1": {
+                    "menuItemId": "item_whiskey_1",
+                    "categoryId": "cat_bar",
+                    "primarySubcategoryId": "sub_whiskey",
+                    "subcategoryIds": [
+                        "sub_whiskey"
+                    ],
+                    "meta": {
+                        "name": "Scotch Whiskey",
+                        "description": "Premium aged scotch",
+                        "categoryName": "Bar",
+                        "image": ""
+                    },
+                    "priceInfo": {
+                        "basePrice": 500,
+                        "discount": 0,
+                        "finalPrice": 500
+                    },
+                    "variants": [],
+                    "addons": [],
+                    "isInStock": true,
+                    "isCustomizable": false
+                },
+                "item_beer_1": {
+                    "menuItemId": "item_beer_1",
+                    "categoryId": "cat_bar",
+                    "primarySubcategoryId": "sub_beer",
+                    "subcategoryIds": [
+                        "sub_beer"
+                    ],
+                    "meta": {
+                        "name": "Craft Beer",
+                        "description": "Local brewery special",
+                        "categoryName": "Bar",
+                        "image": ""
+                    },
+                    "priceInfo": {
+                        "basePrice": 100,
+                        "discount": 0,
+                        "finalPrice": 100
+                    },
+                    "variants": [],
+                    "addons": [],
+                    "isInStock": true,
+                    "isCustomizable": false
+                }
+            },
+            "variants": {
+                "var_size_burger": {
+                    "id": "var_size_burger",
+                    "meta": {
+                        "name": "Size",
+                        "categoryAssociatedWith": [
+                            "cat_food"
+                        ]
+                    },
+                    "options": [
+                        {
+                            "id": "opt_reg",
+                            "name": "Regular",
+                            "priceInfo": {
+                                "basePrice": 0,
+                                "finalPrice": 0,
+                                "discount": 0
+                            }
+                        },
+                        {
+                            "id": "opt_large",
+                            "name": "Large",
+                            "priceInfo": {
+                                "basePrice": 50,
+                                "finalPrice": 50,
+                                "discount": 0
+                            }
+                        }
+                    ],
+                    "isMandatory": true
+                },
+                "var_size_pizza": {
+                    "id": "var_size_pizza",
+                    "meta": {
+                        "name": "Size",
+                        "categoryAssociatedWith": [
+                            "cat_food"
+                        ]
+                    },
+                    "options": [
+                        {
+                            "id": "opt_med",
+                            "name": "Medium",
+                            "priceInfo": {
+                                "basePrice": 0,
+                                "finalPrice": 0,
+                                "discount": 0
+                            }
+                        },
+                        {
+                            "id": "opt_lrg",
+                            "name": "Large",
+                            "priceInfo": {
+                                "basePrice": 100,
+                                "finalPrice": 100,
+                                "discount": 0
+                            }
+                        }
+                    ],
+                    "isMandatory": true
+                }
+            },
+            "addons": {
+                "addon_cheese": {
+                    "id": "addon_cheese",
+                    "meta": {
+                        "name": "Extra Cheese",
+                        "categoryAssociatedWith": [
+                            "cat_food"
+                        ]
+                    },
+                    "priceInfo": {
+                        "basePrice": 20,
+                        "finalPrice": 20,
+                        "discount": 0
+                    },
+                    "isInStock": true
+                }
+            },
+            "kitchens": {
+                "kitchen_food": {
+                    "name": "Food Kitchen",
+                    "status": "active"
+                },
+                "kitchen_bar": {
+                    "name": "Bar Kitchen",
+                    "status": "active"
+                }
+            },
+            "servers": {
+                "server_1": {
+                    "name": "Server One",
+                    "role": "waiter",
+                    "status": "active"
+                },
+                "server_2": {
+                    "name": "Server Two",
+                    "role": "waiter",
+                    "status": "active"
+                }
+            },
+            "tables": {
+                "table_1": {
+                    "number": "1",
+                    "capacity": 4,
+                    "status": "vacant",
+                    "currentOTP": {
+                        "code": "1234"
+                    }
+                },
+                "table_2": {
+                    "number": "2",
+                    "capacity": 2,
+                    "status": "vacant",
+                    "currentOTP": {
+                        "code": "1234"
+                    }
+                }
+            },
+            "sessions": {},
+            "carts": {},
+            "orders": {},
+            "offers": {}
+        }
+    }
+}

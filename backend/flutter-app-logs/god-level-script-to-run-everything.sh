@@ -121,11 +121,12 @@ select_mock_data() {
     echo "  2) mockDataV3 (importMockDataV3.js) - Latest V3 dataset with offers"
     echo "  3) quickImport (quickImport.js)     - Quick V2 import (minimal)"
     echo "  4) quickImportV3 (quickImportV3.js) - Quick V3 import (minimal)"
-    echo "  5) Skip mock data import"
+    echo "  5) mockData5EndToEndTesting (importMockData5.js) - New E2E Test data"
+    echo "  6) Skip mock data import"
     echo ""
     
     while true; do
-        read "?Enter your choice [1-5]: " choice
+        read "?Enter your choice [1-6]: " choice
         case $choice in
             1)
                 MOCK_SCRIPT="importMockDataV2.js"
@@ -148,12 +149,17 @@ select_mock_data() {
                 break
                 ;;
             5)
+                MOCK_SCRIPT="importMockData5.js"
+                MOCK_NAME="mockData5EndToEndTesting"
+                break
+                ;;
+            6)
                 MOCK_SCRIPT=""
                 MOCK_NAME="(skipped)"
                 break
                 ;;
             *)
-                log_warn "Invalid choice. Please enter 1-5."
+                log_warn "Invalid choice. Please enter 1-6."
                 ;;
         esac
     done

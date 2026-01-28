@@ -52,20 +52,27 @@ async function calculatePriceWithOffer(cart, offer) {
         priceInfo: basePriceInfo
     });
 
-    // Step 4: Apply offer discount to final price
+    // Step 4: Determine which discount to apply (item vs offer)
     const basePrice = basePriceInfo.basePrice || 0;
-    const itemDiscountAmount = Math.max(0, basePrice - (basePriceInfo.finalPrice + discountAmount));
-    const finalPrice = Math.max(0, basePriceInfo.finalPrice - discountAmount);
-    const totalDiscountAmount = (basePrice - basePriceInfo.finalPrice) + discountAmount;
+    const itemDiscountAmount = Math.max(0, basePrice - (basePriceInfo.finalPrice || 0));
+    const rawOfferDiscount = Math.max(0, discountAmount || 0);
+    const applicableOfferDiscount = Math.min(rawOfferDiscount, basePrice);
+    const useOfferDiscount = applicableOfferDiscount > itemDiscountAmount;
+    const appliedDiscountAmount = useOfferDiscount ? applicableOfferDiscount : itemDiscountAmount;
+    const finalPrice = Math.max(0, basePrice - appliedDiscountAmount);
+    const totalDiscountAmount = appliedDiscountAmount;
+    const totalDiscount = basePrice > 0 ? (totalDiscountAmount / basePrice) * 100 : 0;
 
     // Step 5: Construct complete priceInfo
     return {
         ...basePriceInfo,
         finalPrice: roundPrice(finalPrice),
+        totalDiscount: roundPrice(totalDiscount),
         totalDiscountAmount: roundPrice(totalDiscountAmount),
         appliedOfferId: offer.id,
         appliedOfferTitle: offer.title,
-        offerDiscount: roundPrice(discountAmount),
+        offerDiscount: useOfferDiscount ? roundPrice(applicableOfferDiscount) : 0,
+        applicableOfferDiscount: roundPrice(applicableOfferDiscount),
         appliedOfferItems: appliedItems,
         offerAppliedAt: timestamp.now()
     };
@@ -100,6 +107,7 @@ async function calculatePriceWithoutOffer(cart) {
         appliedOfferId: null,
         appliedOfferTitle: null,
         offerDiscount: 0,
+        applicableOfferDiscount: 0,
         appliedOfferItems: [],
         offerAppliedAt: null
     };

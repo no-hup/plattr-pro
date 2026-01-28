@@ -241,7 +241,9 @@ function filterItemsByMenu(menuItems, activeMenu) {
   const allowedItemIds = new Set(activeMenu.menuItemIds.map(id => String(id).trim()));
 
   const filtered = menuItems.filter(item => {
-    const itemId = String(item.id).trim();
+    // FIX: use menuItemId (mapped from doc.id in fetchMenuItems) or fallback to id
+    const rawId = item.menuItemId || item.id;
+    const itemId = String(rawId).trim();
     return allowedItemIds.has(itemId);
   });
 
