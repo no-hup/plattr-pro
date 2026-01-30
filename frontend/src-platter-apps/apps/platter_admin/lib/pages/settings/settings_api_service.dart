@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:platter_core/platter_core.dart';
 
-/// API service for restaurant settings
-class SettingsApiService {
+/// API service for restaurant settings (Admin app specific)
+class AdminSettingsApiService {
   final Dio _dio = DioClient().dio;
 
   /// Get restaurant settings

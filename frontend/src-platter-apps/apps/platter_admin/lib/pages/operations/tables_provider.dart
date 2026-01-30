@@ -40,11 +40,11 @@ class TablesProvider extends ChangeNotifier {
       sessionId: sessionId,
     );
 
-    if (response.isSuccess && response.data != null) {
+    if (response.success && response.data != null) {
       _tables = response.data!;
-      _state = DataState.success;
+      _state = DataState.loaded;
     } else {
-      _errorMessage = response.errorMessage ?? 'Failed to load tables';
+      _errorMessage = response.message ?? 'Failed to load tables';
       _state = DataState.error;
     }
     notifyListeners();
@@ -61,11 +61,11 @@ class TablesProvider extends ChangeNotifier {
       status: status,
     );
 
-    if (response.isSuccess) {
+    if (response.success) {
       await loadTables(); // Refresh list
       return true;
     } else {
-      _errorMessage = response.errorMessage ?? 'Failed to update table';
+      _errorMessage = response.message ?? 'Failed to update table';
       notifyListeners();
       return false;
     }
@@ -90,11 +90,11 @@ class TablesProvider extends ChangeNotifier {
       updateData: updateData,
     );
 
-    if (response.isSuccess) {
+    if (response.success) {
       await loadTables(); // Refresh list
       return true;
     } else {
-      _errorMessage = response.errorMessage ?? 'Failed to update table';
+      _errorMessage = response.message ?? 'Failed to update table';
       notifyListeners();
       return false;
     }

@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:platter_core/platter_core.dart';
-import 'settings_api_service.dart';
+import 'settings_api_service.dart' as admin_settings;
 
 /// Provider for restaurant settings state
 class SettingsProvider extends ChangeNotifier {
-  final SettingsApiService _apiService;
+  final admin_settings.AdminSettingsApiService _apiService;
   final String restaurantId;
   final String sessionId;
 
@@ -14,7 +14,7 @@ class SettingsProvider extends ChangeNotifier {
   bool _isSaving = false;
 
   SettingsProvider({
-    required SettingsApiService apiService,
+    required admin_settings.AdminSettingsApiService apiService,
     required this.restaurantId,
     required this.sessionId,
   }) : _apiService = apiService;
@@ -35,23 +35,33 @@ class SettingsProvider extends ChangeNotifier {
       sessionId: sessionId,
     );
 
-    if (response.isSuccess && response.data != null) {
+    if (response.success && response.data != null) {
       _settings = response.data;
-      _state = DataState.success;
+      _state = DataState.loaded;
     } else {
-      _errorMessage = response.errorMessage ?? 'Failed to load settings';
+      _errorMessage = response.message ?? 'Failed to load settings';
       _state = DataState.error;
     }
     notifyListeners();
   }
 
-  /// Update a single setting
+  /// Update a single setting with optimistic update
   Future<bool> updateSetting(String key, dynamic value) async {
     return updateSettings({key: value});
   }
 
-  /// Update multiple settings
+  /// Update multiple settings with optimistic updates
+  /// 
+  /// This method updates local state immediately (optimistic update)
+  /// and only re-fetches from server if the update fails.
   Future<bool> updateSettings(Map<String, dynamic> updates) async {
+    if (_settings == null) return false;
+    
+    // Store previous settings for rollback
+    final previousSettings = _settings;
+    
+    // Apply optimistic update locally
+    _settings = _applyOptimisticUpdates(_settings!, updates);
     _isSaving = true;
     notifyListeners();
 
@@ -63,14 +73,88 @@ class SettingsProvider extends ChangeNotifier {
 
     _isSaving = false;
 
-    if (response.isSuccess) {
-      await loadSettings(); // Refresh settings
+    if (response.success) {
+      // Update succeeded - keep the optimistic update
+      notifyListeners();
       return true;
     } else {
-      _errorMessage = response.errorMessage ?? 'Failed to update settings';
+      // Update failed - rollback to previous settings
+      _settings = previousSettings;
+      _errorMessage = response.message ?? 'Failed to update settings';
       notifyListeners();
       return false;
     }
+  }
+
+  /// Apply dot-path updates to settings optimistically
+  RestaurantSettings _applyOptimisticUpdates(
+    RestaurantSettings current, 
+    Map<String, dynamic> updates,
+  ) {
+    // Build updated feature flags
+    final updatedFlags = Map<String, bool>.from(current.featureFlags);
+    
+    // Build updated theme (copy current values)
+    var updatedTheme = current.theme;
+    String primaryColor = updatedTheme.primaryColor;
+    String secondaryColor = updatedTheme.secondaryColor;
+    String accentColor = updatedTheme.accentColor;
+    String backgroundColor = updatedTheme.backgroundColor;
+    String surfaceColor = updatedTheme.surfaceColor;
+    String errorColor = updatedTheme.errorColor;
+    String fontFamily = updatedTheme.fontFamily;
+    
+    for (final entry in updates.entries) {
+      final key = entry.key;
+      final value = entry.value;
+      
+      if (key.startsWith('featureFlags.')) {
+        final flagKey = key.substring('featureFlags.'.length);
+        if (value is bool) {
+          updatedFlags[flagKey] = value;
+        }
+      } else if (key.startsWith('theme.')) {
+        final themeKey = key.substring('theme.'.length);
+        if (value is String) {
+          switch (themeKey) {
+            case 'primaryColor':
+              primaryColor = value;
+              break;
+            case 'secondaryColor':
+              secondaryColor = value;
+              break;
+            case 'accentColor':
+              accentColor = value;
+              break;
+            case 'backgroundColor':
+              backgroundColor = value;
+              break;
+            case 'surfaceColor':
+              surfaceColor = value;
+              break;
+            case 'errorColor':
+              errorColor = value;
+              break;
+            case 'fontFamily':
+              fontFamily = value;
+              break;
+          }
+        }
+      }
+    }
+    
+    return RestaurantSettings(
+      featureFlags: updatedFlags,
+      theme: ThemeConfig(
+        primaryColor: primaryColor,
+        secondaryColor: secondaryColor,
+        accentColor: accentColor,
+        backgroundColor: backgroundColor,
+        surfaceColor: surfaceColor,
+        errorColor: errorColor,
+        fontFamily: fontFamily,
+      ),
+    );
   }
 
   /// Toggle a boolean feature flag
@@ -82,14 +166,14 @@ class SettingsProvider extends ChangeNotifier {
   Future<bool> updateTheme({
     String? primaryColor,
     String? secondaryColor,
-    String? logoUrl,
+    String? accentColor,
     String? fontFamily,
   }) async {
     final themeUpdates = <String, dynamic>{};
-    if (primaryColor != null) themeUpdates['themeConfig.primaryColor'] = primaryColor;
-    if (secondaryColor != null) themeUpdates['themeConfig.secondaryColor'] = secondaryColor;
-    if (logoUrl != null) themeUpdates['themeConfig.logoUrl'] = logoUrl;
-    if (fontFamily != null) themeUpdates['themeConfig.fontFamily'] = fontFamily;
+    if (primaryColor != null) themeUpdates['theme.primaryColor'] = primaryColor;
+    if (secondaryColor != null) themeUpdates['theme.secondaryColor'] = secondaryColor;
+    if (accentColor != null) themeUpdates['theme.accentColor'] = accentColor;
+    if (fontFamily != null) themeUpdates['theme.fontFamily'] = fontFamily;
 
     if (themeUpdates.isEmpty) return true;
     return updateSettings(themeUpdates);
