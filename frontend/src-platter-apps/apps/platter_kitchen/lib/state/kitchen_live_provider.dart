@@ -62,7 +62,7 @@ class KitchenLiveProvider extends ChangeNotifier {
       
       _error = null;
     } catch (e) {
-      AppLogger.error('Failed to fetch active carts', e);
+      AppLogger.error('Failed to fetch active carts', error: e);
       _error = "Failed to load active tickets.";
     } finally {
       _isLoading = false;

@@ -12,7 +12,7 @@ class SessionManager {
       await SessionStorage().clearSession();
       AppLogger.info('User logged out from kitchen app');
     } catch (error, stackTrace) {
-      AppLogger.error('Failed to clear session during logout', error, stackTrace);
+      AppLogger.error('Failed to clear session during logout', error: error, stackTrace: stackTrace);
       // TODO(tech-debt): surface a user-facing error if session clearing fails.
     }
 

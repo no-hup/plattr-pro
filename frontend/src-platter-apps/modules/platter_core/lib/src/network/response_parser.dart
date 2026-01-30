@@ -29,7 +29,7 @@ class ResponseParser {
     } else {
       AppLogger.error(
         'ResponseParser: Unexpected response format',
-        'Expected Map<String, dynamic>, got ${responseData.runtimeType}',
+        error: 'Expected Map<String, dynamic>, got ${responseData.runtimeType}',
       );
       return ApiResponse<T>.error(
         'Unexpected response format',
@@ -79,8 +79,8 @@ class ResponseParser {
     } catch (e, stack) {
       AppLogger.error(
         'ResponseParser: Failed to parse response data',
-        e,
-        stack,
+        error: e,
+        stackTrace: stack,
       );
       return ApiResponse<T>.error(
         'Failed to parse response: ${e.toString()}',

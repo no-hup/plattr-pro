@@ -2,9 +2,8 @@ import 'package:dio/dio.dart';
 import '../models/order_list_response.dart';
 import '../models/order_detail_response.dart';
 import '../models/served_cart.dart';
+import 'package:platter_core/platter_core.dart' hide DioClient;
 import '../../../network/api_constants.dart';
-import '../../../network/response_parser.dart';
-import '../../../network/api_response.dart';
 import '../../../network/dio_client.dart';
 
 class OrderApiService {

@@ -33,7 +33,7 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
       // Keep log minimal to avoid crashing on circular structures.
       safeRequestLog = '[circular]';
     }
-    console.log("poopoo Received updateCartStatus request:", safeRequestLog);
+    // console.log("Received updateCartStatus request:", safeRequestLog);
     // TODO: Re-enable auth check when ready
     // if (!context.auth) {
     //   throw new functions.https.HttpsError(
@@ -41,9 +41,9 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
     //     'User must be authenticated to update cart status'
     //   );
     // }
-    
+
     OrderInputValidation.validateUpdateCartStatusFields(requestData);
-    
+
     const { restaurantId, orderId, cartIndex, newStatus, notes = '', sessionId } = requestData;
     const mappedStatus = OrderInputValidation.validateCartStatus(newStatus);
     const userId = context.auth?.uid || 'system';  // Fallback to 'system' if no auth
@@ -55,7 +55,7 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
         .doc(restaurantId)
         .collection('sessions')
         .doc(sessionId);
-      
+
       const sessionDoc = await sessionRef.get();
       if (!sessionDoc.exists || sessionDoc.data().status !== 'active') {
         throw new functions.https.HttpsError(
@@ -64,7 +64,7 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
         );
       }
     }
-    
+
     // Update the cart status using the internal function
     const updatedOrder = await _updateCartStatus(
       restaurantId,
@@ -75,7 +75,7 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
       notes,
       sessionId
     );
-    
+
     return {
       success: true,
       message: `Cart status updated to ${mappedStatus}`,
@@ -83,11 +83,11 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
     };
   } catch (error) {
     console.error("Error in updateCartStatus:", error);
-    
+
     if (error instanceof functions.https.HttpsError) {
       throw error;
     }
-    
+
     throw new functions.https.HttpsError(
       'internal',
       error.message || 'An error occurred while updating cart status'
@@ -107,12 +107,12 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
  * @returns {Object} The updated order
  */
 async function _updateCartStatus(
-  restaurantId, 
-  orderId, 
-  cartIndex, 
-  newStatus, 
-  userId, 
-  notes = '', 
+  restaurantId,
+  orderId,
+  cartIndex,
+  newStatus,
+  userId,
+  notes = '',
   sessionId = null
 ) {
   const orderRef = db.collection("restaurants")
@@ -123,26 +123,26 @@ async function _updateCartStatus(
   try {
     return await db.runTransaction(async (transaction) => {
       const orderDoc = await transaction.get(orderRef);
-      
+
       if (!orderDoc.exists) {
         throw new Error(`Order with ID ${orderId} not found`);
       }
-      
+
       const orderData = orderDoc.data();
-      
+
       if (!orderData.carts || !orderData.carts[cartIndex]) {
         throw new Error(`Cart at index ${cartIndex} not found in order ${orderId}`);
       }
-      
+
       const cart = orderData.carts[cartIndex];
       const currentStatus = OrderInputValidation.validateCartStatus(cart.status);
       const normalizedNewStatus = OrderInputValidation.validateCartStatus(newStatus);
-      
+
       // Validate status transition
       if (!isValidStatusTransition(currentStatus, normalizedNewStatus)) {
         throw new Error(`Invalid status transition from ${currentStatus} to ${normalizedNewStatus}`);
       }
-      
+
       // Create status history entry
       const statusEntry = {
         status: normalizedNewStatus,
@@ -150,46 +150,46 @@ async function _updateCartStatus(
         userId: userId,
         notes: notes
       };
-      
+
       // Update cart status
       const updatedCart = {
         ...cart,
         status: normalizedNewStatus,
         statusHistory: [...(cart.statusHistory || []), statusEntry]
       };
-      
+
       // Update assigned staff when work starts on a cart
       if (normalizedNewStatus === FULFILLMENT_STATUS.PREPARING || normalizedNewStatus === FULFILLMENT_STATUS.READY) {
         updatedCart.assignedTo = userId;
       }
-      
+
       // Update the cart in the order
       const updatedCarts = [...orderData.carts];
       updatedCarts[cartIndex] = updatedCart;
-      
+
       const updates = {
         carts: updatedCarts,
         updatedAt: timestamp.now(),
         ...(sessionId && { sessionId })
       };
-      
+
       // Check if all active items are now served
       if (normalizedNewStatus === FULFILLMENT_STATUS.SERVED) {
-        const allActiveCartsServed = updatedCarts.every(c => 
-          OrderInputValidation.validateCartStatus(c.status) === FULFILLMENT_STATUS.SERVED || 
-          OrderInputValidation.validateCartStatus(c.status) === FULFILLMENT_STATUS.CANCELLED || 
+        const allActiveCartsServed = updatedCarts.every(c =>
+          OrderInputValidation.validateCartStatus(c.status) === FULFILLMENT_STATUS.SERVED ||
+          OrderInputValidation.validateCartStatus(c.status) === FULFILLMENT_STATUS.CANCELLED ||
           OrderInputValidation.validateCartStatus(c.status) === FULFILLMENT_STATUS.RETURNED
         );
-        
+
         if (allActiveCartsServed) {
-          console.log(`poopoo All active items served for order ${orderId} in restaurant ${restaurantId}. Table: ${orderData.tableId}`);
+          // console.log(`All active items served for order ${orderId} in restaurant ${restaurantId}. Table: ${orderData.tableId}`);
           // TODO: Consider updating orderStatus to COMPLETED and notifying user/session.
           // Example: updates.orderStatus = ORDER_STATUS.COMPLETED;
         }
       }
-      
+
       transaction.update(orderRef, updates);
-      
+
       // Return the updated order data reflecting the transaction changes
       return {
         id: orderId,

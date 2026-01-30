@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../../auth/base_login_provider.dart';
-import '../../network/data_state.dart';
+import '../../state/data_state.dart';
 
 /// A reusable login form widget for Platter apps.
 /// 

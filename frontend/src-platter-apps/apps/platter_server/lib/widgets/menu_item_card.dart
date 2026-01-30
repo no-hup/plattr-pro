@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../pages/menu_home/models/menu_item.dart';
+import 'package:platter_core/platter_core.dart';
 
 class MenuItemCard extends StatelessWidget {
   final MenuItem item;

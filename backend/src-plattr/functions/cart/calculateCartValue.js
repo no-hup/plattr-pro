@@ -113,7 +113,6 @@ function calculateItemPrice(menuItem, selectedVariants = [], addonDetails = []) 
     discountAmount: totalDiscountAmount,
   });
 
-  console.log("poopoo Price Info:", cartItemPriceInfo.toObject());
   return { priceInfo: cartItemPriceInfo.toObject() };
 }
 
@@ -124,8 +123,15 @@ function calculateItemPrice(menuItem, selectedVariants = [], addonDetails = []) 
  */
 async function calculateCartValue(cart) {
   try {
-    if (!cart || !Array.isArray(cart.items)) {
-      throw new Error("Invalid cart structure.");
+    if (!cart || !cart.items || !Array.isArray(cart.items) || cart.items.length === 0) {
+      return {
+        basePrice: 0,
+        finalPrice: 0,
+        totalVariantBasePrice: 0,
+        totalAddonBasePrice: 0,
+        totalDiscount: 0,
+        totalDiscountAmount: 0
+      };
     }
 
     let basePrice = 0;
@@ -142,7 +148,6 @@ async function calculateCartValue(cart) {
 
       // Skip cancelled items
       if (item.status === 'cancelled') {
-        console.log(`poopoo Skipping cancelled item ${item.menuItemId} in price calculation`);
         continue;
       }
 

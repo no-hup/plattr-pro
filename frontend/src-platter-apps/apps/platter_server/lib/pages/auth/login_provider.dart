@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
-// import '../../models/data_state.dart'; // Removed incorrect import
-import '../auth/models/login_request.dart';
-import '../auth/models/login_response_data.dart';
-import '../auth/repository/login_api_service.dart';
-import '../../../network/api_response.dart';
+import 'package:platter_core/platter_core.dart';
 
-enum DataState { initial, loading, loaded, error }
 
 class LoginProvider extends ChangeNotifier {
   final LoginApiService _apiService;

@@ -1,9 +1,8 @@
 import 'package:dio/dio.dart';
-import '../../../network/response_parser.dart';
+import 'package:platter_core/platter_core.dart' hide DioClient;
 import '../../../network/dio_client.dart';
 import '../../../network/api_constants.dart';
 import '../models/table_models.dart';
-import '../../../network/api_response.dart';
 
 class TableApiService {
   final Dio _dio = DioClient().dio;

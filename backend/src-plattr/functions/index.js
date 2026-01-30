@@ -11,6 +11,8 @@ const menuFunctions = require('./menu/indexMenu');
 const orderFunctions = require('./orders/indexOrders');
 const devFunctions = require('./dev/indexDev');
 const offersFunctions = require('./offers/indexOffers');
+const adminAppFunctions = require('./adminApp/indexAdminApp');
+const adminMenuFunctions = require('./adminApp/menu_admin');
 
 exports.table = tableFunctions;
 exports.server = serverFunctions;
@@ -22,6 +24,33 @@ exports.cart = {
 exports.menu = menuFunctions;
 exports.dev = devFunctions;
 exports.offers = offersFunctions;
+exports.adminApp = adminAppFunctions;
+
+// Admin-prefixed endpoints for Admin app usage
+exports['admin-getRestaurantSettings'] = adminAppFunctions.getRestaurantSettings;
+exports['admin-updateRestaurantSettings'] =
+  adminAppFunctions.updateRestaurantSettings;
+exports['admin-addCategory'] = adminMenuFunctions.addCategory;
+exports['admin-updateCategory'] = adminMenuFunctions.updateCategory;
+exports['admin-deleteCategory'] = adminMenuFunctions.deleteCategory;
+exports['admin-addSubcategory'] = adminMenuFunctions.addSubcategory;
+exports['admin-updateSubcategory'] = adminMenuFunctions.updateSubcategory;
+exports['admin-deleteSubcategory'] = adminMenuFunctions.deleteSubcategory;
+
+// Staff Management (Phase 4)
+exports['admin-getServers'] = adminAppFunctions.getServers;
+exports['admin-addServer'] = adminAppFunctions.addServer;
+exports['admin-updateServer'] = adminAppFunctions.updateServer;
+exports['admin-resetServerPin'] = adminAppFunctions.resetServerPin;
+
+// Table Management (Phase 4)
+exports['admin-getTables'] = adminAppFunctions.getTables;
+exports['admin-updateTableStatus'] = adminAppFunctions.updateTableStatus;
+exports['admin-updateTable'] = adminAppFunctions.updateTable;
+
+// Historical Orders (Phase 5)
+exports['admin-getHistoricalOrders'] = adminAppFunctions.getHistoricalOrders;
+exports['admin-getOrderDetails'] = adminAppFunctions.getOrderDetails;
 
 // Export order functions using the orderFunctions import
 exports.order = {

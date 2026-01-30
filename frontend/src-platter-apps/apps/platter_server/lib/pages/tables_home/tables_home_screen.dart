@@ -3,6 +3,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import '../../widgets/server_app_bar_configuration.dart';
 import 'repository/table_api_service.dart';
+import 'package:platter_core/platter_core.dart';
 import 'tables_provider.dart';
 import 'models/table_models.dart';
 import 'table_detail_dialog.dart';

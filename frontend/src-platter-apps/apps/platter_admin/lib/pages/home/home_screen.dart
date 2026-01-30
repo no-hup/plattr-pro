@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:platter_core/platter_core.dart';
 import '../auth/login_screen.dart';
+import '../menu/menu_catalog_screen.dart';
+import '../orders/orders_screen.dart';
+import '../operations/operations_screen.dart';
+import '../staff/staff_screen.dart';
+import '../settings/settings_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final String restaurantId;
   final String sessionId;
   final String restaurantName;
@@ -15,6 +20,21 @@ class HomeScreen extends StatelessWidget {
     required this.restaurantName,
     required this.staffName,
   });
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
+
+  final List<String> _tabTitles = const [
+    'Menu',
+    'Orders',
+    'Operations',
+    'Staff',
+    'Settings',
+  ];
 
   Future<void> _logout(BuildContext context) async {
     final navigator = Navigator.of(context);
@@ -50,9 +70,20 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tabs = [
+      MenuCatalogScreen(
+        restaurantId: widget.restaurantId,
+        sessionId: widget.sessionId,
+      ),
+      const OrdersScreen(),
+      const OperationsScreen(),
+      const StaffScreen(),
+      const SettingsScreen(),
+    ];
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(restaurantName),
+        title: Text('${widget.restaurantName} • ${_tabTitles[_selectedIndex]}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -61,44 +92,36 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-             UserAccountsDrawerHeader(
-              accountName: Text(staffName),
-              accountEmail: const Text('Admin'), 
-              currentAccountPicture: const CircleAvatar(
-                child: Icon(Icons.admin_panel_settings),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.dashboard),
-              title: const Text('Dashboard'),
-              onTap: () {},
-            ),
-             ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
-              onTap: () {},
-            ),
-          ],
-        ),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: tabs,
       ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.construction, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
-              'Admin Dashboard Coming Soon',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text('This feature is under development.'),
-          ],
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        type: BottomNavigationBarType.fixed,
+        onTap: (index) => setState(() => _selectedIndex = index),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.menu_book),
+            label: 'Menu',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long),
+            label: 'Orders',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.table_bar),
+            label: 'Operations',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people_alt),
+            label: 'Staff',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
       ),
     );
   }

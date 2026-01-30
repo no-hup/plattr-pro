@@ -59,3 +59,13 @@ mock data for testing end to end flow
 mockdata v5 is minimal to test all apps. make it more robust to cover all feature flags.
 test offer and kitchen app.
 finish work on admin app
+
+Parsing robustness (suggestions)
+- Centralize parsing helpers in `platter_core` (status normalization, timestamps, ids) and reuse everywhere.
+- Standardize response envelopes and stable `data` shapes across endpoints.
+- Prefer generated models + `@JsonKey(fromJson:)` converters over manual parsing.
+- Add a repository-level adapter/mapping layer for backend → app model transforms.
+- Enforce required vs optional fields with defaults and logging for missing mandatory fields.
+- Normalize status/enums at the edge; keep UI on canonical values.
+- One timestamp converter for int/string/`Timestamp`/map formats.
+- Contract tests with real backend responses to catch drift.

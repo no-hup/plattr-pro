@@ -29,7 +29,6 @@ function applyFallbackConfiguration(cart, menuItemId, requestData) {
 
   // If cart is empty or has no items, nothing to copy from
   if (!cart || !cart.items || !Array.isArray(cart.items) || cart.items.length === 0) {
-    console.log(`[Cart Fallback] No existing items in cart for fallback`);
     return requestData;
   }
 
@@ -37,13 +36,10 @@ function applyFallbackConfiguration(cart, menuItemId, requestData) {
   const existingItem = [...cart.items].reverse().find(item => item.menuItemId === menuItemId);
 
   if (!existingItem) {
-    console.log(`[Cart Fallback] No existing item found for menuItemId: ${menuItemId}`);
     return requestData;
   }
 
   const updatedRequestData = { ...requestData };
-  let copiedVariants = false;
-  let copiedAddons = false;
 
   // Extract selectedVariants from existing item
   if (existingItem.selectedVariantsDetails && existingItem.selectedVariantsDetails.length > 0) {
@@ -57,7 +53,6 @@ function applyFallbackConfiguration(cart, menuItemId, requestData) {
 
     if (Object.keys(selectedVariants).length > 0) {
       updatedRequestData.selectedVariants = selectedVariants;
-      copiedVariants = true;
     }
   }
 
@@ -69,15 +64,7 @@ function applyFallbackConfiguration(cart, menuItemId, requestData) {
 
     if (selectedAddons.length > 0) {
       updatedRequestData.selectedAddons = selectedAddons;
-      copiedAddons = true;
     }
-  }
-
-  // Log what happened
-  if (copiedVariants || copiedAddons) {
-    console.log(`[Cart Fallback] Copied config from existing item: ${menuItemId} (variants: ${copiedVariants}, addons: ${copiedAddons})`);
-  } else {
-    console.log(`[Cart Fallback] Existing item ${menuItemId} has no custom configuration to copy`);
   }
 
   return updatedRequestData;

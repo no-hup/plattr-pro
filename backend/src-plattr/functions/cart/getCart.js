@@ -24,30 +24,30 @@ function sanitizeNumber(value, defaultValue = 0) {
  */
 function sanitizeCart(cart) {
   if (!cart) return null;
-  
+
   try {
     // Sanitize cart price info using CartTotalPriceInfo model
     cart.priceInfo = new CartTotalPriceInfo(cart.priceInfo).toObject();
-    
+
     // Sanitize items if they exist
     if (Array.isArray(cart.items)) {
       cart.items = cart.items.map(item => {
         if (!item) return null;
-        
+
         // Ensure quantity is valid
         item.quantity = sanitizeNumber(item.quantity, 1);
-        
+
         // Sanitize item price info using CartItemPriceInfo model
         if (item.priceInfo) {
           item.priceInfo = new CartItemPriceInfo(item.priceInfo).toObject();
         }
-        
+
         return item;
       }).filter(item => item !== null);
     } else {
       cart.items = [];
     }
-    
+
     return cart;
   } catch (error) {
     console.error("Error sanitizing cart:", error);
@@ -69,9 +69,9 @@ function sanitizeCart(cart) {
  */
 const getCart = functions.https.onCall(async (data, context) => {
   try {
-    console.log("poopoo getCart request received:", data.data);
+    // console.log("getCart request received:", data.data);
     validateGetCartFields(data.data);
-    
+
     const { restaurantId, tableId, sessionId } = data.data;
 
     // Validate session if provided
@@ -99,7 +99,7 @@ const getCart = functions.https.onCall(async (data, context) => {
     let cart;
     if (cartDoc.exists) {
       cart = cartDoc.data();
-      console.log("poopoo Cart found:", JSON.stringify(cart, null, 2));
+      // console.log("Cart found:", JSON.stringify(cart, null, 2));
     } else {
       cart = {
         restaurantId,
@@ -109,20 +109,20 @@ const getCart = functions.https.onCall(async (data, context) => {
         priceInfo: new CartTotalPriceInfo().toObject(),
         lastUpdated: timestamp.now(),
       };
-      console.log("poopoo No existing cart, returning empty structure");
+      // console.log("No existing cart, returning empty structure");
     }
 
     if (cart.items && Array.isArray(cart.items)) {
       cart.items = cart.items.map(item => {
         if (!item.selectedVariantsDetails) item.selectedVariantsDetails = [];
         if (!item.selectedAddonsDetails) item.selectedAddonsDetails = [];
-        
+
         // Fix NaN quantity values
         if (item.quantity === undefined || item.quantity === null || isNaN(item.quantity)) {
-          console.log(`poopoo Fixing invalid quantity for item ${item.menuItemId}, setting to 1`);
+          // console.log(`Fixing invalid quantity for item ${item.menuItemId}, setting to 1`);
           item.quantity = 1;
         }
-        
+
         return item;
       });
     }
@@ -135,7 +135,7 @@ const getCart = functions.https.onCall(async (data, context) => {
       if (Array.isArray(sanitizedCart.items) && sanitizedCart.items.length > 0) {
         const recalculatedPriceInfo = await calculateCartValue(sanitizedCart);
         sanitizedCart.priceInfo = recalculatedPriceInfo;
-        
+
         // Update the cart in Firestore with recalculated values
         await cartRef.update({
           priceInfo: recalculatedPriceInfo,

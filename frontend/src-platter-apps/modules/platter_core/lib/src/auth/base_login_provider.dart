@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../platter_core.dart';
 import '../logging/app_logger.dart';
 import '../network/api_response.dart';
-import '../network/data_state.dart';
+import '../state/data_state.dart';
 import 'login_api_service.dart';
 import 'login_request.dart';
 import 'login_response_data.dart';
@@ -98,7 +98,7 @@ abstract class BaseLoginProvider extends ChangeNotifier {
         _state = DataState.error;
       }
     } catch (e) {
-      AppLogger.error('Login error', e);
+      AppLogger.error('Login error', error: e);
       _errorMessage = 'An unexpected error occurred: $e';
       _state = DataState.error;
     }
@@ -165,7 +165,7 @@ abstract class BaseLoginProvider extends ChangeNotifier {
         return false;
       }
     } catch (e) {
-      AppLogger.error('Error validating stored session', e);
+      AppLogger.error('Error validating stored session', error: e);
       // In case of network error, deciding whether to allow offline access or not.
       // Based on "Security issue" requirement, we should probably fail safe.
       return false;

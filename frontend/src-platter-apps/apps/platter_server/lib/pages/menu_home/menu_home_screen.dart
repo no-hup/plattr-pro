@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:platter_core/platter_core.dart';
 
 import '../../widgets/server_app_bar_configuration.dart';
-import 'models/menu_item.dart';
-import 'models/menu_category.dart';
 import 'repository/menu_api_service.dart';
 import 'menu_provider.dart';
 import '../../widgets/menu_item_card.dart';

@@ -63,7 +63,7 @@ class SessionStorage {
       await _storage.write(key: _sessionKey, value: jsonString);
       AppLogger.debug('Session saved successfully');
     } catch (e) {
-      AppLogger.error('Failed to save session', e);
+      AppLogger.error('Failed to save session', error: e);
     }
   }
 
@@ -92,7 +92,7 @@ class SessionStorage {
 
       return session;
     } catch (e) {
-      AppLogger.error('Failed to retrieve session', e);
+      AppLogger.error('Failed to retrieve session', error: e);
       return null;
     }
   }
@@ -103,7 +103,7 @@ class SessionStorage {
       await _storage.delete(key: _sessionKey);
       AppLogger.debug('Session cleared');
     } catch (e) {
-      AppLogger.error('Failed to clear session', e);
+      AppLogger.error('Failed to clear session', error: e);
     }
   }
 

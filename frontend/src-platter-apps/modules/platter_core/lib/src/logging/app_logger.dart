@@ -36,14 +36,17 @@ class AppLogger {
   }
 
   /// Logs an error message
-  static void error(String message, [dynamic error, StackTrace? stackTrace]) {
+  static void error(String message, {dynamic error, StackTrace? stackTrace}) {
     if (kDebugMode) {
       _logger.e(message, error: error, stackTrace: stackTrace);
     }
   }
 
-  /// Generic log method (alias for debug)
-  static void log(String message) {
+  static void log(String message, {dynamic error, StackTrace? stackTrace}) {
     debug(message);
+    if (error != null) {
+      // Call static error method
+      AppLogger.error(message, error: error, stackTrace: stackTrace);
+    }
   }
 }

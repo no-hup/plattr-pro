@@ -1,3 +1,11 @@
+// 🕒 CODING AGENT NOTE: Before running this script, ensure timestamp-related fields in MockData5EndToEndTesting.json
+// are updated to relative values near the "current local time" if your logic depends on elapsed time or validity.
+// Fields to check:
+// - restaurants.res_e2e_all_on.orders[].*.createdAt / updatedAt (Timestamp format: {_seconds, _nanoseconds})
+// - restaurants.res_e2e_all_on.carts[].*.submittedAt / checkoutTime (ISO String or Timestamp)
+// - restaurants.res_e2e_all_on.offers[].*.validity.endDate (Must be in the future)
+// Failing to update these may cause orders to appear "3 years ago" or offers to be "expired" in the UI.
+
 // Set emulator environment variables BEFORE importing admin
 const environment = require('../singleton/Environment');
 environment.configureEnvironment(false);

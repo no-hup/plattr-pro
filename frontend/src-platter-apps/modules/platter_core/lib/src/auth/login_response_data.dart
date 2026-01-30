@@ -1,13 +1,34 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'login_response_data.g.dart';
+
 /// Login response data model for Platter apps
+@JsonSerializable()
 class LoginResponseData {
+  @JsonKey(defaultValue: '')
   final String sessionId;
+
+  @JsonKey(name: 'serverId', defaultValue: '') // Backend sends 'serverId' sometimes
   final String staffId;
+
+  @JsonKey(defaultValue: '')
   final String name;
+
+  @JsonKey(defaultValue: '')
   final String entity;
+
+  @JsonKey(defaultValue: '')
   final String role;
+
+  @JsonKey(defaultValue: '')
   final String restaurantId;
+
+  @JsonKey(defaultValue: '')
   final String restaurantName;
+
+  @JsonKey(defaultValue: '')
   final String profileImageUrl;
+
   final String? kitchenId;
   final String? kitchenName;
 
@@ -25,32 +46,14 @@ class LoginResponseData {
   });
 
   factory LoginResponseData.fromJson(Map<String, dynamic> json) {
-    return LoginResponseData(
-      sessionId: json['sessionId'] as String? ?? '',
-      staffId: json['serverId'] as String? ?? json['staffId'] as String? ?? '',
-      name: json['name'] as String? ?? '',
-      entity: json['entity'] as String? ?? '',
-      role: json['role'] as String? ?? '',
-      restaurantId: json['restaurantId'] as String? ?? '',
-      restaurantName: json['restaurantName'] as String? ?? '',
-      profileImageUrl: json['profileImageUrl'] as String? ?? '',
-      kitchenId: json['kitchenId'] as String?,
-      kitchenName: json['kitchenName'] as String?,
-    );
+    // Handle dual field name for staffId/serverId
+    if (json['staffId'] == null && json['serverId'] != null) {
+      json['staffId'] = json['serverId'];
+    }
+    return _$LoginResponseDataFromJson(json);
   }
 
-  Map<String, dynamic> toJson() => {
-        'sessionId': sessionId,
-        'staffId': staffId,
-        'name': name,
-        'entity': entity,
-        'role': role,
-        'restaurantId': restaurantId,
-        'restaurantName': restaurantName,
-        'profileImageUrl': profileImageUrl,
-        if (kitchenId != null) 'kitchenId': kitchenId,
-        if (kitchenName != null) 'kitchenName': kitchenName,
-      };
+  Map<String, dynamic> toJson() => _$LoginResponseDataToJson(this);
 
   /// Safe substring for sessionId display
   String get displaySessionId {
