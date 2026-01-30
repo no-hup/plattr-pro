@@ -1,3 +1,10 @@
+// 🕒 CODING AGENT NOTE: Before running this script, ensure timestamp-related fields in the mock JSON
+// are updated to relative values near the "current local time" if your logic depends on elapsed time or validity.
+// Fields to check:
+// - orders/carts: createdAt, updatedAt, submittedAt (use current Unix seconds for {_seconds: ...})
+// - offers: validity.endDate (must be in the future ISO string)
+// - sessions: status should be 'active'
+
 // Quick import script for emulator - no credentials needed
 const admin = require('firebase-admin');
 const fs = require('fs');

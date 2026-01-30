@@ -67,3 +67,16 @@ The offers engine expects complete offer objects with:
 *   **`isActive`**, **`validity`** window, **`conditions`**, and **`benefit`**
 
 If you add a category-scoped percentage offer (e.g., 50% off desserts), ensure `targetIds` references the dessert subcategory id (ex: `sub_dessert`) and the `benefit.value` is the percentage.
+
+## 6. Handling Timestamps
+Mock data often contains fields that drive time-based logic (e.g., "Elapsed Time" in Kitchen App, "Offer Validity", or "Session Status").
+
+### Critical Fields to Update before Import:
+*   **Firestore Timestamps (`{_seconds, _nanoseconds}`):** Used for `createdAt`, `updatedAt`, `submittedAt`.
+    *   **Agent Action:** Check current local time (metadata) and update `_seconds` to a recent Unix timestamp (e.g., within the last 15-30 mins) so the orders appear "Live" and not "3 years ago".
+*   **ISO Strings:** Used for `statusHistory` or `validity`.
+    *   **Agent Action:** Ensure `validity.endDate` is set far in the future (e.g., 2030) to avoid offers expiring during testing.
+*   **Session Status:** 
+    *   **Agent Action:** Ensure `sessions` for the testing restaurant have `status: "active"`.
+
+A good practice is to update these values in `MockData5EndToEndTesting.json` immediately before running the import script to ensure the UI feels alive.

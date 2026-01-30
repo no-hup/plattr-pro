@@ -13,20 +13,20 @@
  * @returns {Object} Sanitized data
  */
 function sanitizeData(data, options = {}) {
-  const { 
-    criticalProps = [], 
-    defaultValues = {} 
+  const {
+    criticalProps = [],
+    defaultValues = {}
   } = options;
-  
+
   if (!data) {
     console.error("sanitizeData received null or undefined data");
     return {};
   }
-  
+
   try {
     // Track original properties for validation
     const originalProps = new Set(criticalProps.filter(prop => data[prop] !== undefined));
-    
+
     // Clone and sanitize the data
     const clone = JSON.parse(JSON.stringify(data, (key, value) => {
       // Handle NaN values
@@ -34,21 +34,21 @@ function sanitizeData(data, options = {}) {
         console.error(`Found NaN value at field: ${key}`);
         return 0; // Replace NaN with 0
       }
-      
+
       // Handle Infinity values
       if (typeof value === "number" && !isFinite(value)) {
         console.error(`Found Infinity value at field: ${key}`);
         return 0; // Replace Infinity with 0
       }
-      
+
       return value;
     }));
-    
+
     // Verify critical properties were preserved
     for (const prop of originalProps) {
       if (clone[prop] === undefined) {
         console.warn(`Sanitization removed critical property: ${prop}`);
-        
+
         // Restore from default values if available
         if (defaultValues[prop] !== undefined) {
           clone[prop] = defaultValues[prop];
@@ -63,14 +63,14 @@ function sanitizeData(data, options = {}) {
         }
       }
     }
-    
+
     return clone;
   } catch (error) {
     console.error("Error during data sanitization:", error);
-    
+
     // Create a minimal safe object with critical properties
     const safeObject = {};
-    
+
     for (const prop of criticalProps) {
       if (defaultValues[prop] !== undefined) {
         safeObject[prop] = defaultValues[prop];
@@ -84,7 +84,7 @@ function sanitizeData(data, options = {}) {
         }
       }
     }
-    
+
     return safeObject;
   }
 }
@@ -101,16 +101,16 @@ function detectNaNValues(obj, prefix = '') {
   if (!obj || typeof obj !== 'object') {
     return [];
   }
-  
+
   const nanPaths = [];
-  
+
   // Check all properties in the object
   for (const key in obj) {
     if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
-    
+
     const value = obj[key];
     const currentPath = prefix ? `${prefix}.${key}` : key;
-    
+
     if (typeof value === 'number' && isNaN(value)) {
       nanPaths.push(currentPath);
       console.error(`NaN detected at ${currentPath}`);
@@ -122,7 +122,7 @@ function detectNaNValues(obj, prefix = '') {
       }
     }
   }
-  
+
   return nanPaths;
 }
 
@@ -138,14 +138,14 @@ function sanitizeCart(cartData) {
   if (nanPaths.length > 0) {
     console.warn(`Found ${nanPaths.length} NaN values in cart data at: ${nanPaths.join(', ')}`);
   }
-  
+
   return sanitizeData(cartData, {
     criticalProps: ['items', 'priceInfo', 'restaurantId', 'menuItem', 'selectedVariantsDetails', 'selectedAddonsDetails'],
     defaultValues: {
       items: [],
-      priceInfo: { 
-        basePrice: 0, 
-        finalPrice: 0, 
+      priceInfo: {
+        basePrice: 0,
+        finalPrice: 0,
         totalDiscount: 0,
         totalDiscountAmount: 0,
         totalAddonBasePrice: 0,
@@ -177,12 +177,12 @@ function safeRecalculateItemPrice(item, quantity = 1) {
       finalPrice: 0
     };
   }
-  
+
   // Ensure valid quantity
   const safeQuantity = typeof quantity === 'number' && !isNaN(quantity) && quantity > 0
     ? quantity
     : 1;
-  
+
   // Ensure priceInfo object exists
   const priceInfo = item.priceInfo || {};
 
@@ -233,10 +233,10 @@ function safeRecalculateItemPrice(item, quantity = 1) {
   const finalPrice = (itemFinalPrice + unitVariantFinal + unitAddonFinal) * safeQuantity;
 
   return {
-    itemBasePrice,
-    itemVariantBasePrice: unitVariantBase,
-    itemAddonBasePrice: unitAddonBase,
-    itemFinalPrice,
+    itemBasePrice: itemBasePrice * safeQuantity,
+    itemVariantBasePrice: unitVariantBase * safeQuantity,
+    itemAddonBasePrice: unitAddonBase * safeQuantity,
+    itemFinalPrice: itemFinalPrice * safeQuantity,
     discount: itemDiscountPct,
     totalBasePrice,
     totalVariantBasePrice: unitVariantBase * safeQuantity,

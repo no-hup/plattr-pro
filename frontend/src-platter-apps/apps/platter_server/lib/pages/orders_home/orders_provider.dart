@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:platter_core/platter_core.dart';
 import '../../shared/status_utils.dart';
 import 'models/order_summary.dart';
 import 'models/cart_summary.dart';
@@ -7,7 +8,6 @@ import 'models/served_cart.dart';
 import 'models/ui_flags.dart';
 import 'repository/order_api_service.dart';
 
-enum DataState { initial, loading, loaded, error }
 
 /// Category tabs for the Orders Home screen
 enum OrderTab {

@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:platter_core/platter_core.dart';
 import 'repository/table_api_service.dart';
 import 'models/table_models.dart';
 
-enum DataState { initial, loading, loaded, error }
 
 class TablesProvider extends ChangeNotifier {
   final TableApiService _apiService;

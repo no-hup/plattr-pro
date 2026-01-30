@@ -7,7 +7,7 @@ part 'cart_summary.g.dart';
 
 @JsonSerializable()
 class CartSummary {
-  @JsonKey(name: 'cartId', defaultValue: '')
+  @JsonKey(name: 'cartId', defaultValue: '', readValue: _readCartId)
   final String cartId;
 
   @JsonKey(defaultValue: '')
@@ -33,15 +33,14 @@ class CartSummary {
     required this.items,
   });
 
-  factory CartSummary.fromJson(Map<String, dynamic> json) {
-    // Handle hashCode -> cartId mapping for backward compatibility
-    Map<String, dynamic> processedJson = Map.from(json);
-    if (json['cartId'] == null && json['hashCode'] != null) {
-      processedJson['cartId'] = json['hashCode'].toString();
-    }
-    return _$CartSummaryFromJson(processedJson);
-  }
+  factory CartSummary.fromJson(Map<String, dynamic> json) => _$CartSummaryFromJson(json);
 
+  /// Handle hashCode -> cartId mapping for backward compatibility
+  static Object? _readCartId(Map map, String key) {
+    if (map['cartId'] != null) return map['cartId'];
+    if (map['hashCode'] != null) return map['hashCode'].toString();
+    return null;
+  }
   Map<String, dynamic> toJson() => _$CartSummaryToJson(this);
 
   /// Get the status color, preferring backend-provided hex, falling back to constants

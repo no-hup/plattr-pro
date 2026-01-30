@@ -7,7 +7,7 @@ part of 'cart_summary.dart';
 // **************************************************************************
 
 CartSummary _$CartSummaryFromJson(Map<String, dynamic> json) => CartSummary(
-      cartId: json['cartId'] as String? ?? '',
+      cartId: CartSummary._readCartId(json, 'cartId') as String? ?? '',
       status: json['status'] as String? ?? '',
       statusColorHex: json['statusColorHex'] as String? ?? '',
       cartIndex: (json['cartIndex'] as num?)?.toInt() ?? 0,

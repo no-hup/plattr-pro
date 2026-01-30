@@ -28,7 +28,7 @@ const {
 } = require('./addItemToCartBoilerplateHelper');
 
 const addItemToCart = functions.https.onCall(async (data, context) => {
-  console.log("poopoo addItemToCart request received");
+  // console.log("addItemToCart request received");
   validateAddItemFields(data.data);
   let {
     tableId,
@@ -107,7 +107,7 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
         errorHandler.internalError("Menu item has invalid price data.", { menuItemId });
       }
 
-      console.log("poopoo Menu Item Details:", JSON.stringify(menuItem));
+      // console.log("Menu Item Details:", JSON.stringify(menuItem));
 
       // Process selected variants and addons
       const selectedVariantsDetails = await processSelectedVariants(
@@ -125,12 +125,8 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
         errorHandler
       );
 
-      console.log("poopoo Selected Variants:",
-        JSON.stringify(selectedVariantsDetails, null, 2)
-      );
-      console.log("poopoo Selected Addons:",
-        JSON.stringify(selectedAddonsDetails, null, 2)
-      );
+      // console.log("Selected Variants:", JSON.stringify(selectedVariantsDetails, null, 2));
+      // console.log("Selected Addons:", JSON.stringify(selectedAddonsDetails, null, 2));
 
       const itemPriceDetails = calculateItemPrice(
         menuItem,
@@ -201,7 +197,7 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
         // Recalculate prices using safe utility function
         existingItem.priceInfo = safeRecalculateItemPrice(existingItem, existingItem.quantity);
 
-        console.log(`poopoo Updated item quantity from ${oldQuantity} to ${existingItem.quantity} with new final price: ${existingItem.priceInfo.finalPrice}`);
+        // console.log(`Updated item quantity from ${oldQuantity} to ${existingItem.quantity}`);
       } else {
         // Add new item
         cart.items.push(itemToAdd);
@@ -236,7 +232,7 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
         { merge: true }
       );
 
-      console.log("poopoo Sanitized cart to be saved:", JSON.stringify(sanitizedCart, null, 2));
+      // console.log("Sanitized cart to be saved:", JSON.stringify(sanitizedCart, null, 2));
 
       return {
         message: "Item added to cart successfully.",

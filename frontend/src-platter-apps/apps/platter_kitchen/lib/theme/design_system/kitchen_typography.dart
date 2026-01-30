@@ -124,4 +124,8 @@ class KitchenTypography {
   static const TextStyle body = bodyMedium;
   static TextStyle get bodyBold => bodyMedium.copyWith(fontWeight: FontWeight.bold);
   static const TextStyle caption = bodySmall;
+  
+  // Aliases for missing styles
+  static const TextStyle headline3 = h3;
+  static TextStyle get subtitleBold => bodyLarge.copyWith(fontWeight: FontWeight.w600);
 }

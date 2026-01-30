@@ -1,20 +1,8 @@
 import 'package:dio/dio.dart';
-
+import 'package:platter_core/platter_core.dart' hide DioClient;
 import '../../../network/api_constants.dart';
-import '../../../network/api_response.dart';
 import '../../../network/dio_client.dart';
-import '../../../network/response_parser.dart';
-import '../../../app_logger.dart';
 import '../../../singleton/app_state.dart';
-import '../models/full_restaurant_menu_response.dart';
-import '../models/menu_category.dart';
-import '../models/menu_item.dart';
-import '../models/menu_item_meta.dart';
-import '../models/price_info.dart';
-import '../models/nutritional_info.dart';
-import '../models/addon.dart';
-import '../models/variant.dart';
-import '../models/update_menu_item_availability_response.dart';
 
 /// Service for handling menu-related API requests
 class MenuApiService {

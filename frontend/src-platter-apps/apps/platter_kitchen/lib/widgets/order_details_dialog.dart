@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/order_models.dart';
-import 'package:platter_core/platter_core.dart';
+import 'package:platter_core/platter_core.dart' hide OrderStatus;
 import '../core/kitchen_repository.dart';
 import '../constants/kitchen_constants.dart';
 import '../theme/design_system/kitchen_dimensions.dart';
@@ -74,7 +74,7 @@ class _OrderDetailsDialogState extends State<OrderDetailsDialog> {
         Navigator.of(context).pop();
       }
     } catch (e) {
-      AppLogger.error('Failed to mark items ready for order ${widget.order.id}', e);
+      AppLogger.error('Failed to mark items ready for order ${widget.order.id}', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to mark items ready. Please try again.')),
@@ -111,7 +111,7 @@ class _OrderDetailsDialogState extends State<OrderDetailsDialog> {
         Navigator.of(context).pop();
       }
     } catch (e) {
-      AppLogger.error('Failed to cancel items for order ${widget.order.id}', e);
+      AppLogger.error('Failed to cancel items for order ${widget.order.id}', error: e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to cancel items. Please try again.')),
@@ -124,7 +124,7 @@ class _OrderDetailsDialogState extends State<OrderDetailsDialog> {
 
   Future<void> _markOutOfStock(KitchenOrderItem item) async {
     if (item.menuItemId.isEmpty) {
-      AppLogger.warn('Cannot mark out of stock. Missing menuItemId for item ${item.itemId}');
+      AppLogger.warning('Cannot mark out of stock. Missing menuItemId for item ${item.itemId}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Missing menu item id. Cannot update stock.')),
@@ -161,7 +161,7 @@ class _OrderDetailsDialogState extends State<OrderDetailsDialog> {
           );
         }
       } catch (e) {
-        AppLogger.error('Failed to update stock for menu item ${item.menuItemId}', e);
+        AppLogger.error('Failed to update stock for menu item ${item.menuItemId}', error: e);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Failed to update stock. Please try again.')),

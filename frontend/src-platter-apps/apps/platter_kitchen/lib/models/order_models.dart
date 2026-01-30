@@ -1,4 +1,4 @@
-import 'package:platter_core/platter_core.dart';
+import 'package:platter_core/platter_core.dart' hide OrderStatus;
 import '../constants/kitchen_constants.dart';
 
 /// Represents a consolidated Order for the kitchen view.

@@ -29,11 +29,11 @@ const ResponseBuilder = require('../utils/ResponseBuilder');
 const checkoutCart = functions.https.onCall(async (data, context) => {
   const requestPayload = data?.data || data || {};
   try {
-    console.log("poopoo Received checkoutCart request:", JSON.stringify(requestPayload));
+    // console.log("Received checkoutCart request:", JSON.stringify(requestPayload));
     validateCheckoutFields(requestPayload);
-    
+
     const { tableId, restaurantId, cartId, notes = '', sessionId } = requestPayload;
-    
+
     // Validate session (now mandatory)
     await validateCheckoutSession(restaurantId, tableId, sessionId);
 
@@ -49,21 +49,21 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
       .doc(tableId);
 
     const cartDoc = await cartRef.get();
-    
+
     if (!cartDoc.exists) {
       // Throw standard error if cart doesn't exist even with valid session
       errorHandler.preconditionFailed('No active cart found for this table.');
     }
-    
+
     const cart = cartDoc.data();
-    
+
     if (!cart || !cart.items || cart.items.length === 0) {
       // Throw standard error for empty cart
       errorHandler.preconditionFailed('Cannot checkout an empty cart.');
     }
-    
-    console.log(`poopoo Processing checkout for table ${tableId} with ${cart.items.length} items`);
-    
+
+    // console.log(`Processing checkout for table ${tableId} with ${cart.items.length} items`);
+
     // Validate cart price calculations before proceeding
     if (!validateCart(cart)) {
       console.error('Cart validation failed. Price calculations are inconsistent.');
@@ -71,13 +71,13 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
       try {
         const recalculatedPriceInfo = await calculateCartValue(cart);
         cart.priceInfo = recalculatedPriceInfo;
-        console.log('poopoo Cart prices recalculated for checkout');
+        // console.log('Cart prices recalculated for checkout');
       } catch (recalcError) {
         console.error('Failed to recalculate cart prices:', recalcError);
         errorHandler.preconditionFailed('Invalid cart price structure. Please update cart before checkout.');
       }
     }
-    
+
     // Verify stock availability for all items in the cart
     try {
       const outOfStockItems = await validateMenuItemsStock(restaurantId, cart.items);
@@ -89,7 +89,7 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
       console.error('Error validating item stock:', stockError);
       errorHandler.internalError('Failed to validate item stock: ' + stockError.message);
     }
-    
+
     // Create/Update Order and Clear Cart
     try {
       // First, create or update the order (this has its own transaction)
@@ -101,7 +101,7 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
         notes,
         sessionId
       );
-      
+
       // After successful order creation, clear the cart
       // Use clearCartInternal which is already implemented
       try {
@@ -111,9 +111,9 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
         console.error(`Warning: Order created but cart clearing failed: ${clearError.message}`);
         // We don't throw here to avoid leaving the system in an inconsistent state
       }
-      
-      console.log(`poopoo Checkout completed successfully for table ${tableId}, order ID: ${order.id}`);
-      
+
+      // console.log(`Checkout completed successfully for table ${tableId}, order ID: ${order.id}`);
+
       // Return order details
       const normalizedStatus = mapOrderStatus(order.orderStatus || order.status || ORDER_STATUS.IN_PROGRESS);
       return ResponseBuilder.success(
@@ -133,7 +133,7 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
   } catch (error) {
     // Log error message but not the full error object
     console.error(`Error in checkoutCart for table ${requestPayload?.tableId}: ${error.message}`);
-    
+
     // Specific message for createOrUpdateOrder errors
     if (error.message && error.message.includes('Cannot process an empty cart')) {
       errorHandler.preconditionFailed('Cannot checkout an empty cart', {
@@ -141,7 +141,7 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
         tableId: requestPayload?.tableId
       });
     }
-    
+
     errorHandler.handleError(error, "checkoutCart", {
       restaurantId: requestPayload?.restaurantId,
       tableId: requestPayload?.tableId,
@@ -160,16 +160,16 @@ async function validateMenuItemsStock(restaurantId, cartItems) {
   if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
     return [];
   }
-  
+
   // Get unique menu item IDs from cart
   const menuItemIds = [...new Set(cartItems.map(item => item.menuItemId))];
-  
+
   // Batch get all menu items from Firestore
   const menuItemsRef = db.collection('restaurants').doc(restaurantId).collection('menuItems');
   const menuItemDocs = await Promise.all(
     menuItemIds.map(id => menuItemsRef.doc(id).get())
   );
-  
+
   // Find items that are out of stock
   const outOfStockItems = [];
   menuItemDocs.forEach(doc => {
@@ -187,7 +187,7 @@ async function validateMenuItemsStock(restaurantId, cartItems) {
       }
     }
   });
-  
+
   return outOfStockItems;
 }
 

@@ -1,12 +1,8 @@
 import 'package:flutter/foundation.dart';
-
-import 'models/full_restaurant_menu_response.dart';
-import 'models/menu_item.dart';
+import 'package:platter_core/platter_core.dart';
 
 import 'repository/menu_api_service.dart';
 
-/// Enum representing the various states of data loading
-enum DataState { initial, loading, loaded, error }
 
 /// Provider class to manage the state of the restaurant menu
 class MenuProvider extends ChangeNotifier {
