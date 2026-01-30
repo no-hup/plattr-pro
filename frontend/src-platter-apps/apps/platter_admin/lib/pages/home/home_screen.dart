@@ -75,10 +75,22 @@ class _HomeScreenState extends State<HomeScreen> {
         restaurantId: widget.restaurantId,
         sessionId: widget.sessionId,
       ),
-      const OrdersScreen(),
-      const OperationsScreen(),
-      const StaffScreen(),
-      const SettingsScreen(),
+      OrdersScreen(
+        restaurantId: widget.restaurantId,
+        sessionId: widget.sessionId,
+      ),
+      OperationsScreen(
+        restaurantId: widget.restaurantId,
+        sessionId: widget.sessionId,
+      ),
+      StaffScreen(
+        restaurantId: widget.restaurantId,
+        sessionId: widget.sessionId,
+      ),
+      SettingsScreen(
+        restaurantId: widget.restaurantId,
+        sessionId: widget.sessionId,
+      ),
     ];
 
     return Scaffold(

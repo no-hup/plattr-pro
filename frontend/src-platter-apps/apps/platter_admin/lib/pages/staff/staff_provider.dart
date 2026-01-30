@@ -33,11 +33,11 @@ class StaffProvider extends ChangeNotifier {
       sessionId: sessionId,
     );
 
-    if (response.isSuccess && response.data != null) {
+    if (response.success && response.data != null) {
       _staff = response.data!;
-      _state = DataState.success;
+      _state = DataState.loaded;
     } else {
-      _errorMessage = response.errorMessage ?? 'Failed to load staff';
+      _errorMessage = response.message ?? 'Failed to load staff';
       _state = DataState.error;
     }
     notifyListeners();
@@ -65,11 +65,11 @@ class StaffProvider extends ChangeNotifier {
       server: input,
     );
 
-    if (response.isSuccess && response.data != null) {
+    if (response.success && response.data != null) {
       await loadStaff(); // Refresh list
       return response.data;
     } else {
-      _errorMessage = response.errorMessage ?? 'Failed to add staff';
+      _errorMessage = response.message ?? 'Failed to add staff';
       notifyListeners();
       return null;
     }
@@ -100,11 +100,11 @@ class StaffProvider extends ChangeNotifier {
       updateData: updateData,
     );
 
-    if (response.isSuccess) {
+    if (response.success) {
       await loadStaff(); // Refresh list
       return true;
     } else {
-      _errorMessage = response.errorMessage ?? 'Failed to update staff';
+      _errorMessage = response.message ?? 'Failed to update staff';
       notifyListeners();
       return false;
     }
@@ -127,10 +127,10 @@ class StaffProvider extends ChangeNotifier {
       newPin: newPin,
     );
 
-    if (response.isSuccess && response.data != null) {
+    if (response.success && response.data != null) {
       return response.data;
     } else {
-      _errorMessage = response.errorMessage ?? 'Failed to reset PIN';
+      _errorMessage = response.message ?? 'Failed to reset PIN';
       notifyListeners();
       return null;
     }

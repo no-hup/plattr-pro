@@ -66,7 +66,7 @@ class OrdersProvider extends ChangeNotifier {
       cursor: _nextCursor,
     );
 
-    if (response.isSuccess && response.data != null) {
+    if (response.success && response.data != null) {
       final data = response.data!;
       if (reset) {
         _orders = data.orders;
@@ -75,9 +75,9 @@ class OrdersProvider extends ChangeNotifier {
       }
       _hasMore = data.hasMore;
       _nextCursor = data.nextCursor;
-      _state = DataState.success;
+      _state = DataState.loaded;
     } else {
-      _errorMessage = response.errorMessage ?? 'Failed to load orders';
+      _errorMessage = response.message ?? 'Failed to load orders';
       _state = DataState.error;
     }
     notifyListeners();
@@ -101,11 +101,11 @@ class OrdersProvider extends ChangeNotifier {
       orderId: orderId,
     );
 
-    if (response.isSuccess && response.data != null) {
+    if (response.success && response.data != null) {
       _selectedOrder = response.data;
-      _state = DataState.success;
+      _state = DataState.loaded;
     } else {
-      _errorMessage = response.errorMessage ?? 'Failed to load order details';
+      _errorMessage = response.message ?? 'Failed to load order details';
       _state = DataState.error;
     }
     notifyListeners();

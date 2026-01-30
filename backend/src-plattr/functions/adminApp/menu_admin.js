@@ -2,6 +2,7 @@ const functions = require('firebase-functions');
 const { db, FieldValue } = require('../admin/admin');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 const errorHandler = require('../singleton/ErrorHandler');
+const { validateAdminSession } = require('./auth');
 
 function requireField(value, message) {
   if (value === undefined || value === null || value === '') {
@@ -22,11 +23,14 @@ async function getRestaurantRef(restaurantId) {
 exports.addCategory = functions.https.onCall(async (data, context) => {
   const request = data?.data || data || {};
   try {
-    const { restaurantId, category } = request;
+    const { restaurantId, sessionId, category } = request;
     requireField(restaurantId, 'Restaurant ID is required');
     requireField(category, 'Category payload is required');
     requireField(category?.name, 'Category name is required');
     requireField(category?.order, 'Category order is required');
+
+    // Validate session and role
+    await validateAdminSession(restaurantId, sessionId);
 
     const restaurantRef = await getRestaurantRef(restaurantId);
     const payload = {
@@ -48,24 +52,36 @@ exports.addCategory = functions.https.onCall(async (data, context) => {
 exports.updateCategory = functions.https.onCall(async (data, context) => {
   const request = data?.data || data || {};
   try {
-    const { restaurantId, categoryId, updateData } = request;
+    const { restaurantId, sessionId, categoryId, updateData } = request;
     requireField(restaurantId, 'Restaurant ID is required');
     requireField(categoryId, 'Category ID is required');
     requireField(updateData, 'Update data is required');
 
-    const restaurantRef = await getRestaurantRef(restaurantId);
-    const payload = {
-      name: updateData.name,
-      order: updateData.order !== undefined ? Number(updateData.order) : undefined,
-      description: updateData.description ?? '',
-      image: updateData.image ?? '',
-    };
+    // Validate session and role
+    await validateAdminSession(restaurantId, sessionId);
 
-    Object.keys(payload).forEach((key) => {
-      if (payload[key] === undefined) {
-        delete payload[key];
-      }
-    });
+    const restaurantRef = await getRestaurantRef(restaurantId);
+
+    // Only include fields that are explicitly provided (not undefined)
+    // This prevents overwriting existing values when fields are omitted
+    const payload = {};
+
+    if (updateData.name !== undefined) {
+      payload.name = updateData.name;
+    }
+    if (updateData.order !== undefined) {
+      payload.order = Number(updateData.order);
+    }
+    if (updateData.description !== undefined) {
+      payload.description = updateData.description;
+    }
+    if (updateData.image !== undefined) {
+      payload.image = updateData.image;
+    }
+
+    if (Object.keys(payload).length === 0) {
+      return errorHandler.badRequest('No valid fields to update');
+    }
 
     await restaurantRef.collection('categories').doc(categoryId).update(payload);
     return ResponseBuilder.success(null, 'Category updated');
@@ -78,9 +94,12 @@ exports.updateCategory = functions.https.onCall(async (data, context) => {
 exports.deleteCategory = functions.https.onCall(async (data, context) => {
   const request = data?.data || data || {};
   try {
-    const { restaurantId, categoryId } = request;
+    const { restaurantId, sessionId, categoryId } = request;
     requireField(restaurantId, 'Restaurant ID is required');
     requireField(categoryId, 'Category ID is required');
+
+    // Validate session and role
+    await validateAdminSession(restaurantId, sessionId);
 
     const restaurantRef = await getRestaurantRef(restaurantId);
     await restaurantRef.collection('categories').doc(categoryId).delete();
@@ -94,12 +113,15 @@ exports.deleteCategory = functions.https.onCall(async (data, context) => {
 exports.addSubcategory = functions.https.onCall(async (data, context) => {
   const request = data?.data || data || {};
   try {
-    const { restaurantId, subcategory } = request;
+    const { restaurantId, sessionId, subcategory } = request;
     requireField(restaurantId, 'Restaurant ID is required');
     requireField(subcategory, 'Subcategory payload is required');
     requireField(subcategory?.name, 'Subcategory name is required');
     requireField(subcategory?.order, 'Subcategory order is required');
     requireField(subcategory?.parentCategoryId, 'Parent category is required');
+
+    // Validate session and role
+    await validateAdminSession(restaurantId, sessionId);
 
     const restaurantRef = await getRestaurantRef(restaurantId);
     const payload = {
@@ -125,10 +147,13 @@ exports.addSubcategory = functions.https.onCall(async (data, context) => {
 exports.updateSubcategory = functions.https.onCall(async (data, context) => {
   const request = data?.data || data || {};
   try {
-    const { restaurantId, subcategoryId, updateData } = request;
+    const { restaurantId, sessionId, subcategoryId, updateData } = request;
     requireField(restaurantId, 'Restaurant ID is required');
     requireField(subcategoryId, 'Subcategory ID is required');
     requireField(updateData, 'Update data is required');
+
+    // Validate session and role
+    await validateAdminSession(restaurantId, sessionId);
 
     const restaurantRef = await getRestaurantRef(restaurantId);
     const subcategoryRef = restaurantRef.collection('subcategories').doc(subcategoryId);
@@ -139,21 +164,33 @@ exports.updateSubcategory = functions.https.onCall(async (data, context) => {
     }
 
     const existing = snapshot.data() || {};
-    const newParentId = updateData.parentCategoryId || existing.parentCategoryId;
+    const newParentId = updateData.parentCategoryId !== undefined
+      ? updateData.parentCategoryId
+      : existing.parentCategoryId;
 
-    const payload = {
-      name: updateData.name,
-      order: updateData.order !== undefined ? Number(updateData.order) : undefined,
-      description: updateData.description ?? '',
-      image: updateData.image ?? '',
-      parentCategoryId: newParentId,
-    };
+    // Only include fields that are explicitly provided (not undefined)
+    // This prevents overwriting existing values when fields are omitted
+    const payload = {};
 
-    Object.keys(payload).forEach((key) => {
-      if (payload[key] === undefined) {
-        delete payload[key];
-      }
-    });
+    if (updateData.name !== undefined) {
+      payload.name = updateData.name;
+    }
+    if (updateData.order !== undefined) {
+      payload.order = Number(updateData.order);
+    }
+    if (updateData.description !== undefined) {
+      payload.description = updateData.description;
+    }
+    if (updateData.image !== undefined) {
+      payload.image = updateData.image;
+    }
+    if (updateData.parentCategoryId !== undefined) {
+      payload.parentCategoryId = newParentId;
+    }
+
+    if (Object.keys(payload).length === 0) {
+      return errorHandler.badRequest('No valid fields to update');
+    }
 
     await subcategoryRef.update(payload);
 
@@ -176,9 +213,12 @@ exports.updateSubcategory = functions.https.onCall(async (data, context) => {
 exports.deleteSubcategory = functions.https.onCall(async (data, context) => {
   const request = data?.data || data || {};
   try {
-    const { restaurantId, subcategoryId } = request;
+    const { restaurantId, sessionId, subcategoryId } = request;
     requireField(restaurantId, 'Restaurant ID is required');
     requireField(subcategoryId, 'Subcategory ID is required');
+
+    // Validate session and role
+    await validateAdminSession(restaurantId, sessionId);
 
     const restaurantRef = await getRestaurantRef(restaurantId);
     const subcategoryRef = restaurantRef.collection('subcategories').doc(subcategoryId);

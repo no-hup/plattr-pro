@@ -3,7 +3,7 @@ const { admin, db } = require('../admin/admin');
 const timestamp = require('../utils/timestamp');
 const errorHandler = require('../singleton/ErrorHandler');
 const ResponseBuilder = require('../utils/ResponseBuilder');
-const { SERVER_ROLES } = require('./staff_admin');
+const { validateAdminSession } = require('./auth');
 
 /**
  * Table status constants
@@ -14,61 +14,6 @@ const TABLE_STATUS = {
     DISABLED: 'disabled',
     OTP_PENDING: 'pending'
 };
-
-/**
- * Validates admin/manager session before allowing table management operations
- */
-async function validateAdminSession(restaurantId, sessionId) {
-    if (!restaurantId || !sessionId) {
-        errorHandler.badRequest('Missing required parameters: restaurantId and sessionId', {
-            details: 'Both restaurantId and sessionId are required'
-        });
-    }
-
-    const sessionRef = db.collection('restaurants').doc(restaurantId).collection('sessions').doc(sessionId);
-    const sessionDoc = await sessionRef.get();
-
-    if (!sessionDoc.exists) {
-        errorHandler.unauthorized('Invalid session', { restaurantId, sessionId });
-    }
-
-    const sessionData = sessionDoc.data();
-
-    // Verify session is active
-    if (sessionData.status !== 'active') {
-        errorHandler.unauthorized('Session is not active', { restaurantId, sessionId });
-    }
-
-    // Verify session is not expired
-    const now = new Date();
-    if (sessionData.expiresAt && timestamp.safeToDate(sessionData.expiresAt) < now) {
-        errorHandler.unauthorized('Session has expired', { restaurantId, sessionId });
-    }
-
-    // Get server info to check role
-    if (sessionData.entity !== 'server' || !sessionData.serverId) {
-        errorHandler.unauthorized('Invalid session type', { restaurantId, sessionId });
-    }
-
-    const serverRef = db.collection('restaurants').doc(restaurantId).collection('servers').doc(sessionData.serverId);
-    const serverDoc = await serverRef.get();
-
-    if (!serverDoc.exists) {
-        errorHandler.unauthorized('Server not found', { restaurantId, serverId: sessionData.serverId });
-    }
-
-    const serverData = serverDoc.data();
-
-    // Check if user has admin or manager role
-    if (serverData.role !== SERVER_ROLES.ADMIN && serverData.role !== SERVER_ROLES.MANAGER) {
-        errorHandler.forbidden('Insufficient permissions. Admin or Manager role required.', {
-            restaurantId,
-            role: serverData.role
-        });
-    }
-
-    return { serverData, serverId: sessionData.serverId };
-}
 
 /**
  * Get all tables for a restaurant (admin view)
