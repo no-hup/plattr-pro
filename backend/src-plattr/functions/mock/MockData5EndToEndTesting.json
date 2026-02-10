@@ -136,7 +136,7 @@
                         "name": "Classic Burger",
                         "description": "Juicy beef burger",
                         "categoryName": "Food",
-                        "image": ""
+                        "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"
                     },
                     "priceInfo": {
                         "basePrice": 200,
@@ -177,9 +177,16 @@
                         {
                             "id": "var_size_pizza",
                             "name": "Size"
+                        },
+                        {
+                            "id": "var_crust_pizza",
+                            "name": "Crust"
                         }
                     ],
-                    "addons": [],
+                    "addons": [
+                        "addon_olives",
+                        "addon_jalapeno"
+                    ],
                     "isInStock": true,
                     "isCustomizable": true
                 },
@@ -249,7 +256,7 @@
                     },
                     "variants": [],
                     "addons": [],
-                    "isInStock": true,
+                    "isInStock": false,
                     "isCustomizable": false
                 }
             },
@@ -323,6 +330,41 @@
                     "itemsAssociatedWith": [
                         "item_pizza_1"
                     ]
+                },
+                "var_crust_pizza": {
+                    "id": "var_crust_pizza",
+                    "meta": {
+                        "name": "Crust",
+                        "categoryAssociatedWith": [
+                            "cat_food"
+                        ],
+                        "description": "Choose crust type (optional)"
+                    },
+                    "options": [
+                        {
+                            "id": "opt_thin",
+                            "name": "Thin Crust",
+                            "priceInfo": {
+                                "basePrice": 0,
+                                "finalPrice": 0,
+                                "discount": 0
+                            }
+                        },
+                        {
+                            "id": "opt_stuffed",
+                            "name": "Stuffed Crust",
+                            "priceInfo": {
+                                "basePrice": 75,
+                                "finalPrice": 75,
+                                "discount": 0
+                            }
+                        }
+                    ],
+                    "isMandatory": false,
+                    "respectParentDiscount": true,
+                    "itemsAssociatedWith": [
+                        "item_pizza_1"
+                    ]
                 }
             },
             "addons": {
@@ -345,6 +387,48 @@
                     "isMandatory": false,
                     "itemsAssociatedWith": [
                         "item_burger_1"
+                    ]
+                },
+                "addon_olives": {
+                    "id": "addon_olives",
+                    "meta": {
+                        "name": "Black Olives",
+                        "categoryAssociatedWith": [
+                            "cat_food"
+                        ],
+                        "description": "Add black olives"
+                    },
+                    "priceInfo": {
+                        "basePrice": 30,
+                        "finalPrice": 30,
+                        "discount": 0
+                    },
+                    "isInStock": true,
+                    "respectParentDiscount": false,
+                    "isMandatory": false,
+                    "itemsAssociatedWith": [
+                        "item_pizza_1"
+                    ]
+                },
+                "addon_jalapeno": {
+                    "id": "addon_jalapeno",
+                    "meta": {
+                        "name": "Jalapeños",
+                        "categoryAssociatedWith": [
+                            "cat_food"
+                        ],
+                        "description": "Add spicy jalapeños"
+                    },
+                    "priceInfo": {
+                        "basePrice": 25,
+                        "finalPrice": 25,
+                        "discount": 0
+                    },
+                    "isInStock": true,
+                    "respectParentDiscount": true,
+                    "isMandatory": false,
+                    "itemsAssociatedWith": [
+                        "item_pizza_1"
                     ]
                 }
             },
@@ -392,9 +476,135 @@
                     }
                 }
             },
-            "sessions": {},
-            "carts": {},
-            "orders": {},
+            "sessions": {
+                "session_active_1": {
+                    "sessionId": "session_active_1",
+                    "tableId": "table_1",
+                    "customerId": "9876543210",
+                    "restaurantId": "res_e2e_all_on",
+                    "status": "active",
+                    "createdAt": {
+                        "_seconds": 1738200000,
+                        "_nanoseconds": 0
+                    },
+                    "cartIds": [
+                        "cart_served_1",
+                        "cart_pending_1"
+                    ]
+                }
+            },
+            "carts": {
+                "cart_served_1": {
+                    "cartId": "cart_served_1",
+                    "sessionId": "session_active_1",
+                    "orderId": "order_active_1",
+                    "status": "served",
+                    "items": [
+                        {
+                            "cartItemId": "ci_1",
+                            "menuItemId": "item_burger_1",
+                            "name": "Classic Burger",
+                            "quantity": 1,
+                            "basePrice": 180,
+                            "finalPrice": 200,
+                            "selectedVariants": [
+                                {
+                                    "variantId": "var_size_burger",
+                                    "optionId": "opt_reg",
+                                    "name": "Size: Regular",
+                                    "price": 0
+                                }
+                            ],
+                            "selectedAddons": [
+                                {
+                                    "addonId": "addon_cheese",
+                                    "name": "Extra Cheese",
+                                    "price": 20
+                                }
+                            ],
+                            "notes": "No onions",
+                            "kitchenStatus": "served"
+                        }
+                    ],
+                    "subtotal": 200,
+                    "submittedAt": {
+                        "_seconds": 1738200300,
+                        "_nanoseconds": 0
+                    }
+                },
+                "cart_pending_1": {
+                    "cartId": "cart_pending_1",
+                    "sessionId": "session_active_1",
+                    "orderId": "order_active_1",
+                    "status": "in_kitchen",
+                    "items": [
+                        {
+                            "cartItemId": "ci_2",
+                            "menuItemId": "item_pizza_1",
+                            "name": "Margherita Pizza",
+                            "quantity": 1,
+                            "basePrice": 450,
+                            "finalPrice": 580,
+                            "selectedVariants": [
+                                {
+                                    "variantId": "var_size_pizza",
+                                    "optionId": "opt_lrg",
+                                    "name": "Size: Large",
+                                    "price": 100
+                                }
+                            ],
+                            "selectedAddons": [
+                                {
+                                    "addonId": "addon_olives",
+                                    "name": "Black Olives",
+                                    "price": 30
+                                }
+                            ],
+                            "notes": "",
+                            "kitchenStatus": "preparing"
+                        },
+                        {
+                            "cartItemId": "ci_3",
+                            "menuItemId": "item_whiskey_1",
+                            "name": "Scotch Whiskey",
+                            "quantity": 2,
+                            "basePrice": 500,
+                            "finalPrice": 1000,
+                            "selectedVariants": [],
+                            "selectedAddons": [],
+                            "notes": "On the rocks",
+                            "kitchenStatus": "pending"
+                        }
+                    ],
+                    "subtotal": 1580,
+                    "submittedAt": {
+                        "_seconds": 1738200600,
+                        "_nanoseconds": 0
+                    }
+                }
+            },
+            "orders": {
+                "order_active_1": {
+                    "orderId": "order_active_1",
+                    "sessionId": "session_active_1",
+                    "tableId": "table_1",
+                    "customerId": "9876543210",
+                    "status": "in_progress",
+                    "cartIds": [
+                        "cart_served_1",
+                        "cart_pending_1"
+                    ],
+                    "totalAmount": 1780,
+                    "createdAt": {
+                        "_seconds": 1738200300,
+                        "_nanoseconds": 0
+                    },
+                    "updatedAt": {
+                        "_seconds": 1738200600,
+                        "_nanoseconds": 0
+                    }
+                }
+            },
             "offers": {
                 "offer_dessert_50": {
                     "id": "offer_dessert_50",
@@ -414,6 +624,47 @@
                     "benefit": {
                         "value": 50,
                         "maxDiscount": 500
+                    }
+                },
+                "offer_flat_100": {
+                    "id": "offer_flat_100",
+                    "title": "₹100 Off on Bar",
+                    "description": "Flat ₹100 off on bar orders above ₹500",
+                    "type": "FLAT",
+                    "scope": "CATEGORY",
+                    "targetIds": [
+                        "cat_bar"
+                    ],
+                    "isActive": true,
+                    "validity": {
+                        "startDate": "2024-01-01T00:00:00Z",
+                        "endDate": "2030-12-31T23:59:59Z"
+                    },
+                    "conditions": {
+                        "minOrderValue": 500
+                    },
+                    "benefit": {
+                        "value": 100
+                    }
+                },
+                "offer_first_time_20": {
+                    "id": "offer_first_time_20",
+                    "title": "20% Off First Order",
+                    "description": "First-time customers get 20% off",
+                    "type": "PERCENTAGE",
+                    "scope": "ORDER",
+                    "targetIds": [],
+                    "isActive": true,
+                    "validity": {
+                        "startDate": "2024-01-01T00:00:00Z",
+                        "endDate": "2030-12-31T23:59:59Z"
+                    },
+                    "conditions": {
+                        "isFirstTimeUser": true
+                    },
+                    "benefit": {
+                        "value": 20,
+                        "maxDiscount": 200
                     }
                 }
             }
