@@ -26,6 +26,8 @@ const SEND_SERVER_NOTIFICATIONS = 'sendServerNotifications';
  * - Notifies server when order is marked complete
  */
 exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
+  // Load feature flag overrides from Firestore (for test environments)
+  await featureFlags.loadOverrides(db);
   const requestData = data.data || data;
   console.log('poopoo updateOrderStatus request:', JSON.stringify(requestData));
   // Validate inputs

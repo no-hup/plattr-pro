@@ -81,7 +81,10 @@ const listRestaurants = functions.https.onRequest(withCors(async (req, res) => {
   }
 }));
 
+const { setFeatureFlags } = require('./setFeatureFlags');
+
 module.exports = {
   listRestaurants,
+  setFeatureFlags,
 };
 

@@ -69,3 +69,53 @@ Parsing robustness (suggestions)
 - Normalize status/enums at the edge; keep UI on canonical values.
 - One timestamp converter for int/string/`Timestamp`/map formats.
 - Contract tests with real backend responses to catch drift.
+
+5th Apr 26
+
+**E2E API Testing Framework — Expanded to ~95% Consumer Coverage**
+
+Scope: `backend/claude-api-testing-workflow/`
+
+**Output optimization (for Haiku-class LLM execution):**
+- `run.js` now summary-only by default (silent passes, detailed failures); `--verbose` for humans
+- Created `lib/narrator.js` — business-logic narrative log to `results/narrative.log` (tail -f in separate terminal to watch what's being tested: items added, prices verified, offers applied, order status transitions)
+- Created `run-tests.sh` wrapper script
+- Rewrote `README_AGENT.md` with 3-line quick start for Haiku
+
+**Mock data expansion:**
+- 7 restaurants (was 3): added empty_menu, all_out_of_stock, simple_menu (no variants/addons), offer_configs (9 offers incl BOGO, expired, complex conditions, maxDiscount cap)
+- 9 tables per restaurant (was 6) for suite isolation
+- 6 offers on primary restaurant (was 3)
+
+**New + expanded test suites:**
+- NEW `offer-pricing.js` (13 tests): BOGO, PERCENTAGE, FLAT, maxDiscount caps, expiry, condition combos, offer persistence through checkout
+- `pricing.js` +5: multi-addon, qty multiplier, 5-item cart, 3-item with quantities
+- `offers.js` +7: apply/reject/remove for each offer type, price restoration
+- `order-lifecycle.js` +8: CANCELLED flow, backward transition rejection, multi-cart independence
+- `menu.js` +3, `table.js` +3, `error-cases.js` +5, `customer-journey.js` +2
+
+**Totals: 12 suites, ~185 tests (was 11 suites, ~139 tests)**
+
+New assertions: `assertPriceRange`, `assertContains`, `assertOneOf`
+
+Progress file also at: `backend/claude-api-testing-workflow/PROGRESS.md`
+
+todo: run full suite against emulator and fix any test failures. BUG-1 (Firestore transaction ordering in createOrUpdateOrder.js) still blocks all checkout-dependent tests.
+
+6th Apr 26
+
+**Feature Flag Override System — Completed wiring for E2E testing**
+
+- Audited all backend entry points that call `featureFlags.isEnabled()`
+- Found 4 entry points missing `loadOverrides(db)` call (previously only `addItemToCart` and `table.js` had it)
+- Added `loadOverrides(db)` to: `checkoutCart.js`, `updateOrderStatus.js`, `orderTriggers.js` (onOrderPlaced + onOrderUpdated)
+- Verified all modules load without syntax errors
+
+Files ready to commit (feature flag override system — uncommitted from prior session + today's fixes):
+- `FeatureFlags.js` — `loadOverrides()` method + `_overrideStore`
+- `setFeatureFlags.js` — new dev-only endpoint (emulator-guarded)
+- `indexDev.js` — exports `setFeatureFlags`
+- `importMockData5.js` — `--clean` and `--refresh-timestamps` CLI flags
+- `addItemToCart.js`, `table.js`, `checkoutCart.js`, `updateOrderStatus.js`, `orderTriggers.js` — all call `loadOverrides(db)` at entry
+
+todo: commit the feature flag override system. Then run E2E test suite against emulator to validate mock data + flag permutations work end-to-end.

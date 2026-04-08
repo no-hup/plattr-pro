@@ -57,6 +57,8 @@ const SEND_SERVER_NOTIFICATIONS = 'sendServerNotifications';
  * Triggers when a new order is placed (document created)
  */
 const onOrderPlaced = onDocumentCreated('restaurants/{restaurantId}/orders/{orderId}', async (event) => {
+    // Load feature flag overrides from Firestore (for test environments)
+    await featureFlags.loadOverrides(db);
     // Reduce logging - only log essential info
     console.log(`Order created for restaurant: ${event.params.restaurantId}, order: ${event.params.orderId}`);
 
@@ -130,6 +132,8 @@ const onOrderPlaced = onDocumentCreated('restaurants/{restaurantId}/orders/{orde
  * Specifically checks if a cart status changed to READY and notifies the assigned server.
  */
 const onOrderUpdated = onDocumentUpdated('restaurants/{restaurantId}/orders/{orderId}', async (event) => {
+    // Load feature flag overrides from Firestore (for test environments)
+    await featureFlags.loadOverrides(db);
     console.log(`Order updated for restaurant: ${event.params.restaurantId}, order: ${event.params.orderId}`);
 
     const beforeSnapshot = event.data.before;
