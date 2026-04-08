@@ -5,6 +5,12 @@
 // - restaurants.res_e2e_all_on.carts[].*.submittedAt / checkoutTime (ISO String or Timestamp)
 // - restaurants.res_e2e_all_on.offers[].*.validity.endDate (Must be in the future)
 // Failing to update these may cause orders to appear "3 years ago" or offers to be "expired" in the UI.
+//
+// Usage:
+//   node importMockData5.js                       # import with merge (original behavior)
+//   node importMockData5.js --clean               # DELETE all emulator data first, then import
+//   node importMockData5.js --refresh-timestamps   # offset all _seconds to (now - 10 min)
+//   node importMockData5.js --clean --refresh-timestamps  # both
 
 // Set emulator environment variables BEFORE importing admin
 const environment = require('../singleton/Environment');
@@ -13,11 +19,50 @@ const { admin, db, FieldValue, Timestamp } = require('../admin/admin');
 const fs = require('fs');
 const path = require('path');
 
+const args = process.argv.slice(2);
+const shouldClean = args.includes('--clean');
+const shouldRefreshTimestamps = args.includes('--refresh-timestamps');
+
 // Read the new mock data
 const mockDataPath = path.join(__dirname, 'MockData5EndToEndTesting.json');
 console.log('Loading mock data (v5) from:', mockDataPath);
 const mockData = JSON.parse(fs.readFileSync(mockDataPath, 'utf8'));
 console.log('Mock data (v5) loaded successfully');
+
+/**
+ * If --refresh-timestamps is set, walk the raw JSON and offset all
+ * { _seconds, _nanoseconds } objects to (now - 600) seconds so the
+ * data looks recent.
+ */
+function refreshTimestamps(data) {
+    if (!data || typeof data !== 'object') return data;
+    const nowSeconds = Math.floor(Date.now() / 1000) - 600; // 10 min ago
+
+    const result = Array.isArray(data) ? [...data] : { ...data };
+    for (const key in result) {
+        const value = result[key];
+        if (value && typeof value === 'object') {
+            if (value._seconds !== undefined && value._nanoseconds !== undefined) {
+                result[key] = { _seconds: nowSeconds, _nanoseconds: 0 };
+            } else {
+                result[key] = refreshTimestamps(value);
+            }
+        }
+    }
+    return result;
+}
+
+if (shouldRefreshTimestamps) {
+    console.log('Refreshing timestamps to (now - 10 min)...');
+    if (mockData.restaurants) {
+        for (const rid of Object.keys(mockData.restaurants)) {
+            mockData.restaurants[rid] = refreshTimestamps(mockData.restaurants[rid]);
+        }
+    }
+    if (mockData.customers) {
+        mockData.customers = refreshTimestamps(mockData.customers);
+    }
+}
 
 function transformData(data) {
     if (!data || typeof data !== 'object') return data;
@@ -39,8 +84,27 @@ function transformData(data) {
     return result;
 }
 
+/**
+ * Delete all documents in the Firestore emulator via the REST API.
+ */
+async function clearEmulatorData() {
+    const host = process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080';
+    const projectId = 'rms-app-dd875';
+    const url = `http://${host}/emulator/v1/projects/${projectId}/databases/(default)/documents`;
+    console.log(`Clearing all emulator data via DELETE ${url}...`);
+    const resp = await fetch(url, { method: 'DELETE' });
+    if (!resp.ok) {
+        throw new Error(`Failed to clear emulator data: ${resp.status} ${resp.statusText}`);
+    }
+    console.log('Emulator data cleared successfully');
+}
+
 async function importData() {
     try {
+        if (shouldClean) {
+            await clearEmulatorData();
+        }
+
         for (const [restaurantId, restaurantData] of Object.entries(mockData.restaurants)) {
             console.log(`Importing restaurant (v5): ${restaurantId}`);
             try {

@@ -28,6 +28,8 @@ const {
 } = require('./addItemToCartBoilerplateHelper');
 
 const addItemToCart = functions.https.onCall(async (data, context) => {
+  // Load feature flag overrides from Firestore (for test environments)
+  await featureFlags.loadOverrides(db);
   // console.log("addItemToCart request received");
   validateAddItemFields(data.data);
   let {

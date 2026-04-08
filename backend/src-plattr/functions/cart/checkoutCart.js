@@ -11,6 +11,7 @@ const timestamp = require('../utils/timestamp');
 const { ORDER_STATUS } = require('../orders/orderConstants');
 const { mapOrderStatus } = require('../utils/statusUtils');
 const ResponseBuilder = require('../utils/ResponseBuilder');
+const featureFlags = require('../singleton/FeatureFlags');
 
 /**
  * Checkout Cart Cloud Function
@@ -27,6 +28,8 @@ const ResponseBuilder = require('../utils/ResponseBuilder');
  * @returns {Object} Order details including orderId and status
  */
 const checkoutCart = functions.https.onCall(async (data, context) => {
+  // Load feature flag overrides from Firestore (for test environments)
+  await featureFlags.loadOverrides(db);
   const requestPayload = data?.data || data || {};
   try {
     // console.log("Received checkoutCart request:", JSON.stringify(requestPayload));

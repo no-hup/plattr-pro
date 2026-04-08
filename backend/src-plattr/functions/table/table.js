@@ -30,6 +30,8 @@ const TABLE_STATUS = {
 * @throws {Error} Various error types based on validation failures
 */
 exports.validateTableAndLocation = functions.https.onCall(async (request, context) => {
+    // Load feature flag overrides from Firestore (for test environments)
+    await featureFlags.loadOverrides(db);
     // Declare data outside try block so it's accessible in catch
     let data;
     try {
@@ -228,6 +230,8 @@ exports.validateTableAndLocation = functions.https.onCall(async (request, contex
 * - Generates authentication token
 */
 exports.validateOTP = functions.https.onCall(async (request, context) => {
+    // Load feature flag overrides from Firestore (for test environments)
+    await featureFlags.loadOverrides(db);
     const data = request.data;
     console.log("poopoo ==== validateOTP called with data:", {
         restaurantId: data?.restaurantId,
