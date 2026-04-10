@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:platter_core/platter_core.dart';
 import 'api_constants.dart';
 import '../config/app_config.dart';
 import 'interceptors/user_agent_interceptor.dart';
@@ -32,6 +34,9 @@ class DioClient {
     //dio.interceptors.add(AuthInterceptor());      // Handles Authorization
     dio.interceptors
         .add(ErrorInterceptor()); // Handles error logic (e.g., 401 refresh)
+    if (kDebugMode) {
+      dio.interceptors.add(ResponseGuardInterceptor());
+    }
     dio.interceptors.add(LogInterceptor(
       requestBody: true,
       responseBody: true,

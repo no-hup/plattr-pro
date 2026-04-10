@@ -140,6 +140,7 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
     required String restaurantId,
     Map<String, String>? selectedVariants,
     List<String>? selectedAddons,
+    int quantity = 1,
     BuildContext? context,
   }) async {
     // Skip if an update is already in progress
@@ -182,6 +183,7 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
       selectedAddons: addonSelections,
       tableId: tableId,
       restaurantId: restaurantId,
+      quantity: quantity,
     );
 
     // Make API request with the effective customization
@@ -193,6 +195,7 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
         restaurantId: restaurantId,
         selectedVariants: effectiveVariants,
         selectedAddons: effectiveAddons,
+        quantity: quantity,
       );
       
       if (!response.success) {
@@ -270,13 +273,14 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
     required String restaurantId,
     Map<String, String>? selectedVariants,
     List<String>? selectedAddons,
+    int quantity = 1,
   }) async {
     final request = increment
         ? legacy.AddToCartRequest(
             tableId: tableId,
             restaurantId: restaurantId,
             menuItemId: itemId,
-            quantity: 1,
+            quantity: quantity,
             selectedVariants: selectedVariants,
             selectedAddons: selectedAddons,
           )
@@ -284,7 +288,7 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
             tableId: tableId,
             restaurantId: restaurantId,
             menuItemId: itemId,
-            quantity: 1,
+            quantity: quantity,
             selectedVariants: selectedVariants,
             selectedAddons: selectedAddons,
           );
@@ -317,6 +321,7 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
     required String restaurantId,
     required List<VariantSelection> selectedVariants,
     required List<AddonSelection> selectedAddons,
+    int quantity = 1,
   }) {
     // With Freezed models, we need to create new instances rather than modifying existing ones
     final currentItems = _cart?.items.toList() ?? <CartItem>[];
@@ -361,7 +366,7 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
         // Item exists, update its quantity
         final currentItem = currentItems[itemIndex];
         updatedItems[itemIndex] = currentItem.copyWith(
-          quantity: currentItem.quantity + 1,
+          quantity: currentItem.quantity + quantity,
           // Preserve existing customizations if none were specified
           selectedVariants: selectedVariants.isEmpty ? currentItem.selectedVariants : selectedVariants,
           selectedAddons: selectedAddons.isEmpty ? currentItem.selectedAddons : selectedAddons,
@@ -370,7 +375,7 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
         // Item doesn't exist, add it
         updatedItems.add(CartItem(
           menuItemId: itemId,
-          quantity: 1,
+          quantity: quantity,
           selectedVariants: selectedVariants,
           selectedAddons: selectedAddons,
           priceInfo: defaultPriceInfo,

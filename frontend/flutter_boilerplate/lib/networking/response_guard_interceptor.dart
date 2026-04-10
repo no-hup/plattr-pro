@@ -50,12 +50,24 @@ class ResponseGuardInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    String? bodyPreview;
+    if (options.data != null) {
+      final bodyStr = options.data is String
+          ? options.data as String
+          : jsonEncode(options.data);
+      bodyPreview = bodyStr.length > maxResponseLength
+          ? bodyStr.substring(0, maxResponseLength)
+          : bodyStr;
+    }
+
     final entry = {
       'timestamp': DateTime.now().toUtc().toIso8601String(),
       'type': 'request',
       'endpoint': options.path,
       'method': options.method,
-      'log': '⬆️ ${options.method} ${options.path}',
+      if (bodyPreview != null) 'requestBody': bodyPreview,
+      'log':
+          '⬆️ ${options.method} ${options.path}${bodyPreview != null ? ' | Body: $bodyPreview' : ''}',
     };
     _addLog(entry);
     handler.next(options);

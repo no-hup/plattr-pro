@@ -113,9 +113,9 @@ class _CarouselItemCardState extends State<_CarouselItemCard> {
       ),
       builder: (context) => MenuCustomizationSheet(
         item: widget.item,
-        onConfirm: (selectedVariants, selectedAddons) {
+        onConfirm: (selectedVariants, selectedAddons, quantity) {
           AppLogger.log(
-            '🛒 CAROUSEL: Adding customized item with variants: $selectedVariants, addons: $selectedAddons',
+            '🛒 CAROUSEL: Adding customized item with variants: $selectedVariants, addons: $selectedAddons, quantity: $quantity',
           );
           context.read<MenuState>().updateCartItem(
                 widget.item,
@@ -124,6 +124,7 @@ class _CarouselItemCardState extends State<_CarouselItemCard> {
                 restaurantId: widget.restaurantId,
                 selectedVariants: selectedVariants,
                 selectedAddons: selectedAddons.toList(),
+                quantity: quantity,
                 context: context,
               );
         },
@@ -207,30 +208,32 @@ class _CarouselItemCardState extends State<_CarouselItemCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Metadata Badges Row (Veg/Non-Veg, Spicy)
-                  if (!hasImage) ...[ // Add slight top padding if no image
+                  if (!hasImage) ...[
                      const SizedBox(height: 4),
                   ],
+                  // Name with inline dietary/spice markers
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                       if (widget.item.dietaryType != null && widget.item.dietaryType == 'NON_VEG') ...[
-                         StatusBadge.nonVeg(),
-                         const SizedBox(width: 8),
-                       ],
-                       if (widget.item.spiceLevel != null && widget.item.spiceLevel != 'MILD') ...[
-                         StatusBadge.spicy(level: widget.item.spiceLevel!),
-                         const SizedBox(width: 8),
-                       ],
+                      if (widget.item.dietaryType != null) ...[
+                        if (widget.item.dietaryType == 'NON_VEG') StatusBadge.nonVeg()
+                        else if (widget.item.dietaryType == 'EGG') StatusBadge.egg()
+                        else if (widget.item.dietaryType == 'VEG') StatusBadge.veg(),
+                        const SizedBox(width: 4),
+                      ],
+                      if (widget.item.spiceLevel != null && widget.item.spiceLevel != 'MILD') ...[
+                        StatusBadge.spicy(level: widget.item.spiceLevel!),
+                        const SizedBox(width: 4),
+                      ],
+                      Expanded(
+                        child: Text(
+                          widget.item.meta.name,
+                          style: AppTypography.h3.copyWith(fontSize: 16),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
-                  ),
-                  if (widget.item.dietaryType == 'NON_VEG' || (widget.item.spiceLevel != null && widget.item.spiceLevel != 'MILD'))
-                    const SizedBox(height: 8),
-
-                  Text(
-                    widget.item.meta.name,
-                    style: AppTypography.h3.copyWith(fontSize: 16),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   const Spacer(),
                   // Price and Add button row

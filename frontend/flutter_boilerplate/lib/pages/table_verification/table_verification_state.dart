@@ -92,22 +92,28 @@ class TableVerificationPageState extends State<TableVerificationPage> {
           );
           AppLogger.log('🔑 Raw Details: $rawDetails');
 
-          // Extract required fields from raw details with defaults
-          final authMsg = rawDetails['authMessage'] as String? ??
-              rawDetails['error'] as String? ??
+          // Backend wraps the actual fields inside a 'data' sub-key:
+          //   error.details = { status, message, data: { isPhoneNumberMandatory, ... } }
+          // Unwrap that layer; fall back to rawDetails itself for flat formats.
+          final details =
+              rawDetails['data'] as Map<String, dynamic>? ?? rawDetails;
+
+          // Extract required fields from details with defaults
+          final authMsg = details['authMessage'] as String? ??
+              details['error'] as String? ??
               'OTP Required';
           final requireName =
-              rawDetails['isUsernameMandatory'] as bool? ?? false;
+              details['isUsernameMandatory'] as bool? ?? false;
           final requirePhone =
-              rawDetails['isPhoneNumberMandatory'] as bool? ?? false;
+              details['isPhoneNumberMandatory'] as bool? ?? false;
           final isMultiUser =
-              rawDetails['isMultiUserSupported'] as bool? ?? false;
-          final tableStatus = rawDetails['tableStatus'] as String?;
+              details['isMultiUserSupported'] as bool? ?? false;
+          final tableStatus = details['tableStatus'] as String?;
 
           // Extract server and primary customer info for enhanced message
-          final serverName = rawDetails['assignedServer']?['name'] as String?;
+          final serverName = details['assignedServer']?['name'] as String?;
           final primaryCustomerName =
-              rawDetails['primaryCustomer']?['name'] as String?;
+              details['primaryCustomer']?['name'] as String?;
 
           // Create enhanced auth message if server or primary customer info is available
           var enhancedAuthMsg = authMsg;

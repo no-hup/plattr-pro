@@ -280,7 +280,11 @@ class OrderDetailsView extends StatelessWidget {
       children: [
         // Order header with status
         _buildOrderHeader(context),
-        
+
+        // Applied offer banner (auto-applied by backend)
+        if (orderData.appliedOffer != null)
+          _buildAppliedOfferBanner(context),
+
         // Order items based on feature flag
         if (showCartBreakup && orderData.carts.isNotEmpty) 
           // Display the items grouped by cart
@@ -362,6 +366,41 @@ class OrderDetailsView extends StatelessWidget {
     );
   }
   
+  Widget _buildAppliedOfferBanner(BuildContext context) {
+    final offer = orderData.appliedOffer!;
+    final amount = orderData.offerDiscount > 0
+        ? orderData.offerDiscount
+        : offer.discountAmount;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+        border: Border.all(color: Colors.green.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.redeem, color: Colors.green),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              'You saved ₹${amount.toStringAsFixed(2)} with ${offer.title}!',
+              style: AppTypography.body.copyWith(
+                color: Colors.green.shade800,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildOrderSummary(BuildContext context) {
     return Container(
       padding: AppSpacing.pagePadding,

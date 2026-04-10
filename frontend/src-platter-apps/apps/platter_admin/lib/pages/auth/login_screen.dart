@@ -53,15 +53,15 @@ class _LoginScreenContent extends StatelessWidget {
         onLoginSuccess: () => _onLoginSuccess(context),
         debugCredentials: const [
           DebugCredential(
-            name: 'Admin - Full Features',
+            name: 'Admin - All Features ON',
             id: 'res_e2e_all_on',
-            username: 'admin@e2e.com',
+            username: 'admin1@e2e.com',
             pass: '1234',
           ),
           DebugCredential(
-            name: 'Admin - Mock Data 2',
-            id: 'res_full',
-            username: 'admin@plattr.com',
+            name: 'Admin - Simple Menu',
+            id: 'res_e2e_simple_menu',
+            username: 'admin1@e2e-simple.com',
             pass: '1234',
           ),
         ],

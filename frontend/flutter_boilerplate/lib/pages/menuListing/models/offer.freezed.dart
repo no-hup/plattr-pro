@@ -26,6 +26,10 @@ mixin _$Offer {
   String get description => throw _privateConstructorUsedError;
   String? get imageUrl => throw _privateConstructorUsedError;
   String get type => throw _privateConstructorUsedError;
+  String? get scope => throw _privateConstructorUsedError;
+  List<String> get exclusionIds => throw _privateConstructorUsedError;
+  String? get termsAndConditions => throw _privateConstructorUsedError;
+  int? get priority => throw _privateConstructorUsedError;
   OfferBenefit? get benefit => throw _privateConstructorUsedError;
   bool get isApplicable => throw _privateConstructorUsedError;
   String? get reason => throw _privateConstructorUsedError;
@@ -48,6 +52,10 @@ abstract class $OfferCopyWith<$Res> {
       String description,
       String? imageUrl,
       String type,
+      String? scope,
+      List<String> exclusionIds,
+      String? termsAndConditions,
+      int? priority,
       OfferBenefit? benefit,
       bool isApplicable,
       String? reason,
@@ -75,6 +83,10 @@ class _$OfferCopyWithImpl<$Res, $Val extends Offer>
     Object? description = null,
     Object? imageUrl = freezed,
     Object? type = null,
+    Object? scope = freezed,
+    Object? exclusionIds = null,
+    Object? termsAndConditions = freezed,
+    Object? priority = freezed,
     Object? benefit = freezed,
     Object? isApplicable = null,
     Object? reason = freezed,
@@ -105,6 +117,22 @@ class _$OfferCopyWithImpl<$Res, $Val extends Offer>
           ? _value.type
           : type // ignore: cast_nullable_to_non_nullable
               as String,
+      scope: freezed == scope
+          ? _value.scope
+          : scope // ignore: cast_nullable_to_non_nullable
+              as String?,
+      exclusionIds: null == exclusionIds
+          ? _value.exclusionIds
+          : exclusionIds // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+      termsAndConditions: freezed == termsAndConditions
+          ? _value.termsAndConditions
+          : termsAndConditions // ignore: cast_nullable_to_non_nullable
+              as String?,
+      priority: freezed == priority
+          ? _value.priority
+          : priority // ignore: cast_nullable_to_non_nullable
+              as int?,
       benefit: freezed == benefit
           ? _value.benefit
           : benefit // ignore: cast_nullable_to_non_nullable
@@ -151,6 +179,10 @@ abstract class _$$OfferImplCopyWith<$Res> implements $OfferCopyWith<$Res> {
       String description,
       String? imageUrl,
       String type,
+      String? scope,
+      List<String> exclusionIds,
+      String? termsAndConditions,
+      int? priority,
       OfferBenefit? benefit,
       bool isApplicable,
       String? reason,
@@ -177,6 +209,10 @@ class __$$OfferImplCopyWithImpl<$Res>
     Object? description = null,
     Object? imageUrl = freezed,
     Object? type = null,
+    Object? scope = freezed,
+    Object? exclusionIds = null,
+    Object? termsAndConditions = freezed,
+    Object? priority = freezed,
     Object? benefit = freezed,
     Object? isApplicable = null,
     Object? reason = freezed,
@@ -207,6 +243,22 @@ class __$$OfferImplCopyWithImpl<$Res>
           ? _value.type
           : type // ignore: cast_nullable_to_non_nullable
               as String,
+      scope: freezed == scope
+          ? _value.scope
+          : scope // ignore: cast_nullable_to_non_nullable
+              as String?,
+      exclusionIds: null == exclusionIds
+          ? _value._exclusionIds
+          : exclusionIds // ignore: cast_nullable_to_non_nullable
+              as List<String>,
+      termsAndConditions: freezed == termsAndConditions
+          ? _value.termsAndConditions
+          : termsAndConditions // ignore: cast_nullable_to_non_nullable
+              as String?,
+      priority: freezed == priority
+          ? _value.priority
+          : priority // ignore: cast_nullable_to_non_nullable
+              as int?,
       benefit: freezed == benefit
           ? _value.benefit
           : benefit // ignore: cast_nullable_to_non_nullable
@@ -237,10 +289,15 @@ class _$OfferImpl implements _Offer {
       required this.description,
       this.imageUrl,
       required this.type,
+      this.scope,
+      final List<String> exclusionIds = const [],
+      this.termsAndConditions,
+      this.priority,
       this.benefit,
       this.isApplicable = false,
       this.reason,
-      this.potentialSaving = 0});
+      this.potentialSaving = 0})
+      : _exclusionIds = exclusionIds;
 
   factory _$OfferImpl.fromJson(Map<String, dynamic> json) =>
       _$$OfferImplFromJson(json);
@@ -258,6 +315,21 @@ class _$OfferImpl implements _Offer {
   @override
   final String type;
   @override
+  final String? scope;
+  final List<String> _exclusionIds;
+  @override
+  @JsonKey()
+  List<String> get exclusionIds {
+    if (_exclusionIds is EqualUnmodifiableListView) return _exclusionIds;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_exclusionIds);
+  }
+
+  @override
+  final String? termsAndConditions;
+  @override
+  final int? priority;
+  @override
   final OfferBenefit? benefit;
   @override
   @JsonKey()
@@ -270,7 +342,7 @@ class _$OfferImpl implements _Offer {
 
   @override
   String toString() {
-    return 'Offer(id: $id, code: $code, title: $title, description: $description, imageUrl: $imageUrl, type: $type, benefit: $benefit, isApplicable: $isApplicable, reason: $reason, potentialSaving: $potentialSaving)';
+    return 'Offer(id: $id, code: $code, title: $title, description: $description, imageUrl: $imageUrl, type: $type, scope: $scope, exclusionIds: $exclusionIds, termsAndConditions: $termsAndConditions, priority: $priority, benefit: $benefit, isApplicable: $isApplicable, reason: $reason, potentialSaving: $potentialSaving)';
   }
 
   @override
@@ -286,6 +358,13 @@ class _$OfferImpl implements _Offer {
             (identical(other.imageUrl, imageUrl) ||
                 other.imageUrl == imageUrl) &&
             (identical(other.type, type) || other.type == type) &&
+            (identical(other.scope, scope) || other.scope == scope) &&
+            const DeepCollectionEquality()
+                .equals(other._exclusionIds, _exclusionIds) &&
+            (identical(other.termsAndConditions, termsAndConditions) ||
+                other.termsAndConditions == termsAndConditions) &&
+            (identical(other.priority, priority) ||
+                other.priority == priority) &&
             (identical(other.benefit, benefit) || other.benefit == benefit) &&
             (identical(other.isApplicable, isApplicable) ||
                 other.isApplicable == isApplicable) &&
@@ -296,8 +375,22 @@ class _$OfferImpl implements _Offer {
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, id, code, title, description,
-      imageUrl, type, benefit, isApplicable, reason, potentialSaving);
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      code,
+      title,
+      description,
+      imageUrl,
+      type,
+      scope,
+      const DeepCollectionEquality().hash(_exclusionIds),
+      termsAndConditions,
+      priority,
+      benefit,
+      isApplicable,
+      reason,
+      potentialSaving);
 
   @JsonKey(ignore: true)
   @override
@@ -321,6 +414,10 @@ abstract class _Offer implements Offer {
       required final String description,
       final String? imageUrl,
       required final String type,
+      final String? scope,
+      final List<String> exclusionIds,
+      final String? termsAndConditions,
+      final int? priority,
       final OfferBenefit? benefit,
       final bool isApplicable,
       final String? reason,
@@ -340,6 +437,14 @@ abstract class _Offer implements Offer {
   String? get imageUrl;
   @override
   String get type;
+  @override
+  String? get scope;
+  @override
+  List<String> get exclusionIds;
+  @override
+  String? get termsAndConditions;
+  @override
+  int? get priority;
   @override
   OfferBenefit? get benefit;
   @override

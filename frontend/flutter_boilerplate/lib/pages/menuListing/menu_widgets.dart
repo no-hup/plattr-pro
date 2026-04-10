@@ -50,9 +50,9 @@ class _MenuItemCardState extends State<MenuItemCard> {
       ),
       builder: (context) => MenuCustomizationSheet(
         item: widget.item,
-        onConfirm: (selectedVariants, selectedAddons) {
+        onConfirm: (selectedVariants, selectedAddons, quantity) {
           AppLogger.log(
-            '🛒 MENU: Adding customized item with variants: $selectedVariants, addons: $selectedAddons',
+            '🛒 MENU: Adding customized item with variants: $selectedVariants, addons: $selectedAddons, quantity: $quantity',
           );
           context.read<MenuState>().updateCartItem(
                 widget.item,
@@ -61,6 +61,7 @@ class _MenuItemCardState extends State<MenuItemCard> {
                 restaurantId: widget.restaurantId,
                 selectedVariants: selectedVariants,
                 selectedAddons: selectedAddons.toList(),
+                quantity: quantity,
                 context: context,
               );
         },
@@ -223,25 +224,27 @@ class _MenuItemDetails extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Metadata Row (Non-Veg/Spicy) above title
-        if (item.dietaryType == 'NON_VEG' || (item.spiceLevel != null && item.spiceLevel != 'MILD')) ...[
-          Row(
-            children: [
-                if (item.dietaryType != null && item.dietaryType == 'NON_VEG') ...[
-                    StatusBadge.nonVeg(),
-                    const SizedBox(width: 8),
-                ],
-                if (item.spiceLevel != null && item.spiceLevel != 'MILD') ...[
-                    StatusBadge.spicy(level: item.spiceLevel!),
-                    const SizedBox(width: 8),
-                ],
+        // Name with inline dietary/spice markers
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (item.dietaryType != null) ...[
+              if (item.dietaryType == 'NON_VEG') StatusBadge.nonVeg()
+              else if (item.dietaryType == 'EGG') StatusBadge.egg()
+              else if (item.dietaryType == 'VEG') StatusBadge.veg(),
+              const SizedBox(width: 6),
             ],
-          ),
-          const SizedBox(height: 4),
-        ],
-        Text(
-          item.meta.name,
-          style: AppTypography.h3,
+            if (item.spiceLevel != null && item.spiceLevel != 'MILD') ...[
+              StatusBadge.spicy(level: item.spiceLevel!),
+              const SizedBox(width: 6),
+            ],
+            Expanded(
+              child: Text(
+                item.meta.name,
+                style: AppTypography.h3,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: AppDimensions.space4),
         Text(
