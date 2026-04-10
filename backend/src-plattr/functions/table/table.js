@@ -126,8 +126,9 @@ exports.validateTableAndLocation = functions.https.onCall(async (request, contex
         }
 
         // 6. OTP Generation for Vacant Tables
-        if (originalStatus === TABLE_STATUS.VACANT) {
-            console.log(`poopoo Table ${tableId} is VACANT, generating OTP and setting status to OTP_PENDING`);
+        if (originalStatus === TABLE_STATUS.VACANT ||
+            (originalStatus === TABLE_STATUS.OTP_PENDING && !otpService.isOTPValid(tableData.currentOTP))) {
+            console.log(`poopoo Table ${tableId} is ${originalStatus} (with expired/missing OTP), generating new OTP and setting status to OTP_PENDING`);
             const otpObject = otpService.createOTPObject();
 
             try {
@@ -328,6 +329,20 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
                 );
             }
 
+            // Check OTP expiry before comparing code
+            if (!otpService.isOTPValid(tableData.currentOTP)) {
+                console.log("poopoo validateOTP - Error: OTP has expired");
+                errorHandler.preconditionFailed(
+                    "OTP has expired. Please scan the QR code again to get a new OTP.",
+                    {
+                        tableStatus: originalStatus,
+                        error: 'OTP expired',
+                        restaurantId,
+                        tableId
+                    }
+                );
+            }
+
             console.log(`poopoo validateOTP - Expected OTP: ${tableData.currentOTP.code}, Provided OTP: ${otp}`);
             if (tableData.currentOTP.code !== otp) {
                 console.log("poopoo validateOTP - Error: Invalid OTP provided");
@@ -388,6 +403,10 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
                     }
                 );
             }
+
+            // Skip OTP expiry check for ACTIVE tables — the primary customer already
+            // authenticated, so code match alone is sufficient for secondary users.
+            // Expiry is only enforced on VACANT/OTP_PENDING tables (above).
 
             console.log(`poopoo validateOTP - Expected OTP: ${tableData.currentOTP.code}, Provided OTP: ${otp}`);
             if (tableData.currentOTP.code !== otp) {
@@ -581,7 +600,22 @@ exports.cleanupInactiveSessions = functions.https.onCall(async (data, context) =
             for (const tableDoc of tablesSnapshot.docs) {
                 const tableData = tableDoc.data();
                 if (!tableData.lastActivity) {
-                    console.log(`poopoo cleanupInactiveSessions: Table ${tableDoc.id} has no lastActivity, skipping`);
+                    // For OTP_PENDING tables with no lastActivity, fall back to firstScannedAt or OTP createdAt
+                    const fallbackTime = tableData.firstScannedAt || tableData.currentOTP?.createdAt;
+                    if (tableData.status === TABLE_STATUS.OTP_PENDING && fallbackTime) {
+                        const scannedDate = timestamp.safeToDate(fallbackTime);
+                        if (scannedDate && scannedDate.getTime() < inactivityThreshold) {
+                            console.log(`poopoo cleanupInactiveSessions: OTP_PENDING table ${tableDoc.id} scanned at ${scannedDate.toISOString()} is stale, cleaning up`);
+                            batch.update(tableDoc.ref, {
+                                status: TABLE_STATUS.VACANT,
+                                sessionToken: null,
+                                lastActivity: null,
+                                currentOTP: null
+                            });
+                        }
+                    } else {
+                        console.log(`poopoo cleanupInactiveSessions: Table ${tableDoc.id} has no lastActivity, skipping`);
+                    }
                     continue;
                 }
 
@@ -605,7 +639,8 @@ exports.cleanupInactiveSessions = functions.https.onCall(async (data, context) =
                         batch.update(tableDoc.ref, {
                             status: TABLE_STATUS.VACANT,
                             sessionToken: null,
-                            lastActivity: null
+                            lastActivity: null,
+                            currentOTP: null
                         });
                         console.log(`poopoo cleanupInactiveSessions: Marked table ${tableDoc.id} as vacant`);
                     } catch (error) {
@@ -1379,17 +1414,28 @@ exports.updateTableStatus = functions.https.onCall(async (request, context) => {
         // Store previous status for response
         const previousStatus = tableData.status;
 
-        // 5. Handle special case: when changing from active to vacant, clear customer info
+        // 5. When changing to vacant from any status, clean up all table state
         const updateData = {
             status: status,
             lastUpdated: timestamp.serverTimestamp()
         };
 
-        if (previousStatus === 'active' && status === 'vacant') {
-            console.log(`poopoo updateTableStatus - Changing table from active to vacant, clearing customer info`);
+        // When changing to vacant from any status, clean up all table state
+        if (status === 'vacant' && previousStatus !== 'vacant') {
+            console.log(`poopoo updateTableStatus - Changing table to vacant from ${previousStatus}, clearing all state`);
             updateData.primaryCustomer = null;
             updateData.occupiedBy = [];
             updateData.activeOrderId = null;
+            updateData.currentOTP = null;
+
+            // End any active sessions for this table
+            try {
+                await sessionService.endTableSessions(restaurantId, tableId);
+                console.log(`poopoo updateTableStatus - Sessions ended for table ${tableId}`);
+            } catch (sessionError) {
+                console.error(`poopoo updateTableStatus - Error ending sessions: ${sessionError.message}`);
+                // Continue — table status update should still proceed
+            }
         }
 
         // 6. Update table status

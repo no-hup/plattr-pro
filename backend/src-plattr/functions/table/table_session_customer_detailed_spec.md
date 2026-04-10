@@ -18,35 +18,34 @@ The Table-Session-Customer system manages restaurant table authentication, sessi
            │ QR Scanned                                     │
            │ (OTP Generated)                                │
            ▼                                                │
-    ┌─────────────┐                                         │
-    │             │        OTP Expires (5 min)              │
-    │ OTP_PENDING │─────────────────────────────────────────┤
-    │             │                                         │
-    └──────┬──────┘                                         │
-           │                                                │
-           │ OTP Validated                                  │
-           │ (Session Created)                              │
-           ▼                                                │
-    ┌─────────────┐                                         │
-    │             │        Session Ended                    │
-    │   ACTIVE    │─────────────────────────────────────────┤
-    │             │        (Bill Paid / Timeout / Manual)   │
-    └──────┬──────┘                                         │
-           │                                                │
-           │ Secondary User Joins                           │
-           │ (Same Session)                                 │
-           └──────────┐                                     │
-                      │                                     │
-                      ▼                                     │
-               ┌─────────────┐                              │
-               │   ACTIVE    │──────────────────────────────┘
+    ┌─────────────┐     OTP Expires + Re-scan               │
+    │             │─────► Regenerate OTP (stay PENDING) ────┐│
+    │ OTP_PENDING │     Cleanup (1hr inactive) ─────────────┤│
+    │             │                                         ││
+    └──────┬──────┘                                         ││
+           │                                                ││
+           │ OTP Validated                                  ││
+           │ (Session Created)                              ││
+           ▼                                                ││
+    ┌─────────────┐     Session Ended / Manual Vacate       ││
+    │             │─────(clears OTP, ends sessions)─────────┘│
+    │   ACTIVE    │     (Bill Paid / Timeout / Manual)       │
+    │             │                                          │
+    └──────┬──────┘                                          │
+           │                                                 │
+           │ Secondary User Joins                            │
+           │ (OTP code match only — expiry NOT checked)      │
+           └──────────┐                                      │
+                      ▼                                      │
+               ┌─────────────┐                               │
+               │   ACTIVE    │───────────────────────────────┘
                │ (Same)      │
                └─────────────┘
 
     ┌─────────────┐
     │             │
     │  DISABLED   │◄──── Admin Disables (no customer access)
-    │             │
+    │             │────► VACANT (clears OTP, ends sessions)
     └─────────────┘
 ```
 
@@ -125,9 +124,10 @@ customers/{phoneNumber}/
    - **IMP:** If `status === 'disabled'` → HTTP 403 Forbidden
    - **IMP:** If `!isWithinRadius(userLocation, restaurantLocation)` → HTTP 412 Precondition Failed
    - If valid `sessionId` provided and validated → Return success with session
-4. **OTP Generation** (for VACANT tables):
+4. **OTP Generation** (for VACANT tables, or OTP_PENDING with expired OTP):
    - Generate OTP via `otpService.createOTPObject()`
    - Update table: `status: OTP_PENDING`, set `currentOTP`, `firstScannedAt`
+   - **IMP:** Also triggers for OTP_PENDING tables if `!otpService.isOTPValid(currentOTP)` — handles abandoned scans where a previous customer scanned but never entered OTP
 5. **Feature Flag Check:**
    - If `isOtpManadatoryAtScan = true` → HTTP 401 with auth requirements
    - If `false` → Return success with limited access
@@ -161,10 +161,12 @@ isMultiUserSupportEnabled: boolean   // Allows multiple users per table
 ### OTP Configuration
 ```javascript
 const OTP_CONFIG = {
-  VALIDITY_MINUTES: 5,    // IMP: 5-minute expiry window
+  VALIDITY_MINUTES: environment.isEmulator() ? 60 : 5,  // 60 min emulator, 5 min production
   LENGTH: 6               // 6-digit numeric code
 };
 ```
+
+**Note:** OTP expiry is environment-aware via `Environment.isEmulator()`. In emulator/dev, OTPs are valid for 60 minutes for comfortable testing. In production, 5 minutes.
 
 ### OTP Object Structure
 ```javascript
@@ -211,8 +213,8 @@ const OTP_CONFIG = {
    - **IMP:** `isPhoneNumberRequired = (VACANT || OTP_PENDING) || !isMultiUserSupportEnabled`
    - **IMP:** `isUsernameRequired = isUsernameEnabled && potentiallyPrimary`
 3. **OTP Validation:**
-   - For **VACANT/OTP_PENDING**: Validates OTP, user becomes **primary customer**
-   - For **ACTIVE**: Validates OTP, user becomes **secondary customer**
+   - For **VACANT/OTP_PENDING**: Validates OTP structure, checks expiry via `isOTPValid()`, then matches code. User becomes **primary customer**
+   - For **ACTIVE**: Validates OTP structure and matches code. **IMP:** OTP expiry is NOT checked for ACTIVE tables — the primary customer already authenticated, so code match alone is sufficient for secondary users
 4. **Table Update:**
    - Set `status: ACTIVE`
    - Set `primaryCustomer: { phoneNumber, name }` (primary only)
@@ -434,17 +436,20 @@ const isUsernameMandatory =
 - Returns OTP code and expiry timestamps
 
 ### `updateTableStatus`
-- Change table status manually
-- **IMP:** When changing ACTIVE → VACANT: clears `primaryCustomer`, `occupiedBy`, `activeOrderId`
+- Change table status manually (server/kitchen app)
+- **IMP:** When changing any status → VACANT: clears `primaryCustomer`, `occupiedBy`, `activeOrderId`, `currentOTP`, and ends all active sessions via `sessionService.endTableSessions()`
+- Handles all transitions to vacant: `ACTIVE → VACANT`, `OTP_PENDING → VACANT`, `DISABLED → VACANT`
 
 ---
 
 ## Session Cleanup
 
 ### `cleanupInactiveSessions` (Cloud Function)
-- Finds tables with `lastActivity` > 1 hour ago
-- Ends associated sessions
-- Sets table status to VACANT
+- Finds tables with status `ACTIVE` or `OTP_PENDING` and no recent activity (1 hour threshold)
+- For tables with `lastActivity`: checks if older than 1 hour
+- **IMP:** For `OTP_PENDING` tables without `lastActivity`: falls back to `firstScannedAt` or `currentOTP.createdAt` to determine staleness
+- Ends associated sessions via `sessionService.endTableSessions()`
+- Sets table status to VACANT, clears `sessionToken`, `lastActivity`, and `currentOTP`
 - **TODO:** Should check for cart/order activity in last 2 hours
 
 ---

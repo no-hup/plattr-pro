@@ -46,6 +46,7 @@ async function createOrGetTableSession(restaurantId, tableId, primaryUserId) {
       
       // Add this user to the users array if not already present
       const sessionData = existingSession.data();
+      if (!Array.isArray(sessionData.users)) sessionData.users = [];
       if (!sessionData.users.includes(primaryUserId)) {
         console.log(`poopoo createOrGetTableSession: Adding primary user ${primaryUserId} to existing session ${existingSession.id}`);
         try {
@@ -161,6 +162,7 @@ async function addUserToTableSession(restaurantId, sessionId, userId) {
     }
     
     // Add user to the session if not already present
+    if (!Array.isArray(sessionData.users)) sessionData.users = [];
     if (!sessionData.users.includes(userId)) {
       console.log(`poopoo addUserToTableSession: Adding user ${userId} to users array`);
       try {
@@ -273,6 +275,7 @@ async function validateTableSession(restaurantId, tableId, options = {}) {
     }
 
     // If context is provided, manage user access
+    if (!Array.isArray(sessionData.users)) sessionData.users = [];
     if (options.context?.auth && !sessionData.users.includes(options.context.auth.uid)) {
       try {
         await addUserToTableSession(restaurantId, session.id, options.context.auth.uid);
