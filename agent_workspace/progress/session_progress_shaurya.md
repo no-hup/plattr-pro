@@ -119,3 +119,88 @@ Files ready to commit (feature flag override system — uncommitted from prior s
 - `addItemToCart.js`, `table.js`, `checkoutCart.js`, `updateOrderStatus.js`, `orderTriggers.js` — all call `loadOverrides(db)` at entry
 
 todo: commit the feature flag override system. Then run E2E test suite against emulator to validate mock data + flag permutations work end-to-end.
+
+10th Apr 26 (late)
+
+**Offers V2 — Order-Level Auto-Apply**
+
+Moved from cart-level manual offer application to order-level auto-apply at checkout. No backward compatibility — system not live yet, cleaned up aggressively.
+
+**Product decisions:**
+- Offers auto-apply at each cart checkout (best discount wins, tiebreak by `priority`)
+- Evaluated across ALL carts in the order, not per cart
+- Safety net re-evaluation at order COMPLETED (catches cancellations)
+- Admin app gets full CRUD flow for offers
+- New `exclusionIds` support (e.g., "20% off everything except desserts")
+- New `scope: ORDER` replaces the old `CART` scope
+- Single source of truth: the order document (carts no longer carry offer fields)
+
+**Backend deleted:**
+- `offers/applyOffer.js`, `offers/removeOffer.js`, `cart/PriceCalculator.js`
+
+**Backend created:**
+- `offers/evaluateOrderOffers.js` — `evaluateAndPickBestOffer` + `buildAppliedOfferObject` (graceful fallback: returns null on any error)
+- `adminApp/offers_admin.js` — createOffer / updateOffer / deleteOffer / getOffers with input validation
+
+**Backend modified:**
+- `orders/createOrUpdateOrder.js` — removed lazy offer revalidation; auto-applies best offer on every cart append; **uses RAW cart items (not normalized!)** because `normalizeCartItemsForOrder` strips `categoryId`/`subcategoryIds`
+- `orders/updateOrderStatus.js` — COMPLETED handler re-evaluates offers; bill check now compares `basePrice` (not `finalPrice`) so cancellation-triggered offer changes don't fail revalidation
+- `offers/offerEngine.js`, `strategies/BaseOfferStrategy.js` — ORDER scope, `minOrderValue` (renamed from `minCartValue`), uppercase `FULFILLMENT_STATUS.CANCELLED`, exclusion filtering
+- `strategies/{Percentage,Flat}Strategy.js` — CART→ORDER, exclusion-aware
+- `strategies/BogoStrategy.js` — `buyQty`/`getQty` → `buyQuantity`/`getQuantity` to match mock data
+- `cart/calculateCartValue.js` — no longer preserves offer fields on cart; fixed cancelled-status case
+- `cart/validateCart.js` — no longer subtracts offerDiscount
+- `genericModels/priceinfo.js` — `OrderPriceInfo` now has `offerDiscount` field
+- `orders/getOrder.js` sanitizer — returns `appliedOffer`, `offerDiscount`, full `priceInfo` for the consumer UI
+- `offers/indexOffers.js`, `adminApp/indexAdminApp.js`, `index.js` — updated exports
+
+**Pre-existing bugs fixed (caught during plan review):**
+1. **Cancelled item case mismatch** — code compared `item.status === 'cancelled'` (lowercase) but constant is `'CANCELLED'` (uppercase). Cancelled items were never actually filtered. Fixed across 4 files via shared `FULFILLMENT_STATUS.CANCELLED` constant.
+2. **BOGO naming mismatch** — engine used `buyQty`/`getQty`, mock data used `buyQuantity`/`getQuantity`. BOGO silently defaulted to 1+1 regardless of stored values. Renamed engine to match mock data.
+3. **Normalized items strip category fields** — would have broken CATEGORY/ITEM offers at order level. Plan explicitly uses raw cart items.
+4. **Bill revalidation on finalPrice** — would mismatch once offer discount was introduced. Changed to compare base.
+5. **getOrder sanitizer missing appliedOffer** — consumer UI would show nothing.
+
+**Docs:**
+- `auxilary/docs/OFFERS_SYSTEM.md` — rewritten for V2 architecture
+- NEW `Plattr_Pro_Context/OFFERS_V2_Architecture.md` — decision log + gotchas for future agents
+- `restaurant-menu-setup-prod/ONBOARDING_PROMPT.md` — new offers schema section with ORDER scope and exclusionIds examples
+
+**Frontend (delegated to subagent):**
+- Admin app: offers screen + provider + API service + editor dialog + model + home tab
+- Consumer app: OffersCarousel wired to real data, order page shows applied offer banner, Offer model extended
+
+**Todo for next session:**
+- Wait for frontend subagent to complete, review output
+- Rewrite `backend/claude-api-testing-workflow/suites/offers.js` and `offer-pricing.js` for V2 (they test the deleted apply/remove flow)
+- Update Big Brewski mock offer data if it uses old field names (`buyQty`, `CART` scope, `minCartValue`)
+- Manual E2E testing in emulator: admin create offer → consumer checkout → verify order.appliedOffer → mark COMPLETED → verify persistence
+- Consider: server app manual discount override endpoint as graceful fallback (documented as future work)
+
+---
+
+10th Apr 26
+
+**Restaurant Menu Onboarding Pipeline — Big Brewski**
+
+- Created `restaurant-menu-setup-prod/` folder with reusable `ONBOARDING_PROMPT.md` for converting real restaurant menus (photos or JSON) into Firestore-ready DB documents
+- First restaurant: Big Brewski — 49 items, 13 variants, 14 addons, 7 categories, 12 subcategories, 4 offers
+- Created `firestore-big-brewski.json` — standalone import-ready file
+- Added `--file=<path>` flag to `importMockData5.js` so each restaurant can be imported independently without touching MockData5
+
+**Feature flag deep-dive findings:**
+- `shouldUpdateFoodStatusAtItemLevelORAtOrderLevel` — flag defined but ZERO implementation exists. No code reads it. Dead flag.
+- `isMultipleVariantOrAddonForMenuItemsSupported` and `fallbackToSameCustomConfigurationForAddItem` are effectively redundant — the multipleVariant flag guards a scenario the consumer frontend can't produce (no UI to add same item with different config). Consider consolidating.
+- `fallbackToSameCustomConfigurationForAddItem=false` breaks consumer quick-add for customizable items — frontend has no fallback to show config dialog
+- `sendServerNotifications` is fully wired (FCM) but needs real device with Play Services for actual push delivery; emulator flow works but notifications don't arrive
+- Service charge backend checkout calculation is now implemented; no frontend/admin work required for current scope
+
+todo: see `Plattr_Pro_Context/TODO_Feature_Flags_and_Schema.md` for detailed action items from this session
+
+**Engineering Plans — Deep Codebase Research + Multi-Lens Planning (CEO, Eng, Office Hours)**
+
+Created 3 dedicated plan files for the top-priority TODO items from the feature flag deep-dive. Each plan includes CEO/founder review (10-star product thinking, premise challenges), YC Office Hours forcing questions, and detailed engineering review (architecture, data flow, all frontend touchpoints, edge cases, test plans, implementation order).
+
+- Service charge backend checkout/order calculation — Completed. No frontend/admin work required for current scope.
+- `Plattr_Pro_Context/TODO_Variant_Addon_Flag_Cluster_Plan.md` — Unified variant/addon flag task: decision gate first (recommended Option A removes both flags), and only if flags stay togglable does it continue into quick-add recovery and different-config dialog work. Touches: addItemToCart.js, addItemToCartCustomisationHelper.js, addItemToCartBoilerplateHelper.js, Consumer menu_state.dart, optional new VariantConflictDialog. ~backend + consumer cluster across 6-8 files depending on chosen option.
+- `Plattr_Pro_Context/TODO_Item_Level_Food_Status_Plan.md` — Implement item-level status tracking (70% infrastructure already exists: serverMarkItemServed.js, Server app API, contract tests). Decision: IMPLEMENT not REMOVE. Key missing piece: auto-promotion logic + Kitchen app API wiring. ~310 lines across 6-8 files.

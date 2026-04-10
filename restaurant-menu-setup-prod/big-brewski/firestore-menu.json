@@ -1,0 +1,2070 @@
+{
+  "_notes": {
+    "serviceCharge": "7.5% — not modeled in menu schema. Apply at checkout/bill level when that feature is built.",
+    "currency": "INR — prices as displayed on the menu",
+    "generatedFrom": "raw-menu.json",
+    "generatedDate": "2026-04-10"
+  },
+  "res_big_brewski": {
+    "info": {
+      "name": "Big Brewski",
+      "address": "",
+      "phone": "",
+      "email": "",
+      "location": {
+        "_latitude": 0.0,
+        "_longitude": 0.0
+      },
+      "isMultipleVariantOrAddonForMenuItemsSupported": true,
+      "fallbackToSameCustomConfigurationForAddItem": true
+    },
+    "menus": {
+      "menu_main": {
+        "menuId": "menu_main",
+        "name": "Main Menu",
+        "isActive": true,
+        "isDefault": true,
+        "categoryIds": [
+          "cat_starters",
+          "cat_grills",
+          "cat_smash_burger",
+          "cat_pizza",
+          "cat_pastas",
+          "cat_mains",
+          "cat_desserts"
+        ],
+        "menuItemIds": [
+          "item_chilli_paneer_bao",
+          "item_chilli_chicken_bao",
+          "item_naga_pork_bao",
+          "item_lamb_bulgogi_bao",
+          "item_grilled_baby_corn_taco",
+          "item_coastal_chicken_taco",
+          "item_kickin_pork_taco",
+          "item_mojito_prawns_taco",
+          "item_zesty_fried_wings",
+          "item_bbq_blue_cheese_wings",
+          "item_chili_cilantro_wings",
+          "item_byg_garlic_parmesan_wings",
+          "item_platter_of_wings",
+          "item_byg_stir_fried_beef_chilli",
+          "item_beef_suya_kebab",
+          "item_grilled_cottage_cheese_steak",
+          "item_lemon_paprika_chicken",
+          "item_rauch_bbq_pork_ribs",
+          "item_chimichurri_fish",
+          "item_peppered_tenderloin",
+          "item_blaze_bean_burger",
+          "item_pesto_chick_cluck_burger",
+          "item_spiced_lamb_burger",
+          "item_works_beef_burger",
+          "item_margherita",
+          "item_mediterranean_bliss",
+          "item_vegan_senorita",
+          "item_caprino",
+          "item_four_cheese",
+          "item_triple_mushrooms",
+          "item_creamy_alfredo",
+          "item_italian_arrabiata",
+          "item_spaghetti_aglio_e_olio",
+          "item_spaghetti_lamb_ragout",
+          "item_beer_paella",
+          "item_mushroom_stroganoff",
+          "item_hillside_chicken_curry",
+          "item_tomatillo_lamb_stew",
+          "item_burnt_garlic_fried_rice",
+          "item_schezwan_noodles",
+          "item_schezwan_fried_rice",
+          "item_gourmet_ice_cream",
+          "item_classic_ice_cream",
+          "item_devils_chocolate_cake",
+          "item_tres_leches",
+          "item_five_star_fudge",
+          "item_mulberry_dark_choc_mousse",
+          "item_pecan_pie",
+          "item_basque_cheese_cake"
+        ],
+        "order": 0
+      }
+    },
+    "categories": {
+      "cat_starters": {
+        "id": "cat_starters",
+        "name": "Starters",
+        "order": 0,
+        "subcategoryIds": [
+          "sub_baos",
+          "sub_tacos",
+          "sub_wings",
+          "sub_buff"
+        ]
+      },
+      "cat_grills": {
+        "id": "cat_grills",
+        "name": "Grills",
+        "order": 1,
+        "subcategoryIds": [
+          "sub_grills"
+        ]
+      },
+      "cat_smash_burger": {
+        "id": "cat_smash_burger",
+        "name": "Smash Burger",
+        "order": 2,
+        "subcategoryIds": [
+          "sub_smash_burger"
+        ]
+      },
+      "cat_pizza": {
+        "id": "cat_pizza",
+        "name": "Pizza",
+        "order": 3,
+        "subcategoryIds": [
+          "sub_thin_crust",
+          "sub_sourdough"
+        ]
+      },
+      "cat_pastas": {
+        "id": "cat_pastas",
+        "name": "Pastas",
+        "order": 4,
+        "subcategoryIds": [
+          "sub_pastas"
+        ]
+      },
+      "cat_mains": {
+        "id": "cat_mains",
+        "name": "Mains",
+        "order": 5,
+        "subcategoryIds": [
+          "sub_heart_warmers",
+          "sub_asian"
+        ]
+      },
+      "cat_desserts": {
+        "id": "cat_desserts",
+        "name": "Desserts",
+        "order": 6,
+        "subcategoryIds": [
+          "sub_desserts"
+        ]
+      }
+    },
+    "subcategories": {
+      "sub_baos": {
+        "id": "sub_baos",
+        "name": "Baos",
+        "parentCategoryId": "cat_starters",
+        "order": 0
+      },
+      "sub_tacos": {
+        "id": "sub_tacos",
+        "name": "Tacos",
+        "parentCategoryId": "cat_starters",
+        "order": 1
+      },
+      "sub_wings": {
+        "id": "sub_wings",
+        "name": "Wings",
+        "parentCategoryId": "cat_starters",
+        "order": 2
+      },
+      "sub_buff": {
+        "id": "sub_buff",
+        "name": "Buff",
+        "parentCategoryId": "cat_starters",
+        "order": 3
+      },
+      "sub_grills": {
+        "id": "sub_grills",
+        "name": "Grills",
+        "parentCategoryId": "cat_grills",
+        "order": 0
+      },
+      "sub_smash_burger": {
+        "id": "sub_smash_burger",
+        "name": "Smash Burger",
+        "parentCategoryId": "cat_smash_burger",
+        "order": 0
+      },
+      "sub_thin_crust": {
+        "id": "sub_thin_crust",
+        "name": "Thin Crust",
+        "parentCategoryId": "cat_pizza",
+        "order": 0
+      },
+      "sub_sourdough": {
+        "id": "sub_sourdough",
+        "name": "Sourdough",
+        "parentCategoryId": "cat_pizza",
+        "order": 1
+      },
+      "sub_pastas": {
+        "id": "sub_pastas",
+        "name": "Pastas",
+        "parentCategoryId": "cat_pastas",
+        "order": 0
+      },
+      "sub_heart_warmers": {
+        "id": "sub_heart_warmers",
+        "name": "Heart-Warmers",
+        "parentCategoryId": "cat_mains",
+        "order": 0
+      },
+      "sub_asian": {
+        "id": "sub_asian",
+        "name": "Asian",
+        "parentCategoryId": "cat_mains",
+        "order": 1
+      },
+      "sub_desserts": {
+        "id": "sub_desserts",
+        "name": "Desserts",
+        "parentCategoryId": "cat_desserts",
+        "order": 0
+      }
+    },
+    "menuItems": {
+      "item_chilli_paneer_bao": {
+        "menuItemId": "item_chilli_paneer_bao",
+        "categoryId": "cat_starters",
+        "primarySubcategoryId": "sub_baos",
+        "subcategoryIds": ["sub_baos"],
+        "meta": {
+          "name": "Chilli Paneer Bao",
+          "description": "Spicy paneer and peppers in a savory soy glaze, topped with crispy garlic, served in soft, pillowy open-face baos for the perfect bite.",
+          "categoryName": "Starters",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 265,
+          "discount": 0,
+          "finalPrice": 265
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_chilli_chicken_bao": {
+        "menuItemId": "item_chilli_chicken_bao",
+        "categoryId": "cat_starters",
+        "primarySubcategoryId": "sub_baos",
+        "subcategoryIds": ["sub_baos"],
+        "meta": {
+          "name": "Chilli Chicken Bao",
+          "description": "Freshly steamed open-faced baos, stuffed with zesty street-style chili chicken for a burst of flavor.",
+          "categoryName": "Starters",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 265,
+          "discount": 0,
+          "finalPrice": 265
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_naga_pork_bao": {
+        "menuItemId": "item_naga_pork_bao",
+        "categoryId": "cat_starters",
+        "primarySubcategoryId": "sub_baos",
+        "subcategoryIds": ["sub_baos"],
+        "meta": {
+          "name": "Naga Pork Bao",
+          "description": "Soft, steamed open-faced baos filled with stir-fried pork, infused with the fiery heat of Naga chili.",
+          "categoryName": "Starters",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 285,
+          "discount": 0,
+          "finalPrice": 285
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_lamb_bulgogi_bao": {
+        "menuItemId": "item_lamb_bulgogi_bao",
+        "categoryId": "cat_starters",
+        "primarySubcategoryId": "sub_baos",
+        "subcategoryIds": ["sub_baos"],
+        "meta": {
+          "name": "Lamb Bulgogi Bao",
+          "description": "Steamed open-faced baos filled with tender Korean barbecue grilled lamb, bursting with smoky, savory flavors.",
+          "categoryName": "Starters",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 325,
+          "discount": 0,
+          "finalPrice": 325
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_grilled_baby_corn_taco": {
+        "menuItemId": "item_grilled_baby_corn_taco",
+        "categoryId": "cat_starters",
+        "primarySubcategoryId": "sub_tacos",
+        "subcategoryIds": ["sub_tacos"],
+        "meta": {
+          "name": "Grilled Baby Corn",
+          "description": "Khakhra tacos filled with grilled baby corn, creamy guacamole, and tangy sour cream for a satisfying crunch.",
+          "categoryName": "Starters",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 250,
+          "discount": 0,
+          "finalPrice": 250
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_coastal_chicken_taco": {
+        "menuItemId": "item_coastal_chicken_taco",
+        "categoryId": "cat_starters",
+        "primarySubcategoryId": "sub_tacos",
+        "subcategoryIds": ["sub_tacos"],
+        "meta": {
+          "name": "Coastal Chicken",
+          "description": "Khakhra tacos filled with curried chicken, sweet apricot chutney, and zesty raw mango salsa for a flavorful fusion.",
+          "categoryName": "Starters",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 250,
+          "discount": 0,
+          "finalPrice": 250
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_kickin_pork_taco": {
+        "menuItemId": "item_kickin_pork_taco",
+        "categoryId": "cat_starters",
+        "primarySubcategoryId": "sub_tacos",
+        "subcategoryIds": ["sub_tacos"],
+        "meta": {
+          "name": "Kickin' Pork",
+          "description": "Khakhra tacos filled with spicy, tangy curried pork and a kick of spicy pear salsa for a bold, flavorful bite.",
+          "categoryName": "Starters",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 275,
+          "discount": 0,
+          "finalPrice": 275
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_mojito_prawns_taco": {
+        "menuItemId": "item_mojito_prawns_taco",
+        "categoryId": "cat_starters",
+        "primarySubcategoryId": "sub_tacos",
+        "subcategoryIds": ["sub_tacos"],
+        "meta": {
+          "name": "Mojito Prawns",
+          "description": "Khakhra taco filled with grilled prawns, topped with a refreshing mint and rum glaze for a burst of flavor.",
+          "categoryName": "Starters",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 295,
+          "discount": 0,
+          "finalPrice": 295
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_zesty_fried_wings": {
+        "menuItemId": "item_zesty_fried_wings",
+        "categoryId": "cat_starters",
+        "primarySubcategoryId": "sub_wings",
+        "subcategoryIds": ["sub_wings"],
+        "meta": {
+          "name": "Zesty Fried Wings",
+          "description": "Crispy, tangy, and perfectly seasoned, these fried wings pack a bold burst of flavor in every bite.",
+          "categoryName": "Starters",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 295,
+          "discount": 0,
+          "finalPrice": 295
+        },
+        "variants": [
+          { "id": "var_qty_zesty_wings", "name": "Quantity" }
+        ],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_bbq_blue_cheese_wings": {
+        "menuItemId": "item_bbq_blue_cheese_wings",
+        "categoryId": "cat_starters",
+        "primarySubcategoryId": "sub_wings",
+        "subcategoryIds": ["sub_wings"],
+        "meta": {
+          "name": "BBQ Blue Cheese",
+          "description": "Crispy fried chicken wings tossed in tangy barbecue sauce and finished with a creamy blue cheese drizzle for irresistible flavor.",
+          "categoryName": "Starters",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 315,
+          "discount": 0,
+          "finalPrice": 315
+        },
+        "variants": [
+          { "id": "var_qty_bbq_wings", "name": "Quantity" }
+        ],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_chili_cilantro_wings": {
+        "menuItemId": "item_chili_cilantro_wings",
+        "categoryId": "cat_starters",
+        "primarySubcategoryId": "sub_wings",
+        "subcategoryIds": ["sub_wings"],
+        "meta": {
+          "name": "Chili Cilantro",
+          "description": "Marinated in coriander, chilies, and herbs, then grilled to perfection.",
+          "categoryName": "Starters",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 285,
+          "discount": 0,
+          "finalPrice": 285
+        },
+        "variants": [
+          { "id": "var_qty_cilantro_wings", "name": "Quantity" }
+        ],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_byg_garlic_parmesan_wings": {
+        "menuItemId": "item_byg_garlic_parmesan_wings",
+        "categoryId": "cat_starters",
+        "primarySubcategoryId": "sub_wings",
+        "subcategoryIds": ["sub_wings"],
+        "meta": {
+          "name": "Byg Garlic Parmesan",
+          "description": "Delightful patty of vegetables and mushrooms with cheese, grilled onions and jalapeno.",
+          "categoryName": "Starters",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 295,
+          "discount": 0,
+          "finalPrice": 295
+        },
+        "variants": [
+          { "id": "var_qty_garlic_wings", "name": "Quantity" }
+        ],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_platter_of_wings": {
+        "menuItemId": "item_platter_of_wings",
+        "categoryId": "cat_starters",
+        "primarySubcategoryId": "sub_wings",
+        "subcategoryIds": ["sub_wings"],
+        "meta": {
+          "name": "Platter Of Wings",
+          "description": "Indulge in our curated platter of magical chicken wings, where you no longer have to choose—enjoy them all! This journey of bold spices and secret recipes takes you through our chef's wildest chicken experiments, each bite a flavorful adventure.",
+          "categoryName": "Starters",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 845,
+          "discount": 0,
+          "finalPrice": 845
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_byg_stir_fried_beef_chilli": {
+        "menuItemId": "item_byg_stir_fried_beef_chilli",
+        "categoryId": "cat_starters",
+        "primarySubcategoryId": "sub_buff",
+        "subcategoryIds": ["sub_buff"],
+        "meta": {
+          "name": "Byg Stir Fried Beef Chilli",
+          "description": "Tender, succulent sliced beef tossed with capsicum, onion, soy, and chili – a BYG Brewski favorite!",
+          "categoryName": "Starters",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 365,
+          "discount": 0,
+          "finalPrice": 365
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_beef_suya_kebab": {
+        "menuItemId": "item_beef_suya_kebab",
+        "categoryId": "cat_starters",
+        "primarySubcategoryId": "sub_buff",
+        "subcategoryIds": ["sub_buff"],
+        "meta": {
+          "name": "Beef Suya Kebab",
+          "description": "Freshly steamed open faced baos filled with the street style chilli chicken.",
+          "categoryName": "Starters",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 315,
+          "discount": 0,
+          "finalPrice": 315
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_grilled_cottage_cheese_steak": {
+        "menuItemId": "item_grilled_cottage_cheese_steak",
+        "categoryId": "cat_grills",
+        "primarySubcategoryId": "sub_grills",
+        "subcategoryIds": ["sub_grills"],
+        "meta": {
+          "name": "Grilled Cottage Cheese Steak",
+          "description": "Sumac-beetroot marinated paneer steak, with earthy, tangy flavors.",
+          "categoryName": "Grills",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 165,
+          "discount": 0,
+          "finalPrice": 165
+        },
+        "variants": [
+          { "id": "var_portion_cottage_cheese", "name": "Portion" }
+        ],
+        "addons": [
+          "addon_mash_potato",
+          "addon_spanish_rice",
+          "addon_summer_salad"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_lemon_paprika_chicken": {
+        "menuItemId": "item_lemon_paprika_chicken",
+        "categoryId": "cat_grills",
+        "primarySubcategoryId": "sub_grills",
+        "subcategoryIds": ["sub_grills"],
+        "meta": {
+          "name": "Lemon Paprika Chicken",
+          "description": "Our tapas-style grilled chicken – truly legendary!",
+          "categoryName": "Grills",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 235,
+          "discount": 0,
+          "finalPrice": 235
+        },
+        "variants": [
+          { "id": "var_portion_paprika_chicken", "name": "Portion" }
+        ],
+        "addons": [
+          "addon_mash_potato",
+          "addon_spanish_rice",
+          "addon_summer_salad"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_rauch_bbq_pork_ribs": {
+        "menuItemId": "item_rauch_bbq_pork_ribs",
+        "categoryId": "cat_grills",
+        "primarySubcategoryId": "sub_grills",
+        "subcategoryIds": ["sub_grills"],
+        "meta": {
+          "name": "Rauch and BBQ Pork Ribs",
+          "description": "Fall-off-the-bone back ribs, slow-cooked in a bold, spiced beer BBQ sauce for an unforgettable flavor.",
+          "categoryName": "Grills",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 295,
+          "discount": 0,
+          "finalPrice": 295
+        },
+        "variants": [
+          { "id": "var_pcs_pork_ribs", "name": "Pieces" }
+        ],
+        "addons": [
+          "addon_mash_potato",
+          "addon_spanish_rice",
+          "addon_summer_salad"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_chimichurri_fish": {
+        "menuItemId": "item_chimichurri_fish",
+        "categoryId": "cat_grills",
+        "primarySubcategoryId": "sub_grills",
+        "subcategoryIds": ["sub_grills"],
+        "meta": {
+          "name": "Chimichurri Fish",
+          "description": "Our Chefs favourite- loaded with buttery garlic and parmesan. These finger licking morsels are your one-way ticket to paradise. Served with creamy tomato mustard.",
+          "categoryName": "Grills",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 225,
+          "discount": 0,
+          "finalPrice": 225
+        },
+        "variants": [
+          { "id": "var_portion_chimichurri_fish", "name": "Portion" }
+        ],
+        "addons": [
+          "addon_mash_potato",
+          "addon_spanish_rice",
+          "addon_summer_salad"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_peppered_tenderloin": {
+        "menuItemId": "item_peppered_tenderloin",
+        "categoryId": "cat_grills",
+        "primarySubcategoryId": "sub_grills",
+        "subcategoryIds": ["sub_grills"],
+        "meta": {
+          "name": "Peppered Tenderloin Medallions",
+          "description": "Tender, melt-in-your-mouth beef medallions, perfectly complemented by a rich, velvety red wine jus.",
+          "categoryName": "Grills",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 245,
+          "discount": 0,
+          "finalPrice": 245
+        },
+        "variants": [
+          { "id": "var_portion_tenderloin", "name": "Portion" }
+        ],
+        "addons": [
+          "addon_mash_potato",
+          "addon_spanish_rice",
+          "addon_summer_salad"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_blaze_bean_burger": {
+        "menuItemId": "item_blaze_bean_burger",
+        "categoryId": "cat_smash_burger",
+        "primarySubcategoryId": "sub_smash_burger",
+        "subcategoryIds": ["sub_smash_burger"],
+        "meta": {
+          "name": "Blaze Bean Burger",
+          "description": "Treat your tastebuds to a foodgasm with a spiced bean patty, grilled vegetables, and zesty bell pepper salsa.",
+          "categoryName": "Smash Burger",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 295,
+          "discount": 0,
+          "finalPrice": 295
+        },
+        "variants": [],
+        "addons": [
+          "addon_fried_egg",
+          "addon_cheese",
+          "addon_bacon"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_pesto_chick_cluck_burger": {
+        "menuItemId": "item_pesto_chick_cluck_burger",
+        "categoryId": "cat_smash_burger",
+        "primarySubcategoryId": "sub_smash_burger",
+        "subcategoryIds": ["sub_smash_burger"],
+        "meta": {
+          "name": "Pesto Chick-Cluck Burger",
+          "description": "Smashed chicken patty topped with basil pesto, grilled onions, and gooey melted cheese.",
+          "categoryName": "Smash Burger",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 345,
+          "discount": 0,
+          "finalPrice": 345
+        },
+        "variants": [],
+        "addons": [
+          "addon_fried_egg",
+          "addon_cheese",
+          "addon_bacon"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_spiced_lamb_burger": {
+        "menuItemId": "item_spiced_lamb_burger",
+        "categoryId": "cat_smash_burger",
+        "primarySubcategoryId": "sub_smash_burger",
+        "subcategoryIds": ["sub_smash_burger"],
+        "meta": {
+          "name": "Spiced Lamb Burger",
+          "description": "Savor the ultimate spicy, flavorful lamb burger, topped with roasted bell pepper salsa and served in a brioche bun, featuring our chef's secret gourmet recipe!",
+          "categoryName": "Smash Burger",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 365,
+          "discount": 0,
+          "finalPrice": 365
+        },
+        "variants": [],
+        "addons": [
+          "addon_fried_egg",
+          "addon_cheese",
+          "addon_bacon"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_works_beef_burger": {
+        "menuItemId": "item_works_beef_burger",
+        "categoryId": "cat_smash_burger",
+        "primarySubcategoryId": "sub_smash_burger",
+        "subcategoryIds": ["sub_smash_burger"],
+        "meta": {
+          "name": "Works Beef Burger",
+          "description": "Double beef patty with caramelized onions, Chimichurri salsa, melted cheese, and house-made pickles for a mouthwatering bite.",
+          "categoryName": "Smash Burger",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 345,
+          "discount": 0,
+          "finalPrice": 345
+        },
+        "variants": [],
+        "addons": [
+          "addon_fried_egg",
+          "addon_cheese",
+          "addon_bacon"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_margherita": {
+        "menuItemId": "item_margherita",
+        "categoryId": "cat_pizza",
+        "primarySubcategoryId": "sub_thin_crust",
+        "subcategoryIds": ["sub_thin_crust"],
+        "meta": {
+          "name": "Margherita",
+          "description": "Italian pomodoro, melted mozzarella, tomato and jalapeno relish, fresh basil, and a drizzle of olive oil for a burst of flavor.",
+          "categoryName": "Pizza",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 445,
+          "discount": 0,
+          "finalPrice": 445
+        },
+        "variants": [],
+        "addons": [
+          "addon_exotic_vegetables",
+          "addon_cheese",
+          "addon_chicken_topping",
+          "addon_chicken_sausage",
+          "addon_bacon"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_mediterranean_bliss": {
+        "menuItemId": "item_mediterranean_bliss",
+        "categoryId": "cat_pizza",
+        "primarySubcategoryId": "sub_thin_crust",
+        "subcategoryIds": ["sub_thin_crust"],
+        "meta": {
+          "name": "Mediterranean Bliss",
+          "description": "Roasted bell peppers, broccoli, sundried tomato, grilled onion, kalamata olives, and jalapeno, finished with parmesan, arugula, and feta for a vibrant, satisfying bite.",
+          "categoryName": "Pizza",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 465,
+          "discount": 0,
+          "finalPrice": 465
+        },
+        "variants": [],
+        "addons": [
+          "addon_exotic_vegetables",
+          "addon_cheese",
+          "addon_chicken_topping",
+          "addon_chicken_sausage",
+          "addon_bacon"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_vegan_senorita": {
+        "menuItemId": "item_vegan_senorita",
+        "categoryId": "cat_pizza",
+        "primarySubcategoryId": "sub_sourdough",
+        "subcategoryIds": ["sub_sourdough"],
+        "meta": {
+          "name": "Vegan Senorita (no cheese)",
+          "description": "For the vegans, a classic pizza topped with non-dairy cheese for a delicious, plant-based twist.",
+          "categoryName": "Pizza",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 445,
+          "discount": 0,
+          "finalPrice": 445
+        },
+        "variants": [],
+        "addons": [
+          "addon_exotic_vegetables",
+          "addon_cheese",
+          "addon_chicken_topping",
+          "addon_chicken_sausage",
+          "addon_bacon"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_caprino": {
+        "menuItemId": "item_caprino",
+        "categoryId": "cat_pizza",
+        "primarySubcategoryId": "sub_sourdough",
+        "subcategoryIds": ["sub_sourdough"],
+        "meta": {
+          "name": "Caprino",
+          "description": "Sundried tomato pesto, prunes, goat cheese, arugula, and walnuts for a savory, tangy and nutty combination.",
+          "categoryName": "Pizza",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 465,
+          "discount": 0,
+          "finalPrice": 465
+        },
+        "variants": [],
+        "addons": [
+          "addon_exotic_vegetables",
+          "addon_cheese",
+          "addon_chicken_topping",
+          "addon_chicken_sausage",
+          "addon_bacon"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_four_cheese": {
+        "menuItemId": "item_four_cheese",
+        "categoryId": "cat_pizza",
+        "primarySubcategoryId": "sub_sourdough",
+        "subcategoryIds": ["sub_sourdough"],
+        "meta": {
+          "name": "Four Cheese",
+          "description": "A rich blend of buffalo mozzarella, blue cheese, camembert, and parmesan for a cheesy indulgence.",
+          "categoryName": "Pizza",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 495,
+          "discount": 0,
+          "finalPrice": 495
+        },
+        "variants": [],
+        "addons": [
+          "addon_exotic_vegetables",
+          "addon_cheese",
+          "addon_chicken_topping",
+          "addon_chicken_sausage",
+          "addon_bacon"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_triple_mushrooms": {
+        "menuItemId": "item_triple_mushrooms",
+        "categoryId": "cat_pizza",
+        "primarySubcategoryId": "sub_sourdough",
+        "subcategoryIds": ["sub_sourdough"],
+        "meta": {
+          "name": "Triple Mushrooms",
+          "description": "Tomato sauce topped with a trio of mushrooms sautéed with thyme and triple beer, finished with a drizzle of truffle oil.",
+          "categoryName": "Pizza",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 495,
+          "discount": 0,
+          "finalPrice": 495
+        },
+        "variants": [],
+        "addons": [
+          "addon_exotic_vegetables",
+          "addon_cheese",
+          "addon_chicken_topping",
+          "addon_chicken_sausage",
+          "addon_bacon"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_creamy_alfredo": {
+        "menuItemId": "item_creamy_alfredo",
+        "categoryId": "cat_pastas",
+        "primarySubcategoryId": "sub_pastas",
+        "subcategoryIds": ["sub_pastas"],
+        "meta": {
+          "name": "Creamy Alfredo",
+          "description": "The classic Alfredo, made with creamy sauce, parmesan, fresh herbs, and a touch of olives for added depth.",
+          "categoryName": "Pastas",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 345,
+          "discount": 0,
+          "finalPrice": 345
+        },
+        "variants": [],
+        "addons": [
+          "addon_exotic_vegetables",
+          "addon_parmesan_on_side",
+          "addon_chicken_topping",
+          "addon_chicken_sausage",
+          "addon_bacon",
+          "addon_prawns"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_italian_arrabiata": {
+        "menuItemId": "item_italian_arrabiata",
+        "categoryId": "cat_pastas",
+        "primarySubcategoryId": "sub_pastas",
+        "subcategoryIds": ["sub_pastas"],
+        "meta": {
+          "name": "Italian Arrabiata",
+          "description": "The quintessential Italian pasta tossed in a fiery tomato sauce, with olives and fresh basil for a vibrant, authentic flavor.",
+          "categoryName": "Pastas",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 325,
+          "discount": 0,
+          "finalPrice": 325
+        },
+        "variants": [],
+        "addons": [
+          "addon_exotic_vegetables",
+          "addon_parmesan_on_side",
+          "addon_chicken_topping",
+          "addon_chicken_sausage",
+          "addon_bacon",
+          "addon_prawns"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_spaghetti_aglio_e_olio": {
+        "menuItemId": "item_spaghetti_aglio_e_olio",
+        "categoryId": "cat_pastas",
+        "primarySubcategoryId": "sub_pastas",
+        "subcategoryIds": ["sub_pastas"],
+        "meta": {
+          "name": "Spaghetti Aglio E Olio Peperoncino",
+          "description": "An all-time classic with garlic, chili, olive oil, and fresh herbs for a simple yet irresistible flavor.",
+          "categoryName": "Pastas",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 325,
+          "discount": 0,
+          "finalPrice": 325
+        },
+        "variants": [],
+        "addons": [
+          "addon_exotic_vegetables",
+          "addon_parmesan_on_side",
+          "addon_chicken_topping",
+          "addon_chicken_sausage",
+          "addon_bacon",
+          "addon_prawns"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_spaghetti_lamb_ragout": {
+        "menuItemId": "item_spaghetti_lamb_ragout",
+        "categoryId": "cat_pastas",
+        "primarySubcategoryId": "sub_pastas",
+        "subcategoryIds": ["sub_pastas"],
+        "meta": {
+          "name": "Spaghetti Lamb Ragout",
+          "description": "A refined twist on the classic Italian favorite, infused with the smoky depth of Rauchbier.",
+          "categoryName": "Pastas",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 345,
+          "discount": 0,
+          "finalPrice": 345
+        },
+        "variants": [],
+        "addons": [
+          "addon_exotic_vegetables",
+          "addon_parmesan_on_side",
+          "addon_chicken_topping",
+          "addon_chicken_sausage",
+          "addon_bacon",
+          "addon_prawns"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_beer_paella": {
+        "menuItemId": "item_beer_paella",
+        "categoryId": "cat_mains",
+        "primarySubcategoryId": "sub_heart_warmers",
+        "subcategoryIds": ["sub_heart_warmers"],
+        "meta": {
+          "name": "Beer Paella",
+          "description": "This Spanish saffron and rice dish, brimming with bold aromas and vibrant flavors, is simmered with beer for an unforgettable twist!",
+          "categoryName": "Mains",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 275,
+          "discount": 0,
+          "finalPrice": 275
+        },
+        "variants": [
+          { "id": "var_type_beer_paella", "name": "Type" }
+        ],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_mushroom_stroganoff": {
+        "menuItemId": "item_mushroom_stroganoff",
+        "categoryId": "cat_mains",
+        "primarySubcategoryId": "sub_heart_warmers",
+        "subcategoryIds": ["sub_heart_warmers"],
+        "meta": {
+          "name": "Mushroom Stroganoff",
+          "description": "A one-pot nostalgic delight, featuring mushrooms simmered in wine and onion reduction, served with fragrant herbed rice.",
+          "categoryName": "Mains",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 325,
+          "discount": 0,
+          "finalPrice": 325
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_hillside_chicken_curry": {
+        "menuItemId": "item_hillside_chicken_curry",
+        "categoryId": "cat_mains",
+        "primarySubcategoryId": "sub_heart_warmers",
+        "subcategoryIds": ["sub_heart_warmers"],
+        "meta": {
+          "name": "Hillside Chicken Curry",
+          "description": "A light recipe from the hills, featuring chicken cooked with bamboo shoots, potatoes, and chilies, served with fragrant cumin rice.",
+          "categoryName": "Mains",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 295,
+          "discount": 0,
+          "finalPrice": 295
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_tomatillo_lamb_stew": {
+        "menuItemId": "item_tomatillo_lamb_stew",
+        "categoryId": "cat_mains",
+        "primarySubcategoryId": "sub_heart_warmers",
+        "subcategoryIds": ["sub_heart_warmers"],
+        "meta": {
+          "name": "Tomatillo Lamb Stew",
+          "description": "The tangy brightness of green tomatoes paired with tender lamb and mild spices, served with soft, pull-apart bread.",
+          "categoryName": "Mains",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 375,
+          "discount": 0,
+          "finalPrice": 375
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_burnt_garlic_fried_rice": {
+        "menuItemId": "item_burnt_garlic_fried_rice",
+        "categoryId": "cat_mains",
+        "primarySubcategoryId": "sub_heart_warmers",
+        "subcategoryIds": ["sub_heart_warmers"],
+        "meta": {
+          "name": "Burnt Garlic Fried Rice",
+          "description": "A street-style Indo-Chinese comfort dish, bursting with familiar flavors and a touch of spice.",
+          "categoryName": "Mains",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 295,
+          "discount": 0,
+          "finalPrice": 295
+        },
+        "variants": [
+          { "id": "var_type_burnt_garlic_rice", "name": "Type" }
+        ],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_schezwan_noodles": {
+        "menuItemId": "item_schezwan_noodles",
+        "categoryId": "cat_mains",
+        "primarySubcategoryId": "sub_asian",
+        "subcategoryIds": ["sub_asian"],
+        "meta": {
+          "name": "Schezwan Noodles",
+          "description": "All-time favourite!",
+          "categoryName": "Mains",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 250,
+          "discount": 0,
+          "finalPrice": 250
+        },
+        "variants": [],
+        "addons": [
+          "addon_veg_protein",
+          "addon_chicken_protein",
+          "addon_seafood_protein"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_schezwan_fried_rice": {
+        "menuItemId": "item_schezwan_fried_rice",
+        "categoryId": "cat_mains",
+        "primarySubcategoryId": "sub_asian",
+        "subcategoryIds": ["sub_asian"],
+        "meta": {
+          "name": "Schezwan Fried Rice",
+          "description": "A Schezwan style fried rice.",
+          "categoryName": "Mains",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 250,
+          "discount": 0,
+          "finalPrice": 250
+        },
+        "variants": [],
+        "addons": [
+          "addon_veg_protein",
+          "addon_chicken_protein",
+          "addon_seafood_protein"
+        ],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_gourmet_ice_cream": {
+        "menuItemId": "item_gourmet_ice_cream",
+        "categoryId": "cat_desserts",
+        "primarySubcategoryId": "sub_desserts",
+        "subcategoryIds": ["sub_desserts"],
+        "meta": {
+          "name": "Gourmet Ice Cream",
+          "description": "Premium artisanal ice cream in a selection of unique flavors.",
+          "categoryName": "Desserts",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 195,
+          "discount": 0,
+          "finalPrice": 195
+        },
+        "variants": [
+          { "id": "var_flavor_gourmet_ice_cream", "name": "Flavor" }
+        ],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_classic_ice_cream": {
+        "menuItemId": "item_classic_ice_cream",
+        "categoryId": "cat_desserts",
+        "primarySubcategoryId": "sub_desserts",
+        "subcategoryIds": ["sub_desserts"],
+        "meta": {
+          "name": "Classic Ice Cream",
+          "description": "Traditional ice cream in timeless flavors.",
+          "categoryName": "Desserts",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 115,
+          "discount": 0,
+          "finalPrice": 115
+        },
+        "variants": [
+          { "id": "var_flavor_classic_ice_cream", "name": "Flavor" }
+        ],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": true
+      },
+      "item_devils_chocolate_cake": {
+        "menuItemId": "item_devils_chocolate_cake",
+        "categoryId": "cat_desserts",
+        "primarySubcategoryId": "sub_desserts",
+        "subcategoryIds": ["sub_desserts"],
+        "meta": {
+          "name": "Devil's Chocolate Cake",
+          "description": "Chocolate fudge cake soaked in rum, layered with dark chocolate truffle and mascarpone cream for a rich, indulgent treat.",
+          "categoryName": "Desserts",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 295,
+          "discount": 0,
+          "finalPrice": 295
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_tres_leches": {
+        "menuItemId": "item_tres_leches",
+        "categoryId": "cat_desserts",
+        "primarySubcategoryId": "sub_desserts",
+        "subcategoryIds": ["sub_desserts"],
+        "meta": {
+          "name": "Tres Leches",
+          "description": "A classic Latin-American tres leches cake, soaked in three kinds of milk for a rich, creamy indulgence.",
+          "categoryName": "Desserts",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 295,
+          "discount": 0,
+          "finalPrice": 295
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_five_star_fudge": {
+        "menuItemId": "item_five_star_fudge",
+        "categoryId": "cat_desserts",
+        "primarySubcategoryId": "sub_desserts",
+        "subcategoryIds": ["sub_desserts"],
+        "meta": {
+          "name": "Five-Star Fudge",
+          "description": "A decadent, melt in mouth chocolate brownie with a rich velvety texture.",
+          "categoryName": "Desserts",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 285,
+          "discount": 0,
+          "finalPrice": 285
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_mulberry_dark_choc_mousse": {
+        "menuItemId": "item_mulberry_dark_choc_mousse",
+        "categoryId": "cat_desserts",
+        "primarySubcategoryId": "sub_desserts",
+        "subcategoryIds": ["sub_desserts"],
+        "meta": {
+          "name": "Mulberry Dark Chocolate Mousse",
+          "description": "Mulberry meets Callebaut dark chocolate to present a perfect medley of flavours in this mousse.",
+          "categoryName": "Desserts",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 295,
+          "discount": 0,
+          "finalPrice": 295
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_pecan_pie": {
+        "menuItemId": "item_pecan_pie",
+        "categoryId": "cat_desserts",
+        "primarySubcategoryId": "sub_desserts",
+        "subcategoryIds": ["sub_desserts"],
+        "meta": {
+          "name": "Pecan Pie",
+          "description": "A chewy pecan caramel pie slice, baked to perfection and served with a dollop of blueberry cream.",
+          "categoryName": "Desserts",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 295,
+          "discount": 0,
+          "finalPrice": 295
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      },
+      "item_basque_cheese_cake": {
+        "menuItemId": "item_basque_cheese_cake",
+        "categoryId": "cat_desserts",
+        "primarySubcategoryId": "sub_desserts",
+        "subcategoryIds": ["sub_desserts"],
+        "meta": {
+          "name": "Basque Cheese Cake",
+          "description": "Crème caramel with bittersweet notes and a creamy, light center—absolutely heavenly!",
+          "categoryName": "Desserts",
+          "image": ""
+        },
+        "priceInfo": {
+          "basePrice": 275,
+          "discount": 0,
+          "finalPrice": 275
+        },
+        "variants": [],
+        "addons": [],
+        "isInStock": true,
+        "isCustomizable": false
+      }
+    },
+    "variants": {
+      "var_qty_zesty_wings": {
+        "id": "var_qty_zesty_wings",
+        "meta": {
+          "name": "Quantity",
+          "categoryAssociatedWith": ["cat_starters"],
+          "description": "Choose quantity"
+        },
+        "options": [
+          {
+            "id": "opt_6pcs",
+            "name": "6 Pieces",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          },
+          {
+            "id": "opt_12pcs",
+            "name": "12 Pieces",
+            "priceInfo": { "basePrice": 200, "finalPrice": 200, "discount": 0 }
+          }
+        ],
+        "isMandatory": true,
+        "respectParentDiscount": true,
+        "itemsAssociatedWith": ["item_zesty_fried_wings"]
+      },
+      "var_qty_bbq_wings": {
+        "id": "var_qty_bbq_wings",
+        "meta": {
+          "name": "Quantity",
+          "categoryAssociatedWith": ["cat_starters"],
+          "description": "Choose quantity"
+        },
+        "options": [
+          {
+            "id": "opt_6pcs",
+            "name": "6 Pieces",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          },
+          {
+            "id": "opt_12pcs",
+            "name": "12 Pieces",
+            "priceInfo": { "basePrice": 230, "finalPrice": 230, "discount": 0 }
+          }
+        ],
+        "isMandatory": true,
+        "respectParentDiscount": true,
+        "itemsAssociatedWith": ["item_bbq_blue_cheese_wings"]
+      },
+      "var_qty_cilantro_wings": {
+        "id": "var_qty_cilantro_wings",
+        "meta": {
+          "name": "Quantity",
+          "categoryAssociatedWith": ["cat_starters"],
+          "description": "Choose quantity"
+        },
+        "options": [
+          {
+            "id": "opt_6pcs",
+            "name": "6 Pieces",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          },
+          {
+            "id": "opt_12pcs",
+            "name": "12 Pieces",
+            "priceInfo": { "basePrice": 240, "finalPrice": 240, "discount": 0 }
+          }
+        ],
+        "isMandatory": true,
+        "respectParentDiscount": true,
+        "itemsAssociatedWith": ["item_chili_cilantro_wings"]
+      },
+      "var_qty_garlic_wings": {
+        "id": "var_qty_garlic_wings",
+        "meta": {
+          "name": "Quantity",
+          "categoryAssociatedWith": ["cat_starters"],
+          "description": "Choose quantity"
+        },
+        "options": [
+          {
+            "id": "opt_6pcs",
+            "name": "6 Pieces",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          },
+          {
+            "id": "opt_12pcs",
+            "name": "12 Pieces",
+            "priceInfo": { "basePrice": 250, "finalPrice": 250, "discount": 0 }
+          }
+        ],
+        "isMandatory": true,
+        "respectParentDiscount": true,
+        "itemsAssociatedWith": ["item_byg_garlic_parmesan_wings"]
+      },
+      "var_portion_cottage_cheese": {
+        "id": "var_portion_cottage_cheese",
+        "meta": {
+          "name": "Portion",
+          "categoryAssociatedWith": ["cat_grills"],
+          "description": "Choose portion size"
+        },
+        "options": [
+          {
+            "id": "opt_half",
+            "name": "Half",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          },
+          {
+            "id": "opt_full",
+            "name": "Full",
+            "priceInfo": { "basePrice": 90, "finalPrice": 90, "discount": 0 }
+          }
+        ],
+        "isMandatory": true,
+        "respectParentDiscount": true,
+        "itemsAssociatedWith": ["item_grilled_cottage_cheese_steak"]
+      },
+      "var_portion_paprika_chicken": {
+        "id": "var_portion_paprika_chicken",
+        "meta": {
+          "name": "Portion",
+          "categoryAssociatedWith": ["cat_grills"],
+          "description": "Choose portion size"
+        },
+        "options": [
+          {
+            "id": "opt_half",
+            "name": "Half",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          },
+          {
+            "id": "opt_full",
+            "name": "Full",
+            "priceInfo": { "basePrice": 110, "finalPrice": 110, "discount": 0 }
+          }
+        ],
+        "isMandatory": true,
+        "respectParentDiscount": true,
+        "itemsAssociatedWith": ["item_lemon_paprika_chicken"]
+      },
+      "var_pcs_pork_ribs": {
+        "id": "var_pcs_pork_ribs",
+        "meta": {
+          "name": "Pieces",
+          "categoryAssociatedWith": ["cat_grills"],
+          "description": "Choose number of pieces"
+        },
+        "options": [
+          {
+            "id": "opt_2pcs",
+            "name": "2 Pieces",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          },
+          {
+            "id": "opt_3pcs",
+            "name": "3 Pieces",
+            "priceInfo": { "basePrice": 90, "finalPrice": 90, "discount": 0 }
+          }
+        ],
+        "isMandatory": true,
+        "respectParentDiscount": true,
+        "itemsAssociatedWith": ["item_rauch_bbq_pork_ribs"]
+      },
+      "var_portion_chimichurri_fish": {
+        "id": "var_portion_chimichurri_fish",
+        "meta": {
+          "name": "Portion",
+          "categoryAssociatedWith": ["cat_grills"],
+          "description": "Choose portion size"
+        },
+        "options": [
+          {
+            "id": "opt_half",
+            "name": "Half",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          },
+          {
+            "id": "opt_full",
+            "name": "Full",
+            "priceInfo": { "basePrice": 140, "finalPrice": 140, "discount": 0 }
+          }
+        ],
+        "isMandatory": true,
+        "respectParentDiscount": true,
+        "itemsAssociatedWith": ["item_chimichurri_fish"]
+      },
+      "var_portion_tenderloin": {
+        "id": "var_portion_tenderloin",
+        "meta": {
+          "name": "Portion",
+          "categoryAssociatedWith": ["cat_grills"],
+          "description": "Choose portion size"
+        },
+        "options": [
+          {
+            "id": "opt_half",
+            "name": "Half",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          },
+          {
+            "id": "opt_full",
+            "name": "Full",
+            "priceInfo": { "basePrice": 150, "finalPrice": 150, "discount": 0 }
+          }
+        ],
+        "isMandatory": true,
+        "respectParentDiscount": true,
+        "itemsAssociatedWith": ["item_peppered_tenderloin"]
+      },
+      "var_type_beer_paella": {
+        "id": "var_type_beer_paella",
+        "meta": {
+          "name": "Type",
+          "categoryAssociatedWith": ["cat_mains"],
+          "description": "Choose protein type"
+        },
+        "options": [
+          {
+            "id": "opt_vegetarian",
+            "name": "Vegetarian",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          },
+          {
+            "id": "opt_chicken",
+            "name": "Chicken",
+            "priceInfo": { "basePrice": 50, "finalPrice": 50, "discount": 0 }
+          },
+          {
+            "id": "opt_seafood",
+            "name": "Seafood",
+            "priceInfo": { "basePrice": 90, "finalPrice": 90, "discount": 0 }
+          },
+          {
+            "id": "opt_chorizo",
+            "name": "Chorizo",
+            "priceInfo": { "basePrice": 90, "finalPrice": 90, "discount": 0 }
+          }
+        ],
+        "isMandatory": true,
+        "respectParentDiscount": true,
+        "itemsAssociatedWith": ["item_beer_paella"]
+      },
+      "var_type_burnt_garlic_rice": {
+        "id": "var_type_burnt_garlic_rice",
+        "meta": {
+          "name": "Type",
+          "categoryAssociatedWith": ["cat_mains"],
+          "description": "Choose protein type"
+        },
+        "options": [
+          {
+            "id": "opt_chili_paneer",
+            "name": "Chili Paneer",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          },
+          {
+            "id": "opt_chili_chicken",
+            "name": "Chili Chicken",
+            "priceInfo": { "basePrice": 30, "finalPrice": 30, "discount": 0 }
+          },
+          {
+            "id": "opt_chili_pork",
+            "name": "Chili Pork",
+            "priceInfo": { "basePrice": 40, "finalPrice": 40, "discount": 0 }
+          }
+        ],
+        "isMandatory": true,
+        "respectParentDiscount": true,
+        "itemsAssociatedWith": ["item_burnt_garlic_fried_rice"]
+      },
+      "var_flavor_gourmet_ice_cream": {
+        "id": "var_flavor_gourmet_ice_cream",
+        "meta": {
+          "name": "Flavor",
+          "categoryAssociatedWith": ["cat_desserts"],
+          "description": "Choose flavor"
+        },
+        "options": [
+          {
+            "id": "opt_fresh_blueberry",
+            "name": "Fresh Blueberry",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          },
+          {
+            "id": "opt_guava_chilli",
+            "name": "Guava Chilli",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          },
+          {
+            "id": "opt_coffee",
+            "name": "Coffee",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          },
+          {
+            "id": "opt_rum_raisin",
+            "name": "Rum & Raisin",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          }
+        ],
+        "isMandatory": true,
+        "respectParentDiscount": true,
+        "itemsAssociatedWith": ["item_gourmet_ice_cream"]
+      },
+      "var_flavor_classic_ice_cream": {
+        "id": "var_flavor_classic_ice_cream",
+        "meta": {
+          "name": "Flavor",
+          "categoryAssociatedWith": ["cat_desserts"],
+          "description": "Choose flavor"
+        },
+        "options": [
+          {
+            "id": "opt_vanilla",
+            "name": "Vanilla",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          },
+          {
+            "id": "opt_chocolate",
+            "name": "Chocolate",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          },
+          {
+            "id": "opt_strawberry",
+            "name": "Strawberry",
+            "priceInfo": { "basePrice": 0, "finalPrice": 0, "discount": 0 }
+          }
+        ],
+        "isMandatory": true,
+        "respectParentDiscount": true,
+        "itemsAssociatedWith": ["item_classic_ice_cream"]
+      }
+    },
+    "addons": {
+      "addon_mash_potato": {
+        "id": "addon_mash_potato",
+        "meta": {
+          "name": "Mash Potato",
+          "categoryAssociatedWith": ["cat_grills"],
+          "description": "Add mash potato side"
+        },
+        "priceInfo": { "basePrice": 75, "finalPrice": 75, "discount": 0 },
+        "isInStock": true,
+        "respectParentDiscount": false,
+        "isMandatory": false,
+        "itemsAssociatedWith": [
+          "item_grilled_cottage_cheese_steak",
+          "item_lemon_paprika_chicken",
+          "item_rauch_bbq_pork_ribs",
+          "item_chimichurri_fish",
+          "item_peppered_tenderloin"
+        ]
+      },
+      "addon_spanish_rice": {
+        "id": "addon_spanish_rice",
+        "meta": {
+          "name": "Spanish Rice",
+          "categoryAssociatedWith": ["cat_grills"],
+          "description": "Add Spanish rice side"
+        },
+        "priceInfo": { "basePrice": 75, "finalPrice": 75, "discount": 0 },
+        "isInStock": true,
+        "respectParentDiscount": false,
+        "isMandatory": false,
+        "itemsAssociatedWith": [
+          "item_grilled_cottage_cheese_steak",
+          "item_lemon_paprika_chicken",
+          "item_rauch_bbq_pork_ribs",
+          "item_chimichurri_fish",
+          "item_peppered_tenderloin"
+        ]
+      },
+      "addon_summer_salad": {
+        "id": "addon_summer_salad",
+        "meta": {
+          "name": "Summer Salad",
+          "categoryAssociatedWith": ["cat_grills"],
+          "description": "Add summer salad side"
+        },
+        "priceInfo": { "basePrice": 55, "finalPrice": 55, "discount": 0 },
+        "isInStock": true,
+        "respectParentDiscount": false,
+        "isMandatory": false,
+        "itemsAssociatedWith": [
+          "item_grilled_cottage_cheese_steak",
+          "item_lemon_paprika_chicken",
+          "item_rauch_bbq_pork_ribs",
+          "item_chimichurri_fish",
+          "item_peppered_tenderloin"
+        ]
+      },
+      "addon_fried_egg": {
+        "id": "addon_fried_egg",
+        "meta": {
+          "name": "Fried Egg",
+          "categoryAssociatedWith": ["cat_smash_burger"],
+          "description": "Add a fried egg"
+        },
+        "priceInfo": { "basePrice": 25, "finalPrice": 25, "discount": 0 },
+        "isInStock": true,
+        "respectParentDiscount": false,
+        "isMandatory": false,
+        "itemsAssociatedWith": [
+          "item_blaze_bean_burger",
+          "item_pesto_chick_cluck_burger",
+          "item_spiced_lamb_burger",
+          "item_works_beef_burger"
+        ]
+      },
+      "addon_cheese": {
+        "id": "addon_cheese",
+        "meta": {
+          "name": "Cheese",
+          "categoryAssociatedWith": ["cat_smash_burger", "cat_pizza"],
+          "description": "Add extra cheese"
+        },
+        "priceInfo": { "basePrice": 55, "finalPrice": 55, "discount": 0 },
+        "isInStock": true,
+        "respectParentDiscount": false,
+        "isMandatory": false,
+        "itemsAssociatedWith": [
+          "item_blaze_bean_burger",
+          "item_pesto_chick_cluck_burger",
+          "item_spiced_lamb_burger",
+          "item_works_beef_burger",
+          "item_margherita",
+          "item_mediterranean_bliss",
+          "item_vegan_senorita",
+          "item_caprino",
+          "item_four_cheese",
+          "item_triple_mushrooms"
+        ]
+      },
+      "addon_bacon": {
+        "id": "addon_bacon",
+        "meta": {
+          "name": "Bacon",
+          "categoryAssociatedWith": ["cat_smash_burger", "cat_pizza", "cat_pastas"],
+          "description": "Add bacon"
+        },
+        "priceInfo": { "basePrice": 95, "finalPrice": 95, "discount": 0 },
+        "isInStock": true,
+        "respectParentDiscount": false,
+        "isMandatory": false,
+        "itemsAssociatedWith": [
+          "item_blaze_bean_burger",
+          "item_pesto_chick_cluck_burger",
+          "item_spiced_lamb_burger",
+          "item_works_beef_burger",
+          "item_margherita",
+          "item_mediterranean_bliss",
+          "item_vegan_senorita",
+          "item_caprino",
+          "item_four_cheese",
+          "item_triple_mushrooms",
+          "item_creamy_alfredo",
+          "item_italian_arrabiata",
+          "item_spaghetti_aglio_e_olio",
+          "item_spaghetti_lamb_ragout"
+        ]
+      },
+      "addon_exotic_vegetables": {
+        "id": "addon_exotic_vegetables",
+        "meta": {
+          "name": "Exotic Vegetables",
+          "categoryAssociatedWith": ["cat_pizza", "cat_pastas"],
+          "description": "Add exotic vegetables"
+        },
+        "priceInfo": { "basePrice": 45, "finalPrice": 45, "discount": 0 },
+        "isInStock": true,
+        "respectParentDiscount": false,
+        "isMandatory": false,
+        "itemsAssociatedWith": [
+          "item_margherita",
+          "item_mediterranean_bliss",
+          "item_vegan_senorita",
+          "item_caprino",
+          "item_four_cheese",
+          "item_triple_mushrooms",
+          "item_creamy_alfredo",
+          "item_italian_arrabiata",
+          "item_spaghetti_aglio_e_olio",
+          "item_spaghetti_lamb_ragout"
+        ]
+      },
+      "addon_chicken_topping": {
+        "id": "addon_chicken_topping",
+        "meta": {
+          "name": "Chicken",
+          "categoryAssociatedWith": ["cat_pizza", "cat_pastas"],
+          "description": "Add chicken"
+        },
+        "priceInfo": { "basePrice": 75, "finalPrice": 75, "discount": 0 },
+        "isInStock": true,
+        "respectParentDiscount": false,
+        "isMandatory": false,
+        "itemsAssociatedWith": [
+          "item_margherita",
+          "item_mediterranean_bliss",
+          "item_vegan_senorita",
+          "item_caprino",
+          "item_four_cheese",
+          "item_triple_mushrooms",
+          "item_creamy_alfredo",
+          "item_italian_arrabiata",
+          "item_spaghetti_aglio_e_olio",
+          "item_spaghetti_lamb_ragout"
+        ]
+      },
+      "addon_chicken_sausage": {
+        "id": "addon_chicken_sausage",
+        "meta": {
+          "name": "Chicken Sausage",
+          "categoryAssociatedWith": ["cat_pizza", "cat_pastas"],
+          "description": "Add chicken sausage"
+        },
+        "priceInfo": { "basePrice": 75, "finalPrice": 75, "discount": 0 },
+        "isInStock": true,
+        "respectParentDiscount": false,
+        "isMandatory": false,
+        "itemsAssociatedWith": [
+          "item_margherita",
+          "item_mediterranean_bliss",
+          "item_vegan_senorita",
+          "item_caprino",
+          "item_four_cheese",
+          "item_triple_mushrooms",
+          "item_creamy_alfredo",
+          "item_italian_arrabiata",
+          "item_spaghetti_aglio_e_olio",
+          "item_spaghetti_lamb_ragout"
+        ]
+      },
+      "addon_parmesan_on_side": {
+        "id": "addon_parmesan_on_side",
+        "meta": {
+          "name": "Parmesan on Side",
+          "categoryAssociatedWith": ["cat_pastas"],
+          "description": "Add parmesan on the side"
+        },
+        "priceInfo": { "basePrice": 65, "finalPrice": 65, "discount": 0 },
+        "isInStock": true,
+        "respectParentDiscount": false,
+        "isMandatory": false,
+        "itemsAssociatedWith": [
+          "item_creamy_alfredo",
+          "item_italian_arrabiata",
+          "item_spaghetti_aglio_e_olio",
+          "item_spaghetti_lamb_ragout"
+        ]
+      },
+      "addon_prawns": {
+        "id": "addon_prawns",
+        "meta": {
+          "name": "Prawns",
+          "categoryAssociatedWith": ["cat_pastas"],
+          "description": "Add prawns"
+        },
+        "priceInfo": { "basePrice": 125, "finalPrice": 125, "discount": 0 },
+        "isInStock": true,
+        "respectParentDiscount": false,
+        "isMandatory": false,
+        "itemsAssociatedWith": [
+          "item_creamy_alfredo",
+          "item_italian_arrabiata",
+          "item_spaghetti_aglio_e_olio",
+          "item_spaghetti_lamb_ragout"
+        ]
+      },
+      "addon_veg_protein": {
+        "id": "addon_veg_protein",
+        "meta": {
+          "name": "Vegetarian",
+          "categoryAssociatedWith": ["cat_mains"],
+          "description": "Add vegetarian protein"
+        },
+        "priceInfo": { "basePrice": 45, "finalPrice": 45, "discount": 0 },
+        "isInStock": true,
+        "respectParentDiscount": false,
+        "isMandatory": false,
+        "itemsAssociatedWith": [
+          "item_schezwan_noodles",
+          "item_schezwan_fried_rice"
+        ]
+      },
+      "addon_chicken_protein": {
+        "id": "addon_chicken_protein",
+        "meta": {
+          "name": "Chicken",
+          "categoryAssociatedWith": ["cat_mains"],
+          "description": "Add chicken protein"
+        },
+        "priceInfo": { "basePrice": 75, "finalPrice": 75, "discount": 0 },
+        "isInStock": true,
+        "respectParentDiscount": false,
+        "isMandatory": false,
+        "itemsAssociatedWith": [
+          "item_schezwan_noodles",
+          "item_schezwan_fried_rice"
+        ]
+      },
+      "addon_seafood_protein": {
+        "id": "addon_seafood_protein",
+        "meta": {
+          "name": "Seafood",
+          "categoryAssociatedWith": ["cat_mains"],
+          "description": "Add seafood protein"
+        },
+        "priceInfo": { "basePrice": 125, "finalPrice": 125, "discount": 0 },
+        "isInStock": true,
+        "respectParentDiscount": false,
+        "isMandatory": false,
+        "itemsAssociatedWith": [
+          "item_schezwan_noodles",
+          "item_schezwan_fried_rice"
+        ]
+      }
+    },
+    "kitchens": {
+      "kitchen_main": {
+        "name": "Main Kitchen",
+        "status": "active"
+      }
+    },
+    "tables": {
+      "table_1": {
+        "number": "1",
+        "capacity": 4,
+        "status": "vacant",
+        "currentOTP": null
+      },
+      "table_2": {
+        "number": "2",
+        "capacity": 4,
+        "status": "vacant",
+        "currentOTP": null
+      },
+      "table_3": {
+        "number": "3",
+        "capacity": 2,
+        "status": "vacant",
+        "currentOTP": null
+      },
+      "table_4": {
+        "number": "4",
+        "capacity": 2,
+        "status": "vacant",
+        "currentOTP": null
+      },
+      "table_5": {
+        "number": "5",
+        "capacity": 6,
+        "status": "vacant",
+        "currentOTP": null
+      }
+    },
+    "servers": {
+      "server_1": {
+        "name": "Server One",
+        "role": "waiter",
+        "status": "active",
+        "email": "server1@bigbrewski.com",
+        "password": "1234"
+      },
+      "kitchen_staff_1": {
+        "name": "Kitchen One",
+        "role": "kitchen",
+        "status": "active",
+        "email": "kitchen1@bigbrewski.com",
+        "password": "1234"
+      },
+      "admin_1": {
+        "name": "Admin One",
+        "role": "admin",
+        "status": "active",
+        "email": "admin1@bigbrewski.com",
+        "password": "1234"
+      }
+    }
+  }
+}
