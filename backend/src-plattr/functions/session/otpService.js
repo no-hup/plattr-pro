@@ -1,17 +1,24 @@
 const { Timestamp } = require('../admin/admin');
 const functions = require('firebase-functions');
 const timestamp = require('../utils/timestamp');
+const environment = require('../singleton/Environment');
 
 const OTP_CONFIG = {
-  VALIDITY_MINUTES: 5,
+  VALIDITY_MINUTES: environment.isEmulator() ? 60 : 5,
   LENGTH: 6
 };
 
+console.log(`OTP_CONFIG: validity=${OTP_CONFIG.VALIDITY_MINUTES}min, length=${OTP_CONFIG.LENGTH} (${environment.mode})`);
+
 /**
  * Generates a numeric OTP of specified length
+ * In emulator mode, always returns '123456' for easy testing
  * @returns {string} Generated OTP
  */
 function generateOTP() {
+  if (environment.isEmulator()) {
+    return '123456';
+  }
   const min = Math.pow(10, OTP_CONFIG.LENGTH - 1);
   const max = Math.pow(10, OTP_CONFIG.LENGTH) - 1;
   return Math.floor(min + Math.random() * (max - min + 1)).toString();

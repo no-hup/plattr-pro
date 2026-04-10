@@ -3,7 +3,7 @@
 ## Table Scan API
 
 ### TODO
-- [x] Location Check: Verify user's physical location matches restaurant location
+- [ ] Location Check: Verify user's physical location matches restaurant location
 - [ ] Multi-User Support: Allow multiple users to share the same table session
 
 ### Endpoint
@@ -373,12 +373,13 @@ When a user tries to join a table that should have an active session but doesn't
 
 ### OTP Configuration
 - Length: 6 digits
-- Validity: 5 minutes from creation time
+- Validity: 5 minutes in production, 60 minutes in emulator (environment-aware via `Environment.isEmulator()`)
 - Storage: Stored in the table document with creation and expiry timestamps
 
 ### OTP Generation Process
 1. A 6-digit numeric OTP is generated when:
    - A table is first scanned (if it's vacant)
+   - An `OTP_PENDING` table is re-scanned and the existing OTP has expired (abandoned scan recovery)
    - A user requests a new OTP for an active table
    - An existing OTP expires
 
@@ -392,8 +393,8 @@ When a user tries to join a table that should have an active session but doesn't
    ```
 
 3. OTP Validation Logic:
-   - For vacant tables: OTP validation assigns the user as the primary customer
-   - For active tables: OTP validation allows secondary customers to join the existing session
+   - For vacant/OTP_PENDING tables: OTP expiry is checked via `isOTPValid()`, then code is matched. User becomes the primary customer
+   - For active tables: OTP code is matched but **expiry is NOT checked** — the primary customer already authenticated, so code match alone is sufficient for secondary users joining
    - Invalid OTPs: Return appropriate error messages based on table state
 
 ## Session Creation and Management
@@ -438,7 +439,8 @@ When a user tries to join a table that should have an active session but doesn't
 
 2. Session cleanup:
    - Inactive sessions are automatically cleaned up after 1 hour of inactivity
-   - Cleanup process changes table status back to `VACANT`
+   - For `OTP_PENDING` tables without `lastActivity`, falls back to `firstScannedAt` or `currentOTP.createdAt` to determine staleness
+   - Cleanup process changes table status back to `VACANT`, clears `currentOTP`
    - All related session documents are marked as `ENDED`
 
 ## Edge Cases and Special Scenarios
@@ -464,7 +466,7 @@ When a user tries to join a table that should have an active session but doesn't
   }
   ```
   - User must request a new OTP from staff or primary customer
-  - New OTP is generated with fresh 5-minute validity
+  - New OTP is generated with fresh validity period (5 min prod / 60 min emulator)
 
 ### Multiple Users at the Same Table
 - When multiple users scan the same table:
@@ -501,10 +503,10 @@ When a user tries to join a table that should have an active session but doesn't
 
 ### Table Cleanup and Maintenance
 - Tables with no activity for more than 1 hour are automatically reset:
-  - Status changes from `ACTIVE` to `VACANT`
-  - All sessions are marked as `ENDED`
-  - Primary customer information is cleared
-  - OTP is invalidated
+  - Status changes to `VACANT` (from any previous status: ACTIVE, OTP_PENDING, DISABLED)
+  - All sessions are ended via `sessionService.endTableSessions()`
+  - Primary customer information, `occupiedBy`, and `activeOrderId` are cleared
+  - `currentOTP` is cleared
 
 ### Authentication and Identity
 - Users are identified by their phone numbers (when provided)
