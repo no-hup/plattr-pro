@@ -41,6 +41,9 @@ CONSUMER_APP_PORT=5051
 KITCHEN_APP_PORT=5052
 ADMIN_APP_PORT=5053
 
+# Restaurant setup files (standalone imports)
+BIG_BREWSKI_FILE="$PROJECT_ROOT/restaurant-menu-setup-prod/big-brewski/firestore-big-brewski.json"
+
 # Timing
 EMULATOR_WAIT_SECONDS=30
 
@@ -120,6 +123,7 @@ cleanup_processes() {
 # Mock Data Selection
 # -----------------------------------------------------------------------------
 select_mock_data() {
+    MOCK_EXTRA_ARGS=""
     log_step "Select Mock Data to Import"
     
     echo -e "${CYAN}Available mock data options:${NC}\n"
@@ -128,11 +132,13 @@ select_mock_data() {
     echo "  3) quickImport (quickImport.js)     - Quick V2 import (minimal)"
     echo "  4) quickImportV3 (quickImportV3.js) - Quick V3 import (minimal)"
     echo "  5) mockData5EndToEndTesting (importMockData5.js) - New E2E Test data"
-    echo "  6) Skip mock data import"
+    echo "  6) mockData5 + Big Brewski - E2E data + real restaurant"
+    echo "  7) Big Brewski only - standalone real restaurant"
+    echo "  8) Skip mock data import"
     echo ""
-    
+
     while true; do
-        read "?Enter your choice [1-6]: " choice
+        read "choice?Enter your choice [1-8]: "
         case $choice in
             1)
                 MOCK_SCRIPT="importMockDataV2.js"
@@ -160,12 +166,24 @@ select_mock_data() {
                 break
                 ;;
             6)
+                MOCK_SCRIPT="importMockData5.js"
+                MOCK_NAME="mockData5 + Big Brewski"
+                MOCK_EXTRA_ARGS="--include=$BIG_BREWSKI_FILE"
+                break
+                ;;
+            7)
+                MOCK_SCRIPT="importMockData5.js"
+                MOCK_NAME="Big Brewski only"
+                MOCK_EXTRA_ARGS="--file=$BIG_BREWSKI_FILE"
+                break
+                ;;
+            8)
                 MOCK_SCRIPT=""
                 MOCK_NAME="(skipped)"
                 break
                 ;;
             *)
-                log_warn "Invalid choice. Please enter 1-6."
+                log_warn "Invalid choice. Please enter 1-8."
                 ;;
         esac
     done
@@ -293,16 +311,16 @@ import_mock_data() {
         return 1
     fi
     
-    log_info "Running: node $MOCK_SCRIPT"
-    
+    log_info "Running: node $MOCK_SCRIPT ${MOCK_EXTRA_ARGS:-}"
+
     cd "$BACKEND_DIR"
-    
+
     # Set environment variables for emulator
     export FIRESTORE_EMULATOR_HOST="127.0.0.1:$EMULATOR_FIRESTORE_PORT"
     export FUNCTIONS_EMULATOR=true
     export NODE_ENV=development
-    
-    if node "$script_path"; then
+
+    if node "$script_path" ${MOCK_EXTRA_ARGS:-}; then
         log_success "Mock data imported successfully"
     else
         log_error "Mock data import failed"

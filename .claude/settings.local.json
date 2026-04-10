@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /Users/shauryajaiswal/Desktop/dev/plattr-pro/Plattr_Pro_Context/TODO_*.md)",
+      "Bash(node -e \"require\\('./orders/getActiveCartsForKitchen.js'\\); require\\('./server/server_auth.js'\\); require\\('./adminApp/staff_admin.js'\\); require\\('./orders/indexOrders.js'\\); console.log\\('OK'\\);\")"
+    ]
+  }
+}
