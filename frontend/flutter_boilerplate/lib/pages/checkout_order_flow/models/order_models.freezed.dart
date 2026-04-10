@@ -202,6 +202,8 @@ mixin _$OrderData {
   String get notes => throw _privateConstructorUsedError;
   @JsonKey(name: 'carts', defaultValue: [])
   List<CartHistoryItem> get carts => throw _privateConstructorUsedError;
+  AppliedOrderOffer? get appliedOffer => throw _privateConstructorUsedError;
+  double get offerDiscount => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $OrderDataCopyWith<OrderData> get copyWith =>
@@ -225,7 +227,11 @@ abstract class $OrderDataCopyWith<$Res> {
       double total,
       List<OrderItem> items,
       String notes,
-      @JsonKey(name: 'carts', defaultValue: []) List<CartHistoryItem> carts});
+      @JsonKey(name: 'carts', defaultValue: []) List<CartHistoryItem> carts,
+      AppliedOrderOffer? appliedOffer,
+      double offerDiscount});
+
+  $AppliedOrderOfferCopyWith<$Res>? get appliedOffer;
 }
 
 /// @nodoc
@@ -253,6 +259,8 @@ class _$OrderDataCopyWithImpl<$Res, $Val extends OrderData>
     Object? items = null,
     Object? notes = null,
     Object? carts = null,
+    Object? appliedOffer = freezed,
+    Object? offerDiscount = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -303,7 +311,27 @@ class _$OrderDataCopyWithImpl<$Res, $Val extends OrderData>
           ? _value.carts
           : carts // ignore: cast_nullable_to_non_nullable
               as List<CartHistoryItem>,
+      appliedOffer: freezed == appliedOffer
+          ? _value.appliedOffer
+          : appliedOffer // ignore: cast_nullable_to_non_nullable
+              as AppliedOrderOffer?,
+      offerDiscount: null == offerDiscount
+          ? _value.offerDiscount
+          : offerDiscount // ignore: cast_nullable_to_non_nullable
+              as double,
     ) as $Val);
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $AppliedOrderOfferCopyWith<$Res>? get appliedOffer {
+    if (_value.appliedOffer == null) {
+      return null;
+    }
+
+    return $AppliedOrderOfferCopyWith<$Res>(_value.appliedOffer!, (value) {
+      return _then(_value.copyWith(appliedOffer: value) as $Val);
+    });
   }
 }
 
@@ -327,7 +355,12 @@ abstract class _$$OrderDataImplCopyWith<$Res>
       double total,
       List<OrderItem> items,
       String notes,
-      @JsonKey(name: 'carts', defaultValue: []) List<CartHistoryItem> carts});
+      @JsonKey(name: 'carts', defaultValue: []) List<CartHistoryItem> carts,
+      AppliedOrderOffer? appliedOffer,
+      double offerDiscount});
+
+  @override
+  $AppliedOrderOfferCopyWith<$Res>? get appliedOffer;
 }
 
 /// @nodoc
@@ -353,6 +386,8 @@ class __$$OrderDataImplCopyWithImpl<$Res>
     Object? items = null,
     Object? notes = null,
     Object? carts = null,
+    Object? appliedOffer = freezed,
+    Object? offerDiscount = null,
   }) {
     return _then(_$OrderDataImpl(
       id: null == id
@@ -403,6 +438,14 @@ class __$$OrderDataImplCopyWithImpl<$Res>
           ? _value._carts
           : carts // ignore: cast_nullable_to_non_nullable
               as List<CartHistoryItem>,
+      appliedOffer: freezed == appliedOffer
+          ? _value.appliedOffer
+          : appliedOffer // ignore: cast_nullable_to_non_nullable
+              as AppliedOrderOffer?,
+      offerDiscount: null == offerDiscount
+          ? _value.offerDiscount
+          : offerDiscount // ignore: cast_nullable_to_non_nullable
+              as double,
     ));
   }
 }
@@ -423,7 +466,9 @@ class _$OrderDataImpl extends _OrderData {
       final List<OrderItem> items = const [],
       this.notes = '',
       @JsonKey(name: 'carts', defaultValue: [])
-      final List<CartHistoryItem> carts = const []})
+      final List<CartHistoryItem> carts = const [],
+      this.appliedOffer,
+      this.offerDiscount = 0.0})
       : _items = items,
         _carts = carts,
         super._();
@@ -471,8 +516,14 @@ class _$OrderDataImpl extends _OrderData {
   }
 
   @override
+  final AppliedOrderOffer? appliedOffer;
+  @override
+  @JsonKey()
+  final double offerDiscount;
+
+  @override
   String toString() {
-    return 'OrderData(id: $id, orderNumber: $orderNumber, orderStatus: $orderStatus, tableId: $tableId, restaurantId: $restaurantId, sessionId: $sessionId, createdAt: $createdAt, updatedAt: $updatedAt, total: $total, items: $items, notes: $notes, carts: $carts)';
+    return 'OrderData(id: $id, orderNumber: $orderNumber, orderStatus: $orderStatus, tableId: $tableId, restaurantId: $restaurantId, sessionId: $sessionId, createdAt: $createdAt, updatedAt: $updatedAt, total: $total, items: $items, notes: $notes, carts: $carts, appliedOffer: $appliedOffer, offerDiscount: $offerDiscount)';
   }
 
   @override
@@ -497,7 +548,11 @@ class _$OrderDataImpl extends _OrderData {
             (identical(other.total, total) || other.total == total) &&
             const DeepCollectionEquality().equals(other._items, _items) &&
             (identical(other.notes, notes) || other.notes == notes) &&
-            const DeepCollectionEquality().equals(other._carts, _carts));
+            const DeepCollectionEquality().equals(other._carts, _carts) &&
+            (identical(other.appliedOffer, appliedOffer) ||
+                other.appliedOffer == appliedOffer) &&
+            (identical(other.offerDiscount, offerDiscount) ||
+                other.offerDiscount == offerDiscount));
   }
 
   @override
@@ -514,7 +569,9 @@ class _$OrderDataImpl extends _OrderData {
       total,
       const DeepCollectionEquality().hash(_items),
       notes,
-      const DeepCollectionEquality().hash(_carts));
+      const DeepCollectionEquality().hash(_carts),
+      appliedOffer,
+      offerDiscount);
 
   @JsonKey(ignore: true)
   @override
@@ -537,7 +594,9 @@ abstract class _OrderData extends OrderData {
       final List<OrderItem> items,
       final String notes,
       @JsonKey(name: 'carts', defaultValue: [])
-      final List<CartHistoryItem> carts}) = _$OrderDataImpl;
+      final List<CartHistoryItem> carts,
+      final AppliedOrderOffer? appliedOffer,
+      final double offerDiscount}) = _$OrderDataImpl;
   const _OrderData._() : super._();
 
   @override
@@ -567,6 +626,10 @@ abstract class _OrderData extends OrderData {
   @override
   @JsonKey(name: 'carts', defaultValue: [])
   List<CartHistoryItem> get carts;
+  @override
+  AppliedOrderOffer? get appliedOffer;
+  @override
+  double get offerDiscount;
   @override
   @JsonKey(ignore: true)
   _$$OrderDataImplCopyWith<_$OrderDataImpl> get copyWith =>
@@ -2001,5 +2064,215 @@ abstract class _PriceInfo extends PriceInfo {
   @override
   @JsonKey(ignore: true)
   _$$PriceInfoImplCopyWith<_$PriceInfoImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+mixin _$AppliedOrderOffer {
+  String get id => throw _privateConstructorUsedError;
+  String get title => throw _privateConstructorUsedError;
+  String get description => throw _privateConstructorUsedError;
+  String get type => throw _privateConstructorUsedError;
+  double get discountAmount => throw _privateConstructorUsedError;
+
+  @JsonKey(ignore: true)
+  $AppliedOrderOfferCopyWith<AppliedOrderOffer> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $AppliedOrderOfferCopyWith<$Res> {
+  factory $AppliedOrderOfferCopyWith(
+          AppliedOrderOffer value, $Res Function(AppliedOrderOffer) then) =
+      _$AppliedOrderOfferCopyWithImpl<$Res, AppliedOrderOffer>;
+  @useResult
+  $Res call(
+      {String id,
+      String title,
+      String description,
+      String type,
+      double discountAmount});
+}
+
+/// @nodoc
+class _$AppliedOrderOfferCopyWithImpl<$Res, $Val extends AppliedOrderOffer>
+    implements $AppliedOrderOfferCopyWith<$Res> {
+  _$AppliedOrderOfferCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = null,
+    Object? title = null,
+    Object? description = null,
+    Object? type = null,
+    Object? discountAmount = null,
+  }) {
+    return _then(_value.copyWith(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      title: null == title
+          ? _value.title
+          : title // ignore: cast_nullable_to_non_nullable
+              as String,
+      description: null == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String,
+      type: null == type
+          ? _value.type
+          : type // ignore: cast_nullable_to_non_nullable
+              as String,
+      discountAmount: null == discountAmount
+          ? _value.discountAmount
+          : discountAmount // ignore: cast_nullable_to_non_nullable
+              as double,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$AppliedOrderOfferImplCopyWith<$Res>
+    implements $AppliedOrderOfferCopyWith<$Res> {
+  factory _$$AppliedOrderOfferImplCopyWith(_$AppliedOrderOfferImpl value,
+          $Res Function(_$AppliedOrderOfferImpl) then) =
+      __$$AppliedOrderOfferImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {String id,
+      String title,
+      String description,
+      String type,
+      double discountAmount});
+}
+
+/// @nodoc
+class __$$AppliedOrderOfferImplCopyWithImpl<$Res>
+    extends _$AppliedOrderOfferCopyWithImpl<$Res, _$AppliedOrderOfferImpl>
+    implements _$$AppliedOrderOfferImplCopyWith<$Res> {
+  __$$AppliedOrderOfferImplCopyWithImpl(_$AppliedOrderOfferImpl _value,
+      $Res Function(_$AppliedOrderOfferImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = null,
+    Object? title = null,
+    Object? description = null,
+    Object? type = null,
+    Object? discountAmount = null,
+  }) {
+    return _then(_$AppliedOrderOfferImpl(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      title: null == title
+          ? _value.title
+          : title // ignore: cast_nullable_to_non_nullable
+              as String,
+      description: null == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String,
+      type: null == type
+          ? _value.type
+          : type // ignore: cast_nullable_to_non_nullable
+              as String,
+      discountAmount: null == discountAmount
+          ? _value.discountAmount
+          : discountAmount // ignore: cast_nullable_to_non_nullable
+              as double,
+    ));
+  }
+}
+
+/// @nodoc
+
+class _$AppliedOrderOfferImpl extends _AppliedOrderOffer {
+  const _$AppliedOrderOfferImpl(
+      {required this.id,
+      required this.title,
+      this.description = '',
+      this.type = '',
+      this.discountAmount = 0.0})
+      : super._();
+
+  @override
+  final String id;
+  @override
+  final String title;
+  @override
+  @JsonKey()
+  final String description;
+  @override
+  @JsonKey()
+  final String type;
+  @override
+  @JsonKey()
+  final double discountAmount;
+
+  @override
+  String toString() {
+    return 'AppliedOrderOffer(id: $id, title: $title, description: $description, type: $type, discountAmount: $discountAmount)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$AppliedOrderOfferImpl &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.title, title) || other.title == title) &&
+            (identical(other.description, description) ||
+                other.description == description) &&
+            (identical(other.type, type) || other.type == type) &&
+            (identical(other.discountAmount, discountAmount) ||
+                other.discountAmount == discountAmount));
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, id, title, description, type, discountAmount);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$AppliedOrderOfferImplCopyWith<_$AppliedOrderOfferImpl> get copyWith =>
+      __$$AppliedOrderOfferImplCopyWithImpl<_$AppliedOrderOfferImpl>(
+          this, _$identity);
+}
+
+abstract class _AppliedOrderOffer extends AppliedOrderOffer {
+  const factory _AppliedOrderOffer(
+      {required final String id,
+      required final String title,
+      final String description,
+      final String type,
+      final double discountAmount}) = _$AppliedOrderOfferImpl;
+  const _AppliedOrderOffer._() : super._();
+
+  @override
+  String get id;
+  @override
+  String get title;
+  @override
+  String get description;
+  @override
+  String get type;
+  @override
+  double get discountAmount;
+  @override
+  @JsonKey(ignore: true)
+  _$$AppliedOrderOfferImplCopyWith<_$AppliedOrderOfferImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

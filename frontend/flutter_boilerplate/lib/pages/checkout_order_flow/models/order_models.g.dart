@@ -42,6 +42,11 @@ OrderData _$OrderDataFromJson(Map json) => OrderData(
                   CartHistoryItem.fromJson(Map<String, dynamic>.from(e as Map)))
               .toList() ??
           [],
+      appliedOffer: json['appliedOffer'] == null
+          ? null
+          : AppliedOrderOffer.fromJson(
+              Map<String, dynamic>.from(json['appliedOffer'] as Map)),
+      offerDiscount: (json['offerDiscount'] as num).toDouble(),
     );
 
 Map<String, dynamic> _$OrderDataToJson(OrderData instance) => <String, dynamic>{
@@ -57,6 +62,8 @@ Map<String, dynamic> _$OrderDataToJson(OrderData instance) => <String, dynamic>{
       'items': instance.items.map((e) => e.toJson()).toList(),
       'notes': instance.notes,
       'carts': instance.carts.map((e) => e.toJson()).toList(),
+      'appliedOffer': instance.appliedOffer?.toJson(),
+      'offerDiscount': instance.offerDiscount,
     };
 
 CartHistoryItem _$CartHistoryItemFromJson(Map json) => CartHistoryItem(
@@ -180,4 +187,21 @@ Map<String, dynamic> _$PriceInfoToJson(PriceInfo instance) => <String, dynamic>{
       'basePrice': instance.basePrice,
       'finalPrice': instance.finalPrice,
       'discount': instance.discount,
+    };
+
+AppliedOrderOffer _$AppliedOrderOfferFromJson(Map json) => AppliedOrderOffer(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String,
+      type: json['type'] as String,
+      discountAmount: (json['discountAmount'] as num).toDouble(),
+    );
+
+Map<String, dynamic> _$AppliedOrderOfferToJson(AppliedOrderOffer instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'title': instance.title,
+      'description': instance.description,
+      'type': instance.type,
+      'discountAmount': instance.discountAmount,
     };

@@ -73,6 +73,8 @@ class OrderData with _$OrderData {
     @Default([])
     @JsonKey(name: 'carts', defaultValue: [])
     List<CartHistoryItem> carts,
+    AppliedOrderOffer? appliedOffer,
+    @Default(0.0) double offerDiscount,
   }) = _OrderData;
 
   const OrderData._();
@@ -100,6 +102,10 @@ class OrderData with _$OrderData {
         'items': json['items'] as List<dynamic>? ?? [],
         'notes': json['notes'] as String? ?? '',
         'carts': json['carts'] as List<dynamic>? ?? [],
+        'appliedOffer': json['appliedOffer'],
+        'offerDiscount': (json['offerDiscount'] is num)
+            ? (json['offerDiscount'] as num).toDouble()
+            : 0.0,
       };
 
       AppLogger.log(
@@ -472,6 +478,40 @@ class PriceInfo with _$PriceInfo {
   }
 
   Map<String, dynamic> toJson() => _$PriceInfoToJson(this);
+}
+
+/// The offer that was auto-applied to the order at checkout.
+///
+/// The new order-level offer engine picks the best eligible offer for the
+/// customer automatically, so the consumer app only needs to read back the
+/// title and discount amount to display the "You saved X" banner.
+@freezed
+@JsonSerializable(explicitToJson: true, anyMap: true)
+class AppliedOrderOffer with _$AppliedOrderOffer {
+  const factory AppliedOrderOffer({
+    required String id,
+    required String title,
+    @Default('') String description,
+    @Default('') String type,
+    @Default(0.0) double discountAmount,
+  }) = _AppliedOrderOffer;
+
+  const AppliedOrderOffer._();
+
+  factory AppliedOrderOffer.fromJson(Map<String, dynamic> json) {
+    final sanitized = <String, dynamic>{
+      'id': json['id'] as String? ?? '',
+      'title': json['title'] as String? ?? '',
+      'description': json['description'] as String? ?? '',
+      'type': json['type'] as String? ?? '',
+      'discountAmount': (json['discountAmount'] is num)
+          ? (json['discountAmount'] as num).toDouble()
+          : 0.0,
+    };
+    return _$AppliedOrderOfferFromJson(sanitized);
+  }
+
+  Map<String, dynamic> toJson() => _$AppliedOrderOfferToJson(this);
 }
 
 // Helper for date time parsing - used by Freezed's JsonKey converters

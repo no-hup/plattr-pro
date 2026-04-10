@@ -13,6 +13,13 @@ _$OfferImpl _$$OfferImplFromJson(Map<String, dynamic> json) => _$OfferImpl(
       description: json['description'] as String,
       imageUrl: json['imageUrl'] as String?,
       type: json['type'] as String,
+      scope: json['scope'] as String?,
+      exclusionIds: (json['exclusionIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      termsAndConditions: json['termsAndConditions'] as String?,
+      priority: (json['priority'] as num?)?.toInt(),
       benefit: json['benefit'] == null
           ? null
           : OfferBenefit.fromJson(json['benefit'] as Map<String, dynamic>),
@@ -29,6 +36,10 @@ Map<String, dynamic> _$$OfferImplToJson(_$OfferImpl instance) =>
       'description': instance.description,
       'imageUrl': instance.imageUrl,
       'type': instance.type,
+      'scope': instance.scope,
+      'exclusionIds': instance.exclusionIds,
+      'termsAndConditions': instance.termsAndConditions,
+      'priority': instance.priority,
       'benefit': instance.benefit,
       'isApplicable': instance.isApplicable,
       'reason': instance.reason,

@@ -66,23 +66,43 @@ class StatusBadge extends StatelessWidget {
     );
   }
 
-  /// Creates a Non-Veg indicator (Minimal).
+  /// Creates a Veg indicator (green square with circle).
+  factory StatusBadge.veg({Key? key}) {
+    return StatusBadge(
+      key: key,
+      label: 'Veg',
+      icon: Icons.circle,
+      iconSize: 6,
+    );
+  }
+
+  /// Creates a Non-Veg indicator (red square with circle).
   factory StatusBadge.nonVeg({Key? key}) {
     return StatusBadge(
       key: key,
-      label: _kLabelNonVeg, 
+      label: _kLabelNonVeg,
       icon: Icons.circle,
-      iconSize: 12,
+      iconSize: 6,
     );
   }
-  
-  /// Creates a Spicy indicator (Minimal).
+
+  /// Creates an Egg indicator (yellow/amber square with circle).
+  factory StatusBadge.egg({Key? key}) {
+    return StatusBadge(
+      key: key,
+      label: 'Egg',
+      icon: Icons.circle,
+      iconSize: 6,
+    );
+  }
+
+  /// Creates a Spicy indicator (compact flame icon).
   factory StatusBadge.spicy({Key? key, String level = _kLabelSpicyHot}) {
     return StatusBadge(
       key: key,
-      label: level, 
+      label: level,
       icon: Icons.whatshot,
-      iconSize: 14,
+      iconSize: 10,
     );
   }
 
@@ -108,18 +128,28 @@ class StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Non-Veg: Minimal style with border and small circle icon
-    if (label == _kLabelNonVeg) {
-       return Container(
-         padding: const EdgeInsets.all(4),
-         decoration: BoxDecoration(
-           color: AppColors.paper,
-           border: Border.all(color: AppColors.danger),
-           borderRadius: BorderRadius.circular(4),
-         ),
-         child: const Icon(Icons.circle, size: 8, color: AppColors.danger),
-       );
-    } 
+    // Dietary markers: compact square with circle icon (Veg/NonVeg/Egg)
+    if (label == _kLabelNonVeg || label == 'Veg' || label == 'Egg') {
+      final Color markerColor;
+      if (label == _kLabelNonVeg) {
+        markerColor = AppColors.danger;
+      } else if (label == 'Egg') {
+        markerColor = Colors.amber.shade700;
+      } else {
+        markerColor = Colors.green.shade700;
+      }
+      return Container(
+        width: 14,
+        height: 14,
+        decoration: BoxDecoration(
+          border: Border.all(color: markerColor, width: 1.5),
+          borderRadius: BorderRadius.circular(3),
+        ),
+        child: Center(
+          child: Icon(Icons.circle, size: iconSize, color: markerColor),
+        ),
+      );
+    }
 
     // Determine colors based on badge type or explicit values
     Color bgColor;
@@ -139,9 +169,8 @@ class StatusBadge extends StatelessWidget {
       bgColor = theme.colorScheme.tertiaryContainer.withOpacity(0.3);
       fgColor = theme.colorScheme.tertiary;
     } else if (icon == Icons.whatshot) {
-       // Spicy badge
-       bgColor = Colors.orange.withOpacity(0.1);
-       fgColor = Colors.deepOrange;
+       // Spicy badge — compact, icon only
+       return Icon(icon!, size: iconSize, color: Colors.deepOrange);
     } else {
       // Default styling
       bgColor = theme.colorScheme.surfaceContainerHighest;

@@ -53,15 +53,15 @@ class _LoginScreenContent extends StatelessWidget {
         onLoginSuccess: () => _onLoginSuccess(context),
         debugCredentials: const [
           DebugCredential(
-            name: 'Kitchen Staff - Full',
-            id: 'res_full',
-            username: '3333333333',
+            name: 'Kitchen - All Features ON',
+            id: 'res_e2e_all_on',
+            username: 'kitchen1@e2e.com',
             pass: '1234',
           ),
           DebugCredential(
-            name: 'Kitchen Staff - Order Flow',
-            id: 'res_server-consumer_order_flow',
-            username: '3333333333',
+            name: 'Kitchen - Simple Menu',
+            id: 'res_e2e_simple_menu',
+            username: 'kitchen1@e2e-simple.com',
             pass: '1234',
           ),
         ],

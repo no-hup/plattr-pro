@@ -7,8 +7,6 @@ import 'login_provider.dart'; // DataState will be accessible from here
 // import '../../models/data_state.dart'; // Removed incorrect import
 import '../../main_navigation.dart';
 
-const String _defaultRestaurantId = 'rest001'; // Hardcoded Restaurant ID
-
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
@@ -176,35 +174,35 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
                       ),
                       const SizedBox(height: 16),
                       _DebugCredentialCard(
-                        name: 'Full Hierarchy Rest',
-                        id: 'res_full',
-                        phone: '1111111111',
+                        name: 'Server 1 - All Features ON',
+                        id: 'res_e2e_all_on',
+                        username: 'server1@e2e.com',
                         pass: '1234',
-                        onTap: (id, phone, pass) {
+                        onTap: (id, username, pass) {
                           _restaurantIdController.text = id;
-                          _usernameController.text = phone;
+                          _usernameController.text = username;
                           _passwordController.text = pass;
                         },
                       ),
                       _DebugCredentialCard(
-                        name: 'Server+Consumer Flow Rest',
-                        id: 'res_server-consumer_order_flow',
-                        phone: '1111111111',
+                        name: 'Server 2 - All Features ON',
+                        id: 'res_e2e_all_on',
+                        username: 'server2@e2e.com',
                         pass: '1234',
-                        onTap: (id, phone, pass) {
+                        onTap: (id, username, pass) {
                           _restaurantIdController.text = id;
-                          _usernameController.text = phone;
+                          _usernameController.text = username;
                           _passwordController.text = pass;
                         },
                       ),
                       _DebugCredentialCard(
-                        name: 'Menus Only Rest',
-                        id: 'res_menus',
-                        phone: '2222222222',
+                        name: 'Server 1 - Simple Menu',
+                        id: 'res_e2e_simple_menu',
+                        username: 'server1@e2e-simple.com',
                         pass: '1234',
-                        onTap: (id, phone, pass) {
+                        onTap: (id, username, pass) {
                           _restaurantIdController.text = id;
-                          _usernameController.text = phone;
+                          _usernameController.text = username;
                           _passwordController.text = pass;
                         },
                       ),
@@ -223,14 +221,14 @@ class _LoginScreenContentState extends State<_LoginScreenContent> {
 class _DebugCredentialCard extends StatelessWidget {
   final String name;
   final String id;
-  final String phone;
+  final String username;
   final String pass;
   final Function(String, String, String) onTap;
 
   const _DebugCredentialCard({
     required this.name,
     required this.id,
-    required this.phone,
+    required this.username,
     required this.pass,
     required this.onTap,
   });
@@ -240,7 +238,7 @@ class _DebugCredentialCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: InkWell(
-        onTap: () => onTap(id, phone, pass),
+        onTap: () => onTap(id, username, pass),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Column(
@@ -249,7 +247,7 @@ class _DebugCredentialCard extends StatelessWidget {
               Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
               Text('ID: $id'),
-              Text('Phone: $phone'),
+              Text('Username: $username'),
               Text('Pass: $pass'),
             ],
           ),

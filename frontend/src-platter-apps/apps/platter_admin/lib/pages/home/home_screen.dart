@@ -5,6 +5,7 @@ import '../menu/menu_catalog_screen.dart';
 import '../orders/orders_screen.dart';
 import '../operations/operations_screen.dart';
 import '../staff/staff_screen.dart';
+import '../offers/offers_screen.dart';
 import '../settings/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -33,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
     'Orders',
     'Operations',
     'Staff',
+    'Offers',
     'Settings',
   ];
 
@@ -87,6 +89,10 @@ class _HomeScreenState extends State<HomeScreen> {
         restaurantId: widget.restaurantId,
         sessionId: widget.sessionId,
       ),
+      OffersScreen(
+        restaurantId: widget.restaurantId,
+        sessionId: widget.sessionId,
+      ),
       SettingsScreen(
         restaurantId: widget.restaurantId,
         sessionId: widget.sessionId,
@@ -128,6 +134,10 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.people_alt),
             label: 'Staff',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_offer),
+            label: 'Offers',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),

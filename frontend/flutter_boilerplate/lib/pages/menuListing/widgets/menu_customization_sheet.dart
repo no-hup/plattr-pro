@@ -14,7 +14,7 @@ class MenuCustomizationSheet extends StatefulWidget {
   });
 
   final MenuItem item;
-  final void Function(Map<String, String> variants, Set<String> addons)
+  final void Function(Map<String, String> variants, Set<String> addons, int quantity)
       onConfirm;
 
   @override
@@ -432,8 +432,8 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
               child: PrimaryActionButton(
                 label: 'ADD ₹${_totalPrice.toStringAsFixed(0)}',
                 onPressed: () {
-                  // Pass IDs to onConfirm for the API
-                  widget.onConfirm(_selectedVariantIds, _selectedAddonIds);
+                  // Pass IDs and quantity to onConfirm for the API
+                  widget.onConfirm(_selectedVariantIds, _selectedAddonIds, _quantity);
                   Navigator.pop(context);
                 },
               ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutterboilerplate/pages/debug_baner.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_state.dart';
+import 'package:flutterboilerplate/pages/menuListing/models/offer.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_widgets.dart';
 import 'package:flutterboilerplate/theme/theme.dart';
 import 'package:flutterboilerplate/pages/menuListing/widgets/floating_menu_overlay.dart';
@@ -253,9 +254,13 @@ class _MenuPageContentState extends State<MenuPageContent> with WidgetsBindingOb
                     onCategoryTap: (id) => scrollToCategoryById(id),
                   ),
                   // 2. Offers below Categories, with more top padding for separation
-                  const Padding(
-                    padding: EdgeInsets.only(top: AppSpacing.md),
-                    child: OffersCarousel(),
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.md),
+                    child: OffersCarousel(
+                      offers: menuState.offers,
+                      onOfferTap: (offer) =>
+                          _showOfferDetails(context, offer),
+                    ),
                   ),
                   Expanded(
                     child: ScrollablePositionedList.builder(
@@ -443,5 +448,89 @@ class _MenuPageContentState extends State<MenuPageContent> with WidgetsBindingOb
     } else {
       return menuItems[category.id] ?? [];
     }
+  }
+
+  /// Shows a bottom sheet with offer details. The new offer engine
+  /// auto-applies the best-eligible offer at checkout, so this is purely
+  /// informational — there is no manual apply action.
+  void _showOfferDetails(BuildContext context, Offer offer) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.paper,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  offer.title,
+                  style: AppTypography.h3.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                if (offer.description.isNotEmpty)
+                  Text(
+                    offer.description,
+                    style: AppTypography.body,
+                  ),
+                if ((offer.termsAndConditions ?? '').isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'Terms & Conditions',
+                    style: AppTypography.labelMedium.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    offer.termsAndConditions!,
+                    style: AppTypography.bodySmall,
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.md),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: AppColors.paperAlt,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.divider.withOpacity(0.5),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, size: 18),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          'This offer will be applied automatically at checkout if eligible.',
+                          style: AppTypography.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('Close'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }

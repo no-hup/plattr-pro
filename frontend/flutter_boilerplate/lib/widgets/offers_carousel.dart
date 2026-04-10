@@ -1,73 +1,76 @@
 import 'package:flutter/material.dart';
+import 'package:flutterboilerplate/pages/menuListing/models/offer.dart';
 import 'package:flutterboilerplate/theme/theme.dart';
 
 class OffersCarousel extends StatelessWidget {
-  const OffersCarousel({super.key});
+  const OffersCarousel({
+    super.key,
+    required this.offers,
+    this.onOfferTap,
+  });
+
+  final List<Offer> offers;
+  final void Function(Offer offer)? onOfferTap;
 
   @override
   Widget build(BuildContext context) {
-    // Offers matching the design HTML
-    final offers = [
-      _OfferData(
-        title: '50% off desserts for you',
-        actionText: 'VIEW',
-        icon: Icons.redeem,
-        color: AppColors.paperAlt,
-      ),
-      _OfferData(
-        title: 'Free Delivery on \$75+',
-        actionText: 'DETAILS',
-        icon: Icons.local_shipping,
-        color: AppColors.paperAlt,
-      ),
-    ];
+    if (offers.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return SizedBox(
       height: 48, // Adjusted height for banner style
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg), // 16px page padding
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         scrollDirection: Axis.horizontal,
         itemCount: offers.length,
-        separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.sm), // 8px gap
+        separatorBuilder: (context, index) =>
+            const SizedBox(width: AppSpacing.sm),
         itemBuilder: (context, index) {
           final offer = offers[index];
-          return _OfferPill(offer: offer);
+          return _OfferPill(
+            offer: offer,
+            onTap: onOfferTap,
+          );
         },
       ),
     );
   }
 }
 
-class _OfferData {
-  _OfferData({
-    required this.title,
-    required this.actionText,
-    required this.icon,
-    required this.color,
-  });
-
-  final String title;
-  final String actionText;
-  final IconData icon;
-  final Color color;
+IconData _iconForOfferType(String type) {
+  switch (type.toUpperCase()) {
+    case 'PERCENTAGE':
+      return Icons.percent;
+    case 'FLAT':
+      return Icons.local_offer;
+    case 'BOGO':
+      return Icons.redeem;
+    default:
+      return Icons.card_giftcard;
+  }
 }
 
 class _OfferPill extends StatelessWidget {
-  const _OfferPill({required this.offer});
+  const _OfferPill({required this.offer, this.onTap});
 
-  final _OfferData offer;
+  final Offer offer;
+  final void Function(Offer offer)? onTap;
 
   @override
   Widget build(BuildContext context) {
     // Width: Screen width minus 2x page padding (16*2=32)
-    // This makes it a full-width banner in a carousel
-    final width = MediaQuery.of(context).size.width - (AppSpacing.lg * 2);
+    final width =
+        MediaQuery.of(context).size.width - (AppSpacing.lg * 2);
 
     return Container(
       width: width,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
-        color: offer.color,
+        color: AppColors.paperAlt,
         borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
         border: Border.all(
           color: AppColors.divider.withOpacity(0.5),
@@ -82,9 +85,9 @@ class _OfferPill extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  offer.icon, 
-                  size: 16, 
-                  color: AppColors.primary
+                  _iconForOfferType(offer.type),
+                  size: 16,
+                  color: AppColors.primary,
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
@@ -102,15 +105,19 @@ class _OfferPill extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Right: Action Button Text
           const SizedBox(width: AppSpacing.sm),
-          Text(
-            offer.actionText,
-            style: AppTypography.labelSmall.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppColors.ink.withOpacity(0.4), // ink/40
-              letterSpacing: 1.5, // tracking-wider
+          GestureDetector(
+            onTap: () => onTap?.call(offer),
+            behavior: HitTestBehavior.opaque,
+            child: Text(
+              'VIEW',
+              style: AppTypography.labelSmall.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.ink.withOpacity(0.4),
+                letterSpacing: 1.5,
+              ),
             ),
           ),
         ],
