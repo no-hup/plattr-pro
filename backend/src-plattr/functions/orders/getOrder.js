@@ -210,14 +210,19 @@ function sanitizeOrderData(id, orderData) {
     id: id,
     orderNumber: orderData.orderNumber || '',
     orderStatus: mapOrderStatus(orderData.orderStatus || orderData.status || ''),
-    createdAt: orderData.createdAt instanceof Timestamp ? 
+    createdAt: orderData.createdAt instanceof Timestamp ?
       orderData.createdAt.toDate().toISOString() : orderData.createdAt || '',
-    updatedAt: orderData.updatedAt instanceof Timestamp ? 
+    updatedAt: orderData.updatedAt instanceof Timestamp ?
       orderData.updatedAt.toDate().toISOString() : orderData.updatedAt || '',
     tableId: orderData.tableId || '',
     restaurantId: orderData.restaurantId || '',
     sessionId: orderData.sessionId || null,
     total: orderData.priceInfo?.finalPrice || 0,
+    // Offers V2: expose full priceInfo (incl. offerDiscount) and appliedOffer
+    // so the consumer UI can show a "Saved ₹X with [title]!" banner.
+    priceInfo: orderData.priceInfo || null,
+    offerDiscount: orderData.priceInfo?.offerDiscount || 0,
+    appliedOffer: orderData.appliedOffer || null,
     items: Array.isArray(orderData.items) ? orderData.items.map(item => ({
       menuItemId: item.menuItemId || '',
       name: item.name || (item.menuItem?.meta?.name || ''),

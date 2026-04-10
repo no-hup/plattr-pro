@@ -1,8 +1,8 @@
 /**
  * Flat Discount Strategy
- * 
+ *
  * Handles FLAT offer type.
- * - CART scope: Full flat amount off cart total
+ * - ORDER scope: Full flat amount off order total (or eligible items after exclusions)
  * - CATEGORY/ITEM scope: Flat amount off total of eligible items (not per-item)
  */
 
@@ -10,13 +10,9 @@ const BaseOfferStrategy = require('./BaseOfferStrategy');
 
 class FlatStrategy extends BaseOfferStrategy {
     /**
-     * Flat offers need to check eligibility for non-CART scopes
+     * Flat offers need to check eligibility for all scopes (ORDER may have exclusions)
      */
     validateTypeSpecific(offer, cart, sessionData = {}) {
-        if (offer.scope === 'CART') {
-            return { isValid: true, reason: 'Eligible for flat cart discount' };
-        }
-
         const eligibleItems = this.getEligibleItems(offer, cart);
 
         if (eligibleItems.length === 0) {
@@ -43,10 +39,20 @@ class FlatStrategy extends BaseOfferStrategy {
         let totalDiscount = 0;
         const appliedItems = [];
 
-        if (offer.scope === 'CART') {
-            // CART scope: Flat amount off entire cart (capped at cart total)
-            totalDiscount = Math.min(flatValue, cartTotal);
-            // No itemized breakdown for CART scope
+        if (offer.scope === 'ORDER') {
+            // ORDER scope: flat amount off order total (or eligible items if exclusions present)
+            const hasExclusions = (offer.exclusionIds && offer.exclusionIds.length > 0);
+            if (hasExclusions) {
+                const eligibleItems = this.getEligibleItems(offer, cart);
+                const eligibleTotal = eligibleItems.reduce(
+                    (sum, item) => sum + (item.priceInfo?.finalPrice || 0),
+                    0
+                );
+                totalDiscount = Math.min(flatValue, eligibleTotal);
+            } else {
+                totalDiscount = Math.min(flatValue, cartTotal);
+            }
+            // No itemized breakdown for ORDER scope
         } else {
             // CATEGORY or ITEM scope: Flat amount off eligible items total
             const eligibleItems = this.getEligibleItems(offer, cart);

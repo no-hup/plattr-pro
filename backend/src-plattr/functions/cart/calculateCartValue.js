@@ -1,5 +1,6 @@
 const { db } = require('../admin/admin'); // Use the exported db from admin.js
 const { BasicPriceInfo, CartItemPriceInfo, CartTotalPriceInfo } = require('../genericModels/priceinfo');
+const { FULFILLMENT_STATUS } = require('../orders/orderConstants');
 
 /**
  * Calculates the price of an item based on its base price, selected variants, and addons.
@@ -147,7 +148,7 @@ async function calculateCartValue(cart) {
       }
 
       // Skip cancelled items
-      if (item.status === 'cancelled') {
+      if (item.status === FULFILLMENT_STATUS.CANCELLED) {
         continue;
       }
 
@@ -170,42 +171,23 @@ async function calculateCartValue(cart) {
       addonTotalPrice += itemPriceInfo.totalAddonBasePrice;
     }
 
+    // Offers V2: carts no longer carry offer fields. Offers are evaluated and
+    // applied at the ORDER level in createOrUpdateOrder.js. The cart priceInfo
+    // only reflects item-level discounts (if any).
     const itemDiscountAmount = Math.max(0, basePrice - finalPrice);
-
-    // Preserve any applied offer fields, but do not apply them here
-    const offerDiscount = cart.priceInfo?.offerDiscount || 0;
-    const applicableOfferDiscount = cart.priceInfo?.applicableOfferDiscount || 0;
-    const appliedOfferId = cart.priceInfo?.appliedOfferId;
-
-    // Final price includes only item-level discounts
-    const cartFinalPrice = Math.max(0, finalPrice);
-
-    // Total discount reflects only item-level discounts
-    const totalDiscountAmount = itemDiscountAmount;
-    const totalDiscountPercentage = basePrice > 0 ? (totalDiscountAmount / basePrice) * 100 : 0;
+    const totalDiscountPercentage = basePrice > 0 ? (itemDiscountAmount / basePrice) * 100 : 0;
 
     // Create cart total price info using our model
     const cartTotalPriceInfo = new CartTotalPriceInfo({
       basePrice: roundPrice(basePrice),
-      finalPrice: roundPrice(cartFinalPrice),
+      finalPrice: roundPrice(Math.max(0, finalPrice)),
       totalVariantBasePrice: roundPrice(variantTotalPrice),
       totalAddonBasePrice: roundPrice(addonTotalPrice),
       totalDiscount: roundPrice(totalDiscountPercentage),
-      totalDiscountAmount: roundPrice(totalDiscountAmount)
+      totalDiscountAmount: roundPrice(itemDiscountAmount)
     });
 
-    const result = cartTotalPriceInfo.toObject();
-
-    // Preserve offer fields
-    if (appliedOfferId) {
-      result.appliedOfferId = appliedOfferId;
-      result.appliedOfferTitle = cart.priceInfo?.appliedOfferTitle;
-      result.offerDiscount = offerDiscount;
-      result.applicableOfferDiscount = applicableOfferDiscount;
-      result.appliedOfferItems = cart.priceInfo?.appliedOfferItems || [];
-    }
-
-    return result;
+    return cartTotalPriceInfo.toObject();
   } catch (error) {
     console.error("Error calculating cart value:", error);
     throw new Error("Failed to calculate cart value.");

@@ -1,9 +1,11 @@
 /**
  * Base Strategy Interface for Offer Types
- * 
+ *
  * Each offer type (BOGO, PERCENTAGE, FLAT) implements this interface with
  * type-specific validation and calculation logic.
  */
+
+const { FULFILLMENT_STATUS } = require('../../orders/orderConstants');
 
 /**
  * Base class defining the strategy interface
@@ -32,19 +34,29 @@ class BaseOfferStrategy {
     }
 
     /**
-     * Helper: Get eligible cart items based on scope
-     * @param {Object} offer 
-     * @param {Object} cart 
+     * Helper: Get eligible cart items based on scope and exclusions.
+     *
+     * Offers V2:
+     *   - scope ORDER: all non-cancelled items
+     *   - scope CATEGORY: items whose categoryId or any subcategoryIds match offer.targetIds
+     *   - scope ITEM: items whose menuItemId matches offer.targetIds
+     *
+     * After scope filtering, items matching offer.exclusionIds (by menuItemId,
+     * categoryId, or any subcategoryIds) are removed.
+     *
+     * @param {Object} offer
+     * @param {Object} cart
      * @returns {Array} Eligible items
      */
     getEligibleItems(offer, cart) {
         const cartItems = cart?.items || [];
         const targetIds = offer.targetIds || [];
+        const exclusionIds = offer.exclusionIds || [];
 
-        return cartItems.filter(item => {
-            if (item.status === 'cancelled') return false;
+        const scopeFiltered = cartItems.filter(item => {
+            if (item.status === FULFILLMENT_STATUS.CANCELLED) return false;
 
-            if (offer.scope === 'CART') {
+            if (offer.scope === 'ORDER') {
                 return true;
             } else if (offer.scope === 'CATEGORY') {
                 const subcatIds = Array.isArray(item.subcategoryIds) ? item.subcategoryIds : [];
@@ -54,6 +66,18 @@ class BaseOfferStrategy {
                 return targetIds.includes(item.menuItemId);
             }
             return false;
+        });
+
+        if (exclusionIds.length === 0) {
+            return scopeFiltered;
+        }
+
+        return scopeFiltered.filter(item => {
+            if (exclusionIds.includes(item.menuItemId)) return false;
+            if (exclusionIds.includes(item.categoryId)) return false;
+            const subcatIds = Array.isArray(item.subcategoryIds) ? item.subcategoryIds : [];
+            if (subcatIds.some(id => exclusionIds.includes(id))) return false;
+            return true;
         });
     }
 

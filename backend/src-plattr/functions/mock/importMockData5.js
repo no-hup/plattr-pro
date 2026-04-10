@@ -11,6 +11,9 @@
 //   node importMockData5.js --clean               # DELETE all emulator data first, then import
 //   node importMockData5.js --refresh-timestamps   # offset all _seconds to (now - 10 min)
 //   node importMockData5.js --clean --refresh-timestamps  # both
+//   node importMockData5.js --file=<path>             # import from a custom JSON file instead of MockData5
+//   node importMockData5.js --include=<path>           # merge additional JSON file(s) into the main data
+//   node importMockData5.js --include=<p1> --include=<p2>  # multiple includes supported
 
 // Set emulator environment variables BEFORE importing admin
 const environment = require('../singleton/Environment');
@@ -23,29 +26,51 @@ const args = process.argv.slice(2);
 const shouldClean = args.includes('--clean');
 const shouldRefreshTimestamps = args.includes('--refresh-timestamps');
 
-// Read the new mock data
-const mockDataPath = path.join(__dirname, 'MockData5EndToEndTesting.json');
+// Read the new mock data (supports --file=<path> for custom JSON files)
+const customFile = args.find(a => a.startsWith('--file='));
+const mockDataPath = customFile
+  ? path.resolve(customFile.split('=')[1])
+  : path.join(__dirname, 'MockData5EndToEndTesting.json');
 console.log('Loading mock data (v5) from:', mockDataPath);
 const mockData = JSON.parse(fs.readFileSync(mockDataPath, 'utf8'));
 console.log('Mock data (v5) loaded successfully');
+
+// Merge additional JSON files via --include=<path> (can be specified multiple times)
+const includeFiles = args.filter(a => a.startsWith('--include=')).map(a => path.resolve(a.split('=')[1]));
+for (const includePath of includeFiles) {
+    console.log('Merging additional data from:', includePath);
+    const extra = JSON.parse(fs.readFileSync(includePath, 'utf8'));
+    if (extra.restaurants) {
+        mockData.restaurants = mockData.restaurants || {};
+        Object.assign(mockData.restaurants, extra.restaurants);
+    }
+    if (extra.customers) {
+        mockData.customers = mockData.customers || {};
+        Object.assign(mockData.customers, extra.customers);
+    }
+    console.log('Merged successfully');
+}
 
 /**
  * If --refresh-timestamps is set, walk the raw JSON and offset all
  * { _seconds, _nanoseconds } objects to (now - 600) seconds so the
  * data looks recent.
  */
-function refreshTimestamps(data) {
+function refreshTimestamps(data, parentKey) {
     if (!data || typeof data !== 'object') return data;
     const nowSeconds = Math.floor(Date.now() / 1000) - 600; // 10 min ago
+    const futureSeconds = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
 
     const result = Array.isArray(data) ? [...data] : { ...data };
     for (const key in result) {
         const value = result[key];
         if (value && typeof value === 'object') {
             if (value._seconds !== undefined && value._nanoseconds !== undefined) {
-                result[key] = { _seconds: nowSeconds, _nanoseconds: 0 };
+                // expiresAt fields should be in the future, not the past
+                const target = key === 'expiresAt' ? futureSeconds : nowSeconds;
+                result[key] = { _seconds: target, _nanoseconds: 0 };
             } else {
-                result[key] = refreshTimestamps(value);
+                result[key] = refreshTimestamps(value, key);
             }
         }
     }
@@ -112,7 +137,7 @@ async function importData() {
                 const restaurantRef = db.collection('restaurants').doc(restaurantId);
                 await restaurantRef.set(transformedInfo, { merge: true });
 
-                const subCollections = ['menus', 'subcategories', 'menuItems', 'categories', 'variants', 'tables', 'servers', 'orders', 'addons', 'kitchens', 'sessions', 'carts', 'offers'];
+                const subCollections = ['menus', 'subcategories', 'menuItems', 'categories', 'variants', 'tables', 'servers', 'orders', 'addons', 'kitchens', 'sessions', 'carts', 'offers', 'config'];
                 for (const subCollection of subCollections) {
                     if (!restaurantData[subCollection]) continue;
                     const subCollectionRef = restaurantRef.collection(subCollection);

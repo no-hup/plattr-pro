@@ -36,11 +36,14 @@
  */
 
 /**
- * @typedef {Object} OrderPriceInfoObj 
+ * @typedef {Object} OrderPriceInfoObj
  * @property {number} basePrice - Total original price
  * @property {number} finalPrice - Total price after discounts
  * @property {number} totalDiscount - Overall discount percentage
  * @property {number} totalDiscountAmount - Total discount amount in currency
+ * @property {number} [offerDiscount] - Offers V2: order-level offer discount (post-item-discount)
+ * @property {Array<{type:string,percentage:number,amount:number}>} [charges] - Charges V1: percentage-based overlays computed on finalPrice (positive = fee, negative = discount). Only present when restaurant has billing.charges configured.
+ * @property {number} [chargesTotal] - Sum of charges[].amount (can be negative)
  */
 
 /**
@@ -499,6 +502,15 @@ class OrderPriceInfo {
     this.finalPrice = sanitizeField('finalPrice', data.finalPrice);
     this.totalDiscount = sanitizeField('totalDiscount', data.totalDiscount);
     this.totalDiscountAmount = sanitizeField('totalDiscountAmount', data.totalDiscountAmount);
+    // Offers V2: order-level offer discount (separate from item-level discounts)
+    this.offerDiscount = sanitizeField('offerDiscount', data.offerDiscount);
+
+    // Charges V1: percentage-based overlays on finalPrice (service charge, global
+    // discount, etc.). NOT part of the basePrice/finalPrice/totalDiscountAmount
+    // equation — they are a separate line-item list stored for downstream UI.
+    // chargesTotal can be negative. Empty by default, caller passes through.
+    this.charges = Array.isArray(data.charges) ? data.charges : [];
+    this.chargesTotal = sanitizeField('chargesTotal', data.chargesTotal);
 
     if (sanitizedFieldCount > 0) {
       console.warn(`PriceInfo: Fixed ${sanitizedFieldCount} invalid fields in OrderPriceInfo`);
@@ -519,7 +531,13 @@ class OrderPriceInfo {
       this.finalPrice = 0;
     }
 
-    // Check discount amount consistency
+    // Ensure offerDiscount is non-negative
+    if (this.offerDiscount < 0) {
+      this.offerDiscount = 0;
+    }
+
+    // Offers V2: totalDiscountAmount = item-level discount + offerDiscount.
+    // basePrice - finalPrice should equal totalDiscountAmount.
     const expectedDiscountAmount = Math.max(0, this.basePrice - this.finalPrice);
     if (Math.abs(this.totalDiscountAmount - expectedDiscountAmount) > 0.05) {
       console.warn(`PriceInfo: Order discount amount inconsistency detected: ${this.totalDiscountAmount} vs expected ${expectedDiscountAmount}`);
@@ -551,12 +569,20 @@ class OrderPriceInfo {
    * @returns {OrderPriceInfoObj} - Plain object representation
    */
   toObject() {
-    return {
+    const obj = {
       basePrice: this.basePrice,
       finalPrice: this.finalPrice,
       totalDiscount: this.totalDiscount,
-      totalDiscountAmount: this.totalDiscountAmount
+      totalDiscountAmount: this.totalDiscountAmount,
+      offerDiscount: this.offerDiscount
     };
+    // Only surface charges when non-empty so existing orders and restaurants
+    // without `billing.charges` config see no shape change.
+    if (Array.isArray(this.charges) && this.charges.length > 0) {
+      obj.charges = this.charges;
+      obj.chargesTotal = this.chargesTotal;
+    }
+    return obj;
   }
 
   /**

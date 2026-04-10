@@ -52,12 +52,19 @@ exports['admin-updateTable'] = adminAppFunctions.updateTable;
 exports['admin-getHistoricalOrders'] = adminAppFunctions.getHistoricalOrders;
 exports['admin-getOrderDetails'] = adminAppFunctions.getOrderDetails;
 
+// Offers Management (Offers V2)
+exports['admin-getOffers'] = adminAppFunctions.getOffers;
+exports['admin-createOffer'] = adminAppFunctions.createOffer;
+exports['admin-updateOffer'] = adminAppFunctions.updateOffer;
+exports['admin-deleteOffer'] = adminAppFunctions.deleteOffer;
+
 // Export order functions using the orderFunctions import
 exports.order = {
   getOrder: orderFunctions.getOrder,
   createOrder: orderFunctions.createOrUpdateOrder,
   updateOrderStatus: orderFunctions.updateOrderStatus,
   getActiveOrdersForRestaurant: orderFunctions.getActiveOrdersForRestaurant,
+  getActiveCartsForKitchen: orderFunctions.getActiveCartsForKitchen,
   markCartAsServed: orderFunctions.markCartAsServed,
   getServedCartsForServer: orderFunctions.getServedCartsForServer
 };
