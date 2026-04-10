@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:platter_core/platter_core.dart';
-import 'state/kitchen_live_provider.dart';
 import 'core/kitchen_repository.dart';
+import 'state/kitchen_live_provider.dart';
 import 'widgets/kitchen_app_bar_widget.dart';
 import 'widgets/kitchen_app_bar_configuration.dart';
 import 'pages/live/live_orders_screen.dart';
@@ -23,6 +23,11 @@ class MainNavigation extends StatefulWidget {
   final String kitchenName;
   final String? staffProfileImageUrl;
 
+  /// Repository is injected so tests and alternate entry points can supply
+  /// a fake implementation. Defaults to a real [KitchenRepository] bound to
+  /// the shared `DioClient` singleton.
+  final KitchenRepository? repository;
+
   /// Initial categories - in production, these should come from backend
   /// TODO: Fetch dynamic categories from backend (e.g., login config or active-carts response)
   /// TODO: Add support for subcategories inside kitchen category
@@ -36,6 +41,7 @@ class MainNavigation extends StatefulWidget {
     required this.restaurantName,
     required this.kitchenName,
     this.staffProfileImageUrl,
+    this.repository,
     this.initialCategories = KitchenCategory.defaultCategories,
   });
 
@@ -59,10 +65,15 @@ class _MainNavigationState extends State<MainNavigation> {
   KitchenAppBarConfiguration _currentAppBarConfig =
       const KitchenAppBarConfiguration();
 
+  /// Single repository instance owned by this navigation shell. Reused by
+  /// both the live provider and the history screen so we never double-construct.
+  late final KitchenRepository _repository;
+
   @override
   void initState() {
     super.initState();
     _categories = widget.initialCategories;
+    _repository = widget.repository ?? KitchenRepository();
   }
 
   /// Called by child screens to update the app bar configuration
@@ -144,11 +155,13 @@ class _MainNavigationState extends State<MainNavigation> {
           onLogoutTap: _showLogoutConfirmation,
         ),
       ),
-      // Provide KitchenLiveProvider at this level so it persists when switching tabs
+      // Provide KitchenLiveProvider at this level so it persists when
+      // switching tabs. Repository is injected (defaulted in initState).
       body: ChangeNotifierProvider(
         create: (_) => KitchenLiveProvider(
-          repository: KitchenRepository(), // In real app, this should come from strict DI
+          repository: _repository,
           restaurantId: widget.restaurantId,
+          sessionId: widget.sessionId,
         )..startPolling(),
         child: IndexedStack(
           index: _selectedIndex,
@@ -156,6 +169,7 @@ class _MainNavigationState extends State<MainNavigation> {
             LiveOrdersScreen(
               restaurantId: widget.restaurantId,
               sessionId: widget.sessionId,
+              repository: _repository,
               selectedCategory: _selectedCategory,
             ),
             HistoryScreen(
