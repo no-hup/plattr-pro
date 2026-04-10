@@ -4,7 +4,15 @@ const ServerInputValidation = require('./serverInputValidation');
 const errorHandler = require('../singleton/ErrorHandler');
 const timestamp = require('../utils/timestamp');
 const { SERVER_STATUS } = require('./serverEnums');
-// const { comparePassword } = require('../utils/passwordUtils'); // TODO: Use hash compare in future
+const { comparePassword, hashPassword } = require('../utils/passwordUtils');
+
+// Inline bcrypt prefix detection — kept deliberately narrow (three common
+// bcrypt variants). No dedicated helper to keep the surface area small.
+const BCRYPT_PREFIXES = ['$2a$', '$2b$', '$2y$'];
+function looksLikeBcryptHash(value) {
+  if (typeof value !== 'string') return false;
+  return BCRYPT_PREFIXES.some(p => value.startsWith(p));
+}
 
 function createAuthError(message, details = {}) {
   const error = new Error(message);
@@ -133,10 +141,11 @@ exports.serverLogin = functions.https.onRequest(withCors(async (req, res) => {
         return;
       }
 
-      // Compare password (plain text for now)
+      // Compare password. Stored value is either a bcrypt hash (new staff,
+      // or legacy records that have been lazily upgraded) or legacy plaintext.
       setStage('validate-password');
-      // TODO: Use hash compare in future
-      if (serverData.password !== password) {
+      const storedPassword = serverData.password;
+      if (!storedPassword || typeof storedPassword !== 'string') {
         res.status(401).json({
           error: {
             message: 'Invalid credentials',
@@ -144,6 +153,56 @@ exports.serverLogin = functions.https.onRequest(withCors(async (req, res) => {
           }
         });
         return;
+      }
+
+      let passwordMatches = false;
+      let wasPlaintextMatch = false;
+      try {
+        if (looksLikeBcryptHash(storedPassword)) {
+          passwordMatches = await comparePassword(password, storedPassword);
+        } else {
+          passwordMatches = storedPassword === password;
+          wasPlaintextMatch = passwordMatches;
+        }
+      } catch (compareErr) {
+        // Malformed stored hash or bcrypt runtime error — treat as invalid
+        // credentials, never as a 500. We do not want bad stored values to
+        // leak as "internal server error" to the client.
+        console.error(`[serverLogin] password compare failed for ${username}:`, compareErr);
+        passwordMatches = false;
+      }
+
+      if (!passwordMatches) {
+        res.status(401).json({
+          error: {
+            message: 'Invalid credentials',
+            details: { code: 'unauthenticated', restaurantId, username }
+          }
+        });
+        return;
+      }
+
+      // Lazy upgrade: rewrite legacy plaintext as a bcrypt hash after a
+      // successful login. Skipped in the Firebase emulator so mock-imported
+      // plaintext passwords stay inspectable across test runs.
+      //
+      // Failure policy: the user has already presented valid credentials;
+      // if the background upgrade write fails we log and still let them in.
+      // Production will retry the upgrade on their next login.
+      if (wasPlaintextMatch && process.env.FUNCTIONS_EMULATOR !== 'true') {
+        setStage('lazy-upgrade-password');
+        try {
+          const upgraded = await hashPassword(password);
+          await serverDoc.ref.update({
+            password: upgraded,
+            updatedAt: timestamp.serverTimestamp(),
+          });
+        } catch (upgradeErr) {
+          console.error(
+            `[serverLogin] lazy password upgrade failed for ${serverDoc.id}; login will still succeed:`,
+            upgradeErr
+          );
+        }
       }
 
       // Create or update session using helper

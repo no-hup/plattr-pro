@@ -5,6 +5,7 @@ const errorHandler = require('../singleton/ErrorHandler');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 const { SERVER_STATUS } = require('../server/serverEnums');
 const { validateAdminSession, SERVER_ROLES } = require('./auth');
+const { hashPassword } = require('../utils/passwordUtils');
 
 /**
  * Generates a random 4-6 digit PIN
@@ -129,8 +130,11 @@ exports.addServer = functions.https.onCall(async (request, context) => {
             }
         }
 
-        // Generate a PIN if not provided
+        // Generate a PIN if not provided. The plain PIN is returned once below
+        // so the admin can share it with the staff member; the stored value is
+        // always hashed.
         const pin = server.password || generatePIN(4);
+        const hashedPin = await hashPassword(pin);
 
         // Create server document
         const serverData = {
@@ -139,7 +143,7 @@ exports.addServer = functions.https.onCall(async (request, context) => {
             email: server.email || '',
             role: server.role || SERVER_ROLES.SERVER,
             status: SERVER_STATUS.ACTIVE,
-            password: pin, // TODO: Hash password in production
+            password: hashedPin,
             profileImageUrl: server.profileImageUrl || '',
             createdAt: timestamp.serverTimestamp(),
             updatedAt: timestamp.serverTimestamp(),
@@ -312,12 +316,14 @@ exports.resetServerPin = functions.https.onCall(async (request, context) => {
             errorHandler.notFound('Server not found', { serverId });
         }
 
-        // Generate new PIN or use provided one
+        // Generate new PIN or use provided one. The plain PIN is returned
+        // once in the response; the stored value is always hashed.
         const pin = newPin || generatePIN(4);
+        const hashedPin = await hashPassword(pin);
 
         // Update password
         await serverRef.update({
-            password: pin, // TODO: Hash password in production
+            password: hashedPin,
             updatedAt: timestamp.serverTimestamp(),
         });
 
