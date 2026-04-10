@@ -3,6 +3,7 @@ const menuAdmin = require('./menu_admin');
 const staffAdmin = require('./staff_admin');
 const tablesAdmin = require('./tables_admin');
 const ordersAdmin = require('./orders_admin');
+const offersAdmin = require('./offers_admin');
 
 module.exports = {
     // Settings
@@ -31,4 +32,10 @@ module.exports = {
     addSubcategory: menuAdmin.addSubcategory,
     updateSubcategory: menuAdmin.updateSubcategory,
     deleteSubcategory: menuAdmin.deleteSubcategory,
+
+    // Offers Management (Offers V2)
+    getOffers: offersAdmin.getOffers,
+    createOffer: offersAdmin.createOffer,
+    updateOffer: offersAdmin.updateOffer,
+    deleteOffer: offersAdmin.deleteOffer,
 };

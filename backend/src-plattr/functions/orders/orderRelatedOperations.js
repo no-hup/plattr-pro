@@ -6,7 +6,8 @@ const { FULFILLMENT_STATUS, ORDER_STATUS, PAYMENT_STATUS } = require('./orderCon
 const featureFlags = require('../singleton/FeatureFlags');
 const { calculateCartValue } = require('../cart/calculateCartValue');
 const OrderInputValidation = require('./orderInputValidation');
-const { timestamp } = require('../utils/timestamp');
+const timestamp = require('../utils/timestamp');
+const { evaluateAndPickBestOffer, buildAppliedOfferObject } = require('../offers/evaluateOrderOffers');
 
 /**
  * Updates the status of a specific menu item within an order
@@ -101,9 +102,34 @@ const updateMenuItemStatus = functions.https.onCall(async (data, context) => {
                 updatedOrder.carts[i].priceInfo = updatedPriceInfo;
               }
               
-              // Recalculate total order price across all carts
-              const recalculatedTotalPrice = calculateTotalPriceInfo(updatedOrder.carts);
-              updatedOrder.priceInfo = recalculatedTotalPrice;
+              // Recalculate total order price across all carts (item-level only)
+              const recalculatedBasePrice = calculateTotalPriceInfo(updatedOrder.carts);
+
+              // Offers V2: re-evaluate best order-level offer after cancellation
+              const allCartItems = (updatedOrder.carts || [])
+                .flatMap(c => Array.isArray(c.items) ? c.items : []);
+              const bestOffer = await evaluateAndPickBestOffer(
+                restaurantId,
+                allCartItems,
+                recalculatedBasePrice.basePrice || 0,
+                updatedOrder.sessionId
+              );
+              const baseFinalPrice = recalculatedBasePrice.finalPrice || 0;
+              const offerDiscount = bestOffer
+                ? Math.min(bestOffer.discountAmount || 0, baseFinalPrice)
+                : 0;
+
+              updatedOrder.appliedOffer = bestOffer
+                ? buildAppliedOfferObject(bestOffer)
+                : null;
+
+              updatedOrder.priceInfo = {
+                ...recalculatedBasePrice,
+                finalPrice: Math.max(0, baseFinalPrice - offerDiscount),
+                totalDiscountAmount:
+                  (recalculatedBasePrice.totalDiscountAmount || 0) + offerDiscount,
+                offerDiscount
+              };
             }
           }
         }

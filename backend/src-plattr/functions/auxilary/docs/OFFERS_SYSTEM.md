@@ -1,120 +1,197 @@
-# Flexible Restaurant Offers System
+# Offers V2 — Order-Level Auto-Apply System
 
-## Feature Requirements
+> **V2 replaces V1.** Cart-level manual application has been removed. This document supersedes the older cart-level spec.
 
-### Goal
-Provide a unified offers system that supports cart-level, category-level, and item-level offers with a single schema and consistent pricing behavior.
+## Goal
 
-### Supported Offer Examples
-- Flat 50% off desserts (category percentage)
-- Buy 1 Get 1 Cappuccino (BOGO item)
-- Flat INR 100 off cart above INR 500 (cart flat)
+Provide a simple, admin-managed offers system where:
+- The restaurant creates/edits offers from the Admin app
+- The consumer sees offers as informational hints on the menu page
+- The system automatically picks and applies the BEST eligible offer at checkout, across the entire order (all carts combined)
+- No manual apply/remove flow for consumers — zero cognitive burden
 
-### Business Rules and Decisions
-- Single offer only: one active offer per cart and per table session.
-- New offer application is rejected if an offer is already applied (user must remove first).
-- Min cart value is evaluated on pre-discount base price.
-- BOGO applies once per cart (no multiples for higher quantities).
-- Cheapest eligible units are free for BOGO.
-- Unit price for BOGO is item final price including variants and addons.
-- Category IDs are stable; no snapshotting required.
-- No auto-add of free items; items must be in cart to receive discount.
-- Rounding to 2 decimals in pricing outputs.
-- Max discount cap applies to all offer types.
-- Taxes are not calculated as part of this feature (out of scope).
+## Supported Offer Examples
 
-### Non-goals (Tech Debt)
-- Offer stacking or applying multiple offers per cart.
-- Post-discount eligibility rules (e.g., stacking with minCartValue re-evaluation).
+- **20% off Starters** (PERCENTAGE, CATEGORY scope, targetIds=[cat_starters], maxDiscount=₹200)
+- **₹50 off on orders above ₹500** (FLAT, ORDER scope, conditions.minOrderValue=500)
+- **Buy 1 Get 1 on Blaze Bean Burger** (BOGO, ITEM scope, targetIds=[item_blaze_bean_burger])
+- **30% off everything except desserts** (PERCENTAGE, ORDER scope, exclusionIds=[cat_desserts])
+
+## Business Rules
+
+- **Single offer per order.** No stacking.
+- **Auto-selection:** Pick the offer with the highest `discountAmount`. Tiebreaker: lower `priority` wins.
+- **Evaluation timing:**
+  - At each cart checkout (in `createOrUpdateOrder`) — reevaluate against all items across all carts in the order.
+  - At order COMPLETED (in `updateOrderStatus`) — safety net reevaluation after any cancellations.
+- **Eligibility is computed on raw cart items**, never on normalized order items — `normalizeCartItemsForOrder` strips `categoryId`/`subcategoryIds`, which would break CATEGORY/ITEM scope matching.
+- **Cancelled items are excluded** from eligibility. Status is compared against `FULFILLMENT_STATUS.CANCELLED` (uppercase) via the shared constant — never hardcoded strings.
+- **Graceful fallback:** If offer evaluation throws, the order proceeds with `appliedOffer = null`. The failure is logged but never blocks checkout.
+- **Killswitch:** `restaurant.featureFlags.isOffersEnabled` (default true). When false, `evaluateAndPickBestOffer` short-circuits to null.
 
 ## Data Model
 
-### Universal Offer Schema (Firestore offers subcollection)
-Fields used by backend:
-- id (string)
-- title (string)
-- description (string)
-- type (enum): PERCENTAGE, FLAT, BOGO, FREE_ITEM
-- scope (enum): CART, CATEGORY, ITEM
-- targetIds (array of IDs for categories/subcategories or items)
-- isActive (boolean)
-- validity (object): startDate, endDate
-- conditions (object):
-  - minCartValue (number)
-  - requiredItems (array of { menuItemId, quantity })
-  - userHistory (optional): minOrderCount, activeSessionOrderCount
-- benefit (object):
-  - value (number; used for PERCENTAGE/FLAT)
-  - buyQty, getQty (for BOGO)
-  - maxDiscount (number)
+### Firestore offers subcollection — `restaurants/{restaurantId}/offers/{offerId}`
 
-## Implementation Plan (As Implemented)
+```
+{
+  id: string                    // same as document ID
+  title: string                 // required, shown on consumer carousel
+  description: string           // required, shown in offer details sheet
+  type: 'PERCENTAGE' | 'FLAT' | 'BOGO'
+  scope: 'ORDER' | 'CATEGORY' | 'ITEM'
+  targetIds: string[]           // required non-empty for CATEGORY/ITEM
+  exclusionIds: string[]        // optional — items/categories to exclude
+  isActive: boolean
+  validity: {
+    startDate: ISO string
+    endDate: ISO string
+  }
+  conditions: {                 // all optional
+    minOrderValue: number
+    requiredItems: [{ menuItemId, quantity }]
+    userHistory: {              // optional, session-based offers
+      minOrderCount: number
+      activeSessionOrderCount: number
+    }
+  }
+  benefit: {
+    // PERCENTAGE/FLAT:
+    value: number               // percentage (0-100) or rupee amount
+    maxDiscount: number         // optional cap
+    // BOGO:
+    buyQuantity: number         // default 1
+    getQuantity: number         // default 1
+  }
+  termsAndConditions: string    // optional display text
+  imageUrl: string              // optional
+  code: string                  // optional promo code (future use)
+  priority: number              // optional tiebreaker — lower wins
+  createdAt, updatedAt, deletedAt (soft delete)
+}
+```
 
-### Backend
-1. Offer import and mock data
-   - Added offers subcollection to mock data.
-   - Updated mock data import to include offers.
+### Order document — fields populated by Offers V2
 
-2. Core offer engine
-   - New shared module for validation and discount calculation:
-     - validateOfferApplication(offer, cart, sessionData)
-     - calculateOfferBenefit(offer, cart)
-   - Validation includes: isActive, validity dates, minCartValue, requiredItems, user history, and scope-level eligibility.
-   - BOGO calculation uses cheapest eligible units, applies once per cart, and supports maxDiscount cap.
-   - PERCENTAGE for category/item and FLAT for cart are implemented; flat category/item behavior remains limited.
+```
+order.appliedOffer = {
+  id, title, type, scope,
+  discountAmount: number,
+  appliedItems: [{ menuItemId, cartItemId, originalPrice, discountAmount, discountedPrice }]
+} | null
 
-3. Apply offer
-   - Reject if a different offer is already applied.
-   - Validate eligibility, calculate benefit, and update cart priceInfo:
-     - appliedOfferId, appliedOfferTitle, offerDiscount, appliedOfferItems
-     - totalDiscountAmount and finalPrice updated based on offer discount
+order.priceInfo = {
+  basePrice,
+  finalPrice,           // already reflects offerDiscount subtraction
+  totalDiscount,
+  totalDiscountAmount,  // includes offerDiscount
+  offerDiscount         // NEW in V2 — the order-level offer portion only
+}
+```
 
-4. Get applicable offers
-   - Uses offer engine for eligibility and potential saving.
-   - Returns isApplicable, reason, and potentialSaving per offer.
+## Architecture
 
-5. Remove offer
-   - Clears offer fields from cart priceInfo and recalculates pricing.
+```
+Consumer: browse menu → (sees offers, read-only) → add to cart → checkout
+                                                                      ↓
+checkoutCart.js → createOrUpdateOrder.js
+    1. Append cartSnapshot to order.carts[]
+    2. calculateTotalPriceInfo(updatedCarts)  — item-level totals
+    3. Collect raw items: updatedCarts.flatMap(c => c.items)
+    4. evaluateAndPickBestOffer(restaurantId, allItems, basePrice, sessionId)
+         - Killswitch check
+         - Fetch active offers
+         - For each: validateOfferApplication → calculateOfferBenefit
+         - Sort by discountAmount DESC, priority ASC
+         - Return top candidate or null
+    5. Store order.appliedOffer + adjust order.priceInfo
 
-6. Cart pricing integration
-   - validateCart expects finalPrice = sum(item finalPrice) - offerDiscount.
-   - calculateCartValue preserves offer fields and includes offerDiscount in totalDiscountAmount.
+Consumer: order listing page reads order.appliedOffer → "Saved ₹X with [title]!"
 
-7. Order persistence
-   - appliedOffer details are included in order creation/update.
-   - cartSnapshot retains offer data when added to orders.
+Server marks order COMPLETED → updateOrderStatus.js
+    - Recompute base totals from all cart snapshots
+    - Re-run evaluateAndPickBestOffer (catches cancellation impact)
+    - Compare recomputed base against stored base (offer portion is allowed to differ)
+    - Update appliedOffer + priceInfo, set paymentStatus=PAID
+```
 
-### Frontend (Server App)
-- Orders list and detail screens were refactored to use shared widgets and improved UI density.
-- New OrderCard widget introduced for order/cart summary display.
-- No direct consumer offer UI implemented in these changes.
+## Offer Engine
 
-## Verification Summary
-- Contract test config updated to point to mock import script.
-- Manual or curl tests for offers are expected but not included in code changes here.
+**File:** `backend/src-plattr/functions/offers/offerEngine.js`
 
-## File Change Inventory
+- `validateOfferApplication(offer, cart, sessionData)` — Returns `{ isValid, reason, potentialSaving }`
+- `calculateOfferBenefit(offer, cart)` — Delegates to the right strategy, returns `{ discountAmount, appliedItems }`
 
-### Code Files Changed by Developer (Current Working Tree)
-Backend:
-- backend/src-plattr/functions/cart/calculateCartValue.js
-- backend/src-plattr/functions/cart/validateCart.js
-- backend/src-plattr/functions/mock/importMockDataV2.js
-- backend/src-plattr/functions/mock/mockDataV2.json
-- backend/src-plattr/functions/offers/applyOffer.js
-- backend/src-plattr/functions/offers/getApplicableOffers.js
-- backend/src-plattr/functions/offers/indexOffers.js
-- backend/src-plattr/functions/offers/offerEngine.js (new)
-- backend/src-plattr/functions/offers/removeOffer.js (new)
-- backend/src-plattr/functions/orders/createOrUpdateOrder.js
-- backend/src-plattr/functions/singleton/ErrorHandler.js
-- backend/src-plattr/contract-tests/contract_test_config.sh
+The engine is cart-shape agnostic — it takes any `{ items, priceInfo: { basePrice } }` object. V2 passes a "virtual order cart" built from all items across all cart snapshots.
 
-Frontend (server app):
-- frontend/src-platter-apps/apps/platter_server/lib/pages/orders_home/order_detail_screen.dart
-- frontend/src-platter-apps/apps/platter_server/lib/pages/orders_home/orders_home_screen.dart
-- frontend/src-platter-apps/apps/platter_server/lib/widgets/order_card.dart (new)
+**Strategies** (`backend/src-plattr/functions/offers/strategies/`):
+- `PercentageStrategy.js` — percentage discount with maxDiscount cap
+- `FlatStrategy.js` — flat rupee discount
+- `BogoStrategy.js` — cheapest eligible units are free (applies ONCE per order)
+- `BaseOfferStrategy.getEligibleItems()` handles scope filtering + exclusions
 
-### Non-code Docs and Misc
-- backend/src-plattr/functions/auxilary/docs/TECH_DEBT.md (tech debt notes)
+## Admin CRUD Endpoints
 
+All admin endpoints live in `backend/src-plattr/functions/adminApp/offers_admin.js` and are exported via `index.js` with the `admin-` prefix.
+
+- `admin-getOffers` — list all offers for a restaurant (active + inactive, minus soft-deleted)
+- `admin-createOffer` — validate + write a new offer doc
+- `admin-updateOffer` — merge + validate + update
+- `admin-deleteOffer` — soft delete (sets `isActive=false`, `deletedAt=now()`)
+
+Each endpoint requires admin session validation via `validateAdminSession`.
+
+### Input validation rules
+
+- **Required on create:** title, description, type, scope, benefit, validity.startDate, validity.endDate
+- **Type-specific:**
+  - PERCENTAGE/FLAT: `benefit.value` must be a positive number
+  - BOGO: `benefit.buyQuantity` and `benefit.getQuantity` must be numbers ≥ 1
+- **Scope-specific:** CATEGORY/ITEM require non-empty `targetIds`
+- **Date ordering:** `endDate > startDate`
+- Optional fields stored as-is after type-checking
+
+## Deprecated / Removed
+
+- `offers/applyOffer.js` — DELETED
+- `offers/removeOffer.js` — DELETED
+- `cart/PriceCalculator.js` — DELETED (only used by the deleted files + the lazy revalidation block in createOrUpdateOrder that is no longer needed)
+- Cart-level offer fields (`cart.priceInfo.appliedOfferId` etc.) — no longer preserved by `calculateCartValue.js`
+- `validateCart.js` no longer subtracts `offerDiscount` — carts carry item-level prices only
+- `conditions.minCartValue` — renamed to `minOrderValue`
+
+## Migration Notes
+
+The system is not live yet, so there is NO backward compatibility layer. Any existing offer documents in Firestore must match the V2 schema or be recreated.
+
+**Breaking changes from the pre-V2 engine:**
+1. `scope: 'CART'` → use `scope: 'ORDER'`
+2. `benefit.buyQty` / `benefit.getQty` → `buyQuantity` / `getQuantity`
+3. `conditions.minCartValue` → `conditions.minOrderValue`
+4. Cart documents no longer carry offer fields
+
+## Frontend Integration Points
+
+### Consumer app (`frontend/flutter_boilerplate/`)
+- `lib/widgets/offers_carousel.dart` — displays real offers from `MenuState.offers` (no apply button)
+- `lib/pages/menuListing/MenuPage.dart` — passes `menuState.offers` to the carousel
+- `lib/pages/checkout_order_flow/order_listing_page.dart` — shows the "Saved ₹X with [title]!" banner from `order.appliedOffer`
+- `lib/pages/menuListing/models/offer.dart` — Freezed model with fields: scope, exclusionIds, termsAndConditions, priority
+
+### Admin app (`frontend/src-platter-apps/apps/platter_admin/`)
+- `lib/pages/offers/offers_screen.dart` — list + create button
+- `lib/pages/offers/offers_provider.dart` — ChangeNotifier state
+- `lib/pages/offers/offers_api_service.dart` — Dio calls to `admin-*` endpoints
+- `lib/pages/offers/editors/offer_editor_dialog.dart` — AlertDialog form
+- `lib/pages/offers/models/offer_model.dart` — plain Dart model
+
+## Verification Checklist
+
+- [ ] Create an offer via admin → appears in `admin-getOffers` response
+- [ ] Single cart checkout → `order.appliedOffer` populated with correct discount
+- [ ] Multi-cart checkout → offer re-evaluated with all items, possibly replaced with a better one
+- [ ] Killswitch off → `order.appliedOffer = null` and `order.priceInfo.offerDiscount = 0`
+- [ ] Cancel items post-checkout → mark order COMPLETED → offer re-evaluated, dropped if no longer valid
+- [ ] No applicable offers → order still succeeds with no offer (graceful fallback)
+- [ ] Exclusion offer: "20% off everything except desserts" — desserts not discounted
+- [ ] BOGO offer with `buyQuantity=1, getQuantity=1` — cheapest eligible unit is free

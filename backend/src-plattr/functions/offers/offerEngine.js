@@ -6,6 +6,7 @@
  */
 
 const { getStrategy, isSupported } = require('./strategies');
+const { FULFILLMENT_STATUS } = require('../orders/orderConstants');
 
 /**
  * Validates if an offer can be applied to the cart
@@ -41,9 +42,9 @@ function validateOfferApplication(offer, cart, sessionData = {}) {
         }
     }
 
-    // 3. Minimum Cart Value (Pre-discount)
-    if (conditions.minCartValue && cartTotal < conditions.minCartValue) {
-        const remaining = conditions.minCartValue - cartTotal;
+    // 3. Minimum Order Value (pre-discount total)
+    if (conditions.minOrderValue && cartTotal < conditions.minOrderValue) {
+        const remaining = conditions.minOrderValue - cartTotal;
         return {
             isValid: false,
             reason: `Add ₹${remaining.toFixed(2)} more to unlock`,
@@ -56,7 +57,7 @@ function validateOfferApplication(offer, cart, sessionData = {}) {
     if (conditions.requiredItems && conditions.requiredItems.length > 0) {
         for (const required of conditions.requiredItems) {
             const matches = cartItems.filter(item =>
-                item.menuItemId === required.menuItemId && item.status !== 'cancelled'
+                item.menuItemId === required.menuItemId && item.status !== FULFILLMENT_STATUS.CANCELLED
             );
             const totalQty = matches.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
@@ -91,7 +92,18 @@ function validateOfferApplication(offer, cart, sessionData = {}) {
         }
     }
 
-    // 6. Defensive guard for CATEGORY/ITEM scope with empty targetIds
+    // 6. Defensive guards
+    //    - ORDER scope: targetIds not required (applies to whole order)
+    //    - CATEGORY/ITEM scope: targetIds must be non-empty
+    const validScopes = ['ORDER', 'CATEGORY', 'ITEM'];
+    if (!validScopes.includes(offer.scope)) {
+        console.warn(`⚠️ OFFER_ENGINE: Offer ${offer.id} has invalid scope "${offer.scope}"`);
+        return {
+            isValid: false,
+            reason: 'Offer configuration invalid',
+            potentialSaving: 0
+        };
+    }
     if ((offer.scope === 'CATEGORY' || offer.scope === 'ITEM') &&
         (!offer.targetIds || offer.targetIds.length === 0)) {
         console.warn(`⚠️ OFFER_ENGINE: Offer ${offer.id} has scope ${offer.scope} but empty targetIds`);

@@ -15,9 +15,9 @@ class BogoStrategy extends BaseOfferStrategy {
      */
     validateTypeSpecific(offer, cart, sessionData = {}) {
         const benefit = offer.benefit || {};
-        const buyQty = benefit.buyQty || 1;
-        const getQty = benefit.getQty || 1;
-        const minQtyNeeded = buyQty + getQty;
+        const buyQuantity = benefit.buyQuantity || 1;
+        const getQuantity = benefit.getQuantity || 1;
+        const minQtyNeeded = buyQuantity + getQuantity;
 
         const eligibleItems = this.getEligibleItems(offer, cart);
         const eligibleQty = eligibleItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
@@ -37,8 +37,8 @@ class BogoStrategy extends BaseOfferStrategy {
      */
     calculate(offer, cart) {
         const benefit = offer.benefit || {};
-        const buyQty = benefit.buyQty || 1;
-        const getQty = benefit.getQty || 1;
+        const buyQuantity = benefit.buyQuantity || 1;
+        const getQuantity = benefit.getQuantity || 1;
         const maxDiscount = benefit.maxDiscount || Infinity;
 
         const eligibleItems = this.getEligibleItems(offer, cart);
@@ -60,9 +60,9 @@ class BogoStrategy extends BaseOfferStrategy {
         let totalDiscount = 0;
         const appliedItems = [];
 
-        // APPLIES ONCE PER CART RULE
-        if (totalUnits >= (buyQty + getQty)) {
-            let unitsToDiscount = getQty;
+        // APPLIES ONCE PER ORDER RULE
+        if (totalUnits >= (buyQuantity + getQuantity)) {
+            let unitsToDiscount = getQuantity;
 
             for (const lineItem of eligibleLineItems) {
                 if (unitsToDiscount <= 0) break;

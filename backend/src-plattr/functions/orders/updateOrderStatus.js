@@ -5,11 +5,12 @@ const OrderInputValidation = require('./orderInputValidation');
 const { validateSessionId } = require('../cart/cartInputValidation');
 const { calculateCartValue } = require('../cart/calculateCartValue');
 const { OrderPriceInfo } = require('../genericModels/priceinfo');
-const { timestamp } = require('../utils/timestamp');
+const timestamp = require('../utils/timestamp');
 const featureFlags = require('../singleton/FeatureFlags');
 const { sendFCMNotification } = require('../notifications/sendNotification');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 const errorHandler = require('../singleton/ErrorHandler');
+const { evaluateAndPickBestOffer, buildAppliedOfferObject } = require('../offers/evaluateOrderOffers');
 
 const COLLECTIONS = {
   RESTAURANTS: 'restaurants',
@@ -49,24 +50,60 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
 
       const updatePayload = { orderStatus, updatedAt: timestamp.serverTimestamp() };
 
-      // If marking complete, revalidate prices and set payment
+      // If marking complete, revalidate prices AND re-evaluate order-level offer
+      // (safety net in case items were cancelled after checkout).
       if (orderStatus === ORDER_STATUS.COMPLETED) {
-        let totalBase = 0, totalFinal = 0;
+        // 1. Recompute base totals from all cart snapshots (item-level only)
+        let totalBase = 0, totalFinal = 0, totalItemDiscount = 0;
         for (const cart of order.carts || []) {
           const cartInfo = await calculateCartValue(cart);
           totalBase += cartInfo.basePrice || 0;
           totalFinal += cartInfo.finalPrice || 0;
+          totalItemDiscount += cartInfo.totalDiscountAmount || 0;
         }
-        const recomputedPriceInfo = new OrderPriceInfo({ basePrice: totalBase, finalPrice: totalFinal }).toObject();
-        if (recomputedPriceInfo.basePrice !== order.priceInfo.basePrice ||
-            recomputedPriceInfo.finalPrice !== order.priceInfo.finalPrice) {
-          errorHandler.preconditionFailed('Recomputed bill does not match stored bill', {
+
+        // 2. Collect raw items from all carts (with categoryId / subcategoryIds)
+        const allCartItems = (order.carts || [])
+          .flatMap(c => Array.isArray(c.items) ? c.items : []);
+
+        // 3. Re-evaluate offers — items may have been cancelled since checkout
+        const bestOffer = await evaluateAndPickBestOffer(
+          restaurantId,
+          allCartItems,
+          totalBase,
+          order.sessionId
+        );
+        const offerDiscount = bestOffer ? Math.min(bestOffer.discountAmount, totalFinal) : 0;
+        const appliedOffer = bestOffer ? buildAppliedOfferObject(bestOffer) : null;
+
+        const recomputedPriceInfo = new OrderPriceInfo({
+          basePrice: totalBase,
+          finalPrice: Math.max(0, totalFinal - offerDiscount),
+          totalDiscount: order.priceInfo?.totalDiscount || 0,
+          totalDiscountAmount: totalItemDiscount + offerDiscount,
+          offerDiscount
+        }).toObject();
+
+        // 4. Sanity check: the recomputed base/final (before offer) must match the stored base.
+        //    The offer portion is allowed to differ (e.g., cancellations changed eligibility).
+        if (Math.abs(recomputedPriceInfo.basePrice - (order.priceInfo?.basePrice || 0)) > 0.05) {
+          errorHandler.preconditionFailed('Recomputed bill base does not match stored bill', {
             restaurantId,
-            orderId
+            orderId,
+            recomputedBase: recomputedPriceInfo.basePrice,
+            storedBase: order.priceInfo?.basePrice
           });
         }
+
+        if (appliedOffer && !order.appliedOffer) {
+          console.log(`Offers V2: offer "${appliedOffer.title}" became applicable at COMPLETED for order ${orderId}`);
+        } else if (!appliedOffer && order.appliedOffer) {
+          console.log(`Offers V2: offer "${order.appliedOffer.title}" no longer valid at COMPLETED for order ${orderId}`);
+        }
+
         updatePayload.paymentStatus = PAYMENT_STATUS.PAID;
         updatePayload.priceInfo = recomputedPriceInfo;
+        updatePayload.appliedOffer = appliedOffer; // may be null (clears previous)
       }
 
       tx.update(orderRef, updatePayload);

@@ -1,18 +1,16 @@
 /**
  * Offers Module - Entry Point
- * 
- * This module provides API endpoints for managing and applying offers/promotions.
- * Supports both generic (flat/percentage) and dynamic (rule-based) offers.
- * 
- * @version 1.0.0
+ *
+ * Offers V2: order-level auto-apply architecture.
+ * Consumers no longer apply offers manually — the system evaluates and applies
+ * the best offer at checkout via evaluateOrderOffers.js. This module only
+ * exposes the consumer-facing read endpoint for displaying offer hints.
+ *
+ * @version 2.0.0
  */
 
 const getApplicableOffers = require('./getApplicableOffers');
-const applyOffer = require('./applyOffer');
-const removeOffer = require('./removeOffer');
 
 module.exports = {
     getApplicableOffers,
-    applyOffer,
-    removeOffer,
 };

@@ -1,7 +1,7 @@
 /**
  * Percentage Discount Strategy
- * 
- * Handles PERCENTAGE offer type for CART, CATEGORY, and ITEM scopes.
+ *
+ * Handles PERCENTAGE offer type for ORDER, CATEGORY, and ITEM scopes.
  * - Calculates percentage off eligible items
  * - Supports maxDiscount cap with proportional scaling
  */
@@ -40,10 +40,19 @@ class PercentageStrategy extends BaseOfferStrategy {
         let totalDiscount = 0;
         const appliedItems = [];
 
-        if (offer.scope === 'CART') {
-            // Cart-level percentage: apply to entire cart total
-            totalDiscount = (cartTotal * percentageValue) / 100;
-            // No itemized breakdown for CART scope
+        if (offer.scope === 'ORDER') {
+            // Order-level percentage: apply to entire order total (minus exclusions)
+            const eligibleItems = this.getEligibleItems(offer, cart);
+            const eligibleTotal = eligibleItems.reduce(
+                (sum, item) => sum + (item.priceInfo?.finalPrice || 0),
+                0
+            );
+            // If exclusions present, base discount on eligible items only; otherwise use cart total
+            const discountBase = (offer.exclusionIds && offer.exclusionIds.length > 0)
+                ? eligibleTotal
+                : cartTotal;
+            totalDiscount = (discountBase * percentageValue) / 100;
+            // No itemized breakdown for ORDER scope
         } else {
             // CATEGORY or ITEM scope: calculate per eligible item
             const eligibleItems = this.getEligibleItems(offer, cart);

@@ -9,8 +9,8 @@ const { OrderPriceInfo, CartTotalPriceInfo } = require('../genericModels/pricein
 const { BasicPriceInfo } = require('../genericModels/priceinfo');
 const { v4: uuidv4 } = require('uuid');
 const { mapOrderStatus, mapCartStatus } = require('../utils/statusUtils');
-const { validateOfferApplication } = require('../offers/offerEngine');
-const { calculatePriceWithoutOffer } = require('../cart/PriceCalculator');
+const { evaluateAndPickBestOffer, buildAppliedOfferObject } = require('../offers/evaluateOrderOffers');
+const { calculateCharges } = require('./calculateCharges');
 
 
 /**
@@ -36,78 +36,35 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
     errorHandler.handleError(error, 'createOrUpdateOrder');
   }
 
-  // ========================================
-  // LAZY OFFER REVALIDATION BEFORE CHECKOUT
-  // ========================================
-  // If an offer is applied to the cart, validate it's still eligible.
-  // If not (e.g., user removed items after applying offer), auto-remove the invalid offer.
-  // Only run if offers feature is enabled for this restaurant.
-  let workingCart = { ...cart };
+  // Offers V2: offers are order-level and applied automatically AFTER the cart
+  // snapshot is added to the order (see createNewOrder / updateExistingOrder).
+  // No cart-level offer revalidation is needed here — carts no longer carry
+  // offer fields in Offers V2.
 
-  const { isOffersEnabled } = require('../offers/offerFeatureGuard');
-  const offersEnabled = await isOffersEnabled(restaurantId);
-
-  if (workingCart.priceInfo?.appliedOfferId && offersEnabled) {
-    try {
-      // Fetch the offer to validate
-      const offerDoc = await db
-        .collection('restaurants')
-        .doc(restaurantId)
-        .collection('offers')
-        .doc(workingCart.priceInfo.appliedOfferId)
-        .get();
-
-      if (offerDoc.exists) {
-        const offer = { id: offerDoc.id, ...offerDoc.data() };
-        const validation = validateOfferApplication(offer, workingCart);
-
-        if (!validation.isValid) {
-          console.warn(`⚠️ CHECKOUT: Offer ${offer.id} no longer valid (${validation.reason}), auto-removing before checkout`);
-
-          // Recalculate cart value without offer using centralized PriceCalculator
-          const recalculatedPriceInfo = await calculatePriceWithoutOffer(workingCart);
-
-          workingCart.priceInfo = recalculatedPriceInfo;
-
-          // Also update the cart in Firestore so it's consistent
-          const cartRef = db
-            .collection('restaurants')
-            .doc(restaurantId)
-            .collection('carts')
-            .doc(tableId);
-
-          await cartRef.update({
-            priceInfo: recalculatedPriceInfo,
-            lastUpdated: timestamp.now()
-          });
-        }
-      } else {
-        // Offer document doesn't exist anymore - clear it
-        console.warn(`⚠️ CHECKOUT: Applied offer ${workingCart.priceInfo.appliedOfferId} not found, clearing`);
-        workingCart.priceInfo = {
-          ...workingCart.priceInfo,
-          appliedOfferId: null,
-          appliedOfferTitle: null,
-          offerDiscount: 0,
-          appliedOfferItems: []
-        };
+  // Charges V1: load restaurant `billing.charges` config out-of-band (rarely
+  // changes — same pattern as Offers V2 reading offer configs outside the
+  // transaction). Missing doc / missing field → empty config → zero behavior
+  // change for restaurants that haven't opted in.
+  let chargesConfig = [];
+  try {
+    const settingsDoc = await db
+      .collection('restaurants').doc(restaurantId)
+      .collection('config').doc('settings')
+      .get();
+    if (settingsDoc.exists) {
+      const billing = settingsDoc.data()?.billing;
+      if (billing && Array.isArray(billing.charges)) {
+        chargesConfig = billing.charges;
       }
-    } catch (offerValidationError) {
-      console.error('Error during offer revalidation, proceeding without offer:', offerValidationError);
-      // On error, clear the offer to be safe
-      workingCart.priceInfo = {
-        ...workingCart.priceInfo,
-        appliedOfferId: null,
-        appliedOfferTitle: null,
-        offerDiscount: 0,
-        appliedOfferItems: []
-      };
     }
+  } catch (err) {
+    console.warn(`createOrUpdateOrder: failed to load billing.charges for ${restaurantId}: ${err.message}`);
+    chargesConfig = [];
   }
 
   // Prepare cart snapshot to add to order
   const cartSnapshot = {
-    ...workingCart,
+    ...cart,
     cartId: `${restaurantId}_${tableId}_${uuidv4().substring(0, 8)}`, // Add a unique cartId with restaurant and table prefix
     status: FULFILLMENT_STATUS.PENDING,
     statusHistory: [{
@@ -117,17 +74,9 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
     }],
     checkoutTime: timestamp.serverTimestamp(),
     notes,
-    estimatedPrepTime: calculateEstimatedPrepTime(workingCart.items),
+    estimatedPrepTime: calculateEstimatedPrepTime(cart.items),
     assignedTo: null
   };
-
-  // Extract offer details if present (using workingCart which may have had offer cleared by revalidation)
-  const appliedOffer = workingCart.priceInfo?.appliedOfferId ? {
-    id: workingCart.priceInfo.appliedOfferId,
-    title: workingCart.priceInfo.appliedOfferTitle,
-    discount: workingCart.priceInfo.offerDiscount || 0,
-    // We can store item breakdown here or keep it in cartSnapshot
-  } : null;
 
   // sanitise the format of the cart items for the order
   const orderItems = normalizeCartItemsForOrder(cart);
@@ -152,7 +101,7 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
       if (!existingOrderDoc) {
         // Create new order
         const orderNumber = await generateOrderNumber(transaction, restaurantId);
-        console.log(`poopoo Creating new order for table ${tableId} with order number ${orderNumber}`);
+        console.log(`Creating new order for table ${tableId} with order number ${orderNumber}`);
         orderResult = await createNewOrder(
           transaction,
           restaurantId,
@@ -162,12 +111,12 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
           orderNumber,
           userId,
           sessionId,
-          appliedOffer // Pass appliedOffer
+          chargesConfig
         );
       } else {
         // Update existing order
         const orderDoc = existingOrderDoc;
-        console.log(`poopoo Updating existing order ${orderDoc.id} for table ${tableId}`);
+        console.log(`Updating existing order ${orderDoc.id} for table ${tableId}`);
         orderResult = await updateExistingOrder(
           transaction,
           restaurantId,
@@ -176,7 +125,7 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
           cartSnapshot,
           orderItems,
           sessionId,
-          appliedOffer // Pass appliedOffer
+          chargesConfig
         );
       }
 
@@ -205,7 +154,7 @@ function normalizeCartItemsForOrder(cart) {
 
   return cart.items.map(item => {
     // Skip cancelled items
-    if (item.status === 'cancelled') return null;
+    if (item.status === FULFILLMENT_STATUS.CANCELLED) return null;
 
     // Skip items without menuItemId
     if (!item.menuItemId) return null;
@@ -247,19 +196,53 @@ function normalizeCartItemsForOrder(cart) {
  * @param {string} sessionId - ID of the session (optional)
  * @returns {Object} The created order
  */
-async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, orderItems, orderNumber, userId, sessionId = null, appliedOffer = null) {
+async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, orderItems, orderNumber, userId, sessionId = null, chargesConfig = []) {
   // Fetch table doc to get assignedServerId
   const tableRef = db.collection('restaurants').doc(restaurantId).collection('tables').doc(tableId);
   const tableDoc = await transaction.get(tableRef);
   const assignedServer = tableDoc.exists ? (tableDoc.data().assignedServerId || null) : null;
 
-  // Calculate order price info from cart using our OrderPriceInfo model
+  // Base priceInfo from the cart snapshot (no offer discount yet)
+  const baseBasePrice = cartSnapshot.priceInfo?.basePrice || 0;
+  const baseFinalPrice = cartSnapshot.priceInfo?.finalPrice || 0;
+  const baseTotalDiscount = cartSnapshot.priceInfo?.totalDiscount || 0;
+  const baseTotalDiscountAmount = cartSnapshot.priceInfo?.totalDiscountAmount || 0;
+
+  // Offers V2: evaluate order-level offers against the full (raw) cart items.
+  // We must use raw items with categoryId / subcategoryIds intact — NOT
+  // normalized `orderItems`, which strips those fields.
+  const allCartItems = Array.isArray(cartSnapshot.items) ? cartSnapshot.items : [];
+  const bestOffer = await evaluateAndPickBestOffer(
+    restaurantId,
+    allCartItems,
+    baseBasePrice,
+    sessionId
+  );
+
+  const offerDiscount = bestOffer ? Math.min(bestOffer.discountAmount, baseFinalPrice) : 0;
+  const appliedOffer = bestOffer ? buildAppliedOfferObject(bestOffer) : null;
+
+  // Post-offer final price — used both as the stored finalPrice AND as the
+  // base for Charges V1 percentage computation.
+  const postOfferFinalPrice = Math.max(0, baseFinalPrice - offerDiscount);
+
+  // Charges V1: percentage-based overlays on top of finalPrice (service charge,
+  // global discount, etc.). Empty config → no fields surfaced in priceInfo.
+  const { charges, chargesTotal } = calculateCharges(postOfferFinalPrice, chargesConfig);
+
   const orderPriceInfo = new OrderPriceInfo({
-    basePrice: cartSnapshot.priceInfo?.basePrice,
-    finalPrice: cartSnapshot.priceInfo?.finalPrice,
-    totalDiscount: cartSnapshot.priceInfo?.totalDiscount,
-    totalDiscountAmount: cartSnapshot.priceInfo?.totalDiscountAmount
+    basePrice: baseBasePrice,
+    finalPrice: postOfferFinalPrice,
+    totalDiscount: baseTotalDiscount,
+    totalDiscountAmount: baseTotalDiscountAmount + offerDiscount,
+    offerDiscount,
+    charges,
+    chargesTotal
   }).toObject();
+
+  if (appliedOffer) {
+    console.log(`Offers V2: auto-applied "${appliedOffer.title}" (${appliedOffer.id}) to new order — saved ₹${offerDiscount}`);
+  }
 
   // Create new order document
   const newOrder = {
@@ -277,7 +260,7 @@ async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, 
     assignedServer, // Use server assigned to table, not checkout user
     notes: cartSnapshot.notes || '',
     sessionId,  // Include sessionId in new order
-    appliedOffer // Include offer details
+    appliedOffer // null or { id, title, type, scope, discountAmount, appliedItems }
   };
 
   // Add order to collection
@@ -309,7 +292,7 @@ async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, 
  * @param {string} sessionId - ID of the session (optional)
  * @returns {Object} The updated order
  */
-async function updateExistingOrder(transaction, restaurantId, orderId, existingOrder, cartSnapshot, orderItems, sessionId = null, appliedOffer = null) {
+async function updateExistingOrder(transaction, restaurantId, orderId, existingOrder, cartSnapshot, orderItems, sessionId = null, chargesConfig = []) {
   // Ensure arrays exist with fallbacks
   const existingCarts = Array.isArray(existingOrder.carts) ? existingOrder.carts : [];
   const existingItems = Array.isArray(existingOrder.items) ? existingOrder.items : [];
@@ -317,11 +300,46 @@ async function updateExistingOrder(transaction, restaurantId, orderId, existingO
   // Add new cart to existing carts
   const updatedCarts = [...existingCarts, cartSnapshot];
 
-  // Merge new items with existing items
+  // Merge new items with existing items (normalized, for order.items)
   const updatedItems = [...existingItems, ...orderItems];
 
-  // Calculate updated price info across all carts
-  const updatedPriceInfo = calculateTotalPriceInfo(updatedCarts);
+  // Calculate updated base price info across all carts (no offer yet)
+  const basePriceInfo = calculateTotalPriceInfo(updatedCarts);
+
+  // Offers V2: re-evaluate offers against ALL raw items from ALL carts.
+  // Use cart.items (raw) not updatedItems (normalized — strips categoryId).
+  const allCartItems = updatedCarts.flatMap(c => Array.isArray(c.items) ? c.items : []);
+  const bestOffer = await evaluateAndPickBestOffer(
+    restaurantId,
+    allCartItems,
+    basePriceInfo.basePrice || 0,
+    sessionId || existingOrder.sessionId
+  );
+
+  const baseFinalPrice = basePriceInfo.finalPrice || 0;
+  const offerDiscount = bestOffer ? Math.min(bestOffer.discountAmount, baseFinalPrice) : 0;
+  const appliedOffer = bestOffer ? buildAppliedOfferObject(bestOffer) : null;
+
+  // Post-offer final price — used both as the stored finalPrice AND as the
+  // base for Charges V1 percentage computation.
+  const postOfferFinalPrice = Math.max(0, baseFinalPrice - offerDiscount);
+
+  // Charges V1: recompute on the new order total (previous cart's charges are
+  // replaced — charges always reflect current order finalPrice). Empty config
+  // → charges fields omitted from updated priceInfo.
+  const { charges, chargesTotal } = calculateCharges(postOfferFinalPrice, chargesConfig);
+
+  const updatedPriceInfo = {
+    ...basePriceInfo,
+    finalPrice: postOfferFinalPrice,
+    totalDiscountAmount: (basePriceInfo.totalDiscountAmount || 0) + offerDiscount,
+    offerDiscount,
+    ...(charges.length > 0 ? { charges, chargesTotal } : {})
+  };
+
+  if (appliedOffer) {
+    console.log(`Offers V2: auto-applied "${appliedOffer.title}" (${appliedOffer.id}) to existing order ${orderId} — saved ₹${offerDiscount}`);
+  }
 
   // Handle notes concatenation
   let updatedNotes = existingOrder.notes || '';
@@ -336,6 +354,7 @@ async function updateExistingOrder(transaction, restaurantId, orderId, existingO
     carts: updatedCarts,
     items: updatedItems,
     priceInfo: updatedPriceInfo,
+    appliedOffer, // null clears any previous offer if no longer applicable
     updatedAt: timestamp.serverTimestamp(),
     notes: updatedNotes,
     orderStatus: ORDER_STATUS.IN_PROGRESS,
@@ -363,18 +382,13 @@ async function updateExistingOrder(transaction, restaurantId, orderId, existingO
     updates.sessionId = sessionId;
   }
 
-  // Add appliedOffer to updates if provided
-  if (appliedOffer) {
-    updates.appliedOffer = appliedOffer;
-  }
-
   // Apply updates to document
   const orderRef = db.collection("restaurants").doc(restaurantId)
     .collection("orders").doc(orderId);
 
   transaction.update(orderRef, updates);
 
-  console.log(`poopoo Updated existing order ${orderId} with new cart`);
+  console.log(`Updated existing order ${orderId} with new cart`);
 
   // Return the order with actual Timestamp objects (not serverTimestamp placeholders)
   return {
@@ -428,12 +442,14 @@ function calculateTotalPriceInfo(carts) {
     cart && cart.priceInfo ? new CartTotalPriceInfo(cart.priceInfo) : new CartTotalPriceInfo()
   );
 
-  // Accumulate values
+  // Accumulate values. Note: carts no longer carry offer fields in Offers V2.
+  // Any offerDiscount is applied by the caller after this function returns.
   const totalPriceInfo = new OrderPriceInfo({
     basePrice: cartPriceInfos.reduce((sum, info) => sum + info.basePrice, 0),
     finalPrice: cartPriceInfos.reduce((sum, info) => sum + info.finalPrice, 0),
     totalDiscount: cartPriceInfos.reduce((sum, info) => sum + info.totalDiscount, 0) / carts.length, // Average discount
-    totalDiscountAmount: cartPriceInfos.reduce((sum, info) => sum + info.totalDiscountAmount, 0)
+    totalDiscountAmount: cartPriceInfos.reduce((sum, info) => sum + info.totalDiscountAmount, 0),
+    offerDiscount: 0
   });
 
   return totalPriceInfo.toObject();
