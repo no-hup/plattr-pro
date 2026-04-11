@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# pre-commit: incrementally update the AST knowledge graph
+set -e
+
+if command -v code-review-graph &>/dev/null; then
+  code-review-graph update --quiet 2>/dev/null || true
+fi

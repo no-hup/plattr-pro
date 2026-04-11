@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# post-commit: persist commit context to engram memory (non-blocking)
+(
+  if command -v engram &>/dev/null; then
+    COMMIT_MSG=$(git log -1 --pretty=%B 2>/dev/null)
+    BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+    engram save "commit" "$BRANCH: $COMMIT_MSG" --type decision 2>/dev/null || true
+  fi
+) &
+disown

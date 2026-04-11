@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# pre-push: sanity-check that the graph is healthy before pushing
+if command -v code-review-graph &>/dev/null; then
+  STATUS=$(code-review-graph status 2>/dev/null)
+  if echo "$STATUS" | grep -qi "error\|corrupt"; then
+    echo "⚠️  code-review-graph reports an issue. Run 'code-review-graph build' to fix."
+    exit 1
+  fi
+fi
+exit 0
