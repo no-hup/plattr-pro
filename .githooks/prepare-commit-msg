@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# prepare-commit-msg: inject graph-aware change summary as comment
+COMMIT_MSG_FILE="$1"
+COMMIT_SOURCE="$2"
+
+# Only augment manual commits (not merge/squash/amend)
+if [ -n "$COMMIT_SOURCE" ]; then
+  exit 0
+fi
+
+if command -v code-review-graph &>/dev/null; then
+  SUMMARY=$(code-review-graph detect-changes --format=summary 2>/dev/null || true)
+  if [ -n "$SUMMARY" ]; then
+    printf '\n# Graph impact summary:\n%s\n' "$SUMMARY" >> "$COMMIT_MSG_FILE"
+  fi
+fi

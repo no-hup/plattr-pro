@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# scripts/repo-context — bootstrap or refresh the full AI-SDLC context for this repo.
+# Run after clone or when tools fall out of sync.
+set -e
+
+echo "🔍 Checking tool availability..."
+missing=()
+for tool in rtk engram code-review-graph; do
+  command -v "$tool" &>/dev/null || missing+=("$tool")
+done
+
+if [ ${#missing[@]} -gt 0 ]; then
+  echo "❌ Missing tools: ${missing[*]}"
+  echo "   Install with:"
+  echo "   brew install rtk-ai/tap/rtk gentleman-programming/tap/engram"
+  echo "   pipx install code-review-graph"
+  exit 1
+fi
+echo "✅ All tools present: rtk $(rtk --version 2>/dev/null), engram $(engram --version 2>/dev/null | head -1), code-review-graph $(code-review-graph --version 2>/dev/null)"
+
+echo ""
+echo "📊 Building/refreshing AST graph..."
+code-review-graph build
+echo "✅ Graph built: $(code-review-graph status 2>/dev/null | grep Files)"
+
+echo ""
+echo "🪝 Verifying git hooks..."
+HOOKS_PATH=$(git config core.hooksPath 2>/dev/null)
+if [ "$HOOKS_PATH" != ".githooks" ]; then
+  echo "   Setting core.hooksPath to .githooks"
+  git config core.hooksPath .githooks
+fi
+for hook in pre-commit post-commit prepare-commit-msg pre-push; do
+  if [ ! -x ".githooks/$hook" ]; then
+    echo "❌ Hook not executable: .githooks/$hook"
+    exit 1
+  fi
+done
+echo "✅ All four hooks installed and executable"
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ repo-context bootstrap complete"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
