@@ -4,13 +4,10 @@
 
 function createFeatureFlagsMock(overrides = {}) {
     const defaults = {
-        isMultipleVariantOrAddonForMenuItemsSupported: true,
-        fallbackToSameCustomConfigurationForAddItem: true,
         isOtpManadatoryAtScan: true,
         isUsernameEnabled: true,
         isMultiUserSupportEnabled: false,
-        sendServerNotifications: false,
-        shouldUpdateFoodStatusAtItemLevelORAtOrderLevel: false
+        sendServerNotifications: false
     };
 
     const flags = { ...defaults, ...overrides };

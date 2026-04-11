@@ -100,9 +100,15 @@ async function getActiveCartsForKitchen(data, context) {
 /**
  * Validates a session for kitchen-view access.
  *
- * Allowed roles: KITCHEN, MANAGER, ADMIN (higher roles can see what lower roles see,
- * mirroring validateAdminSession's pattern).
+ * Allowed roles: KITCHEN, MANAGER, ADMIN (higher roles can see what lower roles see).
  * Rejected role: SERVER (waiters use the server-scoped endpoint instead).
+ *
+ * Shape is inspired by adminApp/auth.js:validateAdminSession, but intentionally
+ * stricter in two places:
+ *   1. explicit `status === 'active'` check (admin variant omits this and only
+ *      looks at expiresAt)
+ *   2. timestamps read via utils/timestamp.safeToDate so a missing or malformed
+ *      expiresAt does not crash the handler (admin variant calls .toDate() raw)
  *
  * Kept local to this file on purpose; we do not want to introduce a broader auth
  * abstraction in this phase.

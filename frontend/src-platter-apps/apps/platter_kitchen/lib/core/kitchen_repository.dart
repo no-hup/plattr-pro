@@ -168,8 +168,10 @@ class KitchenRepository {
 
     final orderNumber = _coerceInt(order['orderNumber']);
     final tableLabel = _coerceString(order['tableId']);
-    final serverName = (order['assignedServerName'] as String?) ??
-        (order['serverName'] as String?);
+    // TODO(kitchen-phase-2): resolve assignedServer (id) → server name
+    // server-side. The order document only carries the id; until the
+    // backend joins it, the UI renders without a server label.
+    const String? serverName = null;
     final orderCreatedAt = _parseTimestamp(order['createdAt']);
 
     final carts = order['carts'];
@@ -218,8 +220,8 @@ class KitchenRepository {
       final first = history.first;
       if (first is Map<String, dynamic>) {
         final ts = _parseTimestamp(first['timestamp']);
-        // _parseTimestamp returns DateTime.now() when it cannot parse; use
-        // that as a signal to fall through.
+        // _parseTimestamp returns an epoch sentinel when a value cannot be
+        // parsed; use that as a signal to fall through to order.createdAt.
         if (!_isEpochFallback(ts)) {
           return ts;
         }
@@ -376,19 +378,28 @@ class KitchenRepository {
     return (orderId, cartIdx);
   }
 
+  // Exact-match set. Substring matching on codes like 'precondition' was
+  // brittle; any future unrelated code that happened to embed the word
+  // would have been misclassified as a session expiry.
+  static const Set<String> _kSessionExpiryCodes = {
+    'failed-precondition',
+    'unauthenticated',
+    'session_expired',
+  };
+
   bool _isSessionExpiryCode(String code) {
-    final lower = code.toLowerCase();
-    return lower.contains('failed-precondition') ||
-        lower.contains('precondition') ||
-        lower.contains('unauthenticated') ||
-        lower == 'session_expired';
+    return _kSessionExpiryCodes.contains(code.toLowerCase());
   }
 
   bool _looksLikeTransitionRejection(String? message) {
     if (message == null) return false;
     final lower = message.toLowerCase();
+    // Keep this list narrow — loose matches (e.g. "cart status") would
+    // classify unrelated errors (network wraps, validation errors) as
+    // transition rejections and show the wrong snackbar.
+    // "not found in order" is an invalid cartIndex, NOT a transition
+    // rejection, so it is intentionally omitted.
     return lower.contains('invalid status transition') ||
-        lower.contains('cart status') ||
-        lower.contains('not found in order');
+        lower.contains('invalid cart status transition');
   }
 }

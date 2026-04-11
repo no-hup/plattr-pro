@@ -1,5 +1,7 @@
 // File: category_carousel.dart
 import 'package:flutter/material.dart';
+import 'package:flutterboilerplate/pages/menuListing/models/cart_item.dart';
+import 'package:flutterboilerplate/pages/menuListing/widgets/cart_variant_picker_sheet.dart';
 import 'package:flutterboilerplate/pages/menuListing/widgets/menu_customization_sheet.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_state.dart';
@@ -135,17 +137,72 @@ class _CarouselItemCardState extends State<_CarouselItemCard> {
   void _handleAddToCart(BuildContext context) {
     final menuState = context.read<MenuState>();
 
-    if (menuState.needsCustomization(widget.item)) {
-      final storedCustomization = menuState.getStoredCustomization(widget.item.id);
-
-      if (widget.quantity == 0 || storedCustomization == null) {
-        _showCustomizationSheet(context);
-      } else {
-        widget.onQuantityChanged(true);
-      }
-    } else {
+    if (!menuState.needsCustomization(widget.item)) {
       widget.onQuantityChanged(true);
+      return;
     }
+
+    final totalQty = menuState.getItemQuantity(widget.item.id);
+    if (totalQty == 0) {
+      _showCustomizationSheet(context);
+      return;
+    }
+
+    // Customizable item with qty >= 1 → always open the picker.
+    _showCartVariantPicker(context);
+  }
+
+  void _handleDecrement(BuildContext context) {
+    final menuState = context.read<MenuState>();
+
+    if (!menuState.needsCustomization(widget.item)) {
+      menuState.updateCartItem(
+        widget.item,
+        false,
+        tableId: widget.tableId,
+        restaurantId: widget.restaurantId,
+        context: context,
+      );
+      return;
+    }
+
+    final entries = menuState.getCartEntriesFor(widget.item.id);
+    final totalQty = menuState.getItemQuantity(widget.item.id);
+
+    // Fast path: exactly one entry, qty 1 → direct remove, no picker flash.
+    if (totalQty == 1 && entries.length == 1) {
+      final entry = entries.first;
+      menuState.updateCartItem(
+        widget.item,
+        false,
+        cartItemId: entry.cartItemId,
+        selectedVariants: entry.selectedVariantsMap,
+        selectedAddons: entry.selectedAddonsList,
+        tableId: widget.tableId,
+        restaurantId: widget.restaurantId,
+        context: context,
+      );
+      return;
+    }
+
+    _showCartVariantPicker(context);
+  }
+
+  void _showCartVariantPicker(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.paper,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusLG)),
+      ),
+      builder: (_) => CartVariantPickerSheet(
+        menuItem: widget.item,
+        tableId: widget.tableId,
+        restaurantId: widget.restaurantId,
+      ),
+    );
   }
 
   @override
@@ -292,14 +349,7 @@ class _CarouselItemCardState extends State<_CarouselItemCard> {
           mainAxisSize: MainAxisSize.min,
           children: [
             InkWell(
-              onTap: () {
-                context.read<MenuState>().updateCartItem(
-                      widget.item,
-                      false,
-                      tableId: widget.tableId,
-                      restaurantId: widget.restaurantId,
-                    );
-              },
+              onTap: () => _handleDecrement(context),
               child: const Padding(
                 padding: EdgeInsets.all(4),
                 child: Icon(Icons.remove, size: 16, color: AppColors.ink),

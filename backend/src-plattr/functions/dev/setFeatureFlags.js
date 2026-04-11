@@ -14,10 +14,7 @@ const DEFAULTS = {
   isOtpManadatoryAtScan: true,
   isUsernameEnabled: true,
   isMultiUserSupportEnabled: false,
-  isMultipleVariantOrAddonForMenuItemsSupported: true,
   sendServerNotifications: false,
-  shouldUpdateFoodStatusAtItemLevelORAtOrderLevel: false,
-  fallbackToSameCustomConfigurationForAddItem: true,
 };
 
 const setFeatureFlags = functions.https.onRequest(withCors(async (req, res) => {

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show ChangeNotifier;
+import 'package:flutter/material.dart';
 import 'package:flutterboilerplate/auth/auth_prompt.dart';
 import 'package:flutterboilerplate/pages/cart_listing/cart_helper.dart';
 import 'package:flutterboilerplate/pages/cart_listing/cart_listing_repository.dart';
@@ -262,21 +262,26 @@ class CartListingState extends ChangeNotifier with OffersStateMixin {
     bool increment, {
     required String tableId,
     required String restaurantId,
+    BuildContext? context,
   }) async {
+    // Skip if already updating
+    if (_isUpdatingCart) {
+      AppLogger.log('🔒 CART: Skipping request, update already in progress');
+      return;
+    }
+
+    _isUpdatingCart = true;
+    notifyListeners();
+
+    // Snapshot cart BEFORE any mutation so we can revert on API failure.
+    // Parity with MenuState.updateCartItem (menu_state.dart:160).
+    final previousCart = _cart?.copyWith();
+
+    AppLogger.log(
+      '🛒 CART: ${increment ? "Adding" : "Removing"} item ${item.menuItemId}',
+    );
+
     try {
-      // Skip if already updating
-      if (_isUpdatingCart) {
-        AppLogger.log('🔒 CART: Skipping request, update already in progress');
-        return;
-      }
-
-      _isUpdatingCart = true;
-      notifyListeners();
-
-      AppLogger.log(
-        '🛒 CART: ${increment ? "Adding" : "Removing"} item ${item.menuItemId}',
-      );
-
       // Convert the new VariantSelection/AddonSelection structures to legacy format for API
       final legacyVariants = item.selectedVariantsMap;
       final legacyAddons = item.selectedAddonsList;
@@ -302,6 +307,13 @@ class CartListingState extends ChangeNotifier with OffersStateMixin {
                 quantity: 1,
                 selectedVariants: legacyVariants,
                 selectedAddons: legacyAddons,
+                // Cart page always has a CartItem in hand (not a MenuItem), so
+                // item.cartItemId is always set by the backend. Thread it so the
+                // remove targets THIS specific entry instead of the backend's
+                // "first menuItemId match" fallback — critical correctness fix
+                // for multi-config carts (two Wings entries, user taps - on the
+                // second row). Without this, the wrong entry gets decremented.
+                cartItemId: item.cartItemId,
               ),
               tableId: tableId,
               restaurantId: restaurantId,
@@ -442,15 +454,53 @@ class CartListingState extends ChangeNotifier with OffersStateMixin {
           );
         }
       } else {
-        AppLogger.log('❌ CART: Error updating cart - ${response.message}');
+        // API returned a non-success response (e.g. 5xx, validation error).
+        // Revert the cart to the snapshot and surface the error to the user.
+        _handleApiError(previousCart, response.message, context);
       }
-
-      _isUpdatingCart = false;
-      notifyListeners();
     } catch (e) {
-      AppLogger.log('❌ CART: Exception updating cart - $e');
+      // Exception path (network error, parse failure, etc.) — same rollback + toast.
+      _handleApiError(previousCart, e.toString(), context);
+    } finally {
+      // CRITICAL: always release the lock, even on failure. Mirrors menu_state.dart:262.
       _isUpdatingCart = false;
       notifyListeners();
+    }
+  }
+
+  /// Reverts the in-memory cart to [previousCart] and surfaces [message] to the
+  /// user as a toast. Parity with MenuState._handleApiError at menu_state.dart:310.
+  void _handleApiError(
+    Cart? previousCart,
+    String message,
+    BuildContext? context,
+  ) {
+    AppLogger.log('❌ CART: API error, reverting to snapshot — $message');
+    if (previousCart != null) {
+      _cart = previousCart;
+    }
+    _showErrorToast(context, message);
+  }
+
+  /// Shows a transient error toast via [ScaffoldMessenger]. Safe to call with a
+  /// null or unmounted [context]. Mirrors MenuState._showErrorToast at menu_state.dart:580.
+  void _showErrorToast(BuildContext? context, String message) {
+    if (context == null) return;
+    try {
+      if (!context.mounted) {
+        AppLogger.log('⚠️ CART: Context unmounted, skipping error toast');
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      AppLogger.log('⚠️ CART: Could not show error toast: $e');
     }
   }
 

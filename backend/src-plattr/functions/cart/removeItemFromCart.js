@@ -4,7 +4,10 @@ const { validateRemoveItemFields } = require('./cartInputValidation');
 const timestamp = require('../utils/timestamp');
 const { calculateCartValue } = require('./calculateCartValue');
 const { CartTotalPriceInfo } = require('../genericModels/priceinfo');
-const { safeRecalculateItemPrice } = require('../utils/dataUtils');
+const {
+  getMenuItemRef,
+  buildCartItemPriceInfoForQuantity,
+} = require('./addItemToCartBoilerplateHelper');
 
 /**
  * Simplified function to remove an item from cart
@@ -47,13 +50,34 @@ const removeItemFromCart = functions.https.onCall(async (data, context) => {
       throw new functions.https.HttpsError("not-found", "Item not found in cart.");
     }
 
-    // Decrement quantity; if becomes 0, remove the item
+    // Decrement quantity; if it reaches 0, remove the item entirely.
     const item = cart.items[targetIndex];
     const prevQty = typeof item.quantity === 'number' && !isNaN(item.quantity) ? item.quantity : 1;
     const newQty = prevQty - 1;
     if (newQty > 0) {
+      // Re-derive priceInfo from a trusted per-unit source (the menu item doc
+      // + the item's own immutable selectedVariantsDetails/selectedAddonsDetails).
+      // Historically this function called safeRecalculateItemPrice which read
+      // the existing item.priceInfo fields as if they were per-unit, but
+      // createCartItem/addItemToCart store them as "× current quantity". Every
+      // call after the first compounded the multiplication and corrupted the
+      // cart. See Phase 2.5 in
+      // Plattr_Pro_Context/TODO_Multi_Config_Cart_Feature.md for the full trace.
+      const menuItemDoc = await getMenuItemRef(db, restaurantId, item.menuItemId).get();
+      if (!menuItemDoc.exists) {
+        console.error("Menu item no longer exists during decrement:", { menuItemId: item.menuItemId });
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "Menu item no longer exists."
+        );
+      }
       item.quantity = newQty;
-      item.priceInfo = safeRecalculateItemPrice(item, newQty);
+      item.priceInfo = buildCartItemPriceInfoForQuantity(
+        menuItemDoc.data(),
+        item.selectedVariantsDetails,
+        item.selectedAddonsDetails,
+        newQty
+      );
       cart.items[targetIndex] = item;
     } else {
       cart.items.splice(targetIndex, 1);

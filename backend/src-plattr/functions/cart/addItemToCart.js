@@ -3,11 +3,9 @@ const { admin, db, FieldValue, Timestamp } = require("../admin/admin");
 const { calculateItemPrice } = require("./calculateCartValue");
 const { calculateCartValue } = require("./calculateCartValue");
 const featureFlags = require('../singleton/FeatureFlags');
-const errorMessages = require('../singleton/ErrorMessages');
 const { compareArraysIgnoringOrder } = require('../utils/arrayUtils');
-const { sanitizeCart, safeRecalculateItemPrice } = require('../utils/dataUtils');
+const { sanitizeCart } = require('../utils/dataUtils');
 const { validateAddItemFields, validateSessionId } = require('./cartInputValidation');
-const { applyFallbackConfiguration } = require('./addItemToCartCustomisationHelper');
 const timestamp = require('../utils/timestamp');
 const errorHandler = require('../singleton/ErrorHandler');
 const { BasicPriceInfo, CartItemPriceInfo, CartTotalPriceInfo } = require('../genericModels/priceinfo');
@@ -23,7 +21,7 @@ const {
   processSelectedVariants,
   processSelectedAddons,
   createCartItem,
-  checkDifferentConfigExists,
+  buildCartItemPriceInfoForQuantity,
   validateCartPriceInfo
 } = require('./addItemToCartBoilerplateHelper');
 
@@ -75,16 +73,6 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
         console.warn("Cart missing items array, initializing empty array");
         cart.items = [];
       }
-
-      // Apply fallback configuration for "Quick Add" scenarios
-      // Uses cart data already fetched by transaction (no extra read)
-      const fallbackConfig = applyFallbackConfiguration(
-        cart,
-        menuItemId,
-        { selectedVariants, selectedAddons }
-      );
-      selectedVariants = fallbackConfig.selectedVariants;
-      selectedAddons = fallbackConfig.selectedAddons;
 
       if (!cart.priceInfo) {
         cart.priceInfo = new CartTotalPriceInfo().toObject();
@@ -163,24 +151,8 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
         getNextCartItemId(cart.items)
       );
 
-      const isMultipleConfigsSupported = featureFlags.isEnabled('isMultipleVariantOrAddonForMenuItemsSupported');
-
-      // First check if identical item exists
+      // Check if identical item (same variants + addons) already exists
       const existingItemIndex = findIdenticalItemInCart(cart.items, itemToAdd, compareArraysIgnoringOrder);
-
-      // If multiple configs not supported, check if same menu item with different config exists
-      if (!isMultipleConfigsSupported && existingItemIndex === -1) {
-        const differentConfigError = checkDifferentConfigExists(
-          cart.items,
-          menuItemId,
-          errorMessages,
-          sanitizeCart
-        );
-
-        if (differentConfigError) {
-          return differentConfigError;
-        }
-      }
 
       if (existingItemIndex > -1) {
         // Update existing item
@@ -192,14 +164,20 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
           existingItem.quantity = 0;
         }
 
-        // Store the old quantity for debugging
-        const oldQuantity = existingItem.quantity;
         existingItem.quantity += quantity;
 
-        // Recalculate prices using safe utility function
-        existingItem.priceInfo = safeRecalculateItemPrice(existingItem, existingItem.quantity);
-
-        // console.log(`Updated item quantity from ${oldQuantity} to ${existingItem.quantity}`);
+        // Re-derive priceInfo from the freshly-fetched menuItem (already in
+        // scope above) + the item's immutable variant/addon snapshots. Do NOT
+        // read the existing item.priceInfo — it's stored as "× old quantity"
+        // and re-reading it would compound the multiplication on every
+        // subsequent merge. See Phase 2.5 in
+        // Plattr_Pro_Context/TODO_Multi_Config_Cart_Feature.md.
+        existingItem.priceInfo = buildCartItemPriceInfoForQuantity(
+          menuItem,
+          existingItem.selectedVariantsDetails,
+          existingItem.selectedAddonsDetails,
+          existingItem.quantity
+        );
       } else {
         // Add new item
         cart.items.push(itemToAdd);

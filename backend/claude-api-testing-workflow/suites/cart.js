@@ -88,20 +88,23 @@ export default async function cartSuite() {
     record(assertSuccess(resp, '4. Add burger Large + cheese'));
   }
 
-  // ── 5. Add item WITHOUT mandatory variant ────────────────────
-  // With fallbackToSameCustomConfigurationForAddItem=true (default),
-  // the backend auto-fills from the most recent burger's config.
-  // Since we added burger+Regular in test 3, this should succeed
-  // with the fallback config. If no prior burger existed, it would fail.
+  // ── 5. Add item WITHOUT mandatory variant → error ─────────────
+  // Burger has a mandatory size variant. After removing the fallback flag,
+  // missing a mandatory variant must always fail (no auto-fill from prior adds).
   {
     const resp = await call('cart-addItemToCart', {
       ...cartParams,
       menuItemId: ITEMS.BURGER.id,
       quantity: 1,
       sessionId,
-      // No selectedVariants — fallback auto-fills from test 3's Regular
+      // No selectedVariants — mandatory size variant missing
     });
-    record(assertSuccess(resp, '5. Add burger without variant (fallback fills from prev)'));
+    const isError = resp.status === 'error' || resp._httpStatus >= 400;
+    record({
+      pass: isError,
+      message: `5. Add burger without mandatory variant → ${isError ? 'rejected as expected' : 'unexpectedly succeeded'}`,
+      actual: isError ? undefined : resp,
+    });
   }
 
   // ── 6. Add out-of-stock item → error ───────────────────────────

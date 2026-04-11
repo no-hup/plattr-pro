@@ -5,12 +5,20 @@ import 'package:platter_core/platter_core.dart';
 
 import '../core/kitchen_repository.dart';
 import '../models/active_order_models.dart';
+import '../network/api_constants.dart';
 
 /// Lifecycle state for the live kitchen queue.
 ///
 /// - [loading]        : initial fetch in-flight, no data yet
-/// - [loaded]         : at least one successful fetch; list may be empty
-/// - [transientError] : polling fetch failed but the session is still valid
+/// - [loaded]         : at least one successful fetch; list may be empty.
+///                      Background poll failures leave the provider in
+///                      [loaded] as long as we still have previously-fetched
+///                      data, so the screen never blanks on a single bad
+///                      poll. [error] is still populated in that case.
+/// - [transientError] : fetch failed and we have no data to fall back to
+///                      (initial load failure, or background failure while
+///                      the list was already empty). Polling continues so
+///                      the next tick can recover.
 /// - [sessionExpired] : the session is no longer valid; polling stops
 ///                      until the user Reconnects
 enum KitchenLiveState { loading, loaded, transientError, sessionExpired }
@@ -52,11 +60,12 @@ class KitchenLiveProvider extends ChangeNotifier {
   }
 
   /// Starts polling and does an immediate initial fetch.
-  void startPolling({Duration interval = const Duration(seconds: 60)}) {
+  void startPolling({Duration? interval}) {
+    final effectiveInterval = interval ?? KitchenApiConstants.livePollingInterval;
     _pollingTimer?.cancel();
     fetchActiveCarts(isInitialLoad: true);
     _pollingTimer = Timer.periodic(
-      interval,
+      effectiveInterval,
       (_) => fetchActiveCarts(isInitialLoad: false),
     );
   }
@@ -117,16 +126,6 @@ class KitchenLiveProvider extends ChangeNotifier {
     } finally {
       notifyListeners();
     }
-  }
-
-  /// Called by the UI when the user taps the Reconnect button on the
-  /// session-expired state. This clears local state; the wrapping
-  /// [SessionManager]/AuthWrapper is expected to handle the actual
-  /// re-authentication navigation.
-  void markSessionExpiredAcknowledged() {
-    _activeCarts = [];
-    _state = KitchenLiveState.sessionExpired;
-    notifyListeners();
   }
 
   /// Manually trigger a refresh (pull-to-refresh). No-op if session expired.

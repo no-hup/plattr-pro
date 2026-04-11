@@ -47,9 +47,7 @@
         "location": {
           "_latitude": 12.9716,
           "_longitude": 77.5946
-        },
-        "isMultipleVariantOrAddonForMenuItemsSupported": true,
-        "fallbackToSameCustomConfigurationForAddItem": true
+        }
       },
       "menus": {
         "menu_main": {
@@ -871,9 +869,7 @@
         "location": {
           "_latitude": 12.9716,
           "_longitude": 77.5946
-        },
-        "isMultipleVariantOrAddonForMenuItemsSupported": false,
-        "fallbackToSameCustomConfigurationForAddItem": true
+        }
       },
       "menus": {
         "menu_main": {
@@ -1393,9 +1389,7 @@
         "location": {
           "_latitude": 12.9716,
           "_longitude": 77.5946
-        },
-        "isMultipleVariantOrAddonForMenuItemsSupported": true,
-        "fallbackToSameCustomConfigurationForAddItem": false
+        }
       },
       "menus": {
         "menu_main": {
@@ -1915,9 +1909,7 @@
         "location": {
           "_latitude": 12.9716,
           "_longitude": 77.5946
-        },
-        "isMultipleVariantOrAddonForMenuItemsSupported": true,
-        "fallbackToSameCustomConfigurationForAddItem": true
+        }
       },
       "menus": {
         "menu_main": {
@@ -2135,9 +2127,7 @@
         "location": {
           "_latitude": 12.9716,
           "_longitude": 77.5946
-        },
-        "isMultipleVariantOrAddonForMenuItemsSupported": true,
-        "fallbackToSameCustomConfigurationForAddItem": true
+        }
       },
       "menus": {
         "menu_main": {
@@ -2720,9 +2710,7 @@
         "location": {
           "_latitude": 12.9716,
           "_longitude": 77.5946
-        },
-        "isMultipleVariantOrAddonForMenuItemsSupported": true,
-        "fallbackToSameCustomConfigurationForAddItem": true
+        }
       },
       "menus": {
         "menu_main": {
@@ -3056,9 +3044,7 @@
         "location": {
           "_latitude": 12.9716,
           "_longitude": 77.5946
-        },
-        "isMultipleVariantOrAddonForMenuItemsSupported": true,
-        "fallbackToSameCustomConfigurationForAddItem": true
+        }
       },
       "menus": {
         "menu_main": {

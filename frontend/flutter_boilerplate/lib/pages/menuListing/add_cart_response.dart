@@ -700,6 +700,7 @@ class RemoveFromCartRequest {
     required this.quantity,
     this.selectedVariants,
     this.selectedAddons,
+    this.cartItemId,
   });
   final String tableId;
   final String restaurantId;
@@ -707,6 +708,13 @@ class RemoveFromCartRequest {
   final int quantity;
   final Map<String, String>? selectedVariants;
   final List<String>? selectedAddons;
+
+  /// Backend-assigned monotonic cart entry identifier. When set, the backend's
+  /// remove path targets this specific entry first, falling back to menuItemId
+  /// match only if the cartItemId doesn't resolve. This is the ONLY way to
+  /// surgically remove one of several multi-config entries sharing the same
+  /// menuItemId. See `backend/.../removeItemFromCart.js` lines 37-48.
+  final int? cartItemId;
 
   Map<String, dynamic> toJson() => {
         'tableId': tableId,
@@ -717,5 +725,6 @@ class RemoveFromCartRequest {
           'selectedVariants': selectedVariants,
         if (selectedAddons != null && selectedAddons!.isNotEmpty)
           'selectedAddons': selectedAddons,
+        if (cartItemId != null) 'cartItemId': cartItemId,
       };
 }

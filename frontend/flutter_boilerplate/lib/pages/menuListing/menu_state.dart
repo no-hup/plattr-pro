@@ -1,3 +1,7 @@
+// `show listEquals` only: foundation.dart also exports a `Category`
+// annotation class that collides with menu_response.Category (the restaurant
+// menu model). The `show` clause pulls in only the one function we need.
+import 'package:flutter/foundation.dart' show listEquals, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:flutterboilerplate/models/api_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/add_cart_response.dart' as legacy;
@@ -142,6 +146,7 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
     List<String>? selectedAddons,
     int quantity = 1,
     BuildContext? context,
+    int? cartItemId,
   }) async {
     // Skip if an update is already in progress
     if (_isUpdatingCart) {
@@ -184,6 +189,7 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
       tableId: tableId,
       restaurantId: restaurantId,
       quantity: quantity,
+      cartItemId: cartItemId,
     );
 
     // Make API request with the effective customization
@@ -196,6 +202,7 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
         selectedVariants: effectiveVariants,
         selectedAddons: effectiveAddons,
         quantity: quantity,
+        cartItemId: cartItemId,
       );
       
       if (!response.success) {
@@ -274,6 +281,7 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
     Map<String, String>? selectedVariants,
     List<String>? selectedAddons,
     int quantity = 1,
+    int? cartItemId,
   }) async {
     final request = increment
         ? legacy.AddToCartRequest(
@@ -291,6 +299,7 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
             quantity: quantity,
             selectedVariants: selectedVariants,
             selectedAddons: selectedAddons,
+            cartItemId: cartItemId,
           );
 
     return increment
@@ -322,20 +331,38 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
     required List<VariantSelection> selectedVariants,
     required List<AddonSelection> selectedAddons,
     int quantity = 1,
+    int? cartItemId,
   }) {
     // With Freezed models, we need to create new instances rather than modifying existing ones
     final currentItems = _cart?.items.toList() ?? <CartItem>[];
     final updatedItems = List<CartItem>.from(currentItems);
-    
+
     // Create default price info
     const defaultPriceInfo = CartItemPriceInfo(
-      
+
     );
-    
+
     // Determine how to find the item index based on provided customizations
     int itemIndex;
-    
-    if (selectedVariants.isEmpty && selectedAddons.isEmpty) {
+
+    // Case 0: caller provided a specific cartItemId — this is a surgical
+    // targeting request (e.g. multi-config picker, single-entry menu card '-').
+    // Honour it ahead of all other matching strategies. Falls through to the
+    // legacy strategies if the cartItemId doesn't resolve (stale UI state).
+    if (cartItemId != null) {
+      itemIndex = currentItems.indexWhere((item) => item.cartItemId == cartItemId);
+      if (itemIndex != -1) {
+        AppLogger.log('🔍 CART: Finding item by cartItemId=$cartItemId, found at index $itemIndex');
+      } else {
+        AppLogger.log('⚠️ CART: cartItemId=$cartItemId not found, falling back to legacy match');
+      }
+    } else {
+      itemIndex = -1;
+    }
+
+    if (itemIndex != -1) {
+      // Resolved via cartItemId — skip the legacy matching branches below.
+    } else if (selectedVariants.isEmpty && selectedAddons.isEmpty) {
       // Case 1: No customization specified - find by menuItemId only
       // This is typically used when incrementing/decrementing from item cards
       itemIndex = currentItems.indexWhere((item) => item.menuItemId == itemId);
@@ -406,13 +433,13 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
     notifyListeners();
   }
   
-  // Helper to check if two lists of customizations match
+  // Helper to check if two lists of customizations match.
+  // VariantSelection and AddonSelection are Freezed-generated with proper `==`
+  // and `hashCode`, so listEquals does element-wise deep comparison correctly.
+  // Replaces the previous toString()-based comparison, which worked only by
+  // accident of Freezed's deterministic toString output.
   bool _customizationsMatch<T>(List<T> list1, List<T> list2) {
-    if (list1.length != list2.length) return false;
-    
-    // Simple equality check for now
-    // For more sophisticated matching, we'd need to implement a proper comparison
-    return list1.toString() == list2.toString();
+    return listEquals(list1, list2);
   }
 
   // Helper to create a new cart with empty price info
@@ -602,27 +629,34 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
     }
   }
 
+  /// Returns the TOTAL quantity across every cart entry that matches [itemId].
+  ///
+  /// For a customizable menu item with multiple variant/addon configurations
+  /// in the cart (e.g. Wings 6pc + mayo AND Wings 12pc + hot sauce), the menu
+  /// badge must show 2, not 1. The pre-Phase-3 implementation used
+  /// `firstWhere` and returned only the first matching entry's quantity,
+  /// silently under-counting multi-config carts.
+  ///
+  /// Returns 0 when the cart is null/empty or no entry matches.
   int getItemQuantity(String itemId) {
     if (_cart == null || _cart!.items.isEmpty) {
       return 0;
     }
-    
-    try {
-      final item = _cart!.items
-          .firstWhere(
-            (item) => item.menuItemId == itemId,
-            orElse: () => CartItem(
-              menuItemId: itemId,
-              priceInfo: const CartItemPriceInfo(
-                
-              ),
-            ),
-          );
-      return item.quantity ?? 0;
-    } catch (e) {
-      AppLogger.log('❌ Error getting item quantity: $e');
-      return 0;
-    }
+    return _cart!.items
+        .where((item) => item.menuItemId == itemId)
+        .fold<int>(0, (sum, item) => sum + (item.quantity ?? 0));
+  }
+
+  /// Returns every cart entry whose menuItemId matches [menuItemId], in the
+  /// same order they appear in the cart. For customizable items with multiple
+  /// variant/addon configurations, this is the authoritative lookup used by
+  /// the menu card stepper (single-entry `-` target) and the upcoming
+  /// CartVariantPickerSheet (one card per entry).
+  ///
+  /// Returns an empty list when the cart is null or empty. Never returns null.
+  List<CartItem> getCartEntriesFor(String menuItemId) {
+    if (_cart == null) return const [];
+    return _cart!.items.where((i) => i.menuItemId == menuItemId).toList();
   }
 
   bool needsCustomization(MenuItem item) =>
@@ -652,6 +686,16 @@ class MenuState extends ChangeNotifier with OffersStateMixin {
 
   Cart? _cart;
   Cart? get cart => _cart;
+
+  /// Test-only hook for seeding `_cart` directly without running the full
+  /// `updateCartItem` → API → `_updateLocalCart` pipeline. Enables widget
+  /// tests on menu card handlers + `CartVariantPickerSheet` to stand up a
+  /// multi-entry cart fixture cheaply. **Never call from production code.**
+  @visibleForTesting
+  void seedCartForTest(Cart? cart) {
+    _cart = cart;
+    notifyListeners();
+  }
 
   // ==================== Offers Mixin Implementation ====================
   
