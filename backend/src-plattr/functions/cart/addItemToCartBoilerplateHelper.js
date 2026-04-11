@@ -3,11 +3,10 @@
  */
 
 const { admin, db, FieldValue, Timestamp } = require("../admin/admin");
-const featureFlags = require('../singleton/FeatureFlags');
-const errorMessages = require('../singleton/ErrorMessages');
 const { compareArraysIgnoringOrder } = require('../utils/arrayUtils');
 const { BasicPriceInfo, CartItemPriceInfo, CartTotalPriceInfo } = require('../genericModels/priceinfo');
 const { FULFILLMENT_STATUS } = require('../orders/orderConstants');
+const { calculateItemPrice } = require('./calculateCartValue');
 
 /**
  * Gets a reference to a cart document in Firestore
@@ -449,38 +448,87 @@ async function processSelectedAddons(db, restaurantId, selectedAddons, errorHand
  * @param {number} cartItemId - Unique ID for this cart item
  * @returns {Object} - Complete cart item object
  */
-function createCartItem(menuItemId, menuItem, selectedVariantsDetails, selectedAddonsDetails, quantity, priceDetails, cartItemId) {
-  // Ensure we have valid price info, otherwise use defaults
-  if (!priceDetails || !priceDetails.priceInfo) {
-    console.error("Price calculation failed, using defaults");
-    priceDetails = {
-      priceInfo: {
-        itemBasePrice: 0,
-        totalVariantBasePrice: 0,
-        totalAddonBasePrice: 0,
-        finalPrice: 0,
-        discount: 0,
-        totalBasePrice: 0
-      }
-    };
-  }
+/**
+ * Builds a CartItemPriceInfo object for a given quantity by freshly deriving
+ * per-unit prices from the menu item and the immutable variant/addon snapshots
+ * stored on the cart item, then multiplying by quantity.
+ *
+ * This is the single source of truth for "what should an item's priceInfo look
+ * like at quantity N". It replaces the older, non-idempotent
+ * `safeRecalculateItemPrice` helper in `utils/dataUtils.js`, which used to read
+ * its own previous output as if it were per-unit — producing garbage on every
+ * call after the first. See `Plattr_Pro_Context/TODO_Multi_Config_Cart_Feature.md`
+ * Phase 2.5 for the full writeup.
+ *
+ * Callers MUST pass a fresh `menuItem` snapshot (from Firestore) — not a cached
+ * value pulled off the cart item. This guarantees that the per-unit source of
+ * truth is a document we control, not a possibly-corrupted `priceInfo` field.
+ *
+ * Output shape matches the historical `× quantity` schema that
+ * `calculateCartValue`, `cart_page.dart`, and order creation all depend on.
+ *
+ * @param {Object} menuItem - Fresh menu item document (must contain priceInfo)
+ * @param {Array}  selectedVariantsDetails - Variant snapshot stored on the cart item
+ * @param {Array}  selectedAddonsDetails   - Addon snapshot stored on the cart item
+ * @param {number} quantity - New quantity for the cart item
+ * @returns {Object} CartItemPriceInfo-shaped priceInfo with every field × quantity
+ */
+function buildCartItemPriceInfoForQuantity(menuItem, selectedVariantsDetails, selectedAddonsDetails, quantity) {
+  const safeQty = sanitizeNumber(quantity, 1);
 
-  // Get the base price info
-  const priceInfo = priceDetails.priceInfo;
+  // Delegate per-unit computation to the same function used on initial add.
+  // calculateItemPrice returns per-unit values across the board (see
+  // cart/calculateCartValue.js:104-117).
+  const { priceInfo: unit } = calculateItemPrice(
+    menuItem,
+    Array.isArray(selectedVariantsDetails) ? selectedVariantsDetails : [],
+    Array.isArray(selectedAddonsDetails) ? selectedAddonsDetails : []
+  );
 
-  // Use CartItemPriceInfo model to standardize the price structure
-  const standardizedPriceInfo = new CartItemPriceInfo({
-    itemBasePrice: sanitizeNumber(priceInfo.itemBasePrice * quantity),
-    itemFinalPrice: sanitizeNumber(priceInfo.itemFinalPrice * quantity),
-    totalVariantBasePrice: sanitizeNumber(priceInfo.totalVariantBasePrice * quantity),
-    totalVariantFinalPrice: sanitizeNumber((priceInfo.totalVariantFinalPrice || priceInfo.totalVariantBasePrice) * quantity),
-    totalAddonBasePrice: sanitizeNumber(priceInfo.totalAddonBasePrice * quantity),
-    totalAddonFinalPrice: sanitizeNumber((priceInfo.totalAddonFinalPrice || priceInfo.totalAddonBasePrice) * quantity),
-    totalBasePrice: sanitizeNumber(priceInfo.totalBasePrice * quantity),
-    finalPrice: sanitizeNumber(priceInfo.finalPrice * quantity),
-    discount: sanitizeNumber(priceInfo.discount),
-    discountAmount: sanitizeNumber((priceInfo.discountAmount || 0) * quantity)
+  return new CartItemPriceInfo({
+    itemBasePrice:          sanitizeNumber(unit.itemBasePrice          * safeQty),
+    itemFinalPrice:         sanitizeNumber(unit.itemFinalPrice         * safeQty),
+    totalVariantBasePrice:  sanitizeNumber(unit.totalVariantBasePrice  * safeQty),
+    totalVariantFinalPrice: sanitizeNumber((unit.totalVariantFinalPrice || unit.totalVariantBasePrice) * safeQty),
+    totalAddonBasePrice:    sanitizeNumber(unit.totalAddonBasePrice    * safeQty),
+    totalAddonFinalPrice:   sanitizeNumber((unit.totalAddonFinalPrice  || unit.totalAddonBasePrice) * safeQty),
+    totalBasePrice:         sanitizeNumber(unit.totalBasePrice         * safeQty),
+    finalPrice:             sanitizeNumber(unit.finalPrice             * safeQty),
+    discount:               sanitizeNumber(unit.discount),
+    discountAmount:         sanitizeNumber((unit.discountAmount || 0) * safeQty)
   }).toObject();
+}
+
+function createCartItem(menuItemId, menuItem, selectedVariantsDetails, selectedAddonsDetails, quantity, priceDetails, cartItemId) {
+  // priceDetails is kept in the signature for backward compatibility with the
+  // one caller (addItemToCart.js), but we deliberately re-derive the priceInfo
+  // from `menuItem` so createCartItem and the increment/decrement recalc paths
+  // share exactly the same code. If priceDetails is ever missing or malformed,
+  // buildCartItemPriceInfoForQuantity will still produce a correct priceInfo
+  // from the menu item directly.
+  let standardizedPriceInfo;
+  try {
+    standardizedPriceInfo = buildCartItemPriceInfoForQuantity(
+      menuItem,
+      selectedVariantsDetails,
+      selectedAddonsDetails,
+      quantity
+    );
+  } catch (err) {
+    console.error("createCartItem: priceInfo derivation failed, using zeros", err);
+    standardizedPriceInfo = new CartItemPriceInfo({
+      itemBasePrice: 0,
+      itemFinalPrice: 0,
+      totalVariantBasePrice: 0,
+      totalVariantFinalPrice: 0,
+      totalAddonBasePrice: 0,
+      totalAddonFinalPrice: 0,
+      totalBasePrice: 0,
+      finalPrice: 0,
+      discount: 0,
+      discountAmount: 0
+    }).toObject();
+  }
 
   // Construct cart item with standardized price info
   return {
@@ -492,51 +540,6 @@ function createCartItem(menuItemId, menuItem, selectedVariantsDetails, selectedA
     priceInfo: standardizedPriceInfo,
     cartItemId,
     status: FULFILLMENT_STATUS.PENDING
-  };
-}
-
-/**
- * Checks if a menu item with different configuration already exists in cart
- * Used when multiple configurations aren't supported
- * 
- * @param {Array} cartItems - Array of items in the cart 
- * @param {string} menuItemId - ID of the menu item to check
- * @param {Object} errorMessages - Error message provider
- * @param {Function} sanitizeCart - Function to sanitize cart for response
- * @returns {Object|null} - Error response if different config found, null otherwise
- */
-function checkDifferentConfigExists(cartItems, menuItemId, errorMessages, sanitizeCart) {
-  if (!cartItems || !Array.isArray(cartItems)) {
-    return null;
-  }
-
-  // Find any item with the same menuItemId
-  const sameMenuItemIndex = cartItems.findIndex(item => item.menuItemId === menuItemId);
-
-  if (sameMenuItemIndex === -1) {
-    return null; // No item with this menuItemId exists
-  }
-
-  // Found same menu item with different configuration
-  const existingItem = cartItems[sameMenuItemIndex];
-
-  // Format variant and addon names for error message
-  const existingConfig = {
-    variantNames: (existingItem.selectedVariantsDetails || [])
-      .map(v => v.selected_variant_name || 'unknown')
-      .join(', '),
-    addonNames: (existingItem.selectedAddonsDetails || [])
-      .map(a => a.name || 'unknown')
-      .join(', ')
-  };
-
-  // Return error response
-  return {
-    message: `${errorMessages.get('CART_DIFFERENT_VARIANT_EXISTS')}: ${existingItem.menuItem?.meta?.name || 'Unknown item'} with ${existingConfig.variantNames || 'no variants'} and ${existingConfig.addonNames || 'no addons'}`,
-    status: FULFILLMENT_STATUS.PENDING,
-    data: {
-      existingItem: sanitizeCart(existingItem)
-    }
   };
 }
 
@@ -594,7 +597,7 @@ module.exports = {
   processSelectedVariants,
   processSelectedAddons,
   createCartItem,
-  checkDifferentConfigExists,
+  buildCartItemPriceInfoForQuantity,
   validateCartPriceInfo,
   logItemDetails
 };

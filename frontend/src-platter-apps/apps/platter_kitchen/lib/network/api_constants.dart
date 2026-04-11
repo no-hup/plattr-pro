@@ -12,4 +12,8 @@ class KitchenApiConstants {
   /// Cart status mutation. Shared with the server/waiter app.
   /// Backend: cart/updateCartStatus.js
   static const String updateCartStatus = '/cart-updateCartStatus';
+
+  /// Default polling cadence for the live kitchen queue. Centralised here so
+  /// the provider and any future manual-refresh code agree on the value.
+  static const Duration livePollingInterval = Duration(seconds: 60);
 }

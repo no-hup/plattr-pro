@@ -25,28 +25,11 @@
  *            Apps: Consumer (multi-user join flow), Kitchen (shows multiple occupants)
  *   - FALSE: Single user per table. Phone required only for primary (VACANT/OTP_PENDING).
  *
- * isMultipleVariantOrAddonForMenuItemsSupported (default: true)
- *   - TRUE:  Menu items can have multiple variant groups and addon groups.
- *            Affected: cart/addItemToCart.js:addItemToCartHandler
- *            Apps: Consumer (variant/addon selection UI)
- *   - FALSE: Simplified single-config item addition.
- *
  * sendServerNotifications (default: false)
  *   - TRUE:  Push notifications sent to assigned server on order events.
  *            Affected: orders/updateOrderStatus.js, cart/triggers/orderTriggers.js
  *            Apps: Server (receives push notifications)
  *   - FALSE: No server notifications.
- *
- * shouldUpdateFoodStatusAtItemLevelORAtOrderLevel (default: false)
- *   - TRUE:  Track food preparation status per item (not yet implemented).
- *            Apps: Kitchen (item-level status updates)
- *   - FALSE: Track status at order/cart level.
- *
- * fallbackToSameCustomConfigurationForAddItem (default: true)
- *   - TRUE:  When adding an item that's already in cart, auto-fill previous configuration.
- *            Affected: cart/addItemToCartCustomisationHelper.js
- *            Apps: Consumer (auto-fill variant/addon on re-add)
- *   - FALSE: Always show fresh configuration dialog.
  */
 class FeatureFlags {
   constructor() {
@@ -59,12 +42,7 @@ class FeatureFlags {
       isOtpManadatoryAtScan: true,
       isUsernameEnabled: true,
       isMultiUserSupportEnabled: false,
-      isMultipleVariantOrAddonForMenuItemsSupported: true,
-      sendServerNotifications: false,
-      // TODO: Implement item-level status tracking logic when this is enabled
-      shouldUpdateFoodStatusAtItemLevelORAtOrderLevel: false,
-      // Feature flag for auto-filling cart item configuration
-      fallbackToSameCustomConfigurationForAddItem: true
+      sendServerNotifications: false
     };
     
     // Test override cache (populated by loadOverrides from Firestore)

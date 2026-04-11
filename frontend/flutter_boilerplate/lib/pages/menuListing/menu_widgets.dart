@@ -1,5 +1,7 @@
 // File: menu_item_card.dart
 import 'package:flutter/material.dart';
+import 'package:flutterboilerplate/pages/menuListing/models/cart_item.dart';
+import 'package:flutterboilerplate/pages/menuListing/widgets/cart_variant_picker_sheet.dart';
 import 'package:flutterboilerplate/pages/menuListing/widgets/menu_customization_sheet.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_state.dart';
@@ -72,24 +74,75 @@ class _MenuItemCardState extends State<MenuItemCard> {
   void _handleAddToCart(BuildContext context) {
     final menuState = context.read<MenuState>();
 
-    if (menuState.needsCustomization(widget.item)) {
-      final storedCustomization = menuState.getStoredCustomization(widget.item.id);
-
-      if (widget.quantity == 0 || storedCustomization == null) {
-        AppLogger.log(
-          '🛒 MENU: Showing customization sheet for item ${widget.item.id}',
-        );
-        _showCustomizationSheet(context);
-      } else {
-        AppLogger.log(
-          '🛒 MENU: Using stored customization for item ${widget.item.id}',
-        );
-        widget.onQuantityChanged(true);
-      }
-    } else {
-      AppLogger.log('🛒 MENU: Adding non-customizable item ${widget.item.id}');
+    if (!menuState.needsCustomization(widget.item)) {
       widget.onQuantityChanged(true);
+      return;
     }
+
+    final totalQty = menuState.getItemQuantity(widget.item.id);
+    if (totalQty == 0) {
+      _showCustomizationSheet(context);
+      return;
+    }
+
+    // Customizable item with qty >= 1 → always open the picker so the user
+    // disambiguates which variant config they are incrementing / adding.
+    _showCartVariantPicker(context);
+  }
+
+  void _handleDecrement(BuildContext context) {
+    final menuState = context.read<MenuState>();
+
+    if (!menuState.needsCustomization(widget.item)) {
+      menuState.updateCartItem(
+        widget.item,
+        false,
+        tableId: widget.tableId,
+        restaurantId: widget.restaurantId,
+        context: context,
+      );
+      return;
+    }
+
+    final entries = menuState.getCartEntriesFor(widget.item.id);
+    final totalQty = menuState.getItemQuantity(widget.item.id);
+
+    // Fast path: exactly one entry, qty 1 → direct remove, no picker flash.
+    // Targets the entry's cartItemId so the backend deletes the right row.
+    if (totalQty == 1 && entries.length == 1) {
+      final entry = entries.first;
+      menuState.updateCartItem(
+        widget.item,
+        false,
+        cartItemId: entry.cartItemId,
+        selectedVariants: entry.selectedVariantsMap,
+        selectedAddons: entry.selectedAddonsList,
+        tableId: widget.tableId,
+        restaurantId: widget.restaurantId,
+        context: context,
+      );
+      return;
+    }
+
+    // Any ambiguity (qty >= 2 or multiple entries) → picker disambiguates.
+    _showCartVariantPicker(context);
+  }
+
+  void _showCartVariantPicker(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.paper,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusLG)),
+      ),
+      builder: (_) => CartVariantPickerSheet(
+        menuItem: widget.item,
+        tableId: widget.tableId,
+        restaurantId: widget.restaurantId,
+      ),
+    );
   }
 
   @override
@@ -142,8 +195,7 @@ class _MenuItemCardState extends State<MenuItemCard> {
                       item: widget.item,
                       quantity: widget.quantity,
                       onAddToCart: () => _handleAddToCart(context),
-                      tableId: widget.tableId,
-                      restaurantId: widget.restaurantId,
+                      onDecrement: () => _handleDecrement(context),
                     ),
                   ],
                 ),
@@ -271,15 +323,13 @@ class _QuantityControl extends StatelessWidget {
     required this.item,
     required this.quantity,
     required this.onAddToCart,
-    required this.tableId,
-    required this.restaurantId,
+    required this.onDecrement,
   });
 
   final MenuItem item;
   final int quantity;
   final VoidCallback onAddToCart;
-  final String tableId;
-  final String restaurantId;
+  final VoidCallback onDecrement;
 
   @override
   Widget build(BuildContext context) {
@@ -291,12 +341,7 @@ class _QuantityControl extends StatelessWidget {
       return QuantitySelector(
         quantity: quantity,
         onIncrement: onAddToCart,
-        onDecrement: () => context.read<MenuState>().updateCartItem(
-          item,
-          false,
-          tableId: tableId,
-          restaurantId: restaurantId,
-        ),
+        onDecrement: onDecrement,
         compact: true, // Use compact mode in list
       );
     }

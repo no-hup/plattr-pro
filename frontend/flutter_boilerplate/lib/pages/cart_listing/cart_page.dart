@@ -449,6 +449,7 @@ class CartItemTile extends StatelessWidget {
                                 false,
                                 tableId: tableId,
                                 restaurantId: restaurantId,
+                                context: context,
                               );
                         }
                       },
@@ -473,6 +474,7 @@ class CartItemTile extends StatelessWidget {
                               false,
                               tableId: tableId,
                               restaurantId: restaurantId,
+                              context: context,
                             );
                       },
                 onIncrement: context.watch<CartListingState>().isUpdatingCart
@@ -485,6 +487,7 @@ class CartItemTile extends StatelessWidget {
                               true,
                               tableId: tableId,
                               restaurantId: restaurantId,
+                              context: context,
                             );
                       },
                 isEnabled: !context.watch<CartListingState>().isUpdatingCart,
@@ -498,27 +501,32 @@ class CartItemTile extends StatelessWidget {
   }
 
   // Add a confirmation dialog for removing items
-  void _showRemoveConfirmation(BuildContext context) {
+  void _showRemoveConfirmation(BuildContext pageContext) {
+    // Capture the page context so the error toast has a still-mounted context
+    // to land on after the dialog is dismissed. The dialogContext's Element is
+    // disposed the moment Navigator.pop() fires, which would silently swallow
+    // any error toast shown via CartListingState._showErrorToast.
     showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: pageContext,
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Remove Item'),
         content: const Text(
             'Are you sure you want to remove this item from your cart?',),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('CANCEL'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
               // Set quantity to 0 to remove the item
-              context.read<CartListingState>().updateCartItem(
+              pageContext.read<CartListingState>().updateCartItem(
                     item,
                     false,
                     tableId: tableId,
                     restaurantId: restaurantId,
+                    context: pageContext,
                   );
             },
             style: TextButton.styleFrom(

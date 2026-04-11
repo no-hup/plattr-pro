@@ -157,95 +157,6 @@ function sanitizeCart(cartData) {
 }
 
 /**
- * Safely calculates cart item price totals to prevent NaN propagation
- * @param {Object} item - Cart item
- * @param {number} quantity - Item quantity
- * @returns {Object} Safe price info object with recalculated totals
- */
-function safeRecalculateItemPrice(item, quantity = 1) {
-  if (!item || typeof item !== 'object') {
-    console.error('safeRecalculateItemPrice: Invalid item object');
-    return {
-      itemBasePrice: 0,
-      itemVariantBasePrice: 0,
-      itemAddonBasePrice: 0,
-      itemFinalPrice: 0,
-      discount: 0,
-      totalBasePrice: 0,
-      totalVariantBasePrice: 0,
-      totalAddonBasePrice: 0,
-      finalPrice: 0
-    };
-  }
-
-  // Ensure valid quantity
-  const safeQuantity = typeof quantity === 'number' && !isNaN(quantity) && quantity > 0
-    ? quantity
-    : 1;
-
-  // Ensure priceInfo object exists
-  const priceInfo = item.priceInfo || {};
-
-  // Base item unit prices
-  const itemBasePrice = safeGetNumber(priceInfo.itemBasePrice);
-  const itemFinalPrice = safeGetNumber(priceInfo.itemFinalPrice);
-  const itemDiscountPct = safeGetNumber(priceInfo.discount);
-
-  // Derive unit variant and addon base from selected details (robust against legacy fields)
-  const variants = Array.isArray(item.selectedVariantsDetails) ? item.selectedVariantsDetails : [];
-  const addons = Array.isArray(item.selectedAddonsDetails) ? item.selectedAddonsDetails : [];
-
-  const unitVariantBase = variants.reduce((sum, v) => {
-    const vInfo = v?.priceInfo || {};
-    const base = safeGetNumber(vInfo.basePrice);
-    return sum + base;
-  }, 0);
-
-  const unitAddonBase = addons.reduce((sum, a) => {
-    const aInfo = a?.priceInfo || {};
-    const base = safeGetNumber(aInfo.basePrice);
-    return sum + base;
-  }, 0);
-
-  // Compute unit variant/addon final respecting parent discount when flagged
-  const applyDiscount = (base, pct) => base * (1 - Math.max(0, Math.min(100, pct)) / 100);
-
-  const unitVariantFinal = variants.reduce((sum, v) => {
-    const info = v?.priceInfo || {};
-    const base = safeGetNumber(info.basePrice);
-    const hasOwnFinal = Number.isFinite(info.finalPrice);
-    const ownFinal = hasOwnFinal ? safeGetNumber(info.finalPrice) : base;
-    const final = v?.respectParentDiscount ? applyDiscount(base, itemDiscountPct) : ownFinal;
-    return sum + final;
-  }, 0);
-
-  const unitAddonFinal = addons.reduce((sum, a) => {
-    const info = a?.priceInfo || {};
-    const base = safeGetNumber(info.basePrice);
-    const hasOwnFinal = Number.isFinite(info.finalPrice);
-    const ownFinal = hasOwnFinal ? safeGetNumber(info.finalPrice) : base;
-    const final = a?.respectParentDiscount ? applyDiscount(base, itemDiscountPct) : ownFinal;
-    return sum + final;
-  }, 0);
-
-  // Totals = per-unit totals * quantity
-  const totalBasePrice = (itemBasePrice + unitVariantBase + unitAddonBase) * safeQuantity;
-  const finalPrice = (itemFinalPrice + unitVariantFinal + unitAddonFinal) * safeQuantity;
-
-  return {
-    itemBasePrice: itemBasePrice * safeQuantity,
-    itemVariantBasePrice: unitVariantBase * safeQuantity,
-    itemAddonBasePrice: unitAddonBase * safeQuantity,
-    itemFinalPrice: itemFinalPrice * safeQuantity,
-    discount: itemDiscountPct,
-    totalBasePrice,
-    totalVariantBasePrice: unitVariantBase * safeQuantity,
-    totalAddonBasePrice: unitAddonBase * safeQuantity,
-    finalPrice
-  };
-}
-
-/**
  * Safely get a number value, defaulting to 0 if NaN or invalid
  * @param {any} value - Value to sanitize
  * @returns {number} Sanitized number
@@ -254,10 +165,19 @@ function safeGetNumber(value) {
   return typeof value === 'number' && !isNaN(value) && isFinite(value) ? value : 0;
 }
 
+// NOTE: `safeRecalculateItemPrice` used to live here but was removed in
+// Phase 2.5 of TODO_Multi_Config_Cart_Feature.md. The function was
+// non-idempotent — it read `priceInfo.itemBasePrice` as per-unit but wrote
+// it back as `per-unit × quantity`, so every call after the first compounded
+// the multiplication and corrupted cart totals. Its two callers
+// (addItemToCart merge path, removeItemFromCart decrement path) now use
+// `buildCartItemPriceInfoForQuantity` in
+// `cart/addItemToCartBoilerplateHelper.js`, which always re-derives from a
+// fresh menuItem snapshot via `calculateItemPrice`.
+
 module.exports = {
   sanitizeData,
   sanitizeCart,
   detectNaNValues,
-  safeRecalculateItemPrice,
   safeGetNumber
-}; 
+};

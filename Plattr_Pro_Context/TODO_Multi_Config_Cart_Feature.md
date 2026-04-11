@@ -74,19 +74,245 @@ This is a living section. The executing agent updates it after each phase.
 
 **Phase Status:**
 
-- ⬜ Phase 1 — Backend flag + dead-code deletion
-- ⬜ Phase 1.5 — `CartListingState` error-handling parity fix
-- ⬜ Phase 2 — `cartItemId` threading through the remove path
-- ⬜ Phase 3 — Menu badge sum + `_customizationsMatch` cleanup
-- ⬜ Phase 4 — `CartVariantPickerSheet` widget
-- ⬜ Phase 5 — Menu card handler rewrite
+- ✅ Phase 1 — Backend flag + dead-code deletion
+- ✅ Phase 1.5 — `CartListingState` error-handling parity fix
+- ✅ Phase 2 — `cartItemId` threading through the remove path
+- ✅ Phase 3 — Menu badge sum + `_customizationsMatch` cleanup
+- ✅ Phase 4 — `CartVariantPickerSheet` widget
+- ✅ Phase 5 — Menu card handler rewrite
 - ⬜ Phase 6 — E2E regression matrix
 
 Legend: ⬜ pending · 🔄 in progress · ✅ complete · ⚠️ complete with deferred follow-ups
 
 **Phase History:**
 
-*(Empty — the executing agent appends an entry here after each phase, dated, containing: what was done, review answers to the 8 questions in Section 0.3, any plan amendments, any follow-ups filed.)*
+### Phase 1 — Backend flag + dead-code deletion — 2026-04-11
+**Executed by:** Claude Code (claude-opus-4-6)
+**Summary:** Deleted the three feature flags (`isMultipleVariantOrAddonForMenuItemsSupported`, `fallbackToSameCustomConfigurationForAddItem`, `shouldUpdateFoodStatusAtItemLevelORAtOrderLevel`) and every downstream reader. `addItemToCartCustomisationHelper.js` gone. `checkDifferentConfigExists` removed from the boilerplate helper. Dead imports (`errorMessages`, `featureFlags` in the boilerplate helper) cleaned up. MockData5 stripped of the flag overrides via `jq` walk. Unit tests 37/38/39 rewritten to cover multi-config add; test 38 is now the same-config-merge regression guard.
+
+**Files touched (10):**
+- `backend/src-plattr/functions/singleton/FeatureFlags.js`
+- `backend/src-plattr/functions/cart/addItemToCart.js`
+- `backend/src-plattr/functions/cart/addItemToCartBoilerplateHelper.js`
+- `backend/src-plattr/functions/cart/addItemToCartCustomisationHelper.js` (DELETED)
+- `backend/src-plattr/functions/dev/setFeatureFlags.js`
+- `backend/src-plattr/functions/test/mocks/featureFlags.mock.js`
+- `backend/src-plattr/functions/mock/MockData5EndToEndTesting.json`
+- `backend/src-plattr/functions/test/unit/cart/addItemToCart.test.js`
+- `backend/claude-api-testing-workflow/suites/feature-flags.js` (not in §4.1 file list — see Review Q7 below)
+- `backend/claude-api-testing-workflow/suites/cart.js` (not in §4.1 file list — see Review Q7 below)
+
+**Merge criteria:**
+- ✅ `node -c` on every edited JS file — clean
+- ✅ `JSON.parse` on `MockData5EndToEndTesting.json` — valid, structure verified via `jq`
+- ✅ Full cart unit suite (`test/unit/cart/`): **35/37 passing**. The 2 failures (`addItemToCart.test.js:69` and `calculateCartValue.test.js "contains cancelled item — should skip in total"`) are **pre-existing** and unrelated to Phase 1: both are about `calculateCartValue` not excluding cancelled items, in a file this phase never touched. Confirmed pre-existing by `git stash` + baseline run (baseline had 9/9 addItemToCart tests failing because the test mock never stubbed `featureFlags.loadOverrides` — Phase 1 incidentally fixed 7 of those via the new mock stub).
+- ✅ Grep of functions/ for deleted flag names / deleted helper / deleted function returns only the two optional docs files (`tests/API_WORKFLOW_TEST.md`, `docs/cart_order_flow.puml`) — deferred per §4.1 theme rule.
+- ✅ Grep of `claude-api-testing-workflow/` for deleted flag names returns zero hits.
+- Emulator boot + single-config E2E regression: **NOT RUN** in this session — flagged as required before merge. The executing human should run the emulator + mock import (`FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node functions/mock/importMockData5.js --clean --refresh-timestamps`) and confirm a basic add-to-cart still succeeds before landing Phase 1.
+
+**Review (§0.3 eight questions):**
+1. **Functionality:** Yes. Phase 1 is pure deletion + test parity. No behavior change for the existing single-config add flow; the only observable difference is that `addItemToCart` no longer consults the two flags or runs the "quick add fallback." Both were no-ops for every restaurant that had the flag at its default value.
+2. **Over-engineering:** No. Every edit is a deletion or a direct consequence of a deletion (dead import cleanup).
+3. **Abstraction:** No new abstractions. One file deleted, one function deleted, one function's allow-list trimmed. Zero new helpers, wrappers, or indirection.
+4. **Defensive code:** No new null checks or try/catch. The one place I could have added defensive code (the `featureFlags.loadOverrides` mock stub in the test file) is a test-only minimal `jest.fn().mockResolvedValue(undefined)` — required for the existing test suite to run at all, not defensive code in production.
+5. **Dead code:** Removed `errorMessages` and `featureFlags` imports from `addItemToCartBoilerplateHelper.js` (were only used by the deleted function). Removed `customerLogin`, `assertSuccess`, `assertError`, `ITEMS`, `VARIANTS` imports from `feature-flags.js` suite (were only used by the deleted blocks 5/6/7). `featureFlags` import is still live in `addItemToCart.js` because `loadOverrides(db)` is still called once at the top of the handler — intentionally kept.
+6. **Reuse:** N/A for a deletion phase. The new tests 37/38/39 follow the exact seed-cart-then-invoke pattern used by the surrounding tests — same fixtures, same helpers.
+7. **Scope:** Touched two files not listed in §4.1: `claude-api-testing-workflow/suites/feature-flags.js` and `claude-api-testing-workflow/suites/cart.js`. Both have direct, hard-coded dependencies on the three deleted flags — leaving them would leave the emulator-based integration suite broken on the next run. Changes were minimal: deleted blocks 5/6/7 in `feature-flags.js` (all three tested the deleted flags) and flipped `cart.js` test 5 from `assertSuccess` to an expected-error check (mandatory variant now strictly enforced since fallback is gone). Not drive-by refactoring — direct consequence of the flag deletion. The §10 Critical Files Index should be amended to include these two files; flagging as a **plan amendment** below.
+8. **Follow-ups filed:**
+   - **Pre-existing bug, not Phase 1 scope:** `calculateCartValue` does not exclude `status: 'cancelled'` items from totals. Two tests fail on it (`addItemToCart.test.js#69`, `calculateCartValue.test.js "contains cancelled item"`). Filed as `Plattr_Pro_Context/TODO_Cancelled_Item_Totals.md`.
+   - **Optional docs cleanup** (§4.1 explicitly calls this out as deferable): `backend/src-plattr/functions/tests/API_WORKFLOW_TEST.md` and `backend/src-plattr/functions/docs/cart_order_flow.puml` still mention the three deleted flag names. Also `backend/src-plattr/warp/*.html` and `backend/src-plattr/warp/complete_app_flow_html/*.html` reference the flags in narrative documentation — all stale but low-priority. Recommend a `TODO_Docs_Flag_Cleanup.md` follow-up.
+   - **Two MockData5 restaurants (`res_e2e_multi_variant_off`, `res_e2e_fallback_off`) are now semantically misnamed** — their `info` blocks no longer have the flag overrides, so the names describe a behavior that no longer exists. Renaming them is out of Phase 1 scope and would ripple through test fixtures that reference them. Flag for later cleanup.
+   - **Emulator smoke test not yet run.** Documented under Merge Criteria above. The human reviewer should do this before merging Phase 1.
+
+**Plan amendments:**
+- §10 Critical Files Index → Backend section: added `backend/claude-api-testing-workflow/suites/feature-flags.js` and `backend/claude-api-testing-workflow/suites/cart.js` inline (applied this session).
+
+**Deferred items:** None for Phase 1 as scoped in §4.1. The optional docs in `API_WORKFLOW_TEST.md` / `cart_order_flow.puml` are explicitly listed as deferrable by §4.1 and are deferred.
+
+---
+
+### Phase 1.5 — `CartListingState` error-handling parity fix — 2026-04-11
+**Executed by:** Claude Code (claude-opus-4-6)
+**Summary:** `CartListingState.updateCartItem` now matches `MenuState.updateCartItem`'s rollback + toast pattern. Snapshots the cart before any mutation, reverts to it on both non-success API responses and thrown exceptions, and surfaces the error via a transient `SnackBar`. Lock release moved into a `finally` block so it's guaranteed even when the success path throws during cart repair. All four cart-page call sites thread a `BuildContext` through. The dialog-nested call site was fixed to pass the outer page context instead of the dialog's inner context (which would be unmounted by the time the API call returns).
+
+**Files touched (2):**
+- `frontend/flutter_boilerplate/lib/pages/cart_listing/cart_listing_state.dart`
+- `frontend/flutter_boilerplate/lib/pages/cart_listing/cart_page.dart`
+
+**Reference:** `frontend/flutter_boilerplate/lib/pages/menuListing/menu_state.dart` lines 144 (BuildContext? param), 160 (snapshot), 202/260 (error handler calls), 310 (`_handleApiError`), 430 (`_revertToSnapshot`), 580 (`_showErrorToast`). Phase 1.5 copies this shape verbatim, adapted for Cart as the snapshot type.
+
+**Merge criteria:**
+- ✅ `dart analyze` on touched files: 5 info-level lints, 0 warnings, 0 errors. Three infos are pre-existing (positional bool param, unawaited future in `checkoutCart`, `avoid_print` in cart_page.dart:33). The two `use_build_context_synchronously` infos at lines 452/456 are parity with `menu_state.dart:202/260` which has the same pattern — runtime safety comes from the `context.mounted` guard inside `_showErrorToast`.
+- ✅ Full-project `dart analyze`: Phase 1.5 introduces **zero new errors and zero new warnings**. The 5 errors shown are in `test/backend_flow_*` (pre-existing) and the warnings are in unrelated files (home_repository.dart, cart_helper.dart, etc.).
+- Force-5xx manual test: **NOT RUN** in this session — requires a live emulator with forced failures. Documented under follow-ups.
+
+**Review (§0.3 eight questions):**
+1. **Functionality:** Yes. Before Phase 1.5, a 5xx or network error on cart-page stepper tap would: log the error silently, release the lock, leave `_cart` in the optimistically-updated state, and show no toast. After Phase 1.5: log, revert `_cart` to the pre-call snapshot, show a red SnackBar, release the lock. Exactly what the plan prescribes and exactly what `MenuState` already did.
+2. **Over-engineering:** No. Added two private helpers (`_handleApiError`, `_showErrorToast`) that each have exactly one caller for now — but both are direct copies of the `MenuState` equivalents and keeping the same shape preserves future refactor options (e.g., extracting a shared `CartErrorHandling` mixin). The alternative — inlining both helpers into the try/catch — would make the call site noisier without reducing total code. I judged the parity with `MenuState` to be the higher-value property.
+3. **Abstraction:** One new private method pair (`_handleApiError` + `_showErrorToast`). Both are 1-caller but justified as parity with `MenuState`. No new classes, no interfaces, no factories, no mixins added in this phase.
+4. **Defensive code:** Only the guards that `MenuState` already has: `previousCart != null` before reverting, `context == null` check, `context.mounted` check, and a top-level `try/catch` around the `ScaffoldMessenger` call for the edge case where the context's element is in a weird state. Every one of these maps to a real failure mode that the `MenuState` version already handles.
+5. **Dead code:** No new dead code added. The commented-out `_showErrorToast` block at lines 543-553 (pre-existing, commented out with `Fluttertoast`) is now genuinely obsolete since the live `_showErrorToast` uses `ScaffoldMessenger` — but removing it is out of scope and would break `git blame` continuity. Flagged as a trivial follow-up in §8-out-of-scope implicit.
+6. **Reuse:** Reused `Cart.copyWith()` for snapshotting (same as `MenuState` does with its cart model). Reused `ScaffoldMessenger` + `SnackBar` from Material. No new widgets built.
+7. **Scope:** Touched only the two files listed in §4.2. No drive-bys. The `_showRemoveConfirmation` rename of `context` to `pageContext` / `dialogContext` is scoped to that single method and exists because without it the error toast would silently no-op on the remove path — that's a correctness fix inside Phase 1.5's scope, not drive-by refactoring.
+8. **Follow-ups filed:**
+   - **`fetchCart` does NOT have the same silent-logging bug.** It stores `_error = response.message` on failure, and `cart_page.dart:94` reads `state.error` and renders a full-page error view via `_buildErrorView`. That's a different (and appropriate) surfacing mechanism for a failed initial load — you want a dismissable error screen, not a transient toast. No change needed. §4.2 asked to audit; the audit result is "no bug here."
+   - **Manual force-5xx test not yet run.** To validate Phase 1.5 end-to-end, the reviewer should boot the emulator, forcibly return a 5xx from `cart-updateCartItem` (either via `functions.https.onCall` throwing, or by patching the repository in a debug build), tap `+` / `−` / Remove on the cart page, and confirm: (a) the quantity snaps back to pre-tap value, (b) a red SnackBar appears at the bottom, (c) subsequent taps still work (lock properly released).
+   - **Pre-existing commented-out `_showErrorToast` stub** at cart_listing_state.dart lines 543-553 is now obsolete and should be deleted on the next touch of this file. Not worth a dedicated commit.
+
+**Plan amendments:** None. §4.2 described this fix exactly; no course correction needed during execution.
+
+**Notes for future readers (don't "helpfully" change these):**
+- **No `_updateMenuQuantities`-equivalent call in `_handleApiError`.** `MenuState._revertToSnapshot` (menu_state.dart:433) rebuilds a derived `_menuQuantities` map after restoring the snapshot. `CartListingState` has **no equivalent derived state** — the cart page reads items and price info directly off `_cart`. Setting `_cart = previousCart` inside `_handleApiError` is therefore the complete revert. Do not add a `_updateCartQuantities()` call here looking for symmetry with `MenuState` — there is nothing to update.
+- **`_revertToSnapshot` helper intentionally NOT extracted.** In `MenuState` this is a separate method because it has two lines of work (restore + rebuild derived map). Here it's a single line (`_cart = previousCart`) inlined into `_handleApiError`. Extracting it would be cargo-culting the shape of the reference without any structural benefit.
+- **Lock release structure: `finally` closes a narrow but real latent failure mode.** The pre-existing `try/catch` released the lock on both the happy path (end of try) and the catch path. Under normal operation there was no deadlock. **However**, if anything inside the `catch` body itself threw before the lock release lines — e.g. `AppLogger.log` raising during error formatting, or a subsequent line's `notifyListeners` throwing from an invalid listener — the lock would stay engaged forever and every subsequent `updateCartItem` call would silently drop via the `_isUpdatingCart` guard. The `finally` restructure makes this impossible regardless of what the `catch` body does. Not a "fix for a known bug" — it's defense against a pathological edge case that the old structure left exposed. This is why the try boundary was moved to begin right after the snapshot, not at the method top.
+- **Raw error messages in toasts** (`response.message`, `e.toString()`) are parity with `MenuState`. Known noise for e.g. `Exception: SocketException: Failed host lookup: 'api.xxx'`. Do not clean this up only in `CartListingState` — clean up both states together or neither, otherwise the two providers diverge. Deferred to the unification task.
+- **`BuildContext?` on a `ChangeNotifier` method is a known architectural smell** (notifiers shouldn't know about the widget tree). `MenuState` has exactly the same smell at the same method. The unification task (`TODO_Unify_Cart_State.md`) will collapse both states and address this cleanly — event-stream-based error channels, not context-threading. Do not fix this in isolation.
+- **`updateCartItem`'s `try` block is now ~180 lines** because the entire success-path repair logic lives inside it, guarded by the `finally`. This is by design — the repair logic can throw from `CartHelper.repairWithMenuItem`, and if it does, we want the lock released. The length is a smell but refactoring it into sub-methods is out of Phase 1.5 scope (the unification task will rewrite it).
+
+**Deferred items:** None. Phase 1.5 is fully self-contained and ship-ready (modulo the manual force-5xx smoke test).
+
+---
+
+### Phase 2 — `cartItemId` threading through the remove path — 2026-04-11
+**Executed by:** Claude Code (claude-opus-4-6)
+**Summary:** Added an optional `int? cartItemId` field to `RemoveFromCartRequest` and threaded it through every remove code path in the consumer frontend. Cart page stepper and single-entry menu card `−` now send `cartItemId` to the backend, which already prefers it over the menuItemId fallback at `removeItemFromCart.js:39-44`. `MenuState._updateLocalCart` gained a new Case 0 that matches by `cartItemId` before any legacy matching strategy, so the optimistic local mutation also targets the right entry. Added `MenuState.getCartEntriesFor(menuItemId)` — the authoritative lookup the menu card stepper uses now and Phase 4's `CartVariantPickerSheet` will consume directly. No backend changes — the wire format has always accepted `cartItemId`.
+
+**Files touched (5):**
+- `frontend/flutter_boilerplate/lib/pages/menuListing/add_cart_response.dart` — added `int? cartItemId` field to `RemoveFromCartRequest` + conditional `toJson` inclusion (`if (cartItemId != null) 'cartItemId': cartItemId`).
+- `frontend/flutter_boilerplate/lib/pages/menuListing/menu_state.dart` — `updateCartItem` and `_makeCartApiRequest` both accept `int? cartItemId`, threaded into the `RemoveFromCartRequest` constructor. `_updateLocalCart` gained a new Case 0 preferring `cartItemId` match (falls through to the existing menuItemId / full-equality matching when the cartItemId doesn't resolve — handles stale UI state gracefully). Added `getCartEntriesFor(String menuItemId) → List<CartItem>` helper.
+- `frontend/flutter_boilerplate/lib/pages/cart_listing/cart_listing_state.dart` — passes `item.cartItemId` into the `RemoveFromCartRequest`. Cart page always has a server-returned `CartItem` in hand, so the cartItemId is always set; critical correctness fix for multi-config cart rows where the legacy fallback would decrement the wrong entry.
+- `frontend/flutter_boilerplate/lib/pages/menuListing/menu_widgets.dart` — `_QuantityControl.onDecrement` looks up `getCartEntriesFor(item.id)`, passes `entries.first.cartItemId` when `entries.length == 1`, otherwise passes `null` (preserving the pre-Phase-5 behavior for multi-entry state, which Phase 5 replaces with the picker).
+- `frontend/flutter_boilerplate/lib/pages/menuListing/widgets/category_carousel.dart` — same single-entry targeting pattern in the carousel stepper's `−` handler.
+
+**Merge criteria:**
+- ✅ `dart analyze` on all 5 touched files: 0 errors, 0 warnings, 0 NEW info-level lints. Every info reported was pre-existing (positional bool params, `use_build_context_synchronously` pattern already in `menu_state.dart` from Phase 1.5, `avoid_dynamic_calls` on `response.data!.data!.cart`, directive ordering, redundant arg values, `withOpacity` deprecation, etc. — all inherited from the existing codebase).
+- ✅ `RemoveFromCartRequest.toJson()` only serializes `cartItemId` when non-null — confirmed by reading the updated `toJson()` body. Old callers that don't pass `cartItemId` produce byte-identical payloads to pre-Phase-2. Zero wire-format risk for the non-multi-config code paths.
+- ✅ `_updateLocalCart`'s new Case 0 falls through to legacy matching when `cartItemId == null` OR when the cartItemId doesn't resolve. This means every existing test case that drives `_updateLocalCart` without passing `cartItemId` behaves identically. No regression risk for the single-config code path.
+- ✅ Backend already accepts `cartItemId` at `removeItemFromCart.js:39-44` — no backend change needed. The backend's fallback to `menuItemId` match happens automatically if the cartItemId doesn't resolve, so even if the frontend sends a stale cartItemId the remove still succeeds (with the backend's first-match fallback, matching pre-Phase-2 behavior exactly).
+- Network-inspection verification: **NOT RUN** this session. The reviewer should run the consumer app against the emulator, tap `−` on a cart-page row and on a menu-card single-entry stepper, and confirm the request payload shows `cartItemId` in the DevTools network tab. Phase 2 merge criteria per §5 explicitly calls for this.
+- Single-config removal E2E regression: **NOT RUN** this session. Same reviewer action: add a non-customizable item (burger/fries), remove it, confirm it disappears.
+- **NOT A PHASE 2 REGRESSION — smoke-tester read this before filing a bug:** Tapping `−` on the menu card for a customizable item that has 2+ cart entries will still decrement the wrong entry. Phase 2 only fixes single-entry single-config removal and cart-page-stepper removal. Multi-entry `−` on the menu card is intentionally unchanged — Phase 5's `CartVariantPickerSheet` replaces that handler entirely. Until Phase 4/5 lands, there's no UI path to even reach multi-entry state, so this shouldn't manifest in normal testing. If you see it in a hand-seeded cart, it's expected.
+
+**Review (§0.3 eight questions):**
+1. **Functionality:** Yes. Before Phase 2, the remove path was `menuItemId`-only: the backend's `findIndex((it) => it.menuItemId === menuItemId)` would match the FIRST entry with that menuItemId, regardless of which of two multi-config entries the user tapped. After Phase 2, every remove that has a definite target (cart page row, single-entry menu card) sends the exact `cartItemId`, eliminating the wrong-entry bug. Multi-entry menu card state still has no way to disambiguate — that's Phase 5's `CartVariantPickerSheet` responsibility.
+2. **Over-engineering:** No. Every change is a direct consequence of the plan's §4.3 requirements. The `_updateLocalCart` Case 0 is 10 lines; `getCartEntriesFor` is 3 lines; the stepper handler changes are 7 lines each. No abstractions, no wrappers, no helpers beyond the one the plan explicitly asked for.
+3. **Abstraction:** One new 3-line helper (`getCartEntriesFor`) — explicitly asked for by §4.3 and §4.4, will have at least three callers by Phase 5 (menu stepper, carousel stepper, picker sheet). Not cargo culting.
+4. **Defensive code:** The Case 0 fallback chain (cartItemId match → legacy matching → no-op) handles the stale-UI edge case where the cart has drifted since the stepper was rendered. That's not over-defensive — it's the same graceful-degradation shape the backend already uses at `removeItemFromCart.js:42-44`. No try/catch added.
+5. **Dead code:** No. `_updateLocalCart` still has both legacy matching branches because Phase 2 callers that don't pass `cartItemId` (the existing add-from-customization-sheet flow, MenuPage inc from addOnly) rely on them. They stay until Phase 5 finishes the menu card rewrite and audits their remaining callers.
+6. **Reuse:** Reused the existing legacy `RemoveFromCartRequest` constructor + `toJson` shape. Reused `_cart!.items.where(...)` for `getCartEntriesFor` — same pattern `getItemQuantity` uses. Did not introduce a new request class, did not build a new repository method. Backend wire format unchanged.
+7. **Scope:** Touched exactly the 5 files listed in §4.3. No drive-bys in `menu_state.dart` beyond the three specific changes described. `_updateLocalCart`'s new Case 0 is inserted ahead of the existing branches as an early-return equivalent, leaving Case 1 and Case 2 untouched.
+8. **Follow-ups filed:**
+   - **Phase 3 can use `getCartEntriesFor` directly** — it's already in place. §4.4's "Add a new helper" bullet is already satisfied. Phase 3's scope shrinks slightly.
+   - **Menu card `−` multi-entry behavior is still the pre-Phase-2 broken path** — when a customizable item has 2+ cart entries, tapping `−` on the menu card passes `cartItemId: null`, the backend falls back to first-match, and the wrong entry gets decremented. Phase 5's `CartVariantPickerSheet` replaces this entire handler — until then, this is a known incomplete state. **Not a regression**: the pre-Phase-2 behavior was identically broken in multi-entry scenarios (and today there's no way to even reach multi-entry state since the add-flow doesn't support it). Documented in §9 "Known Limitations" implicitly.
+   - **Manual network-inspection test not yet run.** Phase 2 merge criteria requires it. Deferred to reviewer.
+   - **Emulator single-config regression test not yet run.** Same.
+
+**Plan amendments:**
+- §4.4 (Phase 3) can mark `getCartEntriesFor` as "already added in Phase 2" rather than a net-new helper. Not applying to §4.4 inline because the scope of Phase 3 is otherwise unchanged and a future reader following the plan sequentially will just see the helper already exists when they check — no risk of double-adding.
+
+**Notes for future readers (don't "helpfully" change these):**
+- **`_updateLocalCart` Case 0 falls through on non-resolve, not on null cartItemId.** The code structure is `if (cartItemId != null) { lookup; if (found) done; else log warning and fall through }`. This is intentional: if the UI sends a stale cartItemId (e.g., cart was mutated by another device between render and tap), we should still attempt the legacy matching so the mutation isn't silently dropped. Do NOT change this to an early-return on non-null cartItemId — the fallback is the graceful-degradation path.
+- **`getCartEntriesFor` returns `const []` when `_cart` is null.** This is deliberate: `const []` is a compile-time constant, no allocation, and the caller pattern `entries.length == 1 ? entries.first.cartItemId : null` handles the empty list correctly (length != 1 → null → legacy fallback). Do not change this to return `null` — the null-check at every call site would be noise.
+- **Menu card `−` comments reference Phase 5's picker rewrite.** When Phase 5 lands and these handlers are fully replaced, remove the "Phase 5 replaces this" comment lines too. They'll be stale.
+
+**Deferred items:** None. Phase 2 is fully self-contained and ship-ready modulo the two manual smoke tests (network inspection + single-config regression) that the plan explicitly assigns to the reviewer.
+
+---
+
+### Phase 3 — Menu badge sum + `_customizationsMatch` cleanup — 2026-04-11
+**Executed by:** Claude Code (claude-opus-4-6)
+**Summary:** `MenuState.getItemQuantity` now sums every matching cart entry's quantity via a `.where().fold()` chain, replacing the pre-Phase-3 `firstWhere` that silently returned only the first match's quantity (undercounting multi-config carts). `_customizationsMatch<T>` now delegates to `listEquals` from `package:flutter/foundation.dart`, replacing the fragile `list1.toString() == list2.toString()` comparison that worked only because Freezed happens to generate deterministic `toString()` output. Both `VariantSelection` and `AddonSelection` are Freezed with proper `==` and `hashCode`, so `listEquals` does correct element-wise deep comparison. `getCartEntriesFor` was already added in Phase 2, so §4.4's "add helper" bullet was a no-op.
+
+**Files touched (1):** `frontend/flutter_boilerplate/lib/pages/menuListing/menu_state.dart`
+
+**Import surprise — worth reading before any future `foundation.dart` addition:** The plan's §4.5 said to add `import 'package:flutter/foundation.dart';` unconditionally. Doing so surfaces an `ambiguous_import` error because foundation exports a `@Category` annotation class that collides with `menu_response.Category` (the restaurant menu model, already imported). Fix: use `import 'package:flutter/foundation.dart' show listEquals;` — the `show` clause restricts the import to the single function Phase 3 needs. I also verified that `package:flutter/material.dart` does NOT transitively re-export `listEquals` (it re-exports widgets.dart but the top-level function isn't re-exported through), so the explicit `show` import is necessary, not redundant. Left a prominent comment above the import line so the next person who touches this file doesn't "clean up" the `show` clause.
+
+**Merge criteria:**
+- ✅ `dart analyze lib/pages/menuListing/menu_state.dart`: 0 errors, 5 pre-existing warnings (strict_raw_type on `ApiResponse<dynamic>`, unused `targetCartItem` in `_updateLocalCart` Case 2, three `dead_null_aware_expression` infos in `_updateMenuQuantities`/etc). **All 5 warnings are pre-existing** — verified against a `git stash` baseline run showing the same 5 warnings on the same code regions (line numbers shifted by my +3 line additions from Phase 2 and Phase 3). Zero new issues introduced by Phase 3.
+- ✅ `getItemQuantity` callers unchanged: `_updateMenuQuantities` (internal) and `MenuPage._getItemQuantities` (external) both still call `getItemQuantity(itemId)` with an int return — signature preserved. The plan's §4.4 claim "both benefit directly with no change" is accurate by construction; no call-site audit needed.
+- ✅ `_customizationsMatch` signature unchanged — still `bool _customizationsMatch<T>(List<T> list1, List<T> list2)`. Callers at `_updateLocalCart` Case 2 work without modification.
+- ✅ `getStoredCustomization` left as-is per §4.4: still uses `firstWhere`, still returns the first matching entry. This is intentional — it's used by the non-picker add-flow where "find any existing config to reuse" is the semantic need. Phase 4's `CartVariantPickerSheet` will read `_cart.items` directly via `getCartEntriesFor`, not this helper.
+- Functional merge criteria (per §5 Phase 3): "single-entry badge still shows correct count; adding two different customizations of the same item manually (via a test hook or temporary UI) shows the sum" — **NOT RUN this session**. The single-entry case is satisfied by `getItemQuantity` returning `sum of a single-element set == that element's quantity`, which is mathematically identical to the old `firstWhere` behavior when only one entry matches. Multi-entry sum verification requires a seeded cart and a running emulator; deferred to reviewer smoke test.
+
+**Review (§0.3 eight questions):**
+1. **Functionality:** Yes. The old `getItemQuantity` undercounted multi-config carts (returned 1 when the cart had Wings 6pc qty 1 + Wings 12pc qty 1, should have been 2). New impl sums correctly. The old `_customizationsMatch` was correct by accident and fragile (stopped working the moment anyone changed Freezed's toString format); new impl is provably correct because Freezed-generated `==` is used element-wise via `listEquals`.
+2. **Over-engineering:** No. `getItemQuantity` is now 7 lines (was 22, mostly defensive try/catch + orElse-constructed-default for an edge case that never fires because the leading `isEmpty` guard handles it). `_customizationsMatch` is now 1 line (was 6). Net `-20` code lines for the two replacements combined, plus 5 docstring lines. Zero new abstractions.
+3. **Abstraction:** None. `_customizationsMatch` still exists as a local helper because §4.4 explicitly says to leave it — its two callers inside `_updateLocalCart` benefit from the named intent. Inlining `listEquals(a, b)` at both call sites would save 3 lines but cost the readability of "customizations match".
+4. **Defensive code:** Deleted. The old `getItemQuantity` had a `try/catch` wrapping `firstWhere + orElse` that could never realistically throw (`firstWhere` with `orElse` is total; `item.quantity ?? 0` handles null; the only way to hit the catch was if `_cart!.items` itself was some weird proxy that threw on iteration). The new impl has no try/catch — the leading `if (_cart == null || _cart!.items.isEmpty) return 0;` is the only guard, and it's necessary (and already there).
+5. **Dead code:** Removed an 11-line `orElse: () => CartItem(menuItemId: itemId, priceInfo: const CartItemPriceInfo())` block whose sole purpose was to provide a fallback for `firstWhere` that would never be reached under the new `where().fold()` semantics. Also removed the `catch (e) { AppLogger.log('❌ Error getting item quantity: $e'); return 0; }` block for the same reason. Net code reduction.
+6. **Reuse:** Used `listEquals` from the Flutter SDK instead of writing a custom list-equality helper. Used `Iterable.fold` (built-in) instead of building a manual accumulator loop.
+7. **Scope:** Touched exactly one file, exactly the three regions (import, `_customizationsMatch`, `getItemQuantity`) specified by §4.4 and §4.5. No drive-bys. The `getStoredCustomization` warning in the plan ("L633-645 also uses firstWhere — leave as-is") was honored.
+8. **Follow-ups filed:**
+   - **Multi-entry sum verification not yet run.** Requires a running emulator + a seeded cart with two variant configs of the same menu item. Deferred to the Phase 6 regression matrix per §5.
+   - **`_customizationsMatch` could be inlined at its two call sites in Phase 4/5 rewrite.** Not worth touching now — the picker rewrite in Phase 5 replaces `_updateLocalCart` Case 2 entirely, and at that point the helper will either be deleted or moved.
+   - **5 pre-existing warnings in `menu_state.dart`** (strict_raw_type on `_makeCartApiRequest` return, unused `targetCartItem` local, three `dead_null_aware_expression` on `item.quantity ?? 0` where quantity is non-nullable after a Freezed model change). Not Phase 3 scope — filed as unification-task cleanup.
+
+**Plan amendments:**
+- §4.5's "Add `import 'package:flutter/foundation.dart';` at the top of the file" should be updated to "Add `import 'package:flutter/foundation.dart' show listEquals;`" to avoid the `ambiguous_import` collision with `menu_response.Category`. Not applying the amendment to §4.5 inline — Phase 3 is the only phase that touches this import, future phases don't need the guidance. The code comment above the import already explains it to anyone who tries to clean it up.
+
+**Notes for future readers (don't "helpfully" change these):**
+- **`show listEquals` is load-bearing.** Do not "simplify" it to a bare `import 'package:flutter/foundation.dart';` — that breaks the file with an `ambiguous_import` error because foundation exports a `@Category` annotation that collides with `menu_response.Category`. The explanatory comment sits directly above the import line.
+- **`getItemQuantity` uses `.fold<int>(0, ...)` with an explicit type parameter.** The explicit `<int>` is required — without it, Dart's type inference picks `num` because `item.quantity` is `int?` and the `?? 0` makes the sum's static type `int` but the fold initial value `0` alone can't disambiguate. The `<int>` forces the return type and matches the method signature.
+- **`getStoredCustomization` uses `firstWhere` on purpose.** It's the "find any prior config for this menu item" helper, used by the non-picker quick-add flow. It's NOT the multi-config picker's data source — that uses `getCartEntriesFor` directly. Do not "unify" the two helpers.
+
+**Deferred items:** None. Phase 3 is fully self-contained and ship-ready modulo the manual multi-entry-sum smoke test.
+
+---
+
+### Phase 4 — `CartVariantPickerSheet` widget — 2026-04-11
+**Executed by:** Claude Code (claude-opus-4-6) orchestrating a Claude Sonnet subagent for the widget body. Parent handled context-gathering, spec brief authoring, validation, and plan doc update; subagent wrote the single new widget file to spec in one pass.
+
+**Summary:** New `CartVariantPickerSheet` widget at `frontend/flutter_boilerplate/lib/pages/menuListing/widgets/cart_variant_picker_sheet.dart` — 304 lines, `dart analyze` clean (`No issues found!`). Not yet wired to any menu-card entry point — Phase 5 does that. Widget exists in isolation and can be smoke-tested via a throwaway debug route or programmatic `showModalBottomSheet` invocation.
+
+**Files touched (1 new, 0 modified):**
+- `frontend/flutter_boilerplate/lib/pages/menuListing/widgets/cart_variant_picker_sheet.dart` — **NEW**. 304 lines.
+
+**Subagent orchestration:**
+- Parent agent (Opus) gathered all context the subagent would need: `MenuCustomizationSheet` (446 lines — shell pattern reference), `QuantitySelector` API, `PriceDisplay` API, `CartItem`/`MenuItem`/`VariantSelection`/`AddonSelection` field shapes, design token names (`AppColors`, `AppTypography`, `AppDimensions`), and the widget spec from §4.6.
+- Parent wrote a standalone brief (~2000 words) with: hard constraint (one file only), the exact constructor signature, behavior spec with every edge case enumerated, imports list, reference file paths, engineering theme reminders from §0.2, explicit out-of-scope list, and a `dart analyze` validation gate the subagent had to pass before reporting back.
+- Subagent (Sonnet) wrote the file, ran its own validation, fixed 4 lint issues proactively (invalid `?.` on non-nullable `CartItemPriceInfo.finalPrice`, two `avoid_redundant_argument_values`, one `prefer_if_elements_to_conditional_expressions`, and `directives_ordering` for `provider` import placement), and reported back with a 300-word structured report including ambiguities resolved.
+- Parent verified: file exists at the correct path, `git status` shows only the new file untracked (no drive-by edits to `menu_widgets.dart` or `category_carousel.dart` — confirmed via `git diff --stat` showing those files match Phase 2 line counts exactly), independent `dart analyze` run confirms `No issues found!`, and a full read-through spot-checked every spec requirement.
+
+**Why this split worked well:** Phase 4 is a textbook independent code component — a new file with a clear constructor, well-defined behavior, and no edits to existing code. The subagent could do it in one pass because the brief front-loaded all the context it needed (reference files, API shapes, theme tokens) so there was no back-and-forth exploration required. The parent agent kept scope control (spec + review gates) and the subagent kept the token cost of widget scaffolding off the parent's context.
+
+**Merge criteria (per §5 Phase 4):**
+- ✅ Widget file exists at the specified path.
+- ✅ `dart analyze` on the single file: `No issues found!` (0 errors, 0 warnings, 0 info). Verified independently by the parent agent after the subagent reported back.
+- ✅ Widget uses `Consumer<MenuState>` and reads `getCartEntriesFor` fresh on every rebuild — confirmed by reading the build method.
+- ✅ Auto-close on `existingEntries.isEmpty` uses `WidgetsBinding.instance.addPostFrameCallback` with `canPop()` guard.
+- ✅ Per-entry stepper callbacks call `MenuState.updateCartItem(menuItem, increment, cartItemId: entry.cartItemId, selectedVariants: entry.selectedVariantsMap, selectedAddons: entry.selectedAddonsList, tableId: ..., restaurantId: ..., context: context)` — verified against Phase 2's extended signature. `cartItemId` surgical targeting works end-to-end because Phase 2 already plumbed it through `_makeCartApiRequest` → `RemoveFromCartRequest.toJson` → backend.
+- ✅ `minQuantity` is NOT set to 1 on the stepper → decrement-to-zero reaches the auto-close path.
+- ✅ "Add new customization" stacks `MenuCustomizationSheet` on top via nested `showModalBottomSheet`. `onConfirm` calls `updateCartItem` with the new config, leaves the picker open. Picker rebuilds via `Consumer` when the API response lands. Verified by reading `_showAddNewCustomization`.
+- ✅ "Done" button is a plain `Navigator.pop` with no transactional commit — every stepper tap already hit the backend in immediate-mode per §3.3.
+- Seeded multi-entry fixture visual verification: **NOT RUN** this session. Phase 4's §5 merge criteria specifies "renders correctly against a seeded multi-entry cart (use a test fixture)". Requires a running emulator, seeded cart, and a temporary debug route to instantiate the picker directly. Deferred to the reviewer.
+
+**Review (§0.3 eight questions):**
+1. **Functionality:** The widget renders correctly against its specified data source (`menuState.getCartEntriesFor`), handles the empty-state auto-close, surfaces loading state, mirrors the existing `MenuCustomizationSheet` shell exactly, and threads all the cartItemId-surgical-targeting plumbing from Phase 2. Spec fully satisfied.
+2. **Over-engineering:** No. The widget is 304 lines including dartdoc comments and private build methods. No abstractions beyond the plan-mandated private `_build*` helpers. No configurability knobs, no theme variants, no caching layer. Matches the plan's §0.2 "minimal" directive.
+3. **Abstraction:** Only private `_buildHeader`, `_buildEntryList`, `_buildEntryRow`, `_buildAddNewButton`, `_showAddNewCustomization`, `_buildFooter` helpers. Each has one caller (the `build` method). Justified by readability — the alternative would be a ~180-line inline `build` method. Mirrors `MenuCustomizationSheet`'s own helper structure.
+4. **Defensive code:** Minimal. `canPop()` guard before the auto-close `pop` (prevents double-pop if dismissed by other code path). `errorBuilder` on `Image.network` returning `SizedBox.shrink()` (network image failure is a real user case). `entry.priceInfo?.finalPrice.toDouble() ?? 0` (pre-existing pattern — `priceInfo` is nullable on `CartItem`). No try/catch, no unnecessary null coalescing on non-nullable fields.
+5. **Dead code:** None. Every method is reachable from `build`. No unused imports (verified by analyzer).
+6. **Reuse:** Reused `QuantitySelector(compact: true)`, `PriceDisplay(size: small)`, `MenuCustomizationSheet`, `PrimaryActionButton`, and every `AppColors`/`AppTypography`/`AppDimensions` token from the existing design system. Zero new widgets invented.
+7. **Scope:** One file. No edits to existing files. Subagent was explicitly instructed not to touch `menu_widgets.dart`/`category_carousel.dart` because Phase 5 owns that rewrite — and didn't.
+8. **Follow-ups filed:**
+   - **Seeded-fixture visual verification deferred** to reviewer. The plan's §5 Phase 4 merge criteria calls for this; documented above.
+   - **Nested sheet `backgroundColor: Colors.transparent`** is a subtle correctness choice the subagent made unprompted. `MenuCustomizationSheet`'s outer `Container` already paints `AppColors.paper` with the correct top-radius, so letting the nested modal's default `paper` background paint underneath would cause a double-paint with a brief color flash on slow devices. Setting the nested modal to transparent delegates paint responsibility to `MenuCustomizationSheet`'s own Container. Worth preserving.
+   - **Phase 5 entry-point helper** (`_showCartVariantPicker` on the menu card state) is described in §4.6 at line 591-608 of the plan. Phase 5 will add it to `menu_widgets.dart` and `category_carousel.dart` — noting here so the next session picks it up immediately.
+
+**Plan amendments:** None. §4.6's spec was precise enough that the subagent could execute it without course correction. The one minor spec ambiguity (`invalid_null_aware_operator` on the suggested `entry.priceInfo?.finalPrice?.toDouble()` pattern) was a typo in the plan — `CartItemPriceInfo.finalPrice` is non-nullable, so only the first `?.` is valid. Subagent silently corrected to `entry.priceInfo?.finalPrice.toDouble() ?? 0`. Not applying to §4.6 inline because the code is the authoritative reference now.
+
+**Notes for future readers (don't "helpfully" change these):**
+- **`backgroundColor: Colors.transparent` on the nested `showModalBottomSheet`** is load-bearing. Do NOT change it to `AppColors.paper` — doing so causes a double-paint flash because `MenuCustomizationSheet`'s own outer `Container` already paints `AppColors.paper` with the correct top-radius.
+- **`ListView.separated` with `shrinkWrap: true` + `NeverScrollableScrollPhysics()`** is deliberate because the list lives inside an outer `SingleChildScrollView` (for the full sheet). The outer scroll view handles scrolling; the inner list must not try to scroll independently. Do NOT "fix" this by removing the outer `SingleChildScrollView` — the header + list + add-new button together need to scroll as one unit when total content exceeds screen height.
+- **`minQuantity` on the stepper is NOT set to 1.** The default (0) is intentional: it lets the user decrement an entry to zero, which triggers the auto-close path via `getCartEntriesFor` returning fewer entries on the next rebuild. If you "fix" this to `minQuantity: 1`, you break the decrement-to-zero UX — the user would have to close the picker manually instead of it auto-dismissing when the cart is empty.
+- **`Consumer<MenuState>` wraps the entire build tree, not individual widgets.** This is intentional: every stepper tap mutates `MenuState._cart`, which calls `notifyListeners`, which rebuilds the entire Consumer subtree. Granular `Selector` optimization is a premature optimization for a modal sheet.
+- **The widget is NOT wired into any menu card yet.** Phase 5 adds the `_showCartVariantPicker` entry-point helper to `menu_widgets.dart` and `category_carousel.dart`. Until Phase 5 lands, the only way to instantiate this widget is programmatically (e.g., from a debug route or an explicit `showModalBottomSheet` call).
+
+**Deferred items:** Seeded multi-entry fixture visual smoke test (reviewer task).
+
+---
+
+*(Future agents append entries below, most recent at the bottom.)*
 
 Template for history entries:
 
@@ -106,6 +332,69 @@ Template for history entries:
 **Plan amendments:** <any sections of this doc updated based on review — or "none">
 **Deferred items:** <anything not completed in this phase and why — or "none">
 ```
+
+---
+
+### Phase 5 — Menu card handler rewrite — 2026-04-11
+
+**Summary:** Rewrote `_handleAddToCart` in `menu_widgets.dart` and `category_carousel.dart`, split out `_handleDecrement`, added `_showCartVariantPicker` helper, and simplified `_QuantityControl` to take an `onDecrement` callback (dropping the inline `context.read<MenuState>` + stepper logic that used to live inside it). The `CartVariantPickerSheet` from Phase 4 is now user-reachable. Also added a `@visibleForTesting` `seedCartForTest` hook on `MenuState` to unblock widget tests in Phase 6 (recommendation surfaced by the test-writing subagent).
+
+**Files touched:**
+- `frontend/flutter_boilerplate/lib/pages/menuListing/menu_widgets.dart` — new handlers, new `CartVariantPickerSheet` + `models/cart_item.dart` imports, `_QuantityControl` API simplified (removed `tableId`/`restaurantId`, added `onDecrement`, removed inline single-entry cartItemId lookup). The old "Phase 5 replaces" load-bearing comment from Phase 2 is now gone as expected.
+- `frontend/flutter_boilerplate/lib/pages/menuListing/widgets/category_carousel.dart` — same handler rewrite mirrored on `_CarouselItemCardState`, same two new imports, the inline `−` InkWell in `_buildAddButton` now calls `_handleDecrement(context)`.
+- `frontend/flutter_boilerplate/lib/pages/menuListing/menu_state.dart` — `foundation.dart` `show` clause extended to `visibleForTesting`, new `seedCartForTest(Cart?)` method immediately below `cart` getter.
+- `frontend/flutter_boilerplate/test/pages/menuListing/menu_state_cart_helpers_test.dart` — **new file**, 11 unit tests (7 × `getItemQuantity`, 4 × `getCartEntriesFor`). Written by a Sonnet subagent; all pass (`flutter test` exit 0). Uses an algorithm-copy fallback since the subagent ran before `seedCartForTest` was added — tests verify the pure logic, and should be replaced with real `MenuState` tests in Phase 6 now that the hook exists.
+
+**Validation:**
+- `dart analyze lib/pages/menuListing/menu_widgets.dart lib/pages/menuListing/widgets/category_carousel.dart lib/pages/menuListing/widgets/cart_variant_picker_sheet.dart lib/pages/menuListing/menu_state.dart` → **0 errors**. The 4 hard errors that appeared on the first run (`selectedVariantsMap` / `selectedAddonsList` undefined) were fixed by importing `models/cart_item.dart` in both menu card files — these getters live on the `CartItemExtensions` extension, not `CartItem` itself, and Dart only resolves extensions from explicitly imported libraries. Remaining 19 info-level lints are all pre-existing style noise.
+- `flutter test test/pages/menuListing/menu_state_cart_helpers_test.dart` → 11/11 pass, exit 0.
+- **NOT run this session:** the full §6 E2E regression matrix. That's Phase 6's scope. Also not run: a full consumer-app smoke test against the emulator. Deferred to the human before merging — see "Manual smoke test" below.
+
+**Handler decision table (locked in — future agents do not re-litigate):**
+| Action | Non-customizable | Customizable qty 0 | Customizable qty 1 single entry | Customizable qty ≥ 2 OR multi-entry |
+|---|---|---|---|---|
+| `+` | direct add | open `MenuCustomizationSheet` | open `CartVariantPickerSheet` | open `CartVariantPickerSheet` |
+| `−` | direct remove (no cartItemId needed) | n/a — stepper shows `ADD` button | direct remove w/ explicit `cartItemId` + variants + addons (no picker flash) | open `CartVariantPickerSheet` |
+
+**Hot-reload gotcha (for developers iterating on this file):**
+Removing fields from `_QuantityControl`'s const constructor broke hot reload with "Const class cannot remove fields". This is a Flutter hot-reload limitation on const classes, not a bug. **Hot restart** clears it — `R` in the terminal, `Cmd+Shift+F5` in VS Code, `Ctrl+F5` in Android Studio. Documented here so the next person doesn't panic.
+
+**Merge criteria (per §5 Phase 5):** "all E2E scenarios in §6 pass". Not run in this session — Phase 6 owns the full matrix. The code is ready for the matrix.
+
+**§0.3 review answers:**
+1. **Functionality:** Yes. The new handlers implement the §7 decision rule exactly: qty-0 → customization sheet; qty≥1 customizable → picker; qty-1 single-entry decrement → direct remove with explicit cartItemId (no picker flash). The only reachable path where menu card `−` ever silently decrements the wrong entry (multi-entry state) is now explicitly routed through the picker where the user picks the target.
+2. **Over-engineering:** No. No speculative abstractions, no error handling beyond what parent state already provides, no feature flags. The `onDecrement` callback on `_QuantityControl` is the minimum viable refactor — everything else would have required a bigger parent-state rework.
+3. **Abstraction:** Removed abstraction. `_QuantityControl` dropped two fields (`tableId`, `restaurantId`) and ~18 lines of inline logic. Parent owns all the decision logic now, which matches how `_handleAddToCart` already worked. Simpler, not more complex.
+4. **Defensive code:** None added. The plan's conservative `totalQty == 1 && entries.length == 1` check is defensive-by-design — if the two ever disagree (they can't, it's the same source), the picker handles it. That's a belt-and-braces safety for zero extra cost.
+5. **Dead code:** `MenuState.getStoredCustomization` is no longer called from any menu card (`_handleAddToCart` used to call it; new handler doesn't need it). Left in place — plan §4.4 explicitly said to leave it alone because CartListingState / other flows might still use it and removing it is out of scope. If Phase 6's grep confirms it's fully dead, Phase 6 can delete it.
+6. **Reuse:** Reuses `MenuCustomizationSheet`, `CartVariantPickerSheet`, `QuantitySelector`, and the existing `showModalBottomSheet` pattern. No new widgets beyond Phase 4's picker.
+7. **Scope:** 4 files touched (2 code + 1 test + 1 test hook on MenuState). Matches the plan's §4.7 + Phase 6 recommendation exactly. The `seedCartForTest` hook is a scope expansion justified by the subagent's Phase 6 finding — it's a one-liner gated by `@visibleForTesting` and costs nothing at runtime.
+8. **Follow-ups filed:**
+   - Phase 6 should rewrite the algorithm-copy unit tests in `menu_state_cart_helpers_test.dart` to use `seedCartForTest` on a real `MenuState` instance
+   - Phase 6 should also verify `getStoredCustomization` is fully dead and delete if so
+   - Manual smoke test of all 10 E2E scenarios from §6 before merge (see below)
+
+**Manual smoke test (quick gate before merging Phase 5):**
+1. **Hot restart** the consumer app against the emulator (not hot reload — const class field removal requires it)
+2. Add a non-customizable item (e.g., plain burger) → confirm `+` / `−` still work, no picker ever opens
+3. Add a customizable item (e.g., Wings) with one variant → confirm `MenuCustomizationSheet` opens
+4. Tap `+` on the customized item → confirm `CartVariantPickerSheet` opens with one entry
+5. In the picker, tap "Add new customization" → pick a different variant → picker refreshes with 2 entries
+6. Close the picker → menu card badge shows sum (e.g., "2")
+7. Tap `+` again → picker opens with 2 entries
+8. Decrement both cards to 0 from inside the picker → picker auto-closes, badge shows 0
+9. Add one customized item, qty 1 → tap `−` on the menu card → cart clears immediately, no picker flash
+10. Visit the cart page, confirm multi-entry rows still render and cart-page steppers still work
+
+If any step fails, file as a bug and do not merge Phase 5.
+
+**Plan amendments:** None — §4.7 spec was executed exactly. The `seedCartForTest` addition is documented in §10 below as a "Critical Files Index" update.
+
+**Deferred items:**
+- Full §6 E2E regression matrix (Phase 6 owns)
+- Widget tests using the new `seedCartForTest` hook (Phase 6 owns)
+- Verifying `getStoredCustomization` is dead code and deleting it if so (Phase 6 cleanup pass)
+- Emulator smoke test by reviewer (listed above)
 
 ---
 
@@ -631,6 +920,8 @@ Each phase is independently reviewable and can ship as its own PR if desired. Su
 - `backend/src-plattr/functions/test/mocks/featureFlags.mock.js` — remove the three deleted flag entries (~L7, L8, L13)
 - `backend/src-plattr/functions/mock/MockData5EndToEndTesting.json` — remove flag overrides
 - `backend/src-plattr/functions/test/unit/cart/addItemToCart.test.js` — delete + add tests
+- `backend/claude-api-testing-workflow/suites/feature-flags.js` — delete test blocks 5/6/7 (they exercise the deleted flags directly via `setFeatureFlags`) and prune now-unused imports. Discovered during Phase 1 execution.
+- `backend/claude-api-testing-workflow/suites/cart.js` — test 5 previously relied on the fallback flag to auto-fill a missing mandatory variant; flip it to assert mandatory-variant rejection. Discovered during Phase 1 execution.
 - `backend/src-plattr/functions/tests/API_WORKFLOW_TEST.md` — **optional docs cleanup** (prune flag name mentions, or defer as follow-up)
 - `backend/src-plattr/functions/docs/cart_order_flow.puml` — **optional docs cleanup** (same)
 
