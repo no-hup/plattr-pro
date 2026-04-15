@@ -31,7 +31,7 @@ const TABLE_CLEAN_4 = 'table_clean_4'; // disabled table (for error tests)
 const TABLE_CLEAN_5 = 'table_clean_5'; // for offer-pricing suite
 const TABLE_CLEAN_6 = 'table_clean_6'; // for order-lifecycle cancel flow
 const TABLE_CLEAN_7 = 'table_clean_7'; // for customer-journey expanded
-const TABLE_OTP = '1234';
+const TABLE_OTP = '123456';
 
 // ── Customers ────────────────────────────────────────────────────
 const CUSTOMER_PHONE = '9876543210';   // returning customer

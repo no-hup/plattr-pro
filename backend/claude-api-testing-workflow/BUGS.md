@@ -99,21 +99,32 @@ Discovered during E2E API testing against Firebase emulator with MockData5.
 
 ---
 
+## BUG-8: Order State Machine Missing — Terminal States Not Enforced
+
+**Severity: MEDIUM**
+**Ease of Fix: DONE (2026-04-16)**
+
+- **File:** `functions/orders/updateOrderStatus.js`
+- **Issue:** No state transition validation — any status could be written regardless of current state. CANCELLED→COMPLETED and COMPLETED→IN_PROGRESS were allowed.
+- **Fix:** Added `ALLOWED_TRANSITIONS` guard after reading the order. COMPLETED and CANCELLED are now terminal states.
+- **Tests affected:** order-lifecycle (tests 13, 17 — now pass)
+
+---
+
 ## Summary
 
 | Bug | Severity | Ease of Fix | Status |
 |-----|----------|-------------|--------|
-| BUG-1: Transaction ordering | **CRITICAL** | MEDIUM | Open — blocks all checkout |
+| BUG-1: Transaction ordering | **CRITICAL** | MEDIUM | **FIXED (2026-04-16)** — hoisted all reads before writes in `createOrUpdateOrder.js` |
 | BUG-2: Admin namespace | MEDIUM | EASY | Open — admin untestable in emulator |
-| BUG-3: Server param validation | MEDIUM | EASY | Open — needs debug logging |
+| BUG-3: Server param validation | MEDIUM | EASY | **FIXED (2026-04-16)** — added `data.data \|\| data` unwrapping in `tables_fetch.js` and `table_otp.js` |
 | BUG-4: clearCart no ResponseBuilder | LOW | EASY | Open — cosmetic |
 | BUG-5: Silent addon ignore | LOW | EASY | Open — validation gap |
 | BUG-6: Frozen singleton | LOW | DONE | Workaround applied |
 | BUG-7: OTP regeneration | LOW | N/A | By design |
+| BUG-8: Order state machine | MEDIUM | EASY | **FIXED (2026-04-16)** — added transition allowlist in `updateOrderStatus.js` |
 
-### Priority order for fixing:
-1. **BUG-1** (CRITICAL) — unblocks checkout and order lifecycle tests
-2. **BUG-2** (MEDIUM) — unblocks admin endpoint local testing
-3. **BUG-3** (MEDIUM) — unblocks server table/OTP operations
-4. **BUG-4** (LOW) — quick 1-line fix for consistency
-5. **BUG-5** (LOW) — add validation for addon IDs
+### Remaining priority:
+1. **BUG-2** (MEDIUM) — unblocks admin endpoint local testing
+2. **BUG-4** (LOW) — quick 1-line fix for consistency
+3. **BUG-5** (LOW) — add validation for addon IDs

@@ -84,12 +84,26 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
   try {
     // Begin a transaction to ensure data consistency
     return await db.runTransaction(async (transaction) => {
-      // Check if there's an in-progress order for this table
+      // ── ALL READS FIRST ──────────────────────────────────────────
+      // Firestore transactions require all reads before all writes.
+
+      // 1. Read existing orders for this table
       const orderQuery = db.collection("restaurants").doc(restaurantId)
         .collection("orders")
         .where('tableId', '==', tableId);
-
       const orderSnapshot = await transaction.get(orderQuery);
+
+      // 2. Read table doc (needed for assignedServerId)
+      const tableRef = db.collection('restaurants').doc(restaurantId)
+        .collection('tables').doc(tableId);
+      const tableDoc = await transaction.get(tableRef);
+
+      // 3. Read order counter (needed for order number generation)
+      const counterRef = db.collection("restaurants").doc(restaurantId)
+        .collection("counters").doc("orders");
+      const counterDoc = await transaction.get(counterRef);
+
+      // ── PROCESSING (no more reads after this point) ──────────────
 
       const existingOrderDoc = orderSnapshot.docs.find(doc => {
         const normalizedStatus = mapOrderStatus(doc.data().orderStatus || doc.data().status);
@@ -100,7 +114,7 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
 
       if (!existingOrderDoc) {
         // Create new order
-        const orderNumber = await generateOrderNumber(transaction, restaurantId);
+        const orderNumber = writeOrderCounter(transaction, counterRef, counterDoc);
         console.log(`Creating new order for table ${tableId} with order number ${orderNumber}`);
         orderResult = await createNewOrder(
           transaction,
@@ -111,7 +125,8 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
           orderNumber,
           userId,
           sessionId,
-          chargesConfig
+          chargesConfig,
+          tableDoc
         );
       } else {
         // Update existing order
@@ -125,7 +140,10 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
           cartSnapshot,
           orderItems,
           sessionId,
-          chargesConfig
+          chargesConfig,
+          tableDoc,
+          counterRef,
+          counterDoc
         );
       }
 
@@ -196,11 +214,9 @@ function normalizeCartItemsForOrder(cart) {
  * @param {string} sessionId - ID of the session (optional)
  * @returns {Object} The created order
  */
-async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, orderItems, orderNumber, userId, sessionId = null, chargesConfig = []) {
-  // Fetch table doc to get assignedServerId
-  const tableRef = db.collection('restaurants').doc(restaurantId).collection('tables').doc(tableId);
-  const tableDoc = await transaction.get(tableRef);
-  const assignedServer = tableDoc.exists ? (tableDoc.data().assignedServerId || null) : null;
+async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, orderItems, orderNumber, userId, sessionId = null, chargesConfig = [], tableDoc = null) {
+  // Use pre-read tableDoc (read in transaction body before any writes)
+  const assignedServer = (tableDoc && tableDoc.exists) ? (tableDoc.data().assignedServerId || null) : null;
 
   // Base priceInfo from the cart snapshot (no offer discount yet)
   const baseBasePrice = cartSnapshot.priceInfo?.basePrice || 0;
@@ -269,7 +285,7 @@ async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, 
 
   transaction.set(newOrderRef, newOrder);
 
-  console.log(`poopoo Created new order for table ${tableId} with ID ${newOrderRef.id}`);
+  console.log(`Created new order for table ${tableId} with ID ${newOrderRef.id}`);
 
   // Return the order with actual Timestamp objects (not serverTimestamp placeholders)
   return {
@@ -292,7 +308,7 @@ async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, 
  * @param {string} sessionId - ID of the session (optional)
  * @returns {Object} The updated order
  */
-async function updateExistingOrder(transaction, restaurantId, orderId, existingOrder, cartSnapshot, orderItems, sessionId = null, chargesConfig = []) {
+async function updateExistingOrder(transaction, restaurantId, orderId, existingOrder, cartSnapshot, orderItems, sessionId = null, chargesConfig = [], tableDoc = null, counterRef = null, counterDoc = null) {
   // Ensure arrays exist with fallbacks
   const existingCarts = Array.isArray(existingOrder.carts) ? existingOrder.carts : [];
   const existingItems = Array.isArray(existingOrder.items) ? existingOrder.items : [];
@@ -362,18 +378,16 @@ async function updateExistingOrder(transaction, restaurantId, orderId, existingO
     ...(existingCreatedAt ? { createdAt: existingCreatedAt } : { createdAt: timestamp.serverTimestamp() })
   };
 
-  // If order has no assignedServer, fill from table at cart append time
+  // If order has no assignedServer, fill from pre-read tableDoc
   if (!existingOrder.assignedServer) {
-    const tableRef = db.collection('restaurants').doc(restaurantId).collection('tables').doc(existingOrder.tableId);
-    const tableDoc = await transaction.get(tableRef);
-    if (tableDoc.exists && tableDoc.data().assignedServerId) {
+    if (tableDoc && tableDoc.exists && tableDoc.data().assignedServerId) {
       updates.assignedServer = tableDoc.data().assignedServerId;
     }
   }
 
   let effectiveOrderNumber = existingOrder.orderNumber || existingOrder.order_number || null;
   if (!effectiveOrderNumber) {
-    effectiveOrderNumber = await generateOrderNumber(transaction, restaurantId);
+    effectiveOrderNumber = writeOrderCounter(transaction, counterRef, counterDoc);
     updates.orderNumber = effectiveOrderNumber;
   }
 
@@ -405,25 +419,23 @@ async function updateExistingOrder(transaction, restaurantId, orderId, existingO
 }
 
 /**
- * Generates a unique order number for the restaurant
+ * Writes the next order counter value and returns the formatted order number.
+ * The counterRef and counterDoc must be pre-read in the transaction body
+ * (before any writes) to satisfy Firestore's reads-before-writes constraint.
+ *
  * @param {Object} transaction - Firestore transaction
- * @param {string} restaurantId - ID of the restaurant
- * @returns {string} A unique order number
+ * @param {Object} counterRef - Pre-fetched Firestore document reference for the counter
+ * @param {Object} counterDoc - Pre-fetched Firestore document snapshot for the counter
+ * @returns {string} A unique order number (e.g. ORD-00001)
  */
-async function generateOrderNumber(transaction, restaurantId) {
-  const counterRef = db.collection("restaurants").doc(restaurantId)
-    .collection("counters").doc("orders");
-
-  const counterDoc = await transaction.get(counterRef);
-
+function writeOrderCounter(transaction, counterRef, counterDoc) {
   let nextCount = 1;
-  if (counterDoc.exists) {
+  if (counterDoc && counterDoc.exists) {
     nextCount = counterDoc.data().currentCount + 1;
   }
 
   transaction.set(counterRef, { currentCount: nextCount });
 
-  // Format with leading zeros, e.g. ORD-00001
   return `ORD-${nextCount.toString().padStart(5, '0')}`;
 }
 

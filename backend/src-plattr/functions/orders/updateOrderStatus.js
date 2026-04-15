@@ -30,7 +30,7 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
   // Load feature flag overrides from Firestore (for test environments)
   await featureFlags.loadOverrides(db);
   const requestData = data.data || data;
-  console.log('poopoo updateOrderStatus request:', JSON.stringify(requestData));
+  console.log('updateOrderStatus request:', JSON.stringify(requestData));
   // Validate inputs
   OrderInputValidation.validateUpdateOrderStatusFields(requestData);
   const { restaurantId, orderId, orderStatus, sessionId } = requestData;
@@ -47,6 +47,22 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
         errorHandler.notFound('Order not found', { restaurantId, orderId });
       }
       const order = orderDoc.data();
+
+      // State machine guard: only allow valid transitions
+      const ALLOWED_TRANSITIONS = {
+        [ORDER_STATUS.PENDING]:     [ORDER_STATUS.IN_PROGRESS, ORDER_STATUS.CANCELLED],
+        [ORDER_STATUS.IN_PROGRESS]: [ORDER_STATUS.COMPLETED, ORDER_STATUS.CANCELLED],
+        [ORDER_STATUS.COMPLETED]:   [],   // terminal
+        [ORDER_STATUS.CANCELLED]:   [],   // terminal
+      };
+      const currentStatus = order.orderStatus;
+      const allowed = ALLOWED_TRANSITIONS[currentStatus] || [];
+      if (!allowed.includes(orderStatus)) {
+        errorHandler.badRequest(
+          `Transition ${currentStatus} → ${orderStatus} is not allowed`,
+          { orderId, currentStatus, requestedStatus: orderStatus }
+        );
+      }
 
       const updatePayload = { orderStatus, updatedAt: timestamp.serverTimestamp() };
 

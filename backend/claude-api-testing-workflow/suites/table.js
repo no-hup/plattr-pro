@@ -14,6 +14,7 @@ const { RESTAURANT_ID, TABLE_CLEAN_1, TABLE_CLEAN_2, TABLE_CLEAN_3, TABLE_CLEAN_
 
 export default async function tableSuite() {
   const results = { name: 'table', pass: 0, fail: 0, tests: [] };
+  let sessionId; // captured from test 3 OTP validation, used in tests 15 & 17
 
   function record(a) { results.tests.push(a); a.pass ? results.pass++ : results.fail++; }
 
@@ -50,6 +51,7 @@ export default async function tableSuite() {
     });
     record(assertSuccess(resp, '3. OTP correct'));
     if (resp.status === 'success') {
+      sessionId = resp.data?.sessionId;
       record(assertFieldExists(resp, 'data.sessionId', '3a. sessionId returned'));
       record(assertField(resp, 'data.isPrimaryCustomer', true, '3b. isPrimaryCustomer'));
     }

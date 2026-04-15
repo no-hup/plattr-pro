@@ -38,11 +38,41 @@ Restaurant management platform with 4 apps: Consumer (QR scan → menu → order
 
 ## Testing
 
+### Testing Strategy (Two Homes)
+
+All backend tests live in exactly 2 locations:
+
+1. **Unit Tests (Jest):** `backend/src-plattr/functions/test/unit/` — pure function tests, no emulator needed, runs in milliseconds. Covers `calculateItemPrice`, `BasicPriceInfo`, input validation, response builder.
+   - Run: `cd backend/src-plattr/functions && npx jest --verbose`
+
+2. **E2E API Tests (Agent-friendly):** `backend/claude-api-testing-workflow/` — 12 suites, ~180 tests hitting real Cloud Functions against Firebase emulator. Covers pricing, cart, checkout, order lifecycle, customer journey, server operations, feature flags, offers, error cases.
+   - Run: `cd backend/claude-api-testing-workflow && bash run-tests.sh`
+   - Run single suite: `bash run-tests.sh --suite pricing`
+   - Agent instructions: `backend/claude-api-testing-workflow/README_AGENT.md`
+
+**Do NOT scatter test files elsewhere in the codebase.** Frontend Dart tests live in their respective app `test/` directories — that is the only exception.
+
+### Test Data & Credentials
+
 - E2E test data: `backend/src-plattr/functions/mock/MockData5EndToEndTesting.json`
 - Test startup guide: `AGENT_TESTING_STARTUP_GUIDELINE.md`
 - Consumer OTP for testing: `123456` (6 digits, matches `OTP_CONFIG.LENGTH`)
 - Test customers: phone `9876543210` (Customer One), `9876543211` (Customer Two)
 - Import mock data: `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node functions/mock/importMockData5.js --clean --refresh-timestamps`
+
+### Price Calculation Reference
+
+The `calculateItemPrice` function in `cart/calculateCartValue.js` applies discounts **per-component**, not to the total sum:
+- Base item: uses item's own `finalPrice` (pre-calculated with discount)
+- Variants: if `respectParentDiscount: true`, applies parent item's discount %; otherwise uses variant's own `finalPrice`
+- Addons: same logic as variants via `respectParentDiscount` flag
+- Example: Burger(₹200, 10% off=₹180) + Large(₹50, inherits=₹45) + Cheese(₹20, no inherit=₹20) = **₹245**
+
+### Known Test Gaps
+
+- `offers` and `offer-pricing` suites are SKIPped — `applyOffer` endpoint was removed in Offers V2 (auto-apply at checkout). These suites need rewriting to verify offers via checkout flow.
+- `admin` suite tests are SKIPped — emulator namespace bug with `admin-*` dash-naming in Cloud Function exports.
+- `checkTableStatus` endpoint returns INTERNAL error — needs investigation.
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
