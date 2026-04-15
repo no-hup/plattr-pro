@@ -13,9 +13,10 @@ const ResponseBuilder = require('../utils/ResponseBuilder');
  */
 exports.getTables = functions.https.onCall(async (data, context) => {
     try {
-        // Input validation
-        ServerInputValidation.validateGetTables(data);
-        const { restaurantId } = data;
+        // Input validation — unwrap nested data (onCall may double-wrap)
+        const requestData = data.data || data;
+        ServerInputValidation.validateGetTables(requestData);
+        const { restaurantId } = requestData;
 
         // Verify restaurant exists
         const restaurantRef = db.collection('restaurants').doc(restaurantId);

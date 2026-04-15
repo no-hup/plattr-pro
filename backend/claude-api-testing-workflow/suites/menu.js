@@ -37,10 +37,16 @@ export default async function menuSuite() {
 
   // ── 3. Verify menu items have required fields ──────────────────
   if (menuData) {
-    // Find items in the response (may be nested under categories or at top level)
-    const items = menuData.menuItems || menuData.items || [];
-    // Menu response may nest items under categories or at various paths
-    const allItems = Array.isArray(items) ? items : Object.values(items);
+    // Find items in the response (may be at top level or nested under categories)
+    const directItems = menuData.menuItems || menuData.items || [];
+    let allItems = Array.isArray(directItems) ? directItems : Object.values(directItems);
+    // If no direct items, drill into categories
+    if (allItems.length === 0 && Array.isArray(menuData.categories)) {
+      allItems = menuData.categories.flatMap(c =>
+        (c.subcategories || []).flatMap(sc => sc.items || sc.menuItems || [])
+          .concat(c.items || c.menuItems || [])
+      );
+    }
     const hasItems = allItems.length > 0;
     if (hasItems) {
       const sample = allItems[0];

@@ -24,9 +24,10 @@ const TABLE_STATUS = {
  */
 exports.generateTableOTP = functions.https.onCall(async (data, context) => {
     try {
-        // Input validation
-        ServerInputValidation.validateTableOTPGeneration(data);
-        const { restaurantId, tableId } = data;
+        // Input validation — unwrap nested data (onCall may double-wrap)
+        const requestData = data.data || data;
+        ServerInputValidation.validateTableOTPGeneration(requestData);
+        const { restaurantId, tableId } = requestData;
 
         // Get table and restaurant data
         const restaurantRef = db.collection('restaurants').doc(restaurantId);
