@@ -1,9 +1,10 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
 import 'cart.dart';
 import 'cart_item.dart';
-import 'cart_response_data.dart';
 import 'cart_price_info.dart';
+import 'cart_response_data.dart';
 
 part 'cart_operation_response.freezed.dart';
 part 'cart_operation_response.g.dart';
@@ -25,11 +26,9 @@ class CartResponseDataConverter extends JsonConverter<CartResponseData?, Map<Str
       // If the JSON doesn't have a cart field but has items, create a cart
       if (json.containsKey('items') && json['items'] is List) {
         final cart = Cart(
-          restaurantId: '',
-          tableId: '',
           items: (json['items'] as List)
-              .where((item) => item is Map<String, dynamic>)
-              .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+              .whereType<Map<String, dynamic>>()
+              .map(CartItem.fromJson)
               .toList(),
         );
         return CartResponseData(cart: cart);
@@ -40,7 +39,7 @@ class CartResponseDataConverter extends JsonConverter<CartResponseData?, Map<Str
     } catch (e) {
       AppLogger.log('❌ CartResponseDataConverter.fromJson error: $e');
       return CartResponseData(
-        cart: Cart(restaurantId: '', tableId: '', items: []),
+        cart: Cart(items: []),
       );
     }
   }
@@ -72,7 +71,7 @@ class CartOperationResponse with _$CartOperationResponse {
     
     try {
       // 1. Unwrap the result envelope if present (per schema)
-      Map<String, dynamic> resultJson = json;
+      var resultJson = json;
       if (json.containsKey('result') && json['result'] is Map<String, dynamic>) {
         resultJson = json['result'] as Map<String, dynamic>;
         AppLogger.log('🔍 CART_RESP: Unwrapped result envelope');
@@ -116,13 +115,13 @@ class CartOperationResponse with _$CartOperationResponse {
             }
             
             // Process cart items
-            List<CartItem> items = [];
+            var items = <CartItem>[];
             if (cartJson.containsKey('items') && cartJson['items'] is List) {
               try {
                 final itemsList = cartJson['items'] as List;
                 items = itemsList
-                    .where((item) => item is Map<String, dynamic>)
-                    .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+                    .whereType<Map<String, dynamic>>()
+                    .map(CartItem.fromJson)
                     .toList();
                 AppLogger.log('✅ CART_RESP: Successfully processed ${items.length} cart items');
               } catch (e) {
@@ -140,12 +139,7 @@ class CartOperationResponse with _$CartOperationResponse {
                 AppLogger.log('❌ CART_RESP: Error parsing cart priceInfo: $e');
                 // Create default price info
                 priceInfo = CartPriceInfo(
-                  basePrice: 0,
-                  finalPrice: 0,
-                  totalDiscount: 0,
-                  totalDiscountAmount: 0,
-                  totalAddonBasePrice: 0,
-                  totalVariantBasePrice: 0,
+                  
                 );
               }
             }
@@ -173,16 +167,9 @@ class CartOperationResponse with _$CartOperationResponse {
       if (responseData == null) {
         responseData = CartResponseData(
           cart: Cart(
-            restaurantId: '',
-            tableId: '',
             items: [],
             priceInfo: CartPriceInfo(
-              basePrice: 0,
-              finalPrice: 0,
-              totalDiscount: 0,
-              totalDiscountAmount: 0,
-              totalAddonBasePrice: 0,
-              totalVariantBasePrice: 0,
+              
             ),
           ),
         );
@@ -205,16 +192,9 @@ class CartOperationResponse with _$CartOperationResponse {
         status: 'success',
         data: CartResponseData(
           cart: Cart(
-            restaurantId: '',
-            tableId: '',
             items: [],
             priceInfo: CartPriceInfo(
-              basePrice: 0,
-              finalPrice: 0,
-              totalDiscount: 0,
-              totalDiscountAmount: 0,
-              totalAddonBasePrice: 0,
-              totalVariantBasePrice: 0,
+              
             ),
           ),
         ),

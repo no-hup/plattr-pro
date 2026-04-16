@@ -8,8 +8,8 @@
       "flutterMode": "debug",
       "args": [
         "--web-renderer", "html",
-        "--verbose",
-        "--disable-web-debug-symbols"
+        "--web-hostname", "127.0.0.1",
+        "--web-port", "5051"
       ],
       "dart.debugSdkLibraries": false,
       "dart.debugExternalLibraries": false,
@@ -19,7 +19,12 @@
       "name": "flutter_boilerplate (profile mode)",
       "request": "launch",
       "type": "dart",
-      "flutterMode": "profile"
+      "flutterMode": "profile",
+      "args": [
+        "--web-renderer", "html",
+        "--web-hostname", "127.0.0.1",
+        "--web-port", "5051"
+      ]
     },
     {
       "name": "flutter_boilerplate (release mode)",

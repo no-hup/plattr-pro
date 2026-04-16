@@ -20,6 +20,8 @@ OrderDetailResponse _$OrderDetailResponseFromJson(Map<String, dynamic> json) =>
       items: json['items'] as List<dynamic>,
       notes: json['notes'] as String,
       carts: json['carts'] as List<dynamic>,
+      assignedServerName: json['assignedServerName'] as String?,
+      assignedServerId: json['assignedServerId'] as String?,
     );
 
 Map<String, dynamic> _$OrderDetailResponseToJson(
@@ -37,4 +39,6 @@ Map<String, dynamic> _$OrderDetailResponseToJson(
       'items': instance.items,
       'notes': instance.notes,
       'carts': instance.carts,
+      'assignedServerName': instance.assignedServerName,
+      'assignedServerId': instance.assignedServerId,
     };

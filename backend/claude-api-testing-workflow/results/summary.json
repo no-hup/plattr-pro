@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-04-15T21:11:09.365Z",
+  "totalPass": 167,
+  "totalFail": 5,
+  "status": "FAILED",
+  "suites": [
+    {
+      "name": "admin",
+      "pass": 16,
+      "fail": 0
+    },
+    {
+      "name": "cart",
+      "pass": 16,
+      "fail": 0
+    },
+    {
+      "name": "customer-journey",
+      "pass": 21,
+      "fail": 0
+    },
+    {
+      "name": "error-cases",
+      "pass": 25,
+      "fail": 0
+    },
+    {
+      "name": "feature-flags",
+      "pass": 4,
+      "fail": 0
+    },
+    {
+      "name": "menu",
+      "pass": 11,
+      "fail": 1
+    },
+    {
+      "name": "offer-pricing",
+      "pass": 1,
+      "fail": 0
+    },
+    {
+      "name": "offers",
+      "pass": 1,
+      "fail": 0
+    },
+    {
+      "name": "order-lifecycle",
+      "pass": 20,
+      "fail": 0
+    },
+    {
+      "name": "pricing",
+      "pass": 28,
+      "fail": 0
+    },
+    {
+      "name": "server-journey",
+      "pass": 7,
+      "fail": 1
+    },
+    {
+      "name": "table",
+      "pass": 17,
+      "fail": 3
+    }
+  ],
+  "failedTests": [
+    {
+      "suite": "menu",
+      "testName": "3. Menu items have structure (0...)",
+      "responseSnippet": null
+    },
+    {
+      "suite": "server-journey",
+      "testName": "5. Generate OTP → KNOWN: onCall param format issue",
+      "responseSnippet": "{\"status\":\"error\",\"message\":\"Cannot generate OTP for non-vacant table\",\"error\":{\"details\":{\"status\":\"error\",\"message\":\"Cannot generate OTP for non-vacant table\",\"data\":{\"code\":\"invalid-argument\",\"http"
+    },
+    {
+      "suite": "table",
+      "testName": "3b. isPrimaryCustomer → data.isPrimaryCustomer: expected true, got false",
+      "responseSnippet": "{\"status\":\"success\",\"message\":\"Customer successfully joined table\",\"data\":{\"status\":\"success\",\"customToken\":null,\"isPrimaryCustomer\":false,\"sessionId\":\"T7dPARMiHbrx1WZ8mvkp\"},\"_httpStatus\":200}"
+    },
+    {
+      "suite": "table",
+      "testName": "16. checkTableStatus (vacant) → error: INTERNAL",
+      "responseSnippet": "{\"status\":\"error\",\"message\":\"INTERNAL\",\"error\":{\"message\":\"INTERNAL\",\"status\":\"INTERNAL\"},\"_httpStatus\":500}"
+    },
+    {
+      "suite": "table",
+      "testName": "17. checkTableStatus (occupied) → error: INTERNAL",
+      "responseSnippet": "{\"status\":\"error\",\"message\":\"INTERNAL\",\"error\":{\"message\":\"INTERNAL\",\"status\":\"INTERNAL\"},\"_httpStatus\":500}"
+    }
+  ]
+}

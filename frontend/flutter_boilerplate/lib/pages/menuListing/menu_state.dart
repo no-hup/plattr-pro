@@ -1,3 +1,7 @@
+// `show listEquals` only: foundation.dart also exports a `Category`
+// annotation class that collides with menu_response.Category (the restaurant
+// menu model). The `show` clause pulls in only the one function we need.
+import 'package:flutter/foundation.dart' show listEquals, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:flutterboilerplate/models/api_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/add_cart_response.dart' as legacy;
@@ -11,11 +15,12 @@ import 'package:flutterboilerplate/pages/menuListing/models/cart_item_price_info
 import 'package:flutterboilerplate/pages/menuListing/models/cart_price_info.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/variant_option.dart' as model;
 import 'package:flutterboilerplate/pages/menuListing/models/variant_selection.dart';
+import 'package:flutterboilerplate/pages/menuListing/offers_state_mixin.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
 
 /// Custom logic for addons and variants is implemented with the current user in mind.
 /// Each combination of addons and variants is treated as a unique item in the cart.
-class MenuState extends ChangeNotifier {
+class MenuState extends ChangeNotifier with OffersStateMixin {
   MenuState(this._repository);
 
   final MenuRepository _repository;
@@ -24,9 +29,82 @@ class MenuState extends ChangeNotifier {
   MenuData? _menuData;
   MenuData? get menuData => _menuData;
 
+  // Added getter for categories to simplify UI access
+  List<Category> get categories => _menuData?.categories ?? [];
+
   // Add flag to track ongoing cart updates
   bool _isUpdatingCart = false;
   bool get isUpdatingCart => _isUpdatingCart;
+
+  // ==================== Navigation State ====================
+  
+  /// The currently active category ID (for scroll sync)
+  String? _activeCategoryId;
+  String? get activeCategoryId => _activeCategoryId;
+  
+  void setActiveCategory(String id) {
+    if (_activeCategoryId != id) {
+      _activeCategoryId = id;
+      notifyListeners();
+    }
+  }
+  
+  // ==================== Collapse State ====================
+  
+  /// Set of COLLAPSED subcategory IDs (expanded by default for better UX)
+  /// Tracks which subcategories the user has manually collapsed.
+  final Set<String> _collapsedSubcategoryIds = {};
+  
+  bool isSubcategoryExpanded(String id) {
+    // Default is expanded (true), only collapsed if explicitly in the set
+    return !_collapsedSubcategoryIds.contains(id);
+  }
+  
+  void toggleSubcategory(String id) {
+    if (_collapsedSubcategoryIds.contains(id)) {
+      _collapsedSubcategoryIds.remove(id); // Expand
+    } else {
+      _collapsedSubcategoryIds.add(id); // Collapse
+    }
+    notifyListeners();
+  }
+  
+  /// Initialize collapsed state from backend defaultExpanded field.
+  /// Categories with defaultExpanded: false will have all their subcategories pre-collapsed.
+  void _initializeCollapsedStateFromBackend() {
+    if (_menuData == null) return;
+    
+    // Clear any previous collapsed state
+    _collapsedSubcategoryIds.clear();
+    
+    for (final category in _menuData!.categories) {
+      if (!category.defaultExpanded) {
+        // Pre-collapse all subcategories of this category
+        for (final subcat in category.subcategories) {
+          _collapsedSubcategoryIds.add(subcat.id);
+        }
+        AppLogger.log('📂 MENU: Pre-collapsed ${category.subcategories.length} subcategories for ${category.name} (defaultExpanded: false)');
+      }
+    }
+  }
+  
+  // ==================== Floating Menu State ====================
+  
+  /// Whether the floating menu overlay is expanded
+  bool _isFloatingMenuExpanded = false;
+  bool get isFloatingMenuExpanded => _isFloatingMenuExpanded;
+  
+  void toggleFloatingMenu() {
+    _isFloatingMenuExpanded = !_isFloatingMenuExpanded;
+    notifyListeners();
+  }
+  
+  void closeFloatingMenu() {
+    if (_isFloatingMenuExpanded) {
+      _isFloatingMenuExpanded = false;
+      notifyListeners();
+    }
+  }
 
   // Helper method to convert legacy Map<String, String> to List<VariantSelection>
   List<VariantSelection> _convertToVariantSelections(Map<String, String>? variants) {
@@ -66,7 +144,9 @@ class MenuState extends ChangeNotifier {
     required String restaurantId,
     Map<String, String>? selectedVariants,
     List<String>? selectedAddons,
+    int quantity = 1,
     BuildContext? context,
+    int? cartItemId,
   }) async {
     // Skip if an update is already in progress
     if (_isUpdatingCart) {
@@ -108,6 +188,8 @@ class MenuState extends ChangeNotifier {
       selectedAddons: addonSelections,
       tableId: tableId,
       restaurantId: restaurantId,
+      quantity: quantity,
+      cartItemId: cartItemId,
     );
 
     // Make API request with the effective customization
@@ -119,6 +201,8 @@ class MenuState extends ChangeNotifier {
         restaurantId: restaurantId,
         selectedVariants: effectiveVariants,
         selectedAddons: effectiveAddons,
+        quantity: quantity,
+        cartItemId: cartItemId,
       );
       
       if (!response.success) {
@@ -179,12 +263,10 @@ class MenuState extends ChangeNotifier {
           // Even if there's an error, don't revert as we've already done an optimistic update
         }
       }
-
-      // Update complete
-      _isUpdatingCart = false;
-      notifyListeners();
     } catch (e) {
       _handleApiError(previousCart, itemId, e.toString(), context);
+    } finally {
+      // CRITICAL: Always release the lock, even if exceptions occur
       _isUpdatingCart = false;
       notifyListeners();
     }
@@ -198,13 +280,15 @@ class MenuState extends ChangeNotifier {
     required String restaurantId,
     Map<String, String>? selectedVariants,
     List<String>? selectedAddons,
+    int quantity = 1,
+    int? cartItemId,
   }) async {
     final request = increment
         ? legacy.AddToCartRequest(
             tableId: tableId,
             restaurantId: restaurantId,
             menuItemId: itemId,
-            quantity: 1,
+            quantity: quantity,
             selectedVariants: selectedVariants,
             selectedAddons: selectedAddons,
           )
@@ -212,9 +296,10 @@ class MenuState extends ChangeNotifier {
             tableId: tableId,
             restaurantId: restaurantId,
             menuItemId: itemId,
-            quantity: 1,
+            quantity: quantity,
             selectedVariants: selectedVariants,
             selectedAddons: selectedAddons,
+            cartItemId: cartItemId,
           );
 
     return increment
@@ -245,28 +330,39 @@ class MenuState extends ChangeNotifier {
     required String restaurantId,
     required List<VariantSelection> selectedVariants,
     required List<AddonSelection> selectedAddons,
+    int quantity = 1,
+    int? cartItemId,
   }) {
     // With Freezed models, we need to create new instances rather than modifying existing ones
     final currentItems = _cart?.items.toList() ?? <CartItem>[];
-    List<CartItem> updatedItems = List<CartItem>.from(currentItems);
-    
+    final updatedItems = List<CartItem>.from(currentItems);
+
     // Create default price info
-    final defaultPriceInfo = CartItemPriceInfo(
-      itemBasePrice: 0,
-      itemVariantBasePrice: 0,
-      itemAddonBasePrice: 0,
-      itemFinalPrice: 0,
-      discount: 0,
-      totalBasePrice: 0,
-      totalVariantBasePrice: 0,
-      totalAddonBasePrice: 0,
-      finalPrice: 0,
+    const defaultPriceInfo = CartItemPriceInfo(
+
     );
-    
+
     // Determine how to find the item index based on provided customizations
     int itemIndex;
-    
-    if (selectedVariants.isEmpty && selectedAddons.isEmpty) {
+
+    // Case 0: caller provided a specific cartItemId — this is a surgical
+    // targeting request (e.g. multi-config picker, single-entry menu card '-').
+    // Honour it ahead of all other matching strategies. Falls through to the
+    // legacy strategies if the cartItemId doesn't resolve (stale UI state).
+    if (cartItemId != null) {
+      itemIndex = currentItems.indexWhere((item) => item.cartItemId == cartItemId);
+      if (itemIndex != -1) {
+        AppLogger.log('🔍 CART: Finding item by cartItemId=$cartItemId, found at index $itemIndex');
+      } else {
+        AppLogger.log('⚠️ CART: cartItemId=$cartItemId not found, falling back to legacy match');
+      }
+    } else {
+      itemIndex = -1;
+    }
+
+    if (itemIndex != -1) {
+      // Resolved via cartItemId — skip the legacy matching branches below.
+    } else if (selectedVariants.isEmpty && selectedAddons.isEmpty) {
       // Case 1: No customization specified - find by menuItemId only
       // This is typically used when incrementing/decrementing from item cards
       itemIndex = currentItems.indexWhere((item) => item.menuItemId == itemId);
@@ -286,7 +382,7 @@ class MenuState extends ChangeNotifier {
       itemIndex = currentItems.indexWhere((item) => 
         item.menuItemId == itemId && 
         _customizationsMatch(item.selectedVariants, selectedVariants) &&
-        _customizationsMatch(item.selectedAddons, selectedAddons)
+        _customizationsMatch(item.selectedAddons, selectedAddons),
       );
       
       AppLogger.log('🔍 CART: Finding item by full equality with variants/addons, found: ${itemIndex != -1}');
@@ -297,7 +393,7 @@ class MenuState extends ChangeNotifier {
         // Item exists, update its quantity
         final currentItem = currentItems[itemIndex];
         updatedItems[itemIndex] = currentItem.copyWith(
-          quantity: currentItem.quantity + 1,
+          quantity: currentItem.quantity + quantity,
           // Preserve existing customizations if none were specified
           selectedVariants: selectedVariants.isEmpty ? currentItem.selectedVariants : selectedVariants,
           selectedAddons: selectedAddons.isEmpty ? currentItem.selectedAddons : selectedAddons,
@@ -306,11 +402,11 @@ class MenuState extends ChangeNotifier {
         // Item doesn't exist, add it
         updatedItems.add(CartItem(
           menuItemId: itemId,
-          quantity: 1,
+          quantity: quantity,
           selectedVariants: selectedVariants,
           selectedAddons: selectedAddons,
           priceInfo: defaultPriceInfo,
-        ));
+        ),);
       }
     } else {
       if (itemIndex != -1) {
@@ -337,13 +433,13 @@ class MenuState extends ChangeNotifier {
     notifyListeners();
   }
   
-  // Helper to check if two lists of customizations match
+  // Helper to check if two lists of customizations match.
+  // VariantSelection and AddonSelection are Freezed-generated with proper `==`
+  // and `hashCode`, so listEquals does element-wise deep comparison correctly.
+  // Replaces the previous toString()-based comparison, which worked only by
+  // accident of Freezed's deterministic toString output.
   bool _customizationsMatch<T>(List<T> list1, List<T> list2) {
-    if (list1.length != list2.length) return false;
-    
-    // Simple equality check for now
-    // For more sophisticated matching, we'd need to implement a proper comparison
-    return list1.toString() == list2.toString();
+    return listEquals(list1, list2);
   }
 
   // Helper to create a new cart with empty price info
@@ -353,12 +449,7 @@ class MenuState extends ChangeNotifier {
       tableId: tableId,
       items: items,
       priceInfo: CartPriceInfo(
-        basePrice: 0,
-        finalPrice: 0,
-        totalDiscount: 0,
-        totalDiscountAmount: 0,
-        totalAddonBasePrice: 0,
-        totalVariantBasePrice: 0,
+        
       ),
     );
   }
@@ -391,6 +482,14 @@ class MenuState extends ChangeNotifier {
       // Store menu data
       _menuData = response.data;
       
+      // Set initial active category to first category
+      if (_menuData != null && _menuData!.categories.isNotEmpty) {
+        _activeCategoryId = _menuData!.categories.first.id;
+        
+        // Initialize collapsed state from backend defaultExpanded field
+        _initializeCollapsedStateFromBackend();
+      }
+      
       // Fetch the cart after menu is loaded (but don't wait for UI update yet)
       AppLogger.log('📝 MENU: Menu loaded, now fetching cart');
       await fetchCart(tableId: tableId, restaurantId: restaurantId);
@@ -399,6 +498,9 @@ class MenuState extends ChangeNotifier {
       // fetchCart already calls notifyListeners() to update menu quantities
       _isLoading = false;
       notifyListeners();
+      
+      // Fetch offers after successful menu and cart load (non-blocking)
+      fetchOffersInBackground(restaurantId: restaurantId, tableId: tableId);
       
     } catch (e) {
       AppLogger.log('❌ MENU: Error fetching menu - $e');
@@ -410,7 +512,7 @@ class MenuState extends ChangeNotifier {
 
   Future<void> fetchCart({
     required String tableId, 
-    required String restaurantId
+    required String restaurantId,
   }) async {
     try {
       AppLogger.log('🛒 CART: Fetching cart data for table $tableId at restaurant $restaurantId');
@@ -436,47 +538,27 @@ class MenuState extends ChangeNotifier {
           if (response.data!.data != null) {
             // Check what we got for cart
             final cartData = response.data!.data!.cart;
-            AppLogger.log('📦 CART: Cart data type: ${cartData?.runtimeType}');
+            AppLogger.log('📦 CART: Cart data type: ${cartData.runtimeType}');
             
             // Handle different type scenarios
             Cart? cart;
-            if (cartData is Cart) {
-              // If it's already a Cart, use it directly
-              cart = cartData;
-            } else {
-              // Try to serialize any other type
-              try {
-                // First log what we actually got
-                AppLogger.log('📦 CART: Attempting to create Cart from type: ${cartData.runtimeType}');
-                
-                // Create a default cart if nothing else works
-                if (cartData == null) {
-                  AppLogger.log('⚠️ CART: Cart data is null, creating empty cart');
-                  cart = _createNewCart(restaurantId, tableId, []);
-                }
-              } catch (e) {
-                AppLogger.log('❌ CART: Error creating Cart: $e');
-              }
-            }
-            
+            // If it's already a Cart, use it directly
+            cart = cartData;
+                      
             // Proceed if we have a valid cart
-            if (cart != null) {
-              AppLogger.log('📦 CART: Cart object type: ${cart.runtimeType}');
-              AppLogger.log('📦 CART: Cart items count: ${cart.items.length}');
-              
-              // Update the cart
-              _cart = cart;
-              
-              // Update menu quantities with the new cart
-              _updateMenuQuantities();
-              
-              // Notify listeners that cart data has been updated
-              notifyListeners();
-              AppLogger.log('✅ CART: Successfully updated cart with ${_cart!.items.length} items');
-            } else {
-              AppLogger.log('⚠️ CART: Unable to get valid cart from response');
-            }
-          } else {
+            AppLogger.log('📦 CART: Cart object type: ${cart.runtimeType}');
+            AppLogger.log('📦 CART: Cart items count: ${cart.items.length}');
+            
+            // Update the cart
+            _cart = cart;
+            
+            // Update menu quantities with the new cart
+            _updateMenuQuantities();
+            
+            // Notify listeners that cart data has been updated
+            notifyListeners();
+            AppLogger.log('✅ CART: Successfully updated cart with ${_cart!.items.length} items');
+                    } else {
             AppLogger.log('⚠️ CART: Response.data!.data is null');
           }
         } else {
@@ -525,52 +607,62 @@ class MenuState extends ChangeNotifier {
   void _showErrorToast(BuildContext? context, String message) {
     if (context == null) return;
     
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    // Safely check if the context is still mounted before showing snackbar
+    try {
+      // Check if the context's element is still mounted in the widget tree
+      if (!context.mounted) {
+        AppLogger.log('⚠️ TOAST: Context unmounted, skipping error toast');
+        return;
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      // Silently handle if context is no longer valid (widget unmounted)
+      AppLogger.log('⚠️ TOAST: Could not show error toast: $e');
+    }
   }
 
+  /// Returns the TOTAL quantity across every cart entry that matches [itemId].
+  ///
+  /// For a customizable menu item with multiple variant/addon configurations
+  /// in the cart (e.g. Wings 6pc + mayo AND Wings 12pc + hot sauce), the menu
+  /// badge must show 2, not 1. The pre-Phase-3 implementation used
+  /// `firstWhere` and returned only the first matching entry's quantity,
+  /// silently under-counting multi-config carts.
+  ///
+  /// Returns 0 when the cart is null/empty or no entry matches.
   int getItemQuantity(String itemId) {
     if (_cart == null || _cart!.items.isEmpty) {
       return 0;
     }
-    
-    try {
-      final item = _cart!.items
-          .firstWhere(
-            (item) => item.menuItemId == itemId,
-            orElse: () => CartItem(
-              menuItemId: itemId,
-              quantity: 0,
-              priceInfo: CartItemPriceInfo(
-                itemBasePrice: 0,
-                itemVariantBasePrice: 0,
-                itemAddonBasePrice: 0,
-                itemFinalPrice: 0,
-                discount: 0,
-                totalBasePrice: 0,
-                totalVariantBasePrice: 0,
-                totalAddonBasePrice: 0,
-                finalPrice: 0,
-              ),
-            ),
-          );
-      return item.quantity ?? 0;
-    } catch (e) {
-      AppLogger.log('❌ Error getting item quantity: $e');
-      return 0;
-    }
+    return _cart!.items
+        .where((item) => item.menuItemId == itemId)
+        .fold<int>(0, (sum, item) => sum + (item.quantity ?? 0));
+  }
+
+  /// Returns every cart entry whose menuItemId matches [menuItemId], in the
+  /// same order they appear in the cart. For customizable items with multiple
+  /// variant/addon configurations, this is the authoritative lookup used by
+  /// the menu card stepper (single-entry `-` target) and the upcoming
+  /// CartVariantPickerSheet (one card per entry).
+  ///
+  /// Returns an empty list when the cart is null or empty. Never returns null.
+  List<CartItem> getCartEntriesFor(String menuItemId) {
+    if (_cart == null) return const [];
+    return _cart!.items.where((i) => i.menuItemId == menuItemId).toList();
   }
 
   bool needsCustomization(MenuItem item) =>
       item.isCustomizable &&
-      ((item.variants?.isNotEmpty ?? false) ||
-          (item.addons?.isNotEmpty ?? false));
+      ((item.variants.isNotEmpty ?? false) ||
+          (item.addons.isNotEmpty ?? false));
 
   CartItem? getStoredCustomization(String itemId) {
     if (_cart == null || _cart!.items.isEmpty) {
@@ -595,4 +687,20 @@ class MenuState extends ChangeNotifier {
   Cart? _cart;
   Cart? get cart => _cart;
 
+  /// Test-only hook for seeding `_cart` directly without running the full
+  /// `updateCartItem` → API → `_updateLocalCart` pipeline. Enables widget
+  /// tests on menu card handlers + `CartVariantPickerSheet` to stand up a
+  /// multi-entry cart fixture cheaply. **Never call from production code.**
+  @visibleForTesting
+  void seedCartForTest(Cart? cart) {
+    _cart = cart;
+    notifyListeners();
+  }
+
+  // ==================== Offers Mixin Implementation ====================
+  
+  /// MenuState doesn't have direct session access, so return null.
+  /// Session-based offers will work when called from CartListingState.
+  @override
+  String? getSessionIdForOffers() => null;
 }

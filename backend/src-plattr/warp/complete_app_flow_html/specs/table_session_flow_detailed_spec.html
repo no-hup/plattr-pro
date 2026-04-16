@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plattr Pro - Table & Session Flow Detailed Specification</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        /* Custom styles for important nuances */
+        .imp {
+            background: linear-gradient(90deg, rgba(234, 88, 12, 0.15) 0%, transparent 100%);
+            border-left: 4px solid #ea580c;
+            padding: 10px 14px;
+            border-radius: 0 6px 6px 0;
+            margin: 8px 0;
+            font-weight: 500;
+        }
+
+        .imp::before {
+            content: "⚡ IMP: ";
+            color: #ea580c;
+            font-weight: 700;
+        }
+
+        .flow-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin: 10px 0;
+        }
+
+        .flow-step-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--accent);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .flow-step-content {
+            padding-left: 20px;
+        }
+
+        .flow-step-content li {
+            margin: 6px 0;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .highlight-box {
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 8px;
+            padding: 14px;
+            margin: 12px 0;
+        }
+
+        .highlight-box-title {
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .status-flow {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+
+        .status-arrow {
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        /* Collapsible API Dropdown Styles */
+        .api-accordion {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .api-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border-bottom: 1px solid transparent;
+        }
+
+        .api-header:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .api-header.open {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .api-toggle {
+            font-size: 12px;
+            color: var(--text-muted);
+            transition: transform 0.2s ease;
+        }
+
+        .api-header.open .api-toggle {
+            transform: rotate(90deg);
+        }
+
+        .api-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .api-type {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .api-type-public {
+            background: rgba(5, 150, 105, 0.15);
+            color: var(--success);
+        }
+
+        .api-type-internal {
+            background: rgba(217, 119, 6, 0.15);
+            color: var(--warning);
+        }
+
+        .api-type-trigger {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent2);
+        }
+
+        .api-type-scheduled {
+            background: rgba(8, 145, 178, 0.15);
+            color: var(--cyan);
+        }
+
+        .api-type-server {
+            background: rgba(234, 88, 12, 0.15);
+            color: #ea580c;
+        }
+
+        .api-desc {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-left: auto;
+        }
+
+        .api-content {
+            display: none;
+            padding: 16px;
+            background: var(--bg-secondary);
+        }
+
+        .api-content.open {
+            display: block;
+        }
+
+        .api-params,
+        .api-response {
+            margin-bottom: 14px;
+        }
+
+        .api-section-title {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .json-block {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.5;
+        }
+
+        /* Field coloring for JSON */
+        .field-mandatory {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .field-optional {
+            color: #0891b2;
+            font-style: italic;
+        }
+
+        .field-key {
+            color: var(--accent);
+        }
+
+        .field-value-string {
+            color: #ea580c;
+        }
+
+        .field-value-number {
+            color: #8b5cf6;
+        }
+
+        .field-value-bool {
+            color: #db2777;
+        }
+
+        .field-comment {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .legend-api {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 12px;
+        }
+
+        .legend-api-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-api-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+        }
+
+        /* Feature flag specific styles */
+        .flag-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 14px;
+            margin: 12px 0;
+        }
+
+        .flag-detail {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .flag-detail-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .flag-detail-desc {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 10px;
+        }
+
+        .flag-states {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .flag-state {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .flag-state-label {
+            min-width: 50px;
+            font-weight: 600;
+        }
+
+        /* Schema block */
+        .schema-block {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            margin: 10px 0;
+        }
+
+        .schema-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--cyan);
+            margin-bottom: 8px;
+        }
+
+        .schema-fields {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .schema-field {
+            display: grid;
+            grid-template-columns: 160px 1fr;
+            gap: 8px;
+            padding: 4px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .schema-field:last-child {
+            border-bottom: none;
+        }
+
+        .schema-field-name {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent);
+        }
+
+        .schema-field-type {
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <span class="nav-logo">🆔 Table & Session Spec</span>
+        <a href="#overview">Overview</a>
+        <a href="#table-state">Table State</a>
+        <a href="#validation">Validation</a>
+        <a href="#otp">OTP</a>
+        <a href="#sessions">Sessions</a>
+        <a href="#customers">Customers</a>
+        <a href="#api-reference">API Reference</a>
+        <span style="margin-left: auto; display: flex; gap: 8px;">
+            <a href="order_flow_detailed_spec.html" style="color:#6366f1;border:1px solid #6366f1;">📦 Order Flow</a>
+            <a href="../CONSUMER_APP_FLOW.html" style="color:#f97316;border:1px solid #f97316;">🍽️ Consumer Flow</a>
+        </span>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>Table & Session Flow Detailed Specification</h1>
+            <p>Complete technical breakdown of table authentication, OTP validation, session management, and customer
+                profiles</p>
+            <div class="badges">
+                <span class="badge">🆔 Table Auth</span>
+                <span class="badge">🔑 OTP System</span>
+                <span class="badge">⏱️ Session Management</span>
+                <span class="badge">👤 Customer Profiles</span>
+                <span class="badge">🚩 Feature Flags</span>
+            </div>
+        </div>
+
+        <!-- OVERVIEW -->
+        <section class="section" id="overview">
+            <div class="section-title"><span class="section-icon">📋</span> System Overview</div>
+            <div class="card">
+                <div class="card-title">Key Concepts</div>
+                <ul class="bullet-list">
+                    <li class="info">The <strong>Table-Session-Customer</strong> system manages restaurant table
+                        authentication, session lifecycle, and customer profiles</li>
+                    <li class="info">Enables <strong>multi-user table access</strong> via OTP validation with
+                        session-based ordering</li>
+                    <li class="info">Tables are identified by QR codes containing <code>restaurantId</code> and
+                        <code>tableId</code></li>
+                    <li class="info">Sessions link customers to tables and enable cart/order operations</li>
+                    <li class="success"><strong>Primary customer</strong> validates OTP first and creates the session
+                    </li>
+                    <li class="success"><strong>Secondary customers</strong> join the existing session with the same OTP
+                    </li>
+                </ul>
+                <div class="imp">Only ONE active session per table at a time. New customers join the existing session
+                    rather than creating new ones.</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🔗 Cross-Entity Flow</div>
+                <div class="highlight-box">
+                    <div class="highlight-box-title">Session → Cart/Order Propagation</div>
+                    <div class="status-flow">
+                        <span class="status s-cyan">QR Scan</span>
+                        <span class="status-arrow">→</span>
+                        <span class="status s-pending">OTP Validation</span>
+                        <span class="status-arrow">→</span>
+                        <span class="status s-active">Session Created</span>
+                        <span class="status-arrow">→</span>
+                        <span class="status s-info">Cart Operations</span>
+                        <span class="status-arrow">→</span>
+                        <span class="status s-done">Order Created</span>
+                    </div>
+                </div>
+                <ul class="bullet-list">
+                    <li class="info"><code>validateOTP</code> returns <code>sessionId</code></li>
+                    <li class="info"><code>addItemToCart</code> requires <code>sessionId</code></li>
+                    <li class="info"><code>checkoutCart</code> creates order linked to <code>sessionId</code></li>
+                    <li class="info"><code>getOrder</code> can filter by <code>sessionId</code></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- TABLE STATE MACHINE -->
+        <section class="section" id="table-state">
+            <div class="section-title"><span class="section-icon">🔄</span> Table State Machine</div>
+
+            <div class="card">
+                <div class="card-title">State Diagram</div>
+                <div class="diagram">
+                    <div class="mermaid">
+                        stateDiagram-v2
+                        [*] --> VACANT: Initial State
+                        VACANT --> OTP_PENDING: QR Scanned (OTP Generated)
+                        OTP_PENDING --> VACANT: OTP Expires (5 min)
+                        OTP_PENDING --> ACTIVE: OTP Validated (Session Created)
+                        ACTIVE --> ACTIVE: Secondary User Joins
+                        ACTIVE --> VACANT: Session Ended / Bill Paid / Manual Clear
+
+                        [*] --> DISABLED: Admin Disables
+                        DISABLED --> VACANT: Admin Re-enables
+
+                        note right of OTP_PENDING
+                        OTP valid for 5 minutes
+                        end note
+
+                        note right of ACTIVE
+                        Session valid for 4 hours
+                        end note
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">TABLE_STATUS Constants</div>
+                <div class="json-block">{
+                    <span class="field-key">ACTIVE</span>: <span class="field-value-string">'active'</span>, <span
+                        class="field-comment">// Table in use with active session</span>
+                    <span class="field-key">VACANT</span>: <span class="field-value-string">'vacant'</span>, <span
+                        class="field-comment">// Available for new customers</span>
+                    <span class="field-key">DISABLED</span>: <span class="field-value-string">'disabled'</span>, <span
+                        class="field-comment">// Unavailable (admin controlled)</span>
+                    <span class="field-key">OTP_PENDING</span>: <span class="field-value-string">'pending'</span> <span
+                        class="field-comment">// OTP generated, awaiting validation</span>
+                    }
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">State Transitions</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Trigger</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="status s-active">VACANT</span></td>
+                                <td><span class="status s-pending">OTP_PENDING</span></td>
+                                <td>QR Scan</td>
+                            </tr>
+                            <tr>
+                                <td><span class="status s-pending">OTP_PENDING</span></td>
+                                <td><span class="status s-info">ACTIVE</span></td>
+                                <td>OTP Validated</td>
+                            </tr>
+                            <tr>
+                                <td><span class="status s-pending">OTP_PENDING</span></td>
+                                <td><span class="status s-active">VACANT</span></td>
+                                <td>OTP Expires (5 min)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="status s-info">ACTIVE</span></td>
+                                <td><span class="status s-active">VACANT</span></td>
+                                <td>Session Ends</td>
+                            </tr>
+                            <tr>
+                                <td><span class="status s-error">DISABLED</span></td>
+                                <td><span class="status s-active">VACANT</span></td>
+                                <td>Admin Re-enables</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card">
+                    <div class="card-title">Table Document Fields</div>
+                    <div class="schema-fields">
+                        <div class="schema-field">
+                            <span class="schema-field-name">status</span>
+                            <span class="schema-field-type">'active' | 'vacant' | 'disabled' | 'pending'</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">number</span>
+                            <span class="schema-field-type">string</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">capacity</span>
+                            <span class="schema-field-type">number</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">primaryCustomer</span>
+                            <span class="schema-field-type">{ phoneNumber, name }</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">occupiedBy</span>
+                            <span class="schema-field-type">[phoneNumber, ...]</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">currentOTP</span>
+                            <span class="schema-field-type">{ code, createdAt, expiresAt }</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">assignedServerId</span>
+                            <span class="schema-field-type">string</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">lastActivity</span>
+                            <span class="schema-field-type">Timestamp</span>
+                        </div>
+                    </div>
+                    <div class="imp">When table status changes from ACTIVE → VACANT, system clears
+                        <code>primaryCustomer</code>, <code>occupiedBy</code>, and <code>activeOrderId</code>.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AUTHENTICATION & OTP FLOW -->
+        <section class="section" id="validation">
+            <div class="section-title"><span class="section-icon">🔐</span> Authentication & Validation Flow</div>
+
+            <div class="card">
+                <div class="card-title">📱 QR Scan / validateTableAndLocation</div>
+                <div class="flow-step">
+                    <div class="flow-step-title">📞 1. Entry Point: Customer Scans Table QR Code</div>
+                    <div class="flow-step-content">
+                        <ul>
+                            <li>QR contains <code>restaurantId</code> and <code>tableId</code></li>
+                            <li>App captures user's GPS location</li>
+                            <li>Calls <code>validateTableAndLocation</code> API</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-step-title">✅ 2. Input Validation</div>
+                    <div class="flow-step-content">
+                        <ul>
+                            <li>Required: <code>restaurantId</code>, <code>tableId</code>, <code>userLocation</code>
+                            </li>
+                            <li>Optional: <code>sessionId</code> (for existing session validation)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-step-title">🚫 3. Guard Clauses (Early Exits)</div>
+                    <div class="flow-step-content">
+                        <ul>
+                            <li class="error"><strong>Table DISABLED</strong> → HTTP 403 Forbidden</li>
+                            <li class="error"><strong>Location check fails</strong> → HTTP 412 Precondition Failed</li>
+                            <li class="success"><strong>Valid sessionId provided</strong> → Return success immediately
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="imp">Location validation is currently stubbed (<code>isWithinRadius</code> always
+                        returns <code>true</code>). Future implementation should check if user is within 100m of
+                        restaurant.</div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-step-title">🔢 4. OTP Generation (VACANT tables only)</div>
+                    <div class="flow-step-content">
+                        <ul>
+                            <li>Generate 6-digit OTP via <code>otpService.createOTPObject()</code></li>
+                            <li>Update table: <code>status → OTP_PENDING</code></li>
+                            <li>Set <code>currentOTP</code> and <code>firstScannedAt</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-step-title">🚩 5. Feature Flag Check</div>
+                    <div class="flow-step-content">
+                        <ul>
+                            <li class="warning">If <code>isOtpManadatoryAtScan = true</code> → HTTP 401 with auth
+                                requirements</li>
+                            <li class="success">If <code>false</code> → Return success with limited access</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🚩 Feature Flag Logic</div>
+                <div class="flag-grid">
+                    <div class="flag-detail">
+                        <div class="flag-detail-title">isOtpManadatoryAtScan</div>
+                        <div class="flag-detail-desc">Controls if OTP validation is required when scanning QR</div>
+                        <div class="flag-states">
+                            <div class="flag-state">
+                                <span class="flag flag-on">ON</span>
+                                <span>Every QR scan requires OTP entry (HTTP 401 if not validated)</span>
+                            </div>
+                            <div class="flag-state">
+                                <span class="flag flag-off">OFF</span>
+                                <span>Limited access granted without OTP; <code>otpRequiredForOrder</code> flag
+                                    set</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flag-detail">
+                        <div class="flag-detail-title">isUsernameEnabled</div>
+                        <div class="flag-detail-desc">Makes name field mandatory for users</div>
+                        <div class="flag-states">
+                            <div class="flag-state">
+                                <span class="flag flag-on">ON</span>
+                                <span>Name required for primary customers</span>
+                            </div>
+                            <div class="flag-state">
+                                <span class="flag flag-off">OFF</span>
+                                <span>Name is optional</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flag-detail">
+                        <div class="flag-detail-title">isMultiUserSupportEnabled</div>
+                        <div class="flag-detail-desc">Allows multiple users per table session</div>
+                        <div class="flag-states">
+                            <div class="flag-state">
+                                <span class="flag flag-on">ON</span>
+                                <span>Secondary users can join with phone number</span>
+                            </div>
+                            <div class="flag-state">
+                                <span class="flag flag-off">OFF</span>
+                                <span>Phone number required for ALL users</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="highlight-box">
+                    <div class="highlight-box-title">Requirement Calculation Logic</div>
+                    <div class="json-block"><span class="field-comment">// Phone number is required when:</span>
+                        <span class="field-key">isPhoneNumberMandatory</span> =
+                        (status === <span class="field-value-string">VACANT</span> || status === <span
+                            class="field-value-string">OTP_PENDING</span>) ||
+                        featureFlags.isEnabled(<span class="field-value-string">'isMultiUserSupportEnabled'</span>);
+
+                        <span class="field-comment">// Username is required when:</span>
+                        <span class="field-key">isUsernameMandatory</span> =
+                        featureFlags.isEnabled(<span class="field-value-string">'isUsernameEnabled'</span>) &&
+                        potentiallyPrimary;
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- OTP SYSTEM -->
+        <section class="section" id="otp">
+            <div class="section-title"><span class="section-icon">🔑</span> OTP System</div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">OTP Configuration</div>
+                    <div class="json-block">{
+                        <span class="field-key">VALIDITY_MINUTES</span>: <span class="field-value-number">5</span>,
+                        <span class="field-comment">// 5-minute expiry window</span>
+                        <span class="field-key">LENGTH</span>: <span class="field-value-number">6</span> <span
+                            class="field-comment">// 6-digit numeric code</span>
+                        }
+                    </div>
+                    <div class="imp">OTP expires in 5 minutes from generation. After expiry, table reverts to VACANT.
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">OTP Object Structure</div>
+                    <div class="json-block">{
+                        <span class="field-mandatory">"code"</span>: <span class="field-value-string">"123456"</span>,
+                        <span class="field-comment">// 6-digit numeric code</span>
+                        <span class="field-mandatory">"createdAt"</span>: Timestamp, <span class="field-comment">// OTP
+                            generation time</span>
+                        <span class="field-mandatory">"expiresAt"</span>: Timestamp <span class="field-comment">//
+                            createdAt + 5 minutes</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">OTP Service Functions</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Function</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>generateOTP()</code></td>
+                            <td>Creates random 6-digit numeric string</td>
+                        </tr>
+                        <tr>
+                            <td><code>createOTPObject()</code></td>
+                            <td>Creates OTP with timestamps (code, createdAt, expiresAt)</td>
+                        </tr>
+                        <tr>
+                            <td><code>isOTPValid(otpObject)</code></td>
+                            <td>Checks if OTP hasn't expired by comparing expiresAt with current time</td>
+                        </tr>
+                        <tr>
+                            <td><code>handleOTPGeneration(tableData)</code></td>
+                            <td>Returns existing valid OTP or creates new one</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🔓 OTP Validation Flow (<code>validateOTP</code>)</div>
+                <div class="flow-step">
+                    <div class="flow-step-title">📥 1. Input Requirements</div>
+                    <div class="flow-step-content">
+                        <ul>
+                            <li><strong>Required:</strong> <code>restaurantId</code>, <code>tableId</code>,
+                                <code>otp</code></li>
+                            <li><strong>Conditional:</strong> <code>phoneNumber</code> (required for primary or when
+                                multi-user disabled)</li>
+                            <li><strong>Conditional:</strong> <code>name</code> (required when
+                                <code>isUsernameEnabled</code> and primary)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-step-title">✅ 2. OTP Verification</div>
+                    <div class="flow-step-content">
+                        <ul>
+                            <li>Compare provided OTP with <code>tableData.currentOTP.code</code></li>
+                            <li class="error">If mismatch → HTTP 401 Unauthorized</li>
+                            <li class="success">If match → Proceed to session creation</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-step-title">👤 3. Primary vs Secondary Customer Logic</div>
+                    <div class="flow-step-content">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Table Status</th>
+                                    <th>User Type</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="status s-pending">VACANT/OTP_PENDING</span></td>
+                                    <td><strong>PRIMARY</strong></td>
+                                    <td>Creates session, sets <code>primaryCustomer</code></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="status s-info">ACTIVE</span></td>
+                                    <td><strong>SECONDARY</strong></td>
+                                    <td>Joins existing session, added to <code>occupiedBy</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-step-title">📝 4. Table & Customer Updates</div>
+                    <div class="flow-step-content">
+                        <ul>
+                            <li>Set <code>status: ACTIVE</code></li>
+                            <li>Set <code>primaryCustomer: { phoneNumber, name }</code> (primary only)</li>
+                            <li>Add phoneNumber to <code>occupiedBy[]</code> array</li>
+                            <li>Create/update customer profile via
+                                <code>customerService.createOrUpdateCustomerProfileDirect()</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="flow-step-title">🎟️ 5. Session & Token Generation</div>
+                    <div class="flow-step-content">
+                        <ul>
+                            <li><strong>Primary:</strong> <code>sessionService.createOrGetTableSession()</code></li>
+                            <li><strong>Secondary:</strong> <code>sessionService.addUserToTableSession()</code></li>
+                            <li>Generate Firebase custom token using phoneNumber as UID</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="imp">Phone number is used as the Firebase UID and customer document ID. This creates a direct
+                link between authentication and customer profiles.</div>
+        </section>
+
+        <!-- SESSION MANAGEMENT -->
+        <section class="section" id="sessions">
+            <div class="section-title"><span class="section-icon">⏱️</span> Session Management</div>
+
+            <div class="card">
+                <div class="card-title">SESSION_STATUS Constants</div>
+                <div class="json-block">{
+                    <span class="field-key">ACTIVE</span>: <span class="field-value-string">'active'</span>, <span
+                        class="field-comment">// Session in use</span>
+                    <span class="field-key">ENDED</span>: <span class="field-value-string">'ended'</span>, <span
+                        class="field-comment">// Manually ended (table cleared)</span>
+                    <span class="field-key">EXPIRED</span>: <span class="field-value-string">'expired'</span> <span
+                        class="field-comment">// Time expired (4 hours)</span>
+                    }
+                </div>
+                <div class="imp">Session expires in 4 hours from creation. After expiry, session status changes to
+                    EXPIRED.</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Session Document Schema</div>
+                <div class="schema-block">
+                    <div class="schema-path">restaurants/{restaurantId}/sessions/{sessionId}</div>
+                    <div class="schema-fields">
+                        <div class="schema-field">
+                            <span class="schema-field-name">id</span>
+                            <span class="schema-field-type">string (auto-generated)</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">tableId</span>
+                            <span class="schema-field-type">string</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">primaryUserId</span>
+                            <span class="schema-field-type">string (first customer's phone)</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">users</span>
+                            <span class="schema-field-type">[phoneNumber, ...] (all customers)</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">status</span>
+                            <span class="schema-field-type">'active' | 'ended' | 'expired'</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">createdAt</span>
+                            <span class="schema-field-type">Timestamp</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">updatedAt</span>
+                            <span class="schema-field-type">Timestamp</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">expiresAt</span>
+                            <span class="schema-field-type">Timestamp (4 hours from creation)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Session Service Functions</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Function</th>
+                            <th>Purpose</th>
+                            <th>Key Behavior</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>createOrGetTableSession()</code></td>
+                            <td>Creates new or retrieves existing session</td>
+                            <td>If session exists, adds user to it; otherwise creates new with 4-hour expiry</td>
+                        </tr>
+                        <tr>
+                            <td><code>addUserToTableSession()</code></td>
+                            <td>Adds user to existing session</td>
+                            <td>Validates session not expired; adds to <code>users[]</code> array</td>
+                        </tr>
+                        <tr>
+                            <td><code>validateTableSession()</code></td>
+                            <td>Validates session for a table</td>
+                            <td>Returns session if active & not expired; optionally adds user</td>
+                        </tr>
+                        <tr>
+                            <td><code>endTableSessions()</code></td>
+                            <td>Ends active session for table</td>
+                            <td>Sets <code>status: 'ended'</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Session Lifecycle</div>
+                <div class="status-flow">
+                    <span class="status s-active">Created</span>
+                    <span class="status-arrow">→</span>
+                    <span class="status s-info">ACTIVE</span>
+                    <span class="status-arrow">→</span>
+                    <span class="status s-done">ENDED</span>
+                    <span>or</span>
+                    <span class="status s-error">EXPIRED</span>
+                </div>
+                <ul class="bullet-list">
+                    <li class="info">Session created when primary customer validates OTP</li>
+                    <li class="info">Secondary customers join the same session</li>
+                    <li class="success"><strong>ENDED:</strong> Manual table clear, bill paid</li>
+                    <li class="warning"><strong>EXPIRED:</strong> 4 hours elapsed since creation</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🔄 Session Cleanup</div>
+                <p>The <code>cleanupInactiveSessions</code> function runs to clear stale sessions:</p>
+                <ul class="bullet-list">
+                    <li class="info">Finds tables with <code>lastActivity</code> > 1 hour ago</li>
+                    <li class="info">Ends associated sessions</li>
+                    <li class="info">Sets table status to VACANT</li>
+                </ul>
+                <div class="note warn">⚠️ TODO: Should check for cart/order activity in last 2 hours, not just general
+                    activity.</div>
+            </div>
+        </section>
+
+        <!-- CUSTOMER PROFILES -->
+        <section class="section" id="customers">
+            <div class="section-title"><span class="section-icon">👤</span> Customer Profiles</div>
+
+            <div class="card">
+                <div class="card-title">Customer Document Schema</div>
+                <div class="schema-block">
+                    <div class="schema-path">customers/{phoneNumber}</div>
+                    <div class="schema-fields">
+                        <div class="schema-field">
+                            <span class="schema-field-name">phoneNumber</span>
+                            <span class="schema-field-type">string (Document ID)</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">name</span>
+                            <span class="schema-field-type">string</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">createdAt</span>
+                            <span class="schema-field-type">Timestamp</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">updatedAt</span>
+                            <span class="schema-field-type">Timestamp</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">visits</span>
+                            <span class="schema-field-type">[{ restaurantId, tableId, startTime, endTime? }]</span>
+                        </div>
+                        <div class="schema-field">
+                            <span class="schema-field-name">currentVisit</span>
+                            <span class="schema-field-type">{ restaurantId, tableId, startTime } | null</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="imp">Phone number is used as the document ID, creating a direct mapping between Firebase
+                    Auth UID and customer profile.</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Customer Service Functions</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Function</th>
+                            <th>Type</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>createOrUpdateCustomerProfile</code></td>
+                            <td><span class="api-type api-type-public">PUBLIC</span></td>
+                            <td>Creates new or updates existing customer profile</td>
+                        </tr>
+                        <tr>
+                            <td><code>createOrUpdateCustomerProfileDirect</code></td>
+                            <td><span class="api-type api-type-internal">INTERNAL</span></td>
+                            <td>Same as above, callable directly (used by validateOTP)</td>
+                        </tr>
+                        <tr>
+                            <td><code>getOrCreateCustomerProfile</code></td>
+                            <td><span class="api-type api-type-public">PUBLIC</span></td>
+                            <td>Gets existing profile (requires auth)</td>
+                        </tr>
+                        <tr>
+                            <td><code>updateCustomerVisit</code></td>
+                            <td><span class="api-type api-type-public">PUBLIC</span></td>
+                            <td>Adds new visit to visits array, sets currentVisit</td>
+                        </tr>
+                        <tr>
+                            <td><code>endCustomerVisit</code></td>
+                            <td><span class="api-type api-type-public">PUBLIC</span></td>
+                            <td>Ends current visit, updates table to vacant</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">Primary Customer</div>
+                    <ul class="bullet-list">
+                        <li class="success">First to validate OTP on VACANT/OTP_PENDING table</li>
+                        <li class="info">Creates the table session</li>
+                        <li class="info">Stored in <code>table.primaryCustomer</code></li>
+                        <li class="info">Phone number becomes <code>session.primaryUserId</code></li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-title">Secondary Customer</div>
+                    <ul class="bullet-list">
+                        <li class="success">Validates OTP on already ACTIVE table</li>
+                        <li class="info">Joins existing session</li>
+                        <li class="info">Added to <code>table.occupiedBy[]</code> array</li>
+                        <li class="info">Added to <code>session.users[]</code> array</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- DATABASE SCHEMA -->
+        <section class="section" id="schema">
+            <div class="section-title"><span class="section-icon">🗄️</span> Database Schema Summary</div>
+
+            <div class="card">
+                <div class="card-title">Entity Relationships</div>
+                <div class="json-block"><span class="field-comment">// Restaurant Collection</span>
+                    restaurants/{restaurantId}/
+                    ├── tables/{tableId}
+                    │ ├── status, number, capacity
+                    │ ├── primaryCustomer: { phoneNumber, name }
+                    │ ├── occupiedBy: [phoneNumber1, phoneNumber2, ...]
+                    │ ├── currentOTP: { code, createdAt, expiresAt }
+                    │ ├── assignedServerId, lastActivity, activeOrderId
+                    │
+                    ├── sessions/{sessionId}
+                    │ ├── tableId, primaryUserId
+                    │ ├── users: [userId1, userId2, ...]
+                    │ ├── status: 'active' | 'ended' | 'expired'
+                    │ ├── createdAt, updatedAt, expiresAt
+                    │
+                    └── orders/{orderId}
+                    └── ... (references sessionId)
+
+                    <span class="field-comment">// Customer Collection (separate)</span>
+                    customers/{phoneNumber}/
+                    ├── phoneNumber, name
+                    ├── createdAt, updatedAt
+                    ├── visits: [{ restaurantId, tableId, startTime, endTime? }]
+                    └── currentVisit: { restaurantId, tableId, startTime }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Cross-Entity Links</div>
+                <ul class="bullet-list">
+                    <li class="info"><strong>Table → Session:</strong> Query sessions by <code>tableId</code></li>
+                    <li class="info"><strong>Session → Customers:</strong> <code>session.users[]</code> contains phone
+                        numbers; customers stored separately</li>
+                    <li class="info"><strong>Table → Customers:</strong> <code>table.occupiedBy[]</code> mirrors session
+                        users</li>
+                    <li class="info"><strong>Session → Cart/Order:</strong> Cart and Order operations require
+                        <code>sessionId</code></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- IMPORTANT NUANCES -->
+        <section class="section" id="nuances">
+            <div class="section-title"><span class="section-icon">⚡</span> Key Nuances Summary</div>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Area</th>
+                            <th>Nuance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>OTP Expiry</td>
+                            <td><strong>5 minutes</strong> from generation</td>
+                        </tr>
+                        <tr>
+                            <td>Session Expiry</td>
+                            <td><strong>4 hours</strong> from creation</td>
+                        </tr>
+                        <tr>
+                            <td>Primary Customer</td>
+                            <td>First customer to validate OTP on VACANT/OTP_PENDING table</td>
+                        </tr>
+                        <tr>
+                            <td>Secondary Customer</td>
+                            <td>Subsequent users joining ACTIVE table</td>
+                        </tr>
+                        <tr>
+                            <td>Phone as UID</td>
+                            <td>Phone number used as Firebase UID and customer doc ID</td>
+                        </tr>
+                        <tr>
+                            <td>Table → Vacant</td>
+                            <td>Clears <code>primaryCustomer</code>, <code>occupiedBy</code>, <code>activeOrderId</code>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Session-Cart Link</td>
+                            <td><code>sessionId</code> required for cart checkout</td>
+                        </tr>
+                        <tr>
+                            <td>Location Validation</td>
+                            <td>Currently disabled (always returns true)</td>
+                        </tr>
+                        <tr>
+                            <td>Multi-user</td>
+                            <td>Phone required for all users when <code>isMultiUserSupportEnabled = false</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- API REFERENCE -->
+        <section class="section" id="api-reference">
+            <div class="section-title"><span class="section-icon">🎯</span> API Reference</div>
+
+            <div class="card">
+                <div class="card-title">📖 Complete API Documentation</div>
+                <p style="margin-bottom: 16px;">Comprehensive API reference with request/response examples for all
+                    Table, Session, and Customer APIs.</p>
+
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <a href="table_session_api_reference.html" class="btn-primary"
+                        style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; background: var(--accent); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                        🎯 View Full API Reference →
+                    </a>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <div class="card-title" style="font-size: 13px;">Available API Categories</div>
+                    <ul class="bullet-list">
+                        <li class="info"><strong>Table & OTP APIs:</strong> <code>validateTableAndLocation</code>,
+                            <code>validateOTP</code>, <code>checkTableStatus</code>,
+                            <code>cleanupInactiveSessions</code></li>
+                        <li class="info"><strong>Server App APIs:</strong> <code>generateTableOTP</code>,
+                            <code>updateTableStatus</code>, <code>getTablesForRestaurant</code>,
+                            <code>getTableDetails</code>, <code>assignTableToServer</code>,
+                            <code>unassignTableFromServer</code></li>
+                        <li class="info"><strong>Session APIs:</strong> <code>createOrGetTableSession</code>,
+                            <code>addUserToTableSession</code>, <code>validateTableSession</code>,
+                            <code>endTableSessions</code></li>
+                        <li class="info"><strong>Customer APIs:</strong> <code>createOrUpdateCustomerProfile</code>,
+                            <code>getOrCreateCustomerProfile</code>, <code>updateCustomerVisit</code>,
+                            <code>endCustomerVisit</code></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ERROR HANDLING -->
+        <section class="section" id="errors">
+            <div class="section-title"><span class="section-icon">🚫</span> Error Handling</div>
+
+            <div class="card">
+                <div class="card-title">HTTP Status Codes</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Code</th>
+                            <th>Scenario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="status s-error">400</span></td>
+                            <td>Bad Request</td>
+                            <td>Missing parameters, invalid request format</td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-pending">401</span></td>
+                            <td>Unauthorized</td>
+                            <td>OTP required, invalid OTP provided</td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-error">403</span></td>
+                            <td>Forbidden</td>
+                            <td>Table is disabled</td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-cyan">404</span></td>
+                            <td>Not Found</td>
+                            <td>Restaurant/table/session not found</td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-pink">412</span></td>
+                            <td>Precondition Failed</td>
+                            <td>User not in restaurant premises, session expired</td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-error">500</span></td>
+                            <td>Internal Error</td>
+                            <td>Server errors, database failures</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // Toggle API accordion
+        function toggleApi(header) {
+            header.classList.toggle('open');
+            const content = header.nextElementSibling;
+            content.classList.toggle('open');
+        }
+
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+                fontSize: '12px',
+                primaryColor: '#6366f1',
+                primaryTextColor: '#1e293b',
+                primaryBorderColor: '#e2e8f0',
+                lineColor: '#64748b',
+                secondaryColor: '#f1f5f9',
+                tertiaryColor: '#f8fafc',
+                background: '#ffffff',
+                mainBkg: '#f1f5f9',
+                nodeBorder: '#e2e8f0',
+                clusterBkg: '#f8fafc',
+                clusterBorder: '#e2e8f0'
+            },
+            stateDiagram: {
+                useMaxWidth: true
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -14,15 +14,10 @@ T _$identity<T>(T value) => value;
 final _privateConstructorUsedError = UnsupportedError(
     'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
 
-MenuResponse _$MenuResponseFromJson(Map<String, dynamic> json) {
-  return _MenuResponse.fromJson(json);
-}
-
 /// @nodoc
 mixin _$MenuResponse {
   MenuData get result => throw _privateConstructorUsedError;
 
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $MenuResponseCopyWith<MenuResponse> get copyWith =>
       throw _privateConstructorUsedError;
@@ -108,12 +103,9 @@ class __$$MenuResponseImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
+
 class _$MenuResponseImpl implements _MenuResponse {
   _$MenuResponseImpl({required this.result});
-
-  factory _$MenuResponseImpl.fromJson(Map<String, dynamic> json) =>
-      _$$MenuResponseImplFromJson(json);
 
   @override
   final MenuData result;
@@ -131,7 +123,6 @@ class _$MenuResponseImpl implements _MenuResponse {
             (identical(other.result, result) || other.result == result));
   }
 
-  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, result);
 
@@ -140,20 +131,10 @@ class _$MenuResponseImpl implements _MenuResponse {
   @pragma('vm:prefer-inline')
   _$$MenuResponseImplCopyWith<_$MenuResponseImpl> get copyWith =>
       __$$MenuResponseImplCopyWithImpl<_$MenuResponseImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$MenuResponseImplToJson(
-      this,
-    );
-  }
 }
 
 abstract class _MenuResponse implements MenuResponse {
   factory _MenuResponse({required final MenuData result}) = _$MenuResponseImpl;
-
-  factory _MenuResponse.fromJson(Map<String, dynamic> json) =
-      _$MenuResponseImpl.fromJson;
 
   @override
   MenuData get result;
@@ -163,8 +144,651 @@ abstract class _MenuResponse implements MenuResponse {
       throw _privateConstructorUsedError;
 }
 
-MenuData _$MenuDataFromJson(Map<String, dynamic> json) {
-  return _MenuData.fromJson(json);
+TableContextData _$TableContextDataFromJson(Map<String, dynamic> json) {
+  return _TableContextData.fromJson(json);
+}
+
+/// @nodoc
+mixin _$TableContextData {
+  String get restaurantName => throw _privateConstructorUsedError;
+  String? get tableNumber => throw _privateConstructorUsedError;
+  String? get otp => throw _privateConstructorUsedError;
+  bool get showOtp => throw _privateConstructorUsedError;
+  bool get showImages => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $TableContextDataCopyWith<TableContextData> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $TableContextDataCopyWith<$Res> {
+  factory $TableContextDataCopyWith(
+          TableContextData value, $Res Function(TableContextData) then) =
+      _$TableContextDataCopyWithImpl<$Res, TableContextData>;
+  @useResult
+  $Res call(
+      {String restaurantName,
+      String? tableNumber,
+      String? otp,
+      bool showOtp,
+      bool showImages});
+}
+
+/// @nodoc
+class _$TableContextDataCopyWithImpl<$Res, $Val extends TableContextData>
+    implements $TableContextDataCopyWith<$Res> {
+  _$TableContextDataCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? restaurantName = null,
+    Object? tableNumber = freezed,
+    Object? otp = freezed,
+    Object? showOtp = null,
+    Object? showImages = null,
+  }) {
+    return _then(_value.copyWith(
+      restaurantName: null == restaurantName
+          ? _value.restaurantName
+          : restaurantName // ignore: cast_nullable_to_non_nullable
+              as String,
+      tableNumber: freezed == tableNumber
+          ? _value.tableNumber
+          : tableNumber // ignore: cast_nullable_to_non_nullable
+              as String?,
+      otp: freezed == otp
+          ? _value.otp
+          : otp // ignore: cast_nullable_to_non_nullable
+              as String?,
+      showOtp: null == showOtp
+          ? _value.showOtp
+          : showOtp // ignore: cast_nullable_to_non_nullable
+              as bool,
+      showImages: null == showImages
+          ? _value.showImages
+          : showImages // ignore: cast_nullable_to_non_nullable
+              as bool,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$TableContextDataImplCopyWith<$Res>
+    implements $TableContextDataCopyWith<$Res> {
+  factory _$$TableContextDataImplCopyWith(_$TableContextDataImpl value,
+          $Res Function(_$TableContextDataImpl) then) =
+      __$$TableContextDataImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {String restaurantName,
+      String? tableNumber,
+      String? otp,
+      bool showOtp,
+      bool showImages});
+}
+
+/// @nodoc
+class __$$TableContextDataImplCopyWithImpl<$Res>
+    extends _$TableContextDataCopyWithImpl<$Res, _$TableContextDataImpl>
+    implements _$$TableContextDataImplCopyWith<$Res> {
+  __$$TableContextDataImplCopyWithImpl(_$TableContextDataImpl _value,
+      $Res Function(_$TableContextDataImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? restaurantName = null,
+    Object? tableNumber = freezed,
+    Object? otp = freezed,
+    Object? showOtp = null,
+    Object? showImages = null,
+  }) {
+    return _then(_$TableContextDataImpl(
+      restaurantName: null == restaurantName
+          ? _value.restaurantName
+          : restaurantName // ignore: cast_nullable_to_non_nullable
+              as String,
+      tableNumber: freezed == tableNumber
+          ? _value.tableNumber
+          : tableNumber // ignore: cast_nullable_to_non_nullable
+              as String?,
+      otp: freezed == otp
+          ? _value.otp
+          : otp // ignore: cast_nullable_to_non_nullable
+              as String?,
+      showOtp: null == showOtp
+          ? _value.showOtp
+          : showOtp // ignore: cast_nullable_to_non_nullable
+              as bool,
+      showImages: null == showImages
+          ? _value.showImages
+          : showImages // ignore: cast_nullable_to_non_nullable
+              as bool,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$TableContextDataImpl implements _TableContextData {
+  _$TableContextDataImpl(
+      {required this.restaurantName,
+      this.tableNumber,
+      this.otp,
+      this.showOtp = false,
+      this.showImages = false});
+
+  factory _$TableContextDataImpl.fromJson(Map<String, dynamic> json) =>
+      _$$TableContextDataImplFromJson(json);
+
+  @override
+  final String restaurantName;
+  @override
+  final String? tableNumber;
+  @override
+  final String? otp;
+  @override
+  @JsonKey()
+  final bool showOtp;
+  @override
+  @JsonKey()
+  final bool showImages;
+
+  @override
+  String toString() {
+    return 'TableContextData(restaurantName: $restaurantName, tableNumber: $tableNumber, otp: $otp, showOtp: $showOtp, showImages: $showImages)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$TableContextDataImpl &&
+            (identical(other.restaurantName, restaurantName) ||
+                other.restaurantName == restaurantName) &&
+            (identical(other.tableNumber, tableNumber) ||
+                other.tableNumber == tableNumber) &&
+            (identical(other.otp, otp) || other.otp == otp) &&
+            (identical(other.showOtp, showOtp) || other.showOtp == showOtp) &&
+            (identical(other.showImages, showImages) ||
+                other.showImages == showImages));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(
+      runtimeType, restaurantName, tableNumber, otp, showOtp, showImages);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$TableContextDataImplCopyWith<_$TableContextDataImpl> get copyWith =>
+      __$$TableContextDataImplCopyWithImpl<_$TableContextDataImpl>(
+          this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$TableContextDataImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _TableContextData implements TableContextData {
+  factory _TableContextData(
+      {required final String restaurantName,
+      final String? tableNumber,
+      final String? otp,
+      final bool showOtp,
+      final bool showImages}) = _$TableContextDataImpl;
+
+  factory _TableContextData.fromJson(Map<String, dynamic> json) =
+      _$TableContextDataImpl.fromJson;
+
+  @override
+  String get restaurantName;
+  @override
+  String? get tableNumber;
+  @override
+  String? get otp;
+  @override
+  bool get showOtp;
+  @override
+  bool get showImages;
+  @override
+  @JsonKey(ignore: true)
+  _$$TableContextDataImplCopyWith<_$TableContextDataImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+ActiveMenu _$ActiveMenuFromJson(Map<String, dynamic> json) {
+  return _ActiveMenu.fromJson(json);
+}
+
+/// @nodoc
+mixin _$ActiveMenu {
+  String get menuId => throw _privateConstructorUsedError;
+  String get name => throw _privateConstructorUsedError;
+  bool get isDefault => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $ActiveMenuCopyWith<ActiveMenu> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $ActiveMenuCopyWith<$Res> {
+  factory $ActiveMenuCopyWith(
+          ActiveMenu value, $Res Function(ActiveMenu) then) =
+      _$ActiveMenuCopyWithImpl<$Res, ActiveMenu>;
+  @useResult
+  $Res call({String menuId, String name, bool isDefault});
+}
+
+/// @nodoc
+class _$ActiveMenuCopyWithImpl<$Res, $Val extends ActiveMenu>
+    implements $ActiveMenuCopyWith<$Res> {
+  _$ActiveMenuCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? menuId = null,
+    Object? name = null,
+    Object? isDefault = null,
+  }) {
+    return _then(_value.copyWith(
+      menuId: null == menuId
+          ? _value.menuId
+          : menuId // ignore: cast_nullable_to_non_nullable
+              as String,
+      name: null == name
+          ? _value.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String,
+      isDefault: null == isDefault
+          ? _value.isDefault
+          : isDefault // ignore: cast_nullable_to_non_nullable
+              as bool,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$ActiveMenuImplCopyWith<$Res>
+    implements $ActiveMenuCopyWith<$Res> {
+  factory _$$ActiveMenuImplCopyWith(
+          _$ActiveMenuImpl value, $Res Function(_$ActiveMenuImpl) then) =
+      __$$ActiveMenuImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String menuId, String name, bool isDefault});
+}
+
+/// @nodoc
+class __$$ActiveMenuImplCopyWithImpl<$Res>
+    extends _$ActiveMenuCopyWithImpl<$Res, _$ActiveMenuImpl>
+    implements _$$ActiveMenuImplCopyWith<$Res> {
+  __$$ActiveMenuImplCopyWithImpl(
+      _$ActiveMenuImpl _value, $Res Function(_$ActiveMenuImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? menuId = null,
+    Object? name = null,
+    Object? isDefault = null,
+  }) {
+    return _then(_$ActiveMenuImpl(
+      menuId: null == menuId
+          ? _value.menuId
+          : menuId // ignore: cast_nullable_to_non_nullable
+              as String,
+      name: null == name
+          ? _value.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String,
+      isDefault: null == isDefault
+          ? _value.isDefault
+          : isDefault // ignore: cast_nullable_to_non_nullable
+              as bool,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$ActiveMenuImpl implements _ActiveMenu {
+  _$ActiveMenuImpl(
+      {required this.menuId, required this.name, this.isDefault = false});
+
+  factory _$ActiveMenuImpl.fromJson(Map<String, dynamic> json) =>
+      _$$ActiveMenuImplFromJson(json);
+
+  @override
+  final String menuId;
+  @override
+  final String name;
+  @override
+  @JsonKey()
+  final bool isDefault;
+
+  @override
+  String toString() {
+    return 'ActiveMenu(menuId: $menuId, name: $name, isDefault: $isDefault)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$ActiveMenuImpl &&
+            (identical(other.menuId, menuId) || other.menuId == menuId) &&
+            (identical(other.name, name) || other.name == name) &&
+            (identical(other.isDefault, isDefault) ||
+                other.isDefault == isDefault));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(runtimeType, menuId, name, isDefault);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$ActiveMenuImplCopyWith<_$ActiveMenuImpl> get copyWith =>
+      __$$ActiveMenuImplCopyWithImpl<_$ActiveMenuImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$ActiveMenuImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _ActiveMenu implements ActiveMenu {
+  factory _ActiveMenu(
+      {required final String menuId,
+      required final String name,
+      final bool isDefault}) = _$ActiveMenuImpl;
+
+  factory _ActiveMenu.fromJson(Map<String, dynamic> json) =
+      _$ActiveMenuImpl.fromJson;
+
+  @override
+  String get menuId;
+  @override
+  String get name;
+  @override
+  bool get isDefault;
+  @override
+  @JsonKey(ignore: true)
+  _$$ActiveMenuImplCopyWith<_$ActiveMenuImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+Subcategory _$SubcategoryFromJson(Map<String, dynamic> json) {
+  return _Subcategory.fromJson(json);
+}
+
+/// @nodoc
+mixin _$Subcategory {
+  String get id => throw _privateConstructorUsedError;
+  String get name => throw _privateConstructorUsedError;
+  String? get description => throw _privateConstructorUsedError;
+  String? get image => throw _privateConstructorUsedError;
+  String? get parentCategoryId =>
+      throw _privateConstructorUsedError; // Made optional for backward compatibility with legacy data
+  int get order => throw _privateConstructorUsedError;
+
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+  @JsonKey(ignore: true)
+  $SubcategoryCopyWith<Subcategory> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $SubcategoryCopyWith<$Res> {
+  factory $SubcategoryCopyWith(
+          Subcategory value, $Res Function(Subcategory) then) =
+      _$SubcategoryCopyWithImpl<$Res, Subcategory>;
+  @useResult
+  $Res call(
+      {String id,
+      String name,
+      String? description,
+      String? image,
+      String? parentCategoryId,
+      int order});
+}
+
+/// @nodoc
+class _$SubcategoryCopyWithImpl<$Res, $Val extends Subcategory>
+    implements $SubcategoryCopyWith<$Res> {
+  _$SubcategoryCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = null,
+    Object? name = null,
+    Object? description = freezed,
+    Object? image = freezed,
+    Object? parentCategoryId = freezed,
+    Object? order = null,
+  }) {
+    return _then(_value.copyWith(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      name: null == name
+          ? _value.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String?,
+      image: freezed == image
+          ? _value.image
+          : image // ignore: cast_nullable_to_non_nullable
+              as String?,
+      parentCategoryId: freezed == parentCategoryId
+          ? _value.parentCategoryId
+          : parentCategoryId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      order: null == order
+          ? _value.order
+          : order // ignore: cast_nullable_to_non_nullable
+              as int,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$SubcategoryImplCopyWith<$Res>
+    implements $SubcategoryCopyWith<$Res> {
+  factory _$$SubcategoryImplCopyWith(
+          _$SubcategoryImpl value, $Res Function(_$SubcategoryImpl) then) =
+      __$$SubcategoryImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call(
+      {String id,
+      String name,
+      String? description,
+      String? image,
+      String? parentCategoryId,
+      int order});
+}
+
+/// @nodoc
+class __$$SubcategoryImplCopyWithImpl<$Res>
+    extends _$SubcategoryCopyWithImpl<$Res, _$SubcategoryImpl>
+    implements _$$SubcategoryImplCopyWith<$Res> {
+  __$$SubcategoryImplCopyWithImpl(
+      _$SubcategoryImpl _value, $Res Function(_$SubcategoryImpl) _then)
+      : super(_value, _then);
+
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = null,
+    Object? name = null,
+    Object? description = freezed,
+    Object? image = freezed,
+    Object? parentCategoryId = freezed,
+    Object? order = null,
+  }) {
+    return _then(_$SubcategoryImpl(
+      id: null == id
+          ? _value.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String,
+      name: null == name
+          ? _value.name
+          : name // ignore: cast_nullable_to_non_nullable
+              as String,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String?,
+      image: freezed == image
+          ? _value.image
+          : image // ignore: cast_nullable_to_non_nullable
+              as String?,
+      parentCategoryId: freezed == parentCategoryId
+          ? _value.parentCategoryId
+          : parentCategoryId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      order: null == order
+          ? _value.order
+          : order // ignore: cast_nullable_to_non_nullable
+              as int,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$SubcategoryImpl implements _Subcategory {
+  _$SubcategoryImpl(
+      {required this.id,
+      required this.name,
+      this.description,
+      this.image,
+      this.parentCategoryId,
+      this.order = 0});
+
+  factory _$SubcategoryImpl.fromJson(Map<String, dynamic> json) =>
+      _$$SubcategoryImplFromJson(json);
+
+  @override
+  final String id;
+  @override
+  final String name;
+  @override
+  final String? description;
+  @override
+  final String? image;
+  @override
+  final String? parentCategoryId;
+// Made optional for backward compatibility with legacy data
+  @override
+  @JsonKey()
+  final int order;
+
+  @override
+  String toString() {
+    return 'Subcategory(id: $id, name: $name, description: $description, image: $image, parentCategoryId: $parentCategoryId, order: $order)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$SubcategoryImpl &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.name, name) || other.name == name) &&
+            (identical(other.description, description) ||
+                other.description == description) &&
+            (identical(other.image, image) || other.image == image) &&
+            (identical(other.parentCategoryId, parentCategoryId) ||
+                other.parentCategoryId == parentCategoryId) &&
+            (identical(other.order, order) || other.order == order));
+  }
+
+  @JsonKey(ignore: true)
+  @override
+  int get hashCode => Object.hash(
+      runtimeType, id, name, description, image, parentCategoryId, order);
+
+  @JsonKey(ignore: true)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$SubcategoryImplCopyWith<_$SubcategoryImpl> get copyWith =>
+      __$$SubcategoryImplCopyWithImpl<_$SubcategoryImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$SubcategoryImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _Subcategory implements Subcategory {
+  factory _Subcategory(
+      {required final String id,
+      required final String name,
+      final String? description,
+      final String? image,
+      final String? parentCategoryId,
+      final int order}) = _$SubcategoryImpl;
+
+  factory _Subcategory.fromJson(Map<String, dynamic> json) =
+      _$SubcategoryImpl.fromJson;
+
+  @override
+  String get id;
+  @override
+  String get name;
+  @override
+  String? get description;
+  @override
+  String? get image;
+  @override
+  String? get parentCategoryId;
+  @override // Made optional for backward compatibility with legacy data
+  int get order;
+  @override
+  @JsonKey(ignore: true)
+  _$$SubcategoryImplCopyWith<_$SubcategoryImpl> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 /// @nodoc
@@ -173,8 +797,10 @@ mixin _$MenuData {
   Map<String, List<MenuItem>> get menuItems =>
       throw _privateConstructorUsedError;
   MenuMetadata get metadata => throw _privateConstructorUsedError;
+  ActiveMenu? get activeMenu => throw _privateConstructorUsedError;
+  TableContextData? get tableContext => throw _privateConstructorUsedError;
+  String? get restaurantName => throw _privateConstructorUsedError;
 
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $MenuDataCopyWith<MenuData> get copyWith =>
       throw _privateConstructorUsedError;
@@ -188,9 +814,14 @@ abstract class $MenuDataCopyWith<$Res> {
   $Res call(
       {List<Category> categories,
       Map<String, List<MenuItem>> menuItems,
-      MenuMetadata metadata});
+      MenuMetadata metadata,
+      ActiveMenu? activeMenu,
+      TableContextData? tableContext,
+      String? restaurantName});
 
   $MenuMetadataCopyWith<$Res> get metadata;
+  $ActiveMenuCopyWith<$Res>? get activeMenu;
+  $TableContextDataCopyWith<$Res>? get tableContext;
 }
 
 /// @nodoc
@@ -209,6 +840,9 @@ class _$MenuDataCopyWithImpl<$Res, $Val extends MenuData>
     Object? categories = null,
     Object? menuItems = null,
     Object? metadata = null,
+    Object? activeMenu = freezed,
+    Object? tableContext = freezed,
+    Object? restaurantName = freezed,
   }) {
     return _then(_value.copyWith(
       categories: null == categories
@@ -223,6 +857,18 @@ class _$MenuDataCopyWithImpl<$Res, $Val extends MenuData>
           ? _value.metadata
           : metadata // ignore: cast_nullable_to_non_nullable
               as MenuMetadata,
+      activeMenu: freezed == activeMenu
+          ? _value.activeMenu
+          : activeMenu // ignore: cast_nullable_to_non_nullable
+              as ActiveMenu?,
+      tableContext: freezed == tableContext
+          ? _value.tableContext
+          : tableContext // ignore: cast_nullable_to_non_nullable
+              as TableContextData?,
+      restaurantName: freezed == restaurantName
+          ? _value.restaurantName
+          : restaurantName // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 
@@ -231,6 +877,30 @@ class _$MenuDataCopyWithImpl<$Res, $Val extends MenuData>
   $MenuMetadataCopyWith<$Res> get metadata {
     return $MenuMetadataCopyWith<$Res>(_value.metadata, (value) {
       return _then(_value.copyWith(metadata: value) as $Val);
+    });
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $ActiveMenuCopyWith<$Res>? get activeMenu {
+    if (_value.activeMenu == null) {
+      return null;
+    }
+
+    return $ActiveMenuCopyWith<$Res>(_value.activeMenu!, (value) {
+      return _then(_value.copyWith(activeMenu: value) as $Val);
+    });
+  }
+
+  @override
+  @pragma('vm:prefer-inline')
+  $TableContextDataCopyWith<$Res>? get tableContext {
+    if (_value.tableContext == null) {
+      return null;
+    }
+
+    return $TableContextDataCopyWith<$Res>(_value.tableContext!, (value) {
+      return _then(_value.copyWith(tableContext: value) as $Val);
     });
   }
 }
@@ -246,10 +916,17 @@ abstract class _$$MenuDataImplCopyWith<$Res>
   $Res call(
       {List<Category> categories,
       Map<String, List<MenuItem>> menuItems,
-      MenuMetadata metadata});
+      MenuMetadata metadata,
+      ActiveMenu? activeMenu,
+      TableContextData? tableContext,
+      String? restaurantName});
 
   @override
   $MenuMetadataCopyWith<$Res> get metadata;
+  @override
+  $ActiveMenuCopyWith<$Res>? get activeMenu;
+  @override
+  $TableContextDataCopyWith<$Res>? get tableContext;
 }
 
 /// @nodoc
@@ -266,6 +943,9 @@ class __$$MenuDataImplCopyWithImpl<$Res>
     Object? categories = null,
     Object? menuItems = null,
     Object? metadata = null,
+    Object? activeMenu = freezed,
+    Object? tableContext = freezed,
+    Object? restaurantName = freezed,
   }) {
     return _then(_$MenuDataImpl(
       categories: null == categories
@@ -280,22 +960,34 @@ class __$$MenuDataImplCopyWithImpl<$Res>
           ? _value.metadata
           : metadata // ignore: cast_nullable_to_non_nullable
               as MenuMetadata,
+      activeMenu: freezed == activeMenu
+          ? _value.activeMenu
+          : activeMenu // ignore: cast_nullable_to_non_nullable
+              as ActiveMenu?,
+      tableContext: freezed == tableContext
+          ? _value.tableContext
+          : tableContext // ignore: cast_nullable_to_non_nullable
+              as TableContextData?,
+      restaurantName: freezed == restaurantName
+          ? _value.restaurantName
+          : restaurantName // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
 
 /// @nodoc
-@JsonSerializable()
+
 class _$MenuDataImpl implements _MenuData {
   _$MenuDataImpl(
       {required final List<Category> categories,
       required final Map<String, List<MenuItem>> menuItems,
-      required this.metadata})
+      required this.metadata,
+      this.activeMenu,
+      this.tableContext,
+      this.restaurantName})
       : _categories = categories,
         _menuItems = menuItems;
-
-  factory _$MenuDataImpl.fromJson(Map<String, dynamic> json) =>
-      _$$MenuDataImplFromJson(json);
 
   final List<Category> _categories;
   @override
@@ -315,10 +1007,16 @@ class _$MenuDataImpl implements _MenuData {
 
   @override
   final MenuMetadata metadata;
+  @override
+  final ActiveMenu? activeMenu;
+  @override
+  final TableContextData? tableContext;
+  @override
+  final String? restaurantName;
 
   @override
   String toString() {
-    return 'MenuData(categories: $categories, menuItems: $menuItems, metadata: $metadata)';
+    return 'MenuData(categories: $categories, menuItems: $menuItems, metadata: $metadata, activeMenu: $activeMenu, tableContext: $tableContext, restaurantName: $restaurantName)';
   }
 
   @override
@@ -331,39 +1029,40 @@ class _$MenuDataImpl implements _MenuData {
             const DeepCollectionEquality()
                 .equals(other._menuItems, _menuItems) &&
             (identical(other.metadata, metadata) ||
-                other.metadata == metadata));
+                other.metadata == metadata) &&
+            (identical(other.activeMenu, activeMenu) ||
+                other.activeMenu == activeMenu) &&
+            (identical(other.tableContext, tableContext) ||
+                other.tableContext == tableContext) &&
+            (identical(other.restaurantName, restaurantName) ||
+                other.restaurantName == restaurantName));
   }
 
-  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
       runtimeType,
       const DeepCollectionEquality().hash(_categories),
       const DeepCollectionEquality().hash(_menuItems),
-      metadata);
+      metadata,
+      activeMenu,
+      tableContext,
+      restaurantName);
 
   @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$MenuDataImplCopyWith<_$MenuDataImpl> get copyWith =>
       __$$MenuDataImplCopyWithImpl<_$MenuDataImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$MenuDataImplToJson(
-      this,
-    );
-  }
 }
 
 abstract class _MenuData implements MenuData {
   factory _MenuData(
       {required final List<Category> categories,
       required final Map<String, List<MenuItem>> menuItems,
-      required final MenuMetadata metadata}) = _$MenuDataImpl;
-
-  factory _MenuData.fromJson(Map<String, dynamic> json) =
-      _$MenuDataImpl.fromJson;
+      required final MenuMetadata metadata,
+      final ActiveMenu? activeMenu,
+      final TableContextData? tableContext,
+      final String? restaurantName}) = _$MenuDataImpl;
 
   @override
   List<Category> get categories;
@@ -371,6 +1070,12 @@ abstract class _MenuData implements MenuData {
   Map<String, List<MenuItem>> get menuItems;
   @override
   MenuMetadata get metadata;
+  @override
+  ActiveMenu? get activeMenu;
+  @override
+  TableContextData? get tableContext;
+  @override
+  String? get restaurantName;
   @override
   @JsonKey(ignore: true)
   _$$MenuDataImplCopyWith<_$MenuDataImpl> get copyWith =>
@@ -385,6 +1090,8 @@ MenuMetadata _$MenuMetadataFromJson(Map<String, dynamic> json) {
 mixin _$MenuMetadata {
   int get totalCategories => throw _privateConstructorUsedError;
   int get totalMenuItems => throw _privateConstructorUsedError;
+  int get totalSubcategories => throw _privateConstructorUsedError;
+  String? get activeMenuId => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -398,7 +1105,11 @@ abstract class $MenuMetadataCopyWith<$Res> {
           MenuMetadata value, $Res Function(MenuMetadata) then) =
       _$MenuMetadataCopyWithImpl<$Res, MenuMetadata>;
   @useResult
-  $Res call({int totalCategories, int totalMenuItems});
+  $Res call(
+      {int totalCategories,
+      int totalMenuItems,
+      int totalSubcategories,
+      String? activeMenuId});
 }
 
 /// @nodoc
@@ -416,6 +1127,8 @@ class _$MenuMetadataCopyWithImpl<$Res, $Val extends MenuMetadata>
   $Res call({
     Object? totalCategories = null,
     Object? totalMenuItems = null,
+    Object? totalSubcategories = null,
+    Object? activeMenuId = freezed,
   }) {
     return _then(_value.copyWith(
       totalCategories: null == totalCategories
@@ -426,6 +1139,14 @@ class _$MenuMetadataCopyWithImpl<$Res, $Val extends MenuMetadata>
           ? _value.totalMenuItems
           : totalMenuItems // ignore: cast_nullable_to_non_nullable
               as int,
+      totalSubcategories: null == totalSubcategories
+          ? _value.totalSubcategories
+          : totalSubcategories // ignore: cast_nullable_to_non_nullable
+              as int,
+      activeMenuId: freezed == activeMenuId
+          ? _value.activeMenuId
+          : activeMenuId // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -438,7 +1159,11 @@ abstract class _$$MenuMetadataImplCopyWith<$Res>
       __$$MenuMetadataImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({int totalCategories, int totalMenuItems});
+  $Res call(
+      {int totalCategories,
+      int totalMenuItems,
+      int totalSubcategories,
+      String? activeMenuId});
 }
 
 /// @nodoc
@@ -454,6 +1179,8 @@ class __$$MenuMetadataImplCopyWithImpl<$Res>
   $Res call({
     Object? totalCategories = null,
     Object? totalMenuItems = null,
+    Object? totalSubcategories = null,
+    Object? activeMenuId = freezed,
   }) {
     return _then(_$MenuMetadataImpl(
       totalCategories: null == totalCategories
@@ -464,6 +1191,14 @@ class __$$MenuMetadataImplCopyWithImpl<$Res>
           ? _value.totalMenuItems
           : totalMenuItems // ignore: cast_nullable_to_non_nullable
               as int,
+      totalSubcategories: null == totalSubcategories
+          ? _value.totalSubcategories
+          : totalSubcategories // ignore: cast_nullable_to_non_nullable
+              as int,
+      activeMenuId: freezed == activeMenuId
+          ? _value.activeMenuId
+          : activeMenuId // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -472,7 +1207,10 @@ class __$$MenuMetadataImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$MenuMetadataImpl implements _MenuMetadata {
   _$MenuMetadataImpl(
-      {required this.totalCategories, required this.totalMenuItems});
+      {required this.totalCategories,
+      required this.totalMenuItems,
+      this.totalSubcategories = 0,
+      this.activeMenuId});
 
   factory _$MenuMetadataImpl.fromJson(Map<String, dynamic> json) =>
       _$$MenuMetadataImplFromJson(json);
@@ -481,10 +1219,15 @@ class _$MenuMetadataImpl implements _MenuMetadata {
   final int totalCategories;
   @override
   final int totalMenuItems;
+  @override
+  @JsonKey()
+  final int totalSubcategories;
+  @override
+  final String? activeMenuId;
 
   @override
   String toString() {
-    return 'MenuMetadata(totalCategories: $totalCategories, totalMenuItems: $totalMenuItems)';
+    return 'MenuMetadata(totalCategories: $totalCategories, totalMenuItems: $totalMenuItems, totalSubcategories: $totalSubcategories, activeMenuId: $activeMenuId)';
   }
 
   @override
@@ -495,12 +1238,17 @@ class _$MenuMetadataImpl implements _MenuMetadata {
             (identical(other.totalCategories, totalCategories) ||
                 other.totalCategories == totalCategories) &&
             (identical(other.totalMenuItems, totalMenuItems) ||
-                other.totalMenuItems == totalMenuItems));
+                other.totalMenuItems == totalMenuItems) &&
+            (identical(other.totalSubcategories, totalSubcategories) ||
+                other.totalSubcategories == totalSubcategories) &&
+            (identical(other.activeMenuId, activeMenuId) ||
+                other.activeMenuId == activeMenuId));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, totalCategories, totalMenuItems);
+  int get hashCode => Object.hash(runtimeType, totalCategories, totalMenuItems,
+      totalSubcategories, activeMenuId);
 
   @JsonKey(ignore: true)
   @override
@@ -519,7 +1267,9 @@ class _$MenuMetadataImpl implements _MenuMetadata {
 abstract class _MenuMetadata implements MenuMetadata {
   factory _MenuMetadata(
       {required final int totalCategories,
-      required final int totalMenuItems}) = _$MenuMetadataImpl;
+      required final int totalMenuItems,
+      final int totalSubcategories,
+      final String? activeMenuId}) = _$MenuMetadataImpl;
 
   factory _MenuMetadata.fromJson(Map<String, dynamic> json) =
       _$MenuMetadataImpl.fromJson;
@@ -528,6 +1278,10 @@ abstract class _MenuMetadata implements MenuMetadata {
   int get totalCategories;
   @override
   int get totalMenuItems;
+  @override
+  int get totalSubcategories;
+  @override
+  String? get activeMenuId;
   @override
   @JsonKey(ignore: true)
   _$$MenuMetadataImplCopyWith<_$MenuMetadataImpl> get copyWith =>
@@ -543,8 +1297,13 @@ mixin _$Category {
   String get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
   String get description => throw _privateConstructorUsedError;
-  String? get image => throw _privateConstructorUsedError;
   int get order => throw _privateConstructorUsedError;
+  String? get image => throw _privateConstructorUsedError;
+  List<Subcategory> get subcategories =>
+      throw _privateConstructorUsedError; // 🆕 NEW - nested subcategories
+  String get viewType =>
+      throw _privateConstructorUsedError; // 'list' (default) or 'carousel' for horizontal display
+  bool get defaultExpanded => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -558,7 +1317,14 @@ abstract class $CategoryCopyWith<$Res> {
       _$CategoryCopyWithImpl<$Res, Category>;
   @useResult
   $Res call(
-      {String id, String name, String description, String? image, int order});
+      {String id,
+      String name,
+      String description,
+      int order,
+      String? image,
+      List<Subcategory> subcategories,
+      String viewType,
+      bool defaultExpanded});
 }
 
 /// @nodoc
@@ -577,8 +1343,11 @@ class _$CategoryCopyWithImpl<$Res, $Val extends Category>
     Object? id = null,
     Object? name = null,
     Object? description = null,
-    Object? image = freezed,
     Object? order = null,
+    Object? image = freezed,
+    Object? subcategories = null,
+    Object? viewType = null,
+    Object? defaultExpanded = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -593,14 +1362,26 @@ class _$CategoryCopyWithImpl<$Res, $Val extends Category>
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
               as String,
-      image: freezed == image
-          ? _value.image
-          : image // ignore: cast_nullable_to_non_nullable
-              as String?,
       order: null == order
           ? _value.order
           : order // ignore: cast_nullable_to_non_nullable
               as int,
+      image: freezed == image
+          ? _value.image
+          : image // ignore: cast_nullable_to_non_nullable
+              as String?,
+      subcategories: null == subcategories
+          ? _value.subcategories
+          : subcategories // ignore: cast_nullable_to_non_nullable
+              as List<Subcategory>,
+      viewType: null == viewType
+          ? _value.viewType
+          : viewType // ignore: cast_nullable_to_non_nullable
+              as String,
+      defaultExpanded: null == defaultExpanded
+          ? _value.defaultExpanded
+          : defaultExpanded // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -614,7 +1395,14 @@ abstract class _$$CategoryImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {String id, String name, String description, String? image, int order});
+      {String id,
+      String name,
+      String description,
+      int order,
+      String? image,
+      List<Subcategory> subcategories,
+      String viewType,
+      bool defaultExpanded});
 }
 
 /// @nodoc
@@ -631,8 +1419,11 @@ class __$$CategoryImplCopyWithImpl<$Res>
     Object? id = null,
     Object? name = null,
     Object? description = null,
-    Object? image = freezed,
     Object? order = null,
+    Object? image = freezed,
+    Object? subcategories = null,
+    Object? viewType = null,
+    Object? defaultExpanded = null,
   }) {
     return _then(_$CategoryImpl(
       id: null == id
@@ -647,14 +1438,26 @@ class __$$CategoryImplCopyWithImpl<$Res>
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
               as String,
-      image: freezed == image
-          ? _value.image
-          : image // ignore: cast_nullable_to_non_nullable
-              as String?,
       order: null == order
           ? _value.order
           : order // ignore: cast_nullable_to_non_nullable
               as int,
+      image: freezed == image
+          ? _value.image
+          : image // ignore: cast_nullable_to_non_nullable
+              as String?,
+      subcategories: null == subcategories
+          ? _value._subcategories
+          : subcategories // ignore: cast_nullable_to_non_nullable
+              as List<Subcategory>,
+      viewType: null == viewType
+          ? _value.viewType
+          : viewType // ignore: cast_nullable_to_non_nullable
+              as String,
+      defaultExpanded: null == defaultExpanded
+          ? _value.defaultExpanded
+          : defaultExpanded // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -666,8 +1469,12 @@ class _$CategoryImpl implements _Category {
       {required this.id,
       required this.name,
       required this.description,
+      required this.order,
       this.image,
-      required this.order});
+      final List<Subcategory> subcategories = const [],
+      this.viewType = 'list',
+      this.defaultExpanded = true})
+      : _subcategories = subcategories;
 
   factory _$CategoryImpl.fromJson(Map<String, dynamic> json) =>
       _$$CategoryImplFromJson(json);
@@ -679,13 +1486,30 @@ class _$CategoryImpl implements _Category {
   @override
   final String description;
   @override
-  final String? image;
-  @override
   final int order;
+  @override
+  final String? image;
+  final List<Subcategory> _subcategories;
+  @override
+  @JsonKey()
+  List<Subcategory> get subcategories {
+    if (_subcategories is EqualUnmodifiableListView) return _subcategories;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_subcategories);
+  }
+
+// 🆕 NEW - nested subcategories
+  @override
+  @JsonKey()
+  final String viewType;
+// 'list' (default) or 'carousel' for horizontal display
+  @override
+  @JsonKey()
+  final bool defaultExpanded;
 
   @override
   String toString() {
-    return 'Category(id: $id, name: $name, description: $description, image: $image, order: $order)';
+    return 'Category(id: $id, name: $name, description: $description, order: $order, image: $image, subcategories: $subcategories, viewType: $viewType, defaultExpanded: $defaultExpanded)';
   }
 
   @override
@@ -697,14 +1521,28 @@ class _$CategoryImpl implements _Category {
             (identical(other.name, name) || other.name == name) &&
             (identical(other.description, description) ||
                 other.description == description) &&
+            (identical(other.order, order) || other.order == order) &&
             (identical(other.image, image) || other.image == image) &&
-            (identical(other.order, order) || other.order == order));
+            const DeepCollectionEquality()
+                .equals(other._subcategories, _subcategories) &&
+            (identical(other.viewType, viewType) ||
+                other.viewType == viewType) &&
+            (identical(other.defaultExpanded, defaultExpanded) ||
+                other.defaultExpanded == defaultExpanded));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, id, name, description, image, order);
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      name,
+      description,
+      order,
+      image,
+      const DeepCollectionEquality().hash(_subcategories),
+      viewType,
+      defaultExpanded);
 
   @JsonKey(ignore: true)
   @override
@@ -725,8 +1563,11 @@ abstract class _Category implements Category {
       {required final String id,
       required final String name,
       required final String description,
+      required final int order,
       final String? image,
-      required final int order}) = _$CategoryImpl;
+      final List<Subcategory> subcategories,
+      final String viewType,
+      final bool defaultExpanded}) = _$CategoryImpl;
 
   factory _Category.fromJson(Map<String, dynamic> json) =
       _$CategoryImpl.fromJson;
@@ -738,9 +1579,15 @@ abstract class _Category implements Category {
   @override
   String get description;
   @override
+  int get order;
+  @override
   String? get image;
   @override
-  int get order;
+  List<Subcategory> get subcategories;
+  @override // 🆕 NEW - nested subcategories
+  String get viewType;
+  @override // 'list' (default) or 'carousel' for horizontal display
+  bool get defaultExpanded;
   @override
   @JsonKey(ignore: true)
   _$$CategoryImplCopyWith<_$CategoryImpl> get copyWith =>
@@ -758,13 +1605,17 @@ mixin _$MenuItem {
   String get categoryId => throw _privateConstructorUsedError;
   MenuItemMeta get meta => throw _privateConstructorUsedError;
   PriceInfo get priceInfo => throw _privateConstructorUsedError;
+  bool get isInStock => throw _privateConstructorUsedError;
+  bool get isCustomizable => throw _privateConstructorUsedError;
+  String? get primarySubcategoryId => throw _privateConstructorUsedError;
+  List<String> get subcategoryIds => throw _privateConstructorUsedError;
   List<Variant> get variants => throw _privateConstructorUsedError;
   List<Addon> get addons => throw _privateConstructorUsedError;
   NutritionalInfo? get nutritionalInfo => throw _privateConstructorUsedError;
   List<String> get allergenTags => throw _privateConstructorUsedError;
-  bool get isInStock => throw _privateConstructorUsedError;
-  bool get isCustomizable => throw _privateConstructorUsedError;
   int get quantity => throw _privateConstructorUsedError;
+  String? get dietaryType => throw _privateConstructorUsedError;
+  String? get spiceLevel => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -782,13 +1633,17 @@ abstract class $MenuItemCopyWith<$Res> {
       String categoryId,
       MenuItemMeta meta,
       PriceInfo priceInfo,
+      bool isInStock,
+      bool isCustomizable,
+      String? primarySubcategoryId,
+      List<String> subcategoryIds,
       List<Variant> variants,
       List<Addon> addons,
       NutritionalInfo? nutritionalInfo,
       List<String> allergenTags,
-      bool isInStock,
-      bool isCustomizable,
-      int quantity});
+      int quantity,
+      String? dietaryType,
+      String? spiceLevel});
 
   $MenuItemMetaCopyWith<$Res> get meta;
   $PriceInfoCopyWith<$Res> get priceInfo;
@@ -812,13 +1667,17 @@ class _$MenuItemCopyWithImpl<$Res, $Val extends MenuItem>
     Object? categoryId = null,
     Object? meta = null,
     Object? priceInfo = null,
+    Object? isInStock = null,
+    Object? isCustomizable = null,
+    Object? primarySubcategoryId = freezed,
+    Object? subcategoryIds = null,
     Object? variants = null,
     Object? addons = null,
     Object? nutritionalInfo = freezed,
     Object? allergenTags = null,
-    Object? isInStock = null,
-    Object? isCustomizable = null,
     Object? quantity = null,
+    Object? dietaryType = freezed,
+    Object? spiceLevel = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -837,6 +1696,22 @@ class _$MenuItemCopyWithImpl<$Res, $Val extends MenuItem>
           ? _value.priceInfo
           : priceInfo // ignore: cast_nullable_to_non_nullable
               as PriceInfo,
+      isInStock: null == isInStock
+          ? _value.isInStock
+          : isInStock // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isCustomizable: null == isCustomizable
+          ? _value.isCustomizable
+          : isCustomizable // ignore: cast_nullable_to_non_nullable
+              as bool,
+      primarySubcategoryId: freezed == primarySubcategoryId
+          ? _value.primarySubcategoryId
+          : primarySubcategoryId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      subcategoryIds: null == subcategoryIds
+          ? _value.subcategoryIds
+          : subcategoryIds // ignore: cast_nullable_to_non_nullable
+              as List<String>,
       variants: null == variants
           ? _value.variants
           : variants // ignore: cast_nullable_to_non_nullable
@@ -853,18 +1728,18 @@ class _$MenuItemCopyWithImpl<$Res, $Val extends MenuItem>
           ? _value.allergenTags
           : allergenTags // ignore: cast_nullable_to_non_nullable
               as List<String>,
-      isInStock: null == isInStock
-          ? _value.isInStock
-          : isInStock // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isCustomizable: null == isCustomizable
-          ? _value.isCustomizable
-          : isCustomizable // ignore: cast_nullable_to_non_nullable
-              as bool,
       quantity: null == quantity
           ? _value.quantity
           : quantity // ignore: cast_nullable_to_non_nullable
               as int,
+      dietaryType: freezed == dietaryType
+          ? _value.dietaryType
+          : dietaryType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      spiceLevel: freezed == spiceLevel
+          ? _value.spiceLevel
+          : spiceLevel // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 
@@ -910,13 +1785,17 @@ abstract class _$$MenuItemImplCopyWith<$Res>
       String categoryId,
       MenuItemMeta meta,
       PriceInfo priceInfo,
+      bool isInStock,
+      bool isCustomizable,
+      String? primarySubcategoryId,
+      List<String> subcategoryIds,
       List<Variant> variants,
       List<Addon> addons,
       NutritionalInfo? nutritionalInfo,
       List<String> allergenTags,
-      bool isInStock,
-      bool isCustomizable,
-      int quantity});
+      int quantity,
+      String? dietaryType,
+      String? spiceLevel});
 
   @override
   $MenuItemMetaCopyWith<$Res> get meta;
@@ -941,13 +1820,17 @@ class __$$MenuItemImplCopyWithImpl<$Res>
     Object? categoryId = null,
     Object? meta = null,
     Object? priceInfo = null,
+    Object? isInStock = null,
+    Object? isCustomizable = null,
+    Object? primarySubcategoryId = freezed,
+    Object? subcategoryIds = null,
     Object? variants = null,
     Object? addons = null,
     Object? nutritionalInfo = freezed,
     Object? allergenTags = null,
-    Object? isInStock = null,
-    Object? isCustomizable = null,
     Object? quantity = null,
+    Object? dietaryType = freezed,
+    Object? spiceLevel = freezed,
   }) {
     return _then(_$MenuItemImpl(
       id: null == id
@@ -966,6 +1849,22 @@ class __$$MenuItemImplCopyWithImpl<$Res>
           ? _value.priceInfo
           : priceInfo // ignore: cast_nullable_to_non_nullable
               as PriceInfo,
+      isInStock: null == isInStock
+          ? _value.isInStock
+          : isInStock // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isCustomizable: null == isCustomizable
+          ? _value.isCustomizable
+          : isCustomizable // ignore: cast_nullable_to_non_nullable
+              as bool,
+      primarySubcategoryId: freezed == primarySubcategoryId
+          ? _value.primarySubcategoryId
+          : primarySubcategoryId // ignore: cast_nullable_to_non_nullable
+              as String?,
+      subcategoryIds: null == subcategoryIds
+          ? _value._subcategoryIds
+          : subcategoryIds // ignore: cast_nullable_to_non_nullable
+              as List<String>,
       variants: null == variants
           ? _value._variants
           : variants // ignore: cast_nullable_to_non_nullable
@@ -982,18 +1881,18 @@ class __$$MenuItemImplCopyWithImpl<$Res>
           ? _value._allergenTags
           : allergenTags // ignore: cast_nullable_to_non_nullable
               as List<String>,
-      isInStock: null == isInStock
-          ? _value.isInStock
-          : isInStock // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isCustomizable: null == isCustomizable
-          ? _value.isCustomizable
-          : isCustomizable // ignore: cast_nullable_to_non_nullable
-              as bool,
       quantity: null == quantity
           ? _value.quantity
           : quantity // ignore: cast_nullable_to_non_nullable
               as int,
+      dietaryType: freezed == dietaryType
+          ? _value.dietaryType
+          : dietaryType // ignore: cast_nullable_to_non_nullable
+              as String?,
+      spiceLevel: freezed == spiceLevel
+          ? _value.spiceLevel
+          : spiceLevel // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -1006,14 +1905,19 @@ class _$MenuItemImpl implements _MenuItem {
       required this.categoryId,
       required this.meta,
       required this.priceInfo,
+      required this.isInStock,
+      required this.isCustomizable,
+      this.primarySubcategoryId,
+      final List<String> subcategoryIds = const [],
       final List<Variant> variants = const [],
       final List<Addon> addons = const [],
       this.nutritionalInfo,
       final List<String> allergenTags = const [],
-      required this.isInStock,
-      required this.isCustomizable,
-      this.quantity = 0})
-      : _variants = variants,
+      this.quantity = 0,
+      this.dietaryType,
+      this.spiceLevel})
+      : _subcategoryIds = subcategoryIds,
+        _variants = variants,
         _addons = addons,
         _allergenTags = allergenTags;
 
@@ -1029,6 +1933,21 @@ class _$MenuItemImpl implements _MenuItem {
   final MenuItemMeta meta;
   @override
   final PriceInfo priceInfo;
+  @override
+  final bool isInStock;
+  @override
+  final bool isCustomizable;
+  @override
+  final String? primarySubcategoryId;
+  final List<String> _subcategoryIds;
+  @override
+  @JsonKey()
+  List<String> get subcategoryIds {
+    if (_subcategoryIds is EqualUnmodifiableListView) return _subcategoryIds;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_subcategoryIds);
+  }
+
   final List<Variant> _variants;
   @override
   @JsonKey()
@@ -1059,16 +1978,16 @@ class _$MenuItemImpl implements _MenuItem {
   }
 
   @override
-  final bool isInStock;
-  @override
-  final bool isCustomizable;
-  @override
   @JsonKey()
   final int quantity;
+  @override
+  final String? dietaryType;
+  @override
+  final String? spiceLevel;
 
   @override
   String toString() {
-    return 'MenuItem(id: $id, categoryId: $categoryId, meta: $meta, priceInfo: $priceInfo, variants: $variants, addons: $addons, nutritionalInfo: $nutritionalInfo, allergenTags: $allergenTags, isInStock: $isInStock, isCustomizable: $isCustomizable, quantity: $quantity)';
+    return 'MenuItem(id: $id, categoryId: $categoryId, meta: $meta, priceInfo: $priceInfo, isInStock: $isInStock, isCustomizable: $isCustomizable, primarySubcategoryId: $primarySubcategoryId, subcategoryIds: $subcategoryIds, variants: $variants, addons: $addons, nutritionalInfo: $nutritionalInfo, allergenTags: $allergenTags, quantity: $quantity, dietaryType: $dietaryType, spiceLevel: $spiceLevel)';
   }
 
   @override
@@ -1082,18 +2001,26 @@ class _$MenuItemImpl implements _MenuItem {
             (identical(other.meta, meta) || other.meta == meta) &&
             (identical(other.priceInfo, priceInfo) ||
                 other.priceInfo == priceInfo) &&
+            (identical(other.isInStock, isInStock) ||
+                other.isInStock == isInStock) &&
+            (identical(other.isCustomizable, isCustomizable) ||
+                other.isCustomizable == isCustomizable) &&
+            (identical(other.primarySubcategoryId, primarySubcategoryId) ||
+                other.primarySubcategoryId == primarySubcategoryId) &&
+            const DeepCollectionEquality()
+                .equals(other._subcategoryIds, _subcategoryIds) &&
             const DeepCollectionEquality().equals(other._variants, _variants) &&
             const DeepCollectionEquality().equals(other._addons, _addons) &&
             (identical(other.nutritionalInfo, nutritionalInfo) ||
                 other.nutritionalInfo == nutritionalInfo) &&
             const DeepCollectionEquality()
                 .equals(other._allergenTags, _allergenTags) &&
-            (identical(other.isInStock, isInStock) ||
-                other.isInStock == isInStock) &&
-            (identical(other.isCustomizable, isCustomizable) ||
-                other.isCustomizable == isCustomizable) &&
             (identical(other.quantity, quantity) ||
-                other.quantity == quantity));
+                other.quantity == quantity) &&
+            (identical(other.dietaryType, dietaryType) ||
+                other.dietaryType == dietaryType) &&
+            (identical(other.spiceLevel, spiceLevel) ||
+                other.spiceLevel == spiceLevel));
   }
 
   @JsonKey(ignore: true)
@@ -1104,13 +2031,17 @@ class _$MenuItemImpl implements _MenuItem {
       categoryId,
       meta,
       priceInfo,
+      isInStock,
+      isCustomizable,
+      primarySubcategoryId,
+      const DeepCollectionEquality().hash(_subcategoryIds),
       const DeepCollectionEquality().hash(_variants),
       const DeepCollectionEquality().hash(_addons),
       nutritionalInfo,
       const DeepCollectionEquality().hash(_allergenTags),
-      isInStock,
-      isCustomizable,
-      quantity);
+      quantity,
+      dietaryType,
+      spiceLevel);
 
   @JsonKey(ignore: true)
   @override
@@ -1132,13 +2063,17 @@ abstract class _MenuItem implements MenuItem {
       required final String categoryId,
       required final MenuItemMeta meta,
       required final PriceInfo priceInfo,
+      required final bool isInStock,
+      required final bool isCustomizable,
+      final String? primarySubcategoryId,
+      final List<String> subcategoryIds,
       final List<Variant> variants,
       final List<Addon> addons,
       final NutritionalInfo? nutritionalInfo,
       final List<String> allergenTags,
-      required final bool isInStock,
-      required final bool isCustomizable,
-      final int quantity}) = _$MenuItemImpl;
+      final int quantity,
+      final String? dietaryType,
+      final String? spiceLevel}) = _$MenuItemImpl;
 
   factory _MenuItem.fromJson(Map<String, dynamic> json) =
       _$MenuItemImpl.fromJson;
@@ -1153,6 +2088,14 @@ abstract class _MenuItem implements MenuItem {
   @override
   PriceInfo get priceInfo;
   @override
+  bool get isInStock;
+  @override
+  bool get isCustomizable;
+  @override
+  String? get primarySubcategoryId;
+  @override
+  List<String> get subcategoryIds;
+  @override
   List<Variant> get variants;
   @override
   List<Addon> get addons;
@@ -1161,11 +2104,11 @@ abstract class _MenuItem implements MenuItem {
   @override
   List<String> get allergenTags;
   @override
-  bool get isInStock;
-  @override
-  bool get isCustomizable;
-  @override
   int get quantity;
+  @override
+  String? get dietaryType;
+  @override
+  String? get spiceLevel;
   @override
   @JsonKey(ignore: true)
   _$$MenuItemImplCopyWith<_$MenuItemImpl> get copyWith =>
@@ -1181,6 +2124,8 @@ mixin _$MenuItemMeta {
   String get name => throw _privateConstructorUsedError;
   String get description => throw _privateConstructorUsedError;
   String get categoryName => throw _privateConstructorUsedError;
+  String? get primarySubcategoryName =>
+      throw _privateConstructorUsedError; // 🆕 NEW - nullable for backward compatibility
   String? get image => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -1196,7 +2141,11 @@ abstract class $MenuItemMetaCopyWith<$Res> {
       _$MenuItemMetaCopyWithImpl<$Res, MenuItemMeta>;
   @useResult
   $Res call(
-      {String name, String description, String categoryName, String? image});
+      {String name,
+      String description,
+      String categoryName,
+      String? primarySubcategoryName,
+      String? image});
 }
 
 /// @nodoc
@@ -1215,6 +2164,7 @@ class _$MenuItemMetaCopyWithImpl<$Res, $Val extends MenuItemMeta>
     Object? name = null,
     Object? description = null,
     Object? categoryName = null,
+    Object? primarySubcategoryName = freezed,
     Object? image = freezed,
   }) {
     return _then(_value.copyWith(
@@ -1230,6 +2180,10 @@ class _$MenuItemMetaCopyWithImpl<$Res, $Val extends MenuItemMeta>
           ? _value.categoryName
           : categoryName // ignore: cast_nullable_to_non_nullable
               as String,
+      primarySubcategoryName: freezed == primarySubcategoryName
+          ? _value.primarySubcategoryName
+          : primarySubcategoryName // ignore: cast_nullable_to_non_nullable
+              as String?,
       image: freezed == image
           ? _value.image
           : image // ignore: cast_nullable_to_non_nullable
@@ -1247,7 +2201,11 @@ abstract class _$$MenuItemMetaImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {String name, String description, String categoryName, String? image});
+      {String name,
+      String description,
+      String categoryName,
+      String? primarySubcategoryName,
+      String? image});
 }
 
 /// @nodoc
@@ -1264,6 +2222,7 @@ class __$$MenuItemMetaImplCopyWithImpl<$Res>
     Object? name = null,
     Object? description = null,
     Object? categoryName = null,
+    Object? primarySubcategoryName = freezed,
     Object? image = freezed,
   }) {
     return _then(_$MenuItemMetaImpl(
@@ -1279,6 +2238,10 @@ class __$$MenuItemMetaImplCopyWithImpl<$Res>
           ? _value.categoryName
           : categoryName // ignore: cast_nullable_to_non_nullable
               as String,
+      primarySubcategoryName: freezed == primarySubcategoryName
+          ? _value.primarySubcategoryName
+          : primarySubcategoryName // ignore: cast_nullable_to_non_nullable
+              as String?,
       image: freezed == image
           ? _value.image
           : image // ignore: cast_nullable_to_non_nullable
@@ -1294,6 +2257,7 @@ class _$MenuItemMetaImpl implements _MenuItemMeta {
       {required this.name,
       required this.description,
       required this.categoryName,
+      this.primarySubcategoryName,
       this.image});
 
   factory _$MenuItemMetaImpl.fromJson(Map<String, dynamic> json) =>
@@ -1306,11 +2270,14 @@ class _$MenuItemMetaImpl implements _MenuItemMeta {
   @override
   final String categoryName;
   @override
+  final String? primarySubcategoryName;
+// 🆕 NEW - nullable for backward compatibility
+  @override
   final String? image;
 
   @override
   String toString() {
-    return 'MenuItemMeta(name: $name, description: $description, categoryName: $categoryName, image: $image)';
+    return 'MenuItemMeta(name: $name, description: $description, categoryName: $categoryName, primarySubcategoryName: $primarySubcategoryName, image: $image)';
   }
 
   @override
@@ -1323,13 +2290,15 @@ class _$MenuItemMetaImpl implements _MenuItemMeta {
                 other.description == description) &&
             (identical(other.categoryName, categoryName) ||
                 other.categoryName == categoryName) &&
+            (identical(other.primarySubcategoryName, primarySubcategoryName) ||
+                other.primarySubcategoryName == primarySubcategoryName) &&
             (identical(other.image, image) || other.image == image));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, name, description, categoryName, image);
+  int get hashCode => Object.hash(runtimeType, name, description, categoryName,
+      primarySubcategoryName, image);
 
   @JsonKey(ignore: true)
   @override
@@ -1350,6 +2319,7 @@ abstract class _MenuItemMeta implements MenuItemMeta {
       {required final String name,
       required final String description,
       required final String categoryName,
+      final String? primarySubcategoryName,
       final String? image}) = _$MenuItemMetaImpl;
 
   factory _MenuItemMeta.fromJson(Map<String, dynamic> json) =
@@ -1362,6 +2332,8 @@ abstract class _MenuItemMeta implements MenuItemMeta {
   @override
   String get categoryName;
   @override
+  String? get primarySubcategoryName;
+  @override // 🆕 NEW - nullable for backward compatibility
   String? get image;
   @override
   @JsonKey(ignore: true)

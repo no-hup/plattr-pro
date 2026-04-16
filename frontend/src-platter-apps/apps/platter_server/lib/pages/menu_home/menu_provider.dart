@@ -1,34 +1,30 @@
 import 'package:flutter/foundation.dart';
-
-import 'models/full_restaurant_menu_response.dart';
-import 'models/menu_item.dart';
+import 'package:platter_core/platter_core.dart';
 
 import 'repository/menu_api_service.dart';
 
-/// Enum representing the various states of data loading
-enum DataState { initial, loading, loaded, error }
 
 /// Provider class to manage the state of the restaurant menu
 class MenuProvider extends ChangeNotifier {
   final MenuApiService _apiService;
-  
+
   // State variables
   DataState _state = DataState.initial;
   FullRestaurantMenuResponse? _menu;
   String? _errorMessage;
   bool _isRefreshing = false;
-  
+
   // Getters
   DataState get state => _state;
   FullRestaurantMenuResponse? get menu => _menu;
   String? get errorMessage => _errorMessage;
   bool get isRefreshing => _isRefreshing;
-  
+
   bool get hasMenu => _menu != null && _menu!.categories.isNotEmpty;
-  
+
   // Constructor
   MenuProvider({required MenuApiService apiService}) : _apiService = apiService;
-  
+
   /// Fetches the restaurant menu
   Future<void> fetchRestaurantMenu({
     required String restaurantId,
@@ -38,13 +34,13 @@ class MenuProvider extends ChangeNotifier {
     _state = DataState.loading;
     _errorMessage = null;
     notifyListeners();
-    
+
     // Call API service
     final response = await _apiService.getRestaurantMenu(
       restaurantId: restaurantId,
       sessionId: sessionId,
     );
-    
+
     // Handle response
     if (response.success && response.data != null) {
       _menu = response.data;
@@ -53,11 +49,11 @@ class MenuProvider extends ChangeNotifier {
       _errorMessage = response.message ?? 'Failed to fetch restaurant menu';
       _state = DataState.error;
     }
-    
+
     // Notify UI of changes
     notifyListeners();
   }
-  
+
   /// Refreshes the restaurant menu
   Future<void> refreshMenu({
     required String restaurantId,
@@ -65,13 +61,13 @@ class MenuProvider extends ChangeNotifier {
   }) async {
     _isRefreshing = true;
     notifyListeners();
-    
+
     // Call API service
     final response = await _apiService.getRestaurantMenu(
       restaurantId: restaurantId,
       sessionId: sessionId,
     );
-    
+
     // Handle response
     if (response.success && response.data != null) {
       _menu = response.data;
@@ -84,11 +80,11 @@ class MenuProvider extends ChangeNotifier {
         _state = DataState.error;
       }
     }
-    
+
     _isRefreshing = false;
     notifyListeners();
   }
-  
+
   /// Updates a menu item's availability
   Future<bool> updateMenuItemAvailability({
     required String restaurantId,
@@ -102,19 +98,21 @@ class MenuProvider extends ChangeNotifier {
       menuItemId: menuItemId,
       isAvailable: isAvailable,
     );
-    
+
     if (response.success && response.data != null) {
       final updatedMenuItemId = response.data!.menuItemId;
       final updatedIsAvailable = response.data!.isAvailable;
       if (_menu != null) {
-        final updatedMenuItems = Map<String, List<MenuItem>>.from(_menu!.menuItems);
+        final updatedMenuItems =
+            Map<String, List<MenuItem>>.from(_menu!.menuItems);
         bool itemFound = false;
         updatedMenuItems.forEach((categoryId, items) {
           for (int i = 0; i < items.length; i++) {
             if (items[i].id == updatedMenuItemId) {
               itemFound = true;
               updatedMenuItems[categoryId] = List<MenuItem>.from(items);
-              updatedMenuItems[categoryId]![i] = items[i].copyWith(isAvailable: updatedIsAvailable);
+              updatedMenuItems[categoryId]![i] =
+                  items[i].copyWith(isAvailable: updatedIsAvailable);
               break;
             }
           }
@@ -130,7 +128,7 @@ class MenuProvider extends ChangeNotifier {
       }
       return true;
     }
-    
+
     return false;
   }
 }

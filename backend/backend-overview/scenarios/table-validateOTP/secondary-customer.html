@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>table-validateOTP · Secondary Customer</title>
+    <style>
+      body { font-family: 'Inter', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 2rem; line-height: 1.5; }
+      pre { background: #020617; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid rgba(148, 163, 184, 0.3); }
+      code { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+      h1 { margin-top: 0; }
+    </style>
+  </head>
+  <body>
+    <h1>table-validateOTP · Secondary Customer</h1>
+    <p>
+      Multi-user support is enabled, so the callable appends a new guest to the existing session without creating a new one.
+    </p>
+
+    <h2>Sample Request</h2>
+    <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "tableId": "table001",
+    "otp": "193746",
+    "name": "Jane Smith",
+    "sessionId": "session_abc123"
+  }
+}</code></pre>
+
+    <h2>Sample Response</h2>
+    <pre><code>{
+  "status": "success",
+  "message": "Secondary guest added",
+  "data": {
+    "session": {
+      "sessionId": "session_abc123",
+      "users": [
+        {
+          "customerId": "cust001",
+          "username": "John Doe",
+          "isPrimary": true
+        },
+        {
+          "customerId": "cust002",
+          "username": "Jane Smith",
+          "isPrimary": false
+        }
+      ]
+    },
+    "table": {
+      "tableId": "table001",
+      "status": "ACTIVE"
+    }
+  }
+}</code></pre>
+  </body>
+</html>

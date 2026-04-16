@@ -1,19 +1,20 @@
 import 'dart:convert';
+import 'dart:html' if (dart.library.io) '../session_storage_stub.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutterboilerplate/models/SessionState.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
-import 'dart:html' if (dart.library.io) '../session_storage_stub.dart';
 
 /// Service responsible for persisting session data
 /// Uses sessionStorage on web platforms, which persists through
 /// page refreshes but is cleared when the browser tab is closed
 class SessionStorageService {
-  static const String _sessionStateKey = 'restaurant_session_state';
+  factory SessionStorageService() => _instance;
   
   /// Singleton pattern implementation
   SessionStorageService._();
+  static const String _sessionStateKey = 'restaurant_session_state';
   static final SessionStorageService _instance = SessionStorageService._();
-  factory SessionStorageService() => _instance;
 
   /// Loads session data from storage
   /// Returns null if no session is found or if the session is invalid/expired
@@ -32,7 +33,7 @@ class SessionStorageService {
       
       AppLogger.log('📦 SessionStorage: Found stored session data: $sessionData');
       
-      final Map<String, dynamic> decodedData = 
+      final decodedData = 
           jsonDecode(sessionData) as Map<String, dynamic>;
       
       // Check if session has expired

@@ -28,7 +28,7 @@ class CheckoutRepository {
         'tableId': tableId,
         'sessionId': sessionId,
         if (notes != null && notes.isNotEmpty) 'notes': notes,
-      }
+      },
     };
 
     AppLogger.log('🚀 Checking out cart: URL: $endpoint, Body: $requestBodyMap');
@@ -80,27 +80,27 @@ class CheckoutRepository {
             // Use the success state from ApiResponseFreezed
             return ApiResponseFreezed.success(
               data: checkoutResponse,
-              message: checkoutResponse.message // You can use the message from the response data
+              message: checkoutResponse.message, // You can use the message from the response data
             );
           } catch (e, s) {
             AppLogger.log('❌ Failed to parse CheckoutResponse from result block: $e\n$s');
             return ApiResponseFreezed.error(
               message: 'Failed to process successful response data.',
               errorCode: 'parse_error',
-              errorDetails: {'result_block': decodedBody['result']}
+              errorDetails: {'result_block': decodedBody['result']},
             );
           }
         }
         // Check if the 200 OK response contains an "error" structure
         else if (decodedBody.containsKey('error')) {
           AppLogger.log('⚠️ Checkout API returned application error within 200 OK response.');
-          final String errorMessage = decodedBody['error']['message'] as String? ?? 'Unknown error occurred';
-          final String errorCode = decodedBody['error']['code'] as String? ?? 'unknown_error';
+          final errorMessage = decodedBody['error']['message'] as String? ?? 'Unknown error occurred';
+          final errorCode = decodedBody['error']['code'] as String? ?? 'unknown_error';
           
           return ApiResponseFreezed.error(
             message: errorMessage,
             errorCode: errorCode,
-            errorDetails: decodedBody['error'] as Map<String, dynamic>?
+            errorDetails: decodedBody['error'] as Map<String, dynamic>?,
           );
         }
         // Handle other unexpected 200 OK structures
@@ -109,15 +109,15 @@ class CheckoutRepository {
           return ApiResponseFreezed.error(
             message: 'Received unexpected success response format from server.',
             errorCode: 'unexpected_format',
-            errorDetails: decodedBody
+            errorDetails: decodedBody,
           );
         }
       } else { // Handle non-200 status codes (e.g., 4xx, 5xx)
         AppLogger.log('❌ Checkout failed with HTTP Status: ${response.statusCode}, Body: ${response.data}');
 
         // Extract error message if possible
-        String errorMessage = 'An error occurred during checkout.';
-        String errorCode = 'http_error_${response.statusCode}';
+        var errorMessage = 'An error occurred during checkout.';
+        var errorCode = 'http_error_${response.statusCode}';
         Map<String, dynamic>? errorDetails;
 
         // Attempt to parse specific error structures if body was decoded
@@ -136,9 +136,9 @@ class CheckoutRepository {
           }
         } else {
           // No decoded body, maybe include raw response in details
-          final String rawResponse = response.data is String ? (response.data as String) : 
+          final rawResponse = response.data is String ? (response.data as String) : 
               (response.data != null ? response.data.toString() : '');
-          errorDetails = {'raw_body': rawResponse.length > 200 ? rawResponse.substring(0, 200) + '...' : rawResponse};
+          errorDetails = {'raw_body': rawResponse.length > 200 ? '${rawResponse.substring(0, 200)}...' : rawResponse};
         }
 
         // Return error response

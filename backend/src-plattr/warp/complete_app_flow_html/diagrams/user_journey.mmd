@@ -1,0 +1,48 @@
+flowchart TB
+    subgraph ENTRY["1️⃣ ENTRY"]
+        QR[/"📱 Scan QR Code"/]
+        URL["URL: /r/{restaurantId}/t/{tableId}"]
+    end
+    
+    subgraph AUTH["2️⃣ AUTHENTICATION"]
+        VALIDATE["validateTableAndLocation()"]
+        DECISION{{"Session Valid?"}}
+        OTP["Enter OTP + Phone + Name"]
+        VERIFY["validateOTP()"]
+        SESSION["Create/Join Session"]
+    end
+    
+    subgraph MENU["3️⃣ MENU BROWSING"]
+        FETCH["fetchMenu()"]
+        BROWSE["Browse Categories & Items"]
+        CUSTOMIZE["Select Variants & Addons"]
+    end
+    
+    subgraph CART["4️⃣ CART MANAGEMENT"]
+        ADD["addItemToCart()"]
+        VIEW["View Cart & Modify"]
+        READY{{"Ready to Order?"}}
+    end
+    
+    subgraph ORDER["5️⃣ ORDER & TRACKING"]
+        CHECKOUT["checkoutCart()"]
+        TRACK["Track Order Status"]
+        STATUS["PENDING → PREPARING → READY → SERVED"]
+    end
+    
+    QR --> URL --> VALIDATE
+    VALIDATE --> DECISION
+    DECISION -->|"✅ Yes"| FETCH
+    DECISION -->|"❌ No - OTP Required"| OTP
+    OTP --> VERIFY --> SESSION --> FETCH
+    FETCH --> BROWSE --> CUSTOMIZE --> ADD
+    ADD --> VIEW --> READY
+    READY -->|"Add More"| BROWSE
+    READY -->|"Checkout"| CHECKOUT
+    CHECKOUT --> TRACK --> STATUS
+    
+    style ENTRY fill:#e1f5fe
+    style AUTH fill:#fff3e0
+    style MENU fill:#e8f5e9
+    style CART fill:#fce4ec
+    style ORDER fill:#f3e5f5

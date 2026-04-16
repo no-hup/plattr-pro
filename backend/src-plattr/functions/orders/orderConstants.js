@@ -4,9 +4,10 @@
 
 // Order status enum
 exports.ORDER_STATUS = {
-  ACTIVE: 'active',      // Order is in progress, table is occupied
-  COMPLETED: 'completed', // Order is finished and paid
-  CANCELLED: 'cancelled'  // Order was cancelled
+  PENDING: 'PENDING',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED'
 };
 
 // Payment status enum
@@ -16,20 +17,25 @@ exports.PAYMENT_STATUS = {
   PAID: 'paid'
 };
 
-// Cart status enum
-exports.CART_STATUS = {
-  PENDING: 'pending',      // Initial state when order is placed
-  ACCEPTED: 'accepted',    // Kitchen has seen and accepted the order
-  READY: 'ready',          // Items are ready for serving
-  COMPLETED: 'completed',   // Items have been completed/served to the customer
-  CANCELLED: 'cancelled',  // Items were cancelled
-}; 
-
-// Cart item status enum
-exports.CART_ITEM_STATUS = {
-  PENDING: 'pending',      // Initial state when order is placed
-  READY: 'ready',          // Items are ready for serving
-  COMPLETED: 'completed',   // Items have been completed/served to the customer
-  CANCELLED: 'cancelled',  // Items were cancelled
+// Fulfillment status enum used for both carts and cart items
+exports.FULFILLMENT_STATUS = {
+  PENDING: 'PENDING',
+  PREPARING: 'PREPARING',
+  READY: 'READY',
+  SERVED: 'SERVED',
+  RETURNED: 'RETURNED',
+  CANCELLED: 'CANCELLED'
 };
 
+// Status color hex mapping for UI
+exports.STATUS_COLOR_HEX = {
+  PENDING: '#FFC107',    // Yellow
+  PREPARING: '#FFC107',  // Yellow
+  READY: '#4CAF50',      // Green
+  SERVED: '#4CAF50',     // Green
+  CANCELLED: '#F44336',  // Red
+  RETURNED: '#F44336'    // Red
+};
+
+// Lookback period for served carts query (in hours)
+exports.SERVED_CARTS_LOOKBACK_HOURS = 6;

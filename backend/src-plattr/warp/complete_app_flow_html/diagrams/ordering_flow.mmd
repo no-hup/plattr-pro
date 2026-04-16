@@ -1,0 +1,40 @@
+sequenceDiagram
+    autonumber
+    participant User as 📱 Customer
+    participant App as 🌐 Flutter App
+    participant Menu as 📋 menu.*
+    participant Cart as 🛒 cart.*
+    participant Order as 📦 order.*
+    
+    User->>App: Opens Menu
+    App->>Menu: fetchMenu(restaurantId, inStock: true)
+    Menu-->>App: Categories + Items + Variants + Addons
+    App-->>User: Display Menu
+    
+    loop Add Items to Cart
+        User->>App: Select Item + Variants + Addons
+        App->>Cart: addItemToCart(menuItemId, variants, addons, qty, sessionId)
+        Cart->>Cart: Validate stock, variants, calculate price
+        Cart-->>App: Updated Cart
+        App-->>User: Show Cart Badge Count
+    end
+    
+    User->>App: View Cart
+    App->>Cart: getCart(restaurantId, tableId)
+    Cart-->>App: Cart with Items & Total
+    App-->>User: Display Cart
+    
+    User->>App: Checkout
+    App->>Cart: checkoutCart(restaurantId, tableId, sessionId, notes)
+    Cart->>Cart: Validate session, stock, prices
+    Cart->>Order: createOrUpdateOrder(cart, sessionId)
+    Order-->>Cart: Order Created
+    Cart->>Cart: clearCartInternal()
+    Cart-->>App: ✅ orderId, orderNumber, orderStatus
+    App-->>User: Navigate to Order Tracking
+    
+    loop Real-time Status Updates
+        App->>Order: getOrder(restaurantId, sessionId)
+        Order-->>App: Order with Cart Statuses
+        App-->>User: Update Order Status UI
+    end

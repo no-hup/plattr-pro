@@ -14,8 +14,7 @@ class LoginRequest {
     this.username,
     this.password,
     this.sessionId,
-  }) : assert(
-            (username != null && password != null) || sessionId != null,
+  }) : assert((username != null && password != null) || sessionId != null,
             'Either username/password or sessionId must be provided.');
 
   factory LoginRequest.fromJson(Map<String, dynamic> json) =>

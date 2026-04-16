@@ -10,23 +10,23 @@ import 'otp_response_parser.dart';
 
 /// Repository for handling OTP validation API calls.
 class OtpRepository {
+  factory OtpRepository() => _instance;
   // Singleton Pattern
   OtpRepository._internal() : _dio = DioClient().dio; // Use central Dio instance
   static final OtpRepository _instance = OtpRepository._internal();
-  factory OtpRepository() => _instance;
 
   final Dio _dio;
 
   /// Validates the provided OTP with the backend.
   Future<ApiResponse<OtpValidationResponse>> validateOtp(
-      OtpValidationRequest request) async {
-    const String operation = 'validateOtp';
+      OtpValidationRequest request,) async {
+    const operation = 'validateOtp';
     AppLogger.log('OTP Repo: Starting $operation for table ${request.tableId}');
 
     try {
       // Prepare payload - Firebase callable functions expect data under a 'data' key
       final payload = {'data': request.toJson()};
-      AppLogger.log('OTP Repo: Payload: ${payload}');
+      AppLogger.log('OTP Repo: Payload: $payload');
 
 
       final response = await _dio.post(
@@ -66,8 +66,8 @@ class OtpRepository {
         return OtpResponseParser.parseSuccessResponse(jsonResponse);
      } else {
          // Handle HTTP errors (4xx, 5xx)
-         final String errorMessage = _extractErrorMessage(response);
-         final String errorCode = OtpErrorCodes.fromHttpStatus(statusCode, jsonResponse);
+         final errorMessage = _extractErrorMessage(response);
+         final errorCode = OtpErrorCodes.fromHttpStatus(statusCode, jsonResponse);
          AppLogger.log('OTP Repo: HTTP Error $statusCode: $errorMessage (Code: $errorCode)');
          return ApiResponse.error(
             errorMessage,
@@ -135,7 +135,7 @@ class OtpRepository {
 
   /// Handles generic exceptions.
   ApiResponse<OtpValidationResponse> _handleGenericException(
-      dynamic e, StackTrace stackTrace, String operation) {
+      dynamic e, StackTrace stackTrace, String operation,) {
     AppLogger.log('OTP Repo: Generic Exception during $operation: $e\n$stackTrace');
     return ApiResponse.error(
       'An unexpected error occurred: $e',

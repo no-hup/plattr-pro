@@ -25,7 +25,7 @@ Backend emulator commands
 - Start emulators (Terminal 1):
   1) cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr
   2) export GOOGLE_APPLICATION_CREDENTIALS="/Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr/secure_stuff/service-account.json"
-  3) firebase emulators:start --only firestore,functions --debug
+  3) firebase emulators:start --project rms-app-dd875 --only firestore,functions --debug
 
 - Import mock data (Terminal 2):
   - Preferred (npm script defined in backend/src-plattr/package.json):
@@ -59,7 +59,7 @@ Path-resolution rules for this workspace
 
 Common commands (copy-paste ready)
 - Start emulators:
-  cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr && export GOOGLE_APPLICATION_CREDENTIALS="/Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr/secure_stuff/service-account.json" && firebase emulators:start --only firestore,functions --debug
+  cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr && export GOOGLE_APPLICATION_CREDENTIALS="/Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr/secure_stuff/service-account.json" && firebase emulators:start --project rms-app-dd875 --only firestore,functions --debug
 
 - Import mock data:
   cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr && npm run import-mock

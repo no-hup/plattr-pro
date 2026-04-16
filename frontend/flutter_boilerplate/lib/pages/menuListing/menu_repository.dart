@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutterboilerplate/models/api_response.dart';
+import 'package:flutterboilerplate/networking/dio_client.dart';
 import 'package:flutterboilerplate/pages/menuListing/add_cart_response.dart' as legacy;
 import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_operation_response.dart';
@@ -10,12 +11,7 @@ import 'package:flutterboilerplate/singletonGods/logger.dart';
 class MenuRepository {
   factory MenuRepository() => _instance;
   
-  MenuRepository._internal() : _dio = Dio(BaseOptions(
-    baseUrl: ApiConfig.baseUrl,
-    connectTimeout: const Duration(seconds: 5),
-    receiveTimeout: const Duration(seconds: 3),
-    validateStatus: (status) => true,
-  ));
+  MenuRepository._internal() : _dio = DioClient().dio;
   static final MenuRepository _instance = MenuRepository._internal();  
   final Dio _dio;
 
@@ -42,7 +38,7 @@ Future<ApiResponse<CartOperationResponse>> addItemToCart(
 
       return ResponseParser.parseCartOperation(response);
     } on DioException catch (e) {
-      AppLogger.log('❌ Dio Error: ${e.toString()}');
+      AppLogger.log('❌ Dio Error: $e');
       
       // Handle specific Dio errors
       String errorMessage;
@@ -54,11 +50,9 @@ Future<ApiResponse<CartOperationResponse>> addItemToCart(
         case DioExceptionType.receiveTimeout:
           errorMessage = 'Request timed out';
           errorCode = 'TIMEOUT_ERROR';
-          break;
         case DioExceptionType.connectionError:
           errorMessage = 'No internet connection';
           errorCode = 'CONNECTION_ERROR';
-          break;
         default:
           errorMessage = 'Network error: ${e.message}';
           errorCode = 'NETWORK_ERROR';
@@ -70,7 +64,7 @@ Future<ApiResponse<CartOperationResponse>> addItemToCart(
       );
       
     } catch (e) {
-      AppLogger.log('❌ General Error: ${e.toString()}');
+      AppLogger.log('❌ General Error: $e');
       return ApiResponse.error(
         'Failed to add item to cart: $e',
         errorCode: 'UNKNOWN_ERROR',
@@ -89,7 +83,7 @@ Future<ApiResponse<CartOperationResponse>> addItemToCart(
         'data': {
           'restaurantId': restaurantId,
           'inStock': inStock,
-        }
+        },
       };
       AppLogger.log('📦 Request Payload: $payload');
 
@@ -103,13 +97,13 @@ Future<ApiResponse<CartOperationResponse>> addItemToCart(
 
       return ResponseParser.parseMenuResponse(response);
     } on DioException catch (e) {
-      AppLogger.log('❌ Dio Error: ${e.toString()}');
+      AppLogger.log('❌ Dio Error: $e');
       return ApiResponse.error(
         'Network error: ${e.message}',
         errorCode: 'NETWORK_ERROR',
       );
     } catch (e) {
-      AppLogger.log('❌ General Error: ${e.toString()}');
+      AppLogger.log('❌ General Error: $e');
       return ApiResponse.error(
         'Failed to fetch menu: $e',
         errorCode: 'UNKNOWN_ERROR',
@@ -154,7 +148,7 @@ Future<ApiResponse<CartOperationResponse>> removeItemFromCart(
 
     return ResponseParser.parseCartOperation(response);
   } on DioException catch (e) {
-    AppLogger.log('❌ Dio Error: ${e.toString()}');
+    AppLogger.log('❌ Dio Error: $e');
     
     String errorMessage;
     String errorCode;
@@ -165,11 +159,9 @@ Future<ApiResponse<CartOperationResponse>> removeItemFromCart(
       case DioExceptionType.receiveTimeout:
         errorMessage = 'Request timed out';
         errorCode = 'TIMEOUT_ERROR';
-        break;
       case DioExceptionType.connectionError:
         errorMessage = 'No internet connection';
         errorCode = 'CONNECTION_ERROR';
-        break;
       default:
         errorMessage = 'Network error: ${e.message}';
         errorCode = 'NETWORK_ERROR';
@@ -181,7 +173,7 @@ Future<ApiResponse<CartOperationResponse>> removeItemFromCart(
     );
     
   } catch (e) {
-    AppLogger.log('❌ General Error: ${e.toString()}');
+    AppLogger.log('❌ General Error: $e');
     return ApiResponse.error(
       'Failed to remove item from cart: $e',
       errorCode: 'UNKNOWN_ERROR',
@@ -200,7 +192,7 @@ Future<ApiResponse<CartOperationResponse>> removeItemFromCart(
         'data': {
           'tableId': tableId,
           'restaurantId': restaurantId,
-        }
+        },
       };
       AppLogger.log('📦 Request Payload: $payload');
 
@@ -275,7 +267,7 @@ Future<ApiResponse<CartOperationResponse>> removeItemFromCart(
       
       return parsedResponse;
     } on DioException catch (e) {
-      AppLogger.log('❌ Dio Error: ${e.toString()}');
+      AppLogger.log('❌ Dio Error: $e');
       
       // Handle specific Dio errors
       String errorMessage;
@@ -287,11 +279,9 @@ Future<ApiResponse<CartOperationResponse>> removeItemFromCart(
         case DioExceptionType.receiveTimeout:
           errorMessage = 'Request timed out';
           errorCode = 'TIMEOUT_ERROR';
-          break;
         case DioExceptionType.connectionError:
           errorMessage = 'No internet connection';
           errorCode = 'CONNECTION_ERROR';
-          break;
         default:
           errorMessage = 'Network error: ${e.message}';
           errorCode = 'NETWORK_ERROR';
@@ -303,7 +293,7 @@ Future<ApiResponse<CartOperationResponse>> removeItemFromCart(
       );
       
     } catch (e) {
-      AppLogger.log('❌ General Error: ${e.toString()}');
+      AppLogger.log('❌ General Error: $e');
       return ApiResponse.error(
         'Failed to fetch cart: $e',
         errorCode: 'UNKNOWN_ERROR',

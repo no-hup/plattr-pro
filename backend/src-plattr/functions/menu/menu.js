@@ -31,6 +31,8 @@
 const functions = require('firebase-functions');
 const { admin, db } = require('../admin/admin');
 const MenuValidation = require('./menuValidation');
+const ResponseBuilder = require('../utils/ResponseBuilder');
+const errorHandler = require('../singleton/ErrorHandler');
 
 const { getAllCategories, getCategoryById } = require('./creation/cateogory');
 const { getAllMenuItems, getMenuItemsByCategory, createMenuItem, updateMenuItem: updateMenuItemUtil, deleteMenuItem: deleteMenuItemUtil, getMenuItemById, updateMenuItemStock } = require('./menuItem');
@@ -140,19 +142,17 @@ async function getSpecialOffers() {
  * Endpoint: /menu/add-item
  */
 const addMenuItem = functions.https.onCall(async (data, context) => {
+  const request = data?.data || data || {};
   try {
     // Log the function call
-    const request = data.data;
     console.log('poopoo addMenuItem function called with request:', request);
     
     // Validate input
-    if (!request || !request.restaurantId || !request.menuItemData) {
+    if (!request.restaurantId || !request.menuItemData) {
       console.error('Invalid request: restaurantId and menuItemData are required');
-      return {
-        success: false,
-        message: 'Restaurant ID and menu item data are required',
-        errorCode: 'INVALID_PARAMETERS'
-      };
+      errorHandler.badRequest('Restaurant ID and menu item data are required', {
+        hasRestaurantId: !!request.restaurantId
+      });
     }
     
     const { restaurantId, menuItemData } = request;
@@ -161,11 +161,9 @@ const addMenuItem = functions.https.onCall(async (data, context) => {
     if (!menuItemData.meta || !menuItemData.meta.name || !menuItemData.categoryId || 
         !menuItemData.priceInfo || menuItemData.priceInfo.basePrice === undefined) {
       console.error('Menu item data missing required fields');
-      return {
-        success: false,
-        message: 'Menu item data is missing required fields',
-        errorCode: 'INVALID_MENU_ITEM_DATA'
-      };
+      errorHandler.badRequest('Menu item data is missing required fields', {
+        restaurantId
+      });
     }
     
     // Create the menu item
@@ -175,22 +173,20 @@ const addMenuItem = functions.https.onCall(async (data, context) => {
     const menuItem = await getMenuItemById(restaurantId, menuItemId);
     
     console.log(`poopoo Successfully created menu item: ${menuItemId} for restaurant: ${restaurantId}`);
-    return {
-      success: true,
-      message: 'Menu item added successfully',
-      data: {
+    return ResponseBuilder.success(
+      {
         menuItemId,
         menuItem
-      }
-    };
+      },
+      'Menu item added successfully'
+    );
     
   } catch (error) {
     console.error('Error in addMenuItem:', error);
-    return {
-      success: false,
-      message: 'Failed to add menu item',
-      errorCode: 'MENU_ITEM_ADD_ERROR'
-    };
+    errorHandler.handleError(error, 'addMenuItem', {
+      restaurantId: request?.restaurantId,
+      menuItemId: request?.menuItemId
+    });
   }
 });
 
@@ -199,19 +195,18 @@ const addMenuItem = functions.https.onCall(async (data, context) => {
  * Endpoint: /menu/update-item
  */
 const updateMenuItem = functions.https.onCall(async (data, context) => {
+  const request = data?.data || data || {};
   try {
     // Log the function call
-    const request = data.data;
     console.log('poopoo updateMenuItem function called with request:', request);
     
     // Validate input
-    if (!request || !request.restaurantId || !request.menuItemId || !request.updateData) {
+    if (!request.restaurantId || !request.menuItemId || !request.updateData) {
       console.error('Invalid request: restaurantId, menuItemId and updateData are required');
-      return {
-        success: false,
-        message: 'Restaurant ID, menu item ID and update data are required',
-        errorCode: 'INVALID_PARAMETERS'
-      };
+      errorHandler.badRequest('Restaurant ID, menu item ID and update data are required', {
+        hasRestaurantId: !!request.restaurantId,
+        hasMenuItemId: !!request.menuItemId
+      });
     }
     
     const { restaurantId, menuItemId, updateData } = request;
@@ -223,11 +218,7 @@ const updateMenuItem = functions.https.onCall(async (data, context) => {
     
     if (!menuItemDoc.exists) {
       console.error(`Menu item not found with ID: ${menuItemId}`);
-      return {
-        success: false,
-        message: 'Menu item not found',
-        errorCode: 'MENU_ITEM_NOT_FOUND'
-      };
+      errorHandler.notFound('Menu item not found', { restaurantId, menuItemId });
     }
     
     // Update the menu item
@@ -237,22 +228,20 @@ const updateMenuItem = functions.https.onCall(async (data, context) => {
     const updatedMenuItem = await getMenuItemById(restaurantId, menuItemId);
     
     console.log(`poopoo Successfully updated menu item: ${menuItemId} for restaurant: ${restaurantId}`);
-    return {
-      success: true,
-      message: 'Menu item updated successfully',
-      data: {
+    return ResponseBuilder.success(
+      {
         menuItemId,
         menuItem: updatedMenuItem
-      }
-    };
+      },
+      'Menu item updated successfully'
+    );
     
   } catch (error) {
     console.error('Error in updateMenuItem:', error);
-    return {
-      success: false,
-      message: 'Failed to update menu item',
-      errorCode: 'MENU_ITEM_UPDATE_ERROR'
-    };
+    errorHandler.handleError(error, 'updateMenuItem', {
+      restaurantId: request?.restaurantId,
+      menuItemId: request?.menuItemId
+    });
   }
 });
 
@@ -261,19 +250,17 @@ const updateMenuItem = functions.https.onCall(async (data, context) => {
  * Endpoint: /menu/delete-item
  */
 const deleteMenuItem = functions.https.onCall(async (data, context) => {
+  const request = data?.data || data || {};
   try {
     // Log the function call
-    const request = data.data;
     console.log('poopoo deleteMenuItem function called with request:', request);
     
     // Validate input
-    if (!request || !request.restaurantId || !request.menuItemId) {
+    if (!request.restaurantId || !request.menuItemId) {
       console.error('Invalid request: restaurantId and menuItemId are required');
-      return {
-        success: false,
-        message: 'Restaurant ID and menu item ID are required',
-        errorCode: 'INVALID_PARAMETERS'
-      };
+      errorHandler.badRequest('Restaurant ID and menu item ID are required', {
+        hasRestaurantId: !!request.restaurantId
+      });
     }
     
     const { restaurantId, menuItemId } = request;
@@ -285,32 +272,26 @@ const deleteMenuItem = functions.https.onCall(async (data, context) => {
     
     if (!menuItemDoc.exists) {
       console.error(`Menu item not found with ID: ${menuItemId}`);
-      return {
-        success: false,
-        message: 'Menu item not found',
-        errorCode: 'MENU_ITEM_NOT_FOUND'
-      };
+      errorHandler.notFound('Menu item not found', { restaurantId, menuItemId });
     }
     
     // Delete the menu item
     await deleteMenuItemUtil(restaurantId, menuItemId);
     
     console.log(`poopoo Successfully deleted menu item: ${menuItemId} for restaurant: ${restaurantId}`);
-    return {
-      success: true,
-      message: 'Menu item deleted successfully',
-      data: {
+    return ResponseBuilder.success(
+      {
         menuItemId
-      }
-    };
+      },
+      'Menu item deleted successfully'
+    );
     
   } catch (error) {
     console.error('Error in deleteMenuItem:', error);
-    return {
-      success: false,
-      message: 'Failed to delete menu item',
-      errorCode: 'MENU_ITEM_DELETE_ERROR'
-    };
+    errorHandler.handleError(error, 'deleteMenuItem', {
+      restaurantId: request?.restaurantId,
+      menuItemId: request?.menuItemId
+    });
   }
 });
 
@@ -319,21 +300,23 @@ const deleteMenuItem = functions.https.onCall(async (data, context) => {
  * Endpoint: /menu-updateMenuItemAvailability
  */
 const updateMenuItemAvailability = functions.https.onRequest(async (req, res) => {
-  
   try {
     console.log('poopoo updateMenuItemAvailability function called with request:', req.body);
     
     // Validate input
-    const { restaurantId, sessionId, menuItemId, isAvailable } = req.body;
+    const { restaurantId, sessionId, menuItemId, isAvailable } = req.body || {};
     
     if (!restaurantId || !menuItemId || typeof isAvailable !== 'boolean') {
       console.error('Invalid request: restaurantId, menuItemId, and isAvailable (boolean) are required');
-      res.status(400).json({
-        success: false,
-        message: 'Restaurant ID, menu item ID, and availability status (boolean) are required',
-        errorCode: 'INVALID_PARAMETERS'
-      });
-      return;
+      return res
+        .status(400)
+        .json(
+          ResponseBuilder.error(
+            'invalid_argument',
+            'Restaurant ID, menu item ID, and availability status (boolean) are required',
+            { restaurantId, menuItemId }
+          )
+        );
     }
     
     // Check if the menu item exists
@@ -343,12 +326,15 @@ const updateMenuItemAvailability = functions.https.onRequest(async (req, res) =>
     
     if (!menuItemDoc.exists) {
       console.error(`Menu item not found with ID: ${menuItemId}`);
-      res.status(404).json({
-        success: false,
-        message: 'Menu item not found',
-        errorCode: 'MENU_ITEM_NOT_FOUND'
-      });
-      return;
+      return res
+        .status(404)
+        .json(
+          ResponseBuilder.error(
+            'not_found',
+            'Menu item not found',
+            { restaurantId, menuItemId }
+          )
+        );
     }
     
     // Update the menu item stock using the existing utility function
@@ -358,23 +344,35 @@ const updateMenuItemAvailability = functions.https.onRequest(async (req, res) =>
     const updatedMenuItem = await getMenuItemById(restaurantId, menuItemId);
     
     console.log(`poopoo Successfully updated menu item availability: ${menuItemId} for restaurant: ${restaurantId}`);
-    res.status(200).json({
-      success: true,
-      message: 'Menu item availability updated successfully',
-      data: {
-        menuItemId,
-        isAvailable,
-        menuItem: updatedMenuItem
-      }
-    });
+    return res
+      .status(200)
+      .json(
+        ResponseBuilder.success(
+          {
+            menuItemId,
+            isAvailable,
+            menuItem: updatedMenuItem
+          },
+          'Menu item availability updated successfully'
+        )
+      );
     
   } catch (error) {
     console.error('Error in updateMenuItemAvailability:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update menu item availability',
-      errorCode: 'MENU_ITEM_UPDATE_ERROR'
-    });
+    try {
+      errorHandler.handleError(error, 'updateMenuItemAvailability', {
+        restaurantId: req?.body?.restaurantId,
+        menuItemId: req?.body?.menuItemId
+      });
+    } catch (handledError) {
+      const statusCode = handledError.details?.data?.httpCode || 500;
+      return res
+        .status(statusCode)
+        .json(
+          handledError.details ||
+          ResponseBuilder.error('internal_error', 'Failed to update menu item availability')
+        );
+    }
   }
 });
 

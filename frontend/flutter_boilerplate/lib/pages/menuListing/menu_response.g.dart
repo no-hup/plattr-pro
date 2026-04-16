@@ -6,48 +6,74 @@ part of 'menu_response.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$MenuResponseImpl _$$MenuResponseImplFromJson(Map<String, dynamic> json) =>
-    _$MenuResponseImpl(
-      result: MenuData.fromJson(json['result'] as Map<String, dynamic>),
+_$TableContextDataImpl _$$TableContextDataImplFromJson(
+        Map<String, dynamic> json) =>
+    _$TableContextDataImpl(
+      restaurantName: json['restaurantName'] as String,
+      tableNumber: json['tableNumber'] as String?,
+      otp: json['otp'] as String?,
+      showOtp: json['showOtp'] as bool? ?? false,
+      showImages: json['showImages'] as bool? ?? false,
     );
 
-Map<String, dynamic> _$$MenuResponseImplToJson(_$MenuResponseImpl instance) =>
+Map<String, dynamic> _$$TableContextDataImplToJson(
+        _$TableContextDataImpl instance) =>
     <String, dynamic>{
-      'result': instance.result,
+      'restaurantName': instance.restaurantName,
+      'tableNumber': instance.tableNumber,
+      'otp': instance.otp,
+      'showOtp': instance.showOtp,
+      'showImages': instance.showImages,
     };
 
-_$MenuDataImpl _$$MenuDataImplFromJson(Map<String, dynamic> json) =>
-    _$MenuDataImpl(
-      categories: (json['categories'] as List<dynamic>)
-          .map((e) => Category.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      menuItems: (json['menuItems'] as Map<String, dynamic>).map(
-        (k, e) => MapEntry(
-            k,
-            (e as List<dynamic>)
-                .map((e) => MenuItem.fromJson(e as Map<String, dynamic>))
-                .toList()),
-      ),
-      metadata: MenuMetadata.fromJson(json['metadata'] as Map<String, dynamic>),
+_$ActiveMenuImpl _$$ActiveMenuImplFromJson(Map<String, dynamic> json) =>
+    _$ActiveMenuImpl(
+      menuId: json['menuId'] as String,
+      name: json['name'] as String,
+      isDefault: json['isDefault'] as bool? ?? false,
     );
 
-Map<String, dynamic> _$$MenuDataImplToJson(_$MenuDataImpl instance) =>
+Map<String, dynamic> _$$ActiveMenuImplToJson(_$ActiveMenuImpl instance) =>
     <String, dynamic>{
-      'categories': instance.categories,
-      'menuItems': instance.menuItems,
-      'metadata': instance.metadata,
+      'menuId': instance.menuId,
+      'name': instance.name,
+      'isDefault': instance.isDefault,
+    };
+
+_$SubcategoryImpl _$$SubcategoryImplFromJson(Map<String, dynamic> json) =>
+    _$SubcategoryImpl(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String?,
+      image: json['image'] as String?,
+      parentCategoryId: json['parentCategoryId'] as String?,
+      order: (json['order'] as num?)?.toInt() ?? 0,
+    );
+
+Map<String, dynamic> _$$SubcategoryImplToJson(_$SubcategoryImpl instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'name': instance.name,
+      'description': instance.description,
+      'image': instance.image,
+      'parentCategoryId': instance.parentCategoryId,
+      'order': instance.order,
     };
 
 _$MenuMetadataImpl _$$MenuMetadataImplFromJson(Map<String, dynamic> json) =>
     _$MenuMetadataImpl(
       totalCategories: (json['totalCategories'] as num).toInt(),
       totalMenuItems: (json['totalMenuItems'] as num).toInt(),
+      totalSubcategories: (json['totalSubcategories'] as num?)?.toInt() ?? 0,
+      activeMenuId: json['activeMenuId'] as String?,
     );
 
 Map<String, dynamic> _$$MenuMetadataImplToJson(_$MenuMetadataImpl instance) =>
     <String, dynamic>{
       'totalCategories': instance.totalCategories,
       'totalMenuItems': instance.totalMenuItems,
+      'totalSubcategories': instance.totalSubcategories,
+      'activeMenuId': instance.activeMenuId,
     };
 
 _$CategoryImpl _$$CategoryImplFromJson(Map<String, dynamic> json) =>
@@ -55,8 +81,14 @@ _$CategoryImpl _$$CategoryImplFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String,
-      image: json['image'] as String?,
       order: (json['order'] as num).toInt(),
+      image: json['image'] as String?,
+      subcategories: (json['subcategories'] as List<dynamic>?)
+              ?.map((e) => Subcategory.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      viewType: json['viewType'] as String? ?? 'list',
+      defaultExpanded: json['defaultExpanded'] as bool? ?? true,
     );
 
 Map<String, dynamic> _$$CategoryImplToJson(_$CategoryImpl instance) =>
@@ -64,8 +96,11 @@ Map<String, dynamic> _$$CategoryImplToJson(_$CategoryImpl instance) =>
       'id': instance.id,
       'name': instance.name,
       'description': instance.description,
-      'image': instance.image,
       'order': instance.order,
+      'image': instance.image,
+      'subcategories': instance.subcategories,
+      'viewType': instance.viewType,
+      'defaultExpanded': instance.defaultExpanded,
     };
 
 _$MenuItemImpl _$$MenuItemImplFromJson(Map<String, dynamic> json) =>
@@ -74,6 +109,13 @@ _$MenuItemImpl _$$MenuItemImplFromJson(Map<String, dynamic> json) =>
       categoryId: json['categoryId'] as String,
       meta: MenuItemMeta.fromJson(json['meta'] as Map<String, dynamic>),
       priceInfo: PriceInfo.fromJson(json['priceInfo'] as Map<String, dynamic>),
+      isInStock: json['isInStock'] as bool,
+      isCustomizable: json['isCustomizable'] as bool,
+      primarySubcategoryId: json['primarySubcategoryId'] as String?,
+      subcategoryIds: (json['subcategoryIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
       variants: (json['variants'] as List<dynamic>?)
               ?.map((e) => Variant.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -90,9 +132,9 @@ _$MenuItemImpl _$$MenuItemImplFromJson(Map<String, dynamic> json) =>
               ?.map((e) => e as String)
               .toList() ??
           const [],
-      isInStock: json['isInStock'] as bool,
-      isCustomizable: json['isCustomizable'] as bool,
       quantity: (json['quantity'] as num?)?.toInt() ?? 0,
+      dietaryType: json['dietaryType'] as String?,
+      spiceLevel: json['spiceLevel'] as String?,
     );
 
 Map<String, dynamic> _$$MenuItemImplToJson(_$MenuItemImpl instance) =>
@@ -101,13 +143,17 @@ Map<String, dynamic> _$$MenuItemImplToJson(_$MenuItemImpl instance) =>
       'categoryId': instance.categoryId,
       'meta': instance.meta,
       'priceInfo': instance.priceInfo,
+      'isInStock': instance.isInStock,
+      'isCustomizable': instance.isCustomizable,
+      'primarySubcategoryId': instance.primarySubcategoryId,
+      'subcategoryIds': instance.subcategoryIds,
       'variants': instance.variants,
       'addons': instance.addons,
       'nutritionalInfo': instance.nutritionalInfo,
       'allergenTags': instance.allergenTags,
-      'isInStock': instance.isInStock,
-      'isCustomizable': instance.isCustomizable,
       'quantity': instance.quantity,
+      'dietaryType': instance.dietaryType,
+      'spiceLevel': instance.spiceLevel,
     };
 
 _$MenuItemMetaImpl _$$MenuItemMetaImplFromJson(Map<String, dynamic> json) =>
@@ -115,6 +161,7 @@ _$MenuItemMetaImpl _$$MenuItemMetaImplFromJson(Map<String, dynamic> json) =>
       name: json['name'] as String,
       description: json['description'] as String,
       categoryName: json['categoryName'] as String,
+      primarySubcategoryName: json['primarySubcategoryName'] as String?,
       image: json['image'] as String?,
     );
 
@@ -123,6 +170,7 @@ Map<String, dynamic> _$$MenuItemMetaImplToJson(_$MenuItemMetaImpl instance) =>
       'name': instance.name,
       'description': instance.description,
       'categoryName': instance.categoryName,
+      'primarySubcategoryName': instance.primarySubcategoryName,
       'image': instance.image,
     };
 

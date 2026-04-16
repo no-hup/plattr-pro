@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>table-validateOTP · Secondary Customer</title>
+  <style>
+    body { font-family: 'SFMono-Regular', Consolas, monospace; margin: 24px; line-height: 1.4; }
+    pre { background: #0b1121; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>table-validateOTP</h1>
+  <p><strong>Scenario:</strong> Multi-user flag enabled; secondary user joins the active session.</p>
+
+  <h2>Request</h2>
+  <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "tableId": "table009",
+    "otp": "789012",
+    "phoneNumber": "+919876543210",
+    "name": "Ravi",
+    "userLocation": { "latitude": 12.9717, "longitude": 77.5945 }
+  }
+}</code></pre>
+
+  <h2>Response</h2>
+  <pre><code>{
+  "status": "success",
+  "message": "Joined existing session",
+  "data": {
+    "sessionId": "sess_table009_primary",
+    "addedUser": {
+      "customerId": "cust_ravi",
+      "isPrimary": false
+    },
+    "tableState": "ACTIVE"
+  }
+}</code></pre>
+
+  <h2>Notes</h2>
+  <ul>
+    <li>Requires <code>isMultiUserSupportEnabled=true</code>.</li>
+    <li>Session document appends the new user to <code>users</code> array.</li>
+  </ul>
+</body>
+</html>

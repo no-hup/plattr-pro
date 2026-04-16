@@ -1,63 +1,106 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
-import 'models/order_summary.dart';
+import '../../widgets/server_app_bar_configuration.dart';
+
 import 'repository/order_api_service.dart';
+import 'package:platter_core/platter_core.dart';
 import 'orders_provider.dart';
+import 'models/order_summary.dart';
 import 'order_detail_screen.dart';
+import '../../widgets/order_card.dart';
+import '../../widgets/state_views.dart';
+import '../../shared/status_utils.dart';
 
 class OrdersHomeScreen extends StatefulWidget {
   final String restaurantId;
   final String sessionId;
-  
+  final ValueChanged<ServerAppBarConfiguration>? onAppBarConfigChanged;
+
   const OrdersHomeScreen({
-    Key? key,
+    super.key,
     required this.restaurantId,
     required this.sessionId,
-  }) : super(key: key);
+    this.onAppBarConfigChanged,
+  });
 
   @override
   State<OrdersHomeScreen> createState() => _OrdersHomeScreenState();
 }
 
-class _OrdersHomeScreenState extends State<OrdersHomeScreen> {
+class _OrdersHomeScreenState extends State<OrdersHomeScreen>
+    with SingleTickerProviderStateMixin {
   late final ScrollController _scrollController;
   late final OrdersProvider _ordersProvider;
-  
+  late TabController _tabController;
+
+  // Tab order: My Orders, Ready, Pending, Served, All Orders
+  final List<OrderTab> _tabs = [
+    OrderTab.myOrders,
+    OrderTab.ready,
+    OrderTab.pending,
+    OrderTab.served,
+    OrderTab.allOrders,
+  ];
+
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _ordersProvider = OrdersProvider(apiService: OrderApiService());
-    
+    _tabController = TabController(length: _tabs.length, vsync: this);
+
     // Listen for state changes in the provider
     _ordersProvider.addListener(_handleProviderUpdate);
-    
+
     // Fetch orders when screen is first loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchOrders();
+      _updateAppBarConfig();
     });
   }
-  
+
   @override
   void dispose() {
     _ordersProvider.removeListener(_handleProviderUpdate);
     _ordersProvider.dispose();
     _scrollController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
-  
+
   void _handleProviderUpdate() {
     // Force rebuild when provider state changes
     setState(() {});
   }
-  
-  Future<void> _fetchOrders() async {
-    await _ordersProvider.fetchActiveOrders(
-      restaurantId: widget.restaurantId,
-      sessionId: widget.sessionId,
+
+  void _updateAppBarConfig() {
+    widget.onAppBarConfigChanged?.call(
+      ServerAppBarConfiguration(
+        additionalActions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshOrders,
+            tooltip: 'Refresh Orders',
+          ),
+        ],
+      ),
     );
   }
-  
+
+  Future<void> _fetchOrders() async {
+    await Future.wait([
+      _ordersProvider.fetchActiveOrders(
+        restaurantId: widget.restaurantId,
+        sessionId: widget.sessionId,
+      ),
+      _ordersProvider.fetchServedCarts(
+        restaurantId: widget.restaurantId,
+        sessionId: widget.sessionId,
+      ),
+    ]);
+  }
+
   Future<void> _refreshOrders() async {
     await _ordersProvider.refreshOrders(
       restaurantId: widget.restaurantId,
@@ -65,56 +108,106 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Active Orders'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshOrders,
-          ),
-        ],
-      ),
-      body: AnimatedBuilder(
-        animation: _ordersProvider,
-        builder: (context, child) {
-          return _buildContent(_ordersProvider);
-        },
-      ),
-    );
-  }
-  
-  Widget _buildContent(OrdersProvider provider) {
-    // Handle different states
-    switch (provider.state) {
-      case DataState.initial:
-      case DataState.loading:
-        if (!provider.isRefreshing) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        // Fall through to show content with refresh indicator
-        return _buildOrderList(provider, isRefreshing: true);
-        
-      case DataState.error:
-        if (provider.hasOrders) {
-          // Show error but still display orders
-          return _buildOrderList(provider, hasError: true);
-        }
-        return _buildErrorState(provider.errorMessage);
-        
-      case DataState.loaded:
-        if (!provider.hasOrders) {
-          return _buildEmptyState();
-        }
-        return _buildOrderList(provider);
+  String _getTabLabel(OrderTab tab) {
+    switch (tab) {
+      case OrderTab.myOrders:
+        return 'My Orders';
+      case OrderTab.ready:
+        return 'Ready';
+      case OrderTab.pending:
+        return 'Pending';
+      case OrderTab.served:
+        return 'Served';
+      case OrderTab.allOrders:
+        return 'All Orders';
     }
   }
-  
-  Widget _buildOrderList(OrdersProvider provider, {bool isRefreshing = false, bool hasError = false}) {
-    // This would include the actual order list implementation
-    // For now, just a placeholder
+
+  List<OrderTab> _getVisibleTabs() {
+    final tabs = [..._tabs];
+    // Show "All Orders" only if uiFlags.showAllOrdersTab == true
+    if (!_ordersProvider.uiFlags.showAllOrdersTab) {
+      tabs.remove(OrderTab.allOrders);
+    }
+    return tabs;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ordersProvider,
+      builder: (context, child) {
+        final visibleTabs = _getVisibleTabs();
+
+        // Adjust tab controller if needed
+        if (_tabController.length != visibleTabs.length) {
+          _tabController.dispose();
+          _tabController =
+              TabController(length: visibleTabs.length, vsync: this);
+        }
+
+        return Column(
+          children: [
+            // Category tabs
+            Material(
+              color: Theme.of(context).colorScheme.surface,
+              elevation: 1,
+              child: TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                tabs: visibleTabs
+                    .map((tab) => Tab(text: _getTabLabel(tab)))
+                    .toList(),
+                labelColor: Theme.of(context).colorScheme.primary,
+                unselectedLabelColor:
+                    Theme.of(context).colorScheme.onSurfaceVariant,
+                indicatorColor: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            // Content
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children:
+                    visibleTabs.map((tab) => _buildTabContent(tab)).toList(),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildTabContent(OrderTab tab) {
+    // Handle different states
+    switch (_ordersProvider.state) {
+      case DataState.initial:
+      case DataState.loading:
+        if (!_ordersProvider.isRefreshing) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return _buildCartGrid(tab, isRefreshing: true);
+
+      case DataState.error:
+        if (_ordersProvider.hasOrders) {
+          return _buildCartGrid(tab, hasError: true);
+        }
+        return _buildErrorState(_ordersProvider.errorMessage);
+
+      case DataState.loaded:
+        final cards = _ordersProvider.getCardsForTab(tab);
+        if (cards.isEmpty) {
+          return _buildEmptyState(tab);
+        }
+        return _buildCartGrid(tab);
+    }
+  }
+
+  Widget _buildCartGrid(OrderTab tab,
+      {bool isRefreshing = false, bool hasError = false}) {
+    final cards = _ordersProvider.getCardsForTab(tab);
+
     return RefreshIndicator(
       onRefresh: _refreshOrders,
       child: Column(
@@ -125,18 +218,21 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen> {
               color: Colors.red.shade100,
               width: double.infinity,
               child: Text(
-                'Error: ${provider.errorMessage ?? "Unknown error"}',
+                'Error: ${_ordersProvider.errorMessage ?? "Unknown error"}',
                 style: const TextStyle(color: Colors.red),
               ),
             ),
-          // This would be replaced with actual order list implementation
           Expanded(
-            child: ListView.builder(
+            child: MasonryGridView.count(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: provider.orders.length,
+              padding: const EdgeInsets.all(16),
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              itemCount: cards.length,
               itemBuilder: (context, index) {
-                return _buildOrderItem(provider.orders[index]);
+                return _buildCartCard(cards[index]);
               },
             ),
           ),
@@ -144,133 +240,120 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen> {
       ),
     );
   }
-  
-  Widget _buildOrderItem(OrderSummary order) {
-    final allItems = order.carts.expand((cart) => cart.items).toList();
 
-    // Helper to determine pill color based on status
-    Color _getPillColor(String status) {
-      switch (status.toLowerCase()) {
-        case 'ready':
-          return Colors.green.shade100;
-        case 'preparing':
-          return Colors.orange.shade100;
-        default:
-          return Colors.grey.shade200;
-      }
-    }
+  Widget _buildCartCard(CartCard card) {
+    // Parse cart status color
+    final statusColor = card.cartStatusColorHex.isNotEmpty
+        ? StatusColors.parseHexColor(card.cartStatusColorHex)
+        : StatusColors.getColorForStatus(
+            StatusUtils.parseCartStatus(card.cartStatus));
 
-    // Helper to determine text color for better contrast
-    Color _getTextColor(String status) {
-      switch (status.toLowerCase()) {
-        case 'ready':
-          return Colors.green.shade800;
-        case 'preparing':
-          return Colors.orange.shade800;
-        default:
-          return Colors.grey.shade700;
-      }
-    }
-
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      title: Text('Order #${order.orderId}'),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Table: ${order.tableId} • Status: ${order.status}'),
-          const SizedBox(height: 8),
-          if (allItems.isNotEmpty)
-            Wrap(
-              spacing: 8.0, // Horizontal space between pills
-              runSpacing: 4.0, // Vertical space between lines of pills
-              children: allItems.map((item) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
-                  decoration: BoxDecoration(
-                    color: _getPillColor(item.status),
-                    borderRadius: BorderRadius.circular(20.0), // Cylindrical shape
-                  ),
-                  child: Text(
-                    '${item.quantity}× ${item.name}',
-                    style: TextStyle(
-                      color: _getTextColor(item.status),
-                      fontSize: 12,
-                    ),
-                  ),
-                );
-              }).toList(),
-            )
-          else
-            const Text('No active items in this order.', style: TextStyle(fontStyle: FontStyle.italic)),
-        ],
-      ),
-      // Adjust isThreeLine based on content, or remove if layout handles height dynamically
-      // isThreeLine: true, // This might need adjustment or to be made dynamic
-      onTap: () => _navigateToOrderDetail(order),
+    return OrderCard(
+      tableId: card.tableId,
+      orderId: card.orderId,
+      price: '₹${card.finalPrice.toStringAsFixed(0)}',
+      status: StatusUtils.mapCartStatusToDisplay(card.cartStatus),
+      statusColor: statusColor,
+      items: card.items,
+      maxItems: _ordersProvider.uiFlags.maxItemsInOrderCard,
+      onTap: () => _navigateToOrderDetail(card),
+      onLongPress: () => _handleLongPress(card),
     );
   }
-  
-  void _navigateToOrderDetail(OrderSummary order) {
-    Navigator.push(context, MaterialPageRoute(
-      builder: (context) => OrderDetailScreen(
-        restaurantId: widget.restaurantId,
-        sessionId: widget.sessionId,
-        orderId: order.orderId,
-      ),
-    ));
+
+  void _handleLongPress(CartCard card) async {
+    // Don't allow marking already served carts
+    if (StatusUtils.normalizeCartStatus(card.cartStatus) == 'SERVED') {
+      return;
+    }
+
+    final confirmAction = _ordersProvider.uiFlags.confirmServeCartAction;
+
+    if (confirmAction) {
+      // Show confirmation dialog
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Mark as Served'),
+          content: Text(
+            'Mark this cart from Table ${card.tableId} as served?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Mark Served'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) return;
+    }
+
+    // Mark as served
+    final success = await _ordersProvider.markCartAsServed(
+      restaurantId: widget.restaurantId,
+      orderId: card.orderId,
+      cartIndex: card.cartIndex,
+      sessionId: widget.sessionId,
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success ? 'Cart marked as served' : 'Failed to mark cart as served',
+          ),
+          backgroundColor: success ? Colors.green : Colors.red,
+        ),
+      );
+    }
   }
-  
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.receipt_long, size: 64, color: Colors.grey),
-          const SizedBox(height: 16),
-          const Text(
-            'No active orders',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+
+  void _navigateToOrderDetail(CartCard card) {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OrderDetailScreen(
+            restaurantId: widget.restaurantId,
+            sessionId: widget.sessionId,
+            orderId: card.orderId,
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'New orders will appear here',
-            style: TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _refreshOrders,
-            child: const Text('Refresh'),
-          ),
-        ],
-      ),
+        ));
+  }
+
+  Widget _buildEmptyState(OrderTab tab) {
+    String message;
+    switch (tab) {
+      case OrderTab.ready:
+        message = 'No carts ready for pickup';
+        break;
+      case OrderTab.pending:
+        message = 'No pending carts';
+        break;
+      case OrderTab.served:
+        message = 'No recently served carts';
+        break;
+      default:
+        message = 'No active orders';
+    }
+
+    return EmptyStateWidget(
+      icon: Icons.receipt_long,
+      title: message,
+      subtitle: 'Pull down to refresh',
+      onRefresh: _refreshOrders,
     );
   }
-  
+
   Widget _buildErrorState(String? errorMessage) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 64, color: Colors.red),
-          const SizedBox(height: 16),
-          const Text(
-            'Failed to load orders',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            errorMessage ?? 'Unknown error occurred',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.red),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _fetchOrders,
-            child: const Text('Try Again'),
-          ),
-        ],
-      ),
+    return ErrorStateWidget(
+      message: errorMessage ?? 'Unknown error occurred',
+      onRetry: _fetchOrders,
     );
   }
 }

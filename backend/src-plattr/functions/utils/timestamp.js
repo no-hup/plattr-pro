@@ -5,21 +5,17 @@ const isFirebaseInitialized = (() => {
   try {
     // More robust check to ensure FieldValue.serverTimestamp is a function
     if (!admin || !admin.firestore || typeof FieldValue?.serverTimestamp !== 'function') {
-      console.log('poopoo Firebase Admin SDK not properly initialized, using fallback timestamp methods');
       return false;
     }
-    
+
     // Verify that serverTimestamp actually returns a value
     const testTimestamp = FieldValue.serverTimestamp();
     if (!testTimestamp) {
-      console.log('poopoo FieldValue.serverTimestamp() returns undefined, using fallback timestamp methods');
       return false;
     }
-    
-    console.log('poopoo Firebase Admin SDK properly initialized, serverTimestamp is available');
+
     return true;
   } catch (e) {
-    console.error('Error checking Firebase initialization:', e);
     return false;
   }
 })();
@@ -38,7 +34,7 @@ const getServerTimestamp = () => {
     console.error('Error getting serverTimestamp:', e);
   }
   // Fallback if serverTimestamp isn't available
-  console.log('poopoo Using fallback timestamp implementation');
+  // console.log('poopoo Using fallback timestamp implementation');
   return { _seconds: Math.floor(Date.now() / 1000), _nanoseconds: 0 };
 };
 
@@ -80,9 +76,9 @@ const timestamp = {
       console.error('Error in fromDate:', e);
     }
     // Return a raw timestamp-like object as fallback
-    return { 
-      _seconds: Math.floor(date.getTime() / 1000), 
-      _nanoseconds: 0 
+    return {
+      _seconds: Math.floor(date.getTime() / 1000),
+      _nanoseconds: 0
     };
   },
 
@@ -106,9 +102,9 @@ const timestamp = {
       console.error('Error in fromDateTime:', e);
     }
     // Return a raw timestamp-like object as fallback
-    return { 
-      _seconds: Math.floor(date.getTime() / 1000), 
-      _nanoseconds: 0 
+    return {
+      _seconds: Math.floor(date.getTime() / 1000),
+      _nanoseconds: 0
     };
   },
 
@@ -120,26 +116,26 @@ const timestamp = {
   safeToDate: (timestamp) => {
     try {
       if (!timestamp) return null;
-      
+
       // If it's already a JavaScript Date
       if (timestamp instanceof Date) return timestamp;
-      
+
       // Handle raw Firestore timestamp with _seconds and _nanoseconds
       if (timestamp._seconds !== undefined && typeof timestamp._seconds === 'number') {
         return new Date(timestamp._seconds * 1000);
       }
-      
+
       // If it's a Firestore Timestamp with toDate method
       if (timestamp.toDate && typeof timestamp.toDate === 'function') {
         return timestamp.toDate();
       }
-      
+
       // If it's a string or number representing seconds or milliseconds
       if (typeof timestamp === 'string' || typeof timestamp === 'number') {
         // Try parsing as a date string first
         const dateObj = new Date(timestamp);
         if (!isNaN(dateObj.getTime())) return dateObj;
-        
+
         // If it's a number in seconds (Firestore stores as seconds)
         const seconds = typeof timestamp === 'string' ? Number(timestamp) : timestamp;
         if (!isNaN(seconds)) {
@@ -147,7 +143,7 @@ const timestamp = {
           return new Date(seconds < 10000000000 ? seconds * 1000 : seconds);
         }
       }
-      
+
       console.warn(`Unrecognized timestamp format: ${typeof timestamp}`, JSON.stringify(timestamp));
       return null;
     } catch (error) {
@@ -155,17 +151,17 @@ const timestamp = {
       return null;
     }
   },
-  
+
   /**
    * Creates an ISO date string from a timestamp value, with fallback to default expiry
    * @param {*} timestamp - Timestamp value to convert
    * @param {number} [defaultExpiryHours=4] - Default expiry hours if timestamp is invalid
    * @returns {string} ISO date string
    */
-  toISOString: function(timestamp, defaultExpiryHours = 4) {
+  toISOString: function (timestamp, defaultExpiryHours = 4) {
     try {
       const dateObj = this.safeToDate(timestamp);
-      
+
       if (dateObj) {
         return dateObj.toISOString();
       } else {

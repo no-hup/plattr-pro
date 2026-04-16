@@ -1,18 +1,4 @@
 class SessionState {
-  final String? restaurantId;
-  final String? tableId;
-  final String? userName;
-  final String? phoneNumber;
-  final bool isAuthenticated;
-  final bool isLoading;
-  final String? error;
-  final String? sessionId;
-  final String? sessionExpiresAt;
-  final bool isPrimaryCustomer;
-  final bool otpRequiredForOrder;
-  final bool isUsernameMandatory;
-  final bool isPhoneNumberMandatory;
-  final bool isMultiUserSupported;
 
   const SessionState({
     this.restaurantId,
@@ -30,6 +16,20 @@ class SessionState {
     this.isPhoneNumberMandatory = true,
     this.isMultiUserSupported = false,
   });
+  final String? restaurantId;
+  final String? tableId;
+  final String? userName;
+  final String? phoneNumber;
+  final bool isAuthenticated;
+  final bool isLoading;
+  final String? error;
+  final String? sessionId;
+  final String? sessionExpiresAt;
+  final bool isPrimaryCustomer;
+  final bool otpRequiredForOrder;
+  final bool isUsernameMandatory;
+  final bool isPhoneNumberMandatory;
+  final bool isMultiUserSupported;
 
   SessionState copyWith({
     String? restaurantId,

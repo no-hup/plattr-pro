@@ -12,11 +12,10 @@ class ErrorHandler {
     if (ErrorHandler.instance) {
       return ErrorHandler.instance;
     }
-    
+
     ErrorHandler.instance = this;
-    console.log("poopoo ErrorHandler instance created");
   }
-  
+
   /**
    * Throws a Firebase HttpsError with the appropriate status code and format
    * @param {string} code - Firebase error code
@@ -26,7 +25,7 @@ class ErrorHandler {
    */
   throwError(code, message, details = null) {
     console.log(`poopoo ErrorHandler.throwError - Code: ${code}, Message: ${message}`);
-    
+
     const errorResponse = {
       status: "error",
       message: message,
@@ -35,17 +34,17 @@ class ErrorHandler {
         httpCode: httpStatusCodes.getHttpCode(code)
       }
     };
-    
+
     if (details) {
       // Add any additional details to the data object
       Object.assign(errorResponse.data, details);
       console.log(`poopoo ErrorHandler.throwError - Details: ${JSON.stringify(details)}`);
     }
-    
+
     console.log(`poopoo ErrorHandler.throwError - Throwing error with code: ${code}`);
     throw new functions.https.HttpsError(code, message, errorResponse);
   }
-  
+
   /**
    * Throws a 400 Bad Request error
    * @param {string} [message] - Error message, defaults to a standard message
@@ -56,7 +55,7 @@ class ErrorHandler {
     console.log(`poopoo ErrorHandler.badRequest - Message: ${message}`);
     this.throwError('invalid-argument', message, details);
   }
-  
+
   /**
    * Throws a 401 Unauthorized error
    * @param {string} [message] - Error message, defaults to a standard message
@@ -67,7 +66,7 @@ class ErrorHandler {
     console.log(`poopoo ErrorHandler.unauthorized - Message: ${message}`);
     this.throwError('unauthenticated', message, details);
   }
-  
+
   /**
    * Throws a 403 Forbidden error
    * @param {string} [message] - Error message, defaults to a standard message
@@ -78,7 +77,7 @@ class ErrorHandler {
     console.log(`poopoo ErrorHandler.forbidden - Message: ${message}`);
     this.throwError('permission-denied', message, details);
   }
-  
+
   /**
    * Throws a 404 Not Found error
    * @param {string} [message] - Error message, defaults to a standard message
@@ -89,7 +88,7 @@ class ErrorHandler {
     console.log(`poopoo ErrorHandler.notFound - Message: ${message}`);
     this.throwError('not-found', message, details);
   }
-  
+
   /**
    * Throws a 412 Precondition Failed error
    * @param {string} [message] - Error message, defaults to a standard message
@@ -100,7 +99,17 @@ class ErrorHandler {
     console.log(`poopoo ErrorHandler.preconditionFailed - Message: ${message}`);
     this.throwError('failed-precondition', message, details);
   }
-  
+
+  /**
+   * Throws a 409 Conflict error
+   * @param {string} [message] - Error message, defaults to a standard message
+   * @param {Object} [details] - Additional error details
+   * @throws {functions.https.HttpsError} Firebase HttpsError with already-exists code
+   */
+  conflict(message = 'Resource already exists', details = null) {
+    this.throwError('already-exists', message, details);
+  }
+
   /**
    * Throws a 500 Internal Server Error
    * @param {string} [message] - Error message, defaults to a standard message
@@ -111,7 +120,7 @@ class ErrorHandler {
     console.log(`poopoo ErrorHandler.internalError - Message: ${message}`);
     this.throwError('internal', message, details);
   }
-  
+
   /**
    * Handles errors in a standardized way for Cloud Functions
    * @param {Error} error - The error to handle
@@ -122,11 +131,11 @@ class ErrorHandler {
   handleError(error, functionName, context = {}) {
     console.error(`Error in ${functionName}:`, error);
     console.error(`Stack trace: ${error.stack || 'No stack trace available'}`);
-    
+
     // If already a Firebase HttpsError, ensure it follows the standardized format
     if (error instanceof functions.https.HttpsError) {
       console.log(`poopoo ErrorHandler.handleError - Handling Firebase HttpsError with code: ${error.code}`);
-      
+
       // Check if the error details are already in the standardized format
       if (error.details && error.details.status === 'error' && error.details.data) {
         // Already standardized, just add context if provided
@@ -135,7 +144,7 @@ class ErrorHandler {
         }
         throw error;
       }
-      
+
       // Otherwise, reformat to standardized structure
       const errorResponse = {
         status: 'error',
@@ -146,17 +155,17 @@ class ErrorHandler {
           ...context
         }
       };
-      
+
       // If there were original details, merge them into the data
       if (error.details) {
-        Object.assign(errorResponse.data, 
+        Object.assign(errorResponse.data,
           typeof error.details === 'object' ? error.details : { originalDetails: error.details }
         );
       }
-      
+
       throw new functions.https.HttpsError(error.code, error.message, errorResponse);
     }
-    
+
     // Handle specific error types with standardized structure
     if (error.name === 'ValidationError') {
       console.log(`poopoo ErrorHandler.handleError - Handling ValidationError: ${error.message}`);

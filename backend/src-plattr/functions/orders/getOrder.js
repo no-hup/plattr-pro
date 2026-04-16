@@ -5,8 +5,11 @@ const admin = require('../admin/initializeAdmin');
 const db = admin.firestore();
 const { Timestamp } = require("firebase-admin/firestore");
 const { ORDER_STATUS } = require('./orderConstants');
+const { mapOrderStatus } = require('../utils/statusUtils');
 const OrderInputValidation = require('./orderInputValidation');
 const timestamp = require('../utils/timestamp');
+const ResponseBuilder = require('../utils/ResponseBuilder');
+const errorHandler = require('../singleton/ErrorHandler');
 
 /**
  * Unified order retrieval function that can:
@@ -19,9 +22,8 @@ const timestamp = require('../utils/timestamp');
  * @param {Object} data - Input data with restaurantId, tableId or orderId, getAllOrders (optional), activeOnly (optional), sessionId (optional)
  */
 const getOrder = functions.https.onCall(async (data, context) => {
+  const requestData = data?.data || data || {};
   try {
-    const requestData = data.data || data;
-    
     console.log("poopoo Received order request:", JSON.stringify(requestData));
     
     // TODO: Re-enable auth check when ready
@@ -53,10 +55,10 @@ const getOrder = functions.https.onCall(async (data, context) => {
       
       const sessionDoc = await sessionRef.get();
       if (!sessionDoc.exists || sessionDoc.data().status !== 'active') {
-        throw new functions.https.HttpsError(
-          'failed-precondition',
-          'Invalid or inactive session'
-        );
+        errorHandler.preconditionFailed('Invalid or inactive session', {
+          restaurantId,
+          sessionId
+        });
       }
     }
     
@@ -69,10 +71,7 @@ const getOrder = functions.https.onCall(async (data, context) => {
       const orderDoc = await orderRef.get();
       
       if (!orderDoc.exists) {
-        throw new functions.https.HttpsError(
-          'not-found',
-          'Order not found'
-        );
+        errorHandler.notFound('Order not found', { restaurantId, orderId });
       }
       
       const orderData = orderDoc.data();
@@ -80,11 +79,10 @@ const getOrder = functions.https.onCall(async (data, context) => {
       
       console.log(`poopoo Retrieved order ${orderDoc.id} successfully`);
       
-      return {
-        status: "success",
-        message: "Order retrieved successfully",
-        data: sanitizedOrder
-      };
+      return ResponseBuilder.success(
+        sanitizedOrder,
+        "Order retrieved successfully"
+      );
     } 
     // CASE 2 & 3: Get orders by table
     else if (tableId) {
@@ -109,22 +107,32 @@ const getOrder = functions.https.onCall(async (data, context) => {
           .collection("orders")
           .where('tableId', '==', tableId)
           .orderBy('createdAt', 'desc');
-        
+
         if (activeOnly) {
-          ordersQuery = ordersQuery.where('orderStatus', 'in', 
-            ["PLACED", "PREPARING", "READY", "PENDING", ORDER_STATUS.ACTIVE]);
+          const activeStatusFilters = [
+            ORDER_STATUS.PENDING,
+            ORDER_STATUS.IN_PROGRESS,
+            'pending',
+            'in_progress',
+            'PLACED',
+            'PREPARING',
+            'READY',
+            'active',
+            'ACTIVE'
+          ];
+
+          ordersQuery = ordersQuery.where('orderStatus', 'in', activeStatusFilters);
         }
         
         const ordersSnapshot = await ordersQuery.get();
         
         if (ordersSnapshot.empty) {
-          return {
-            status: "success",
-            message: activeOnly ? 
+          return ResponseBuilder.success(
+            [],
+            activeOnly ? 
               "No active orders found for this table" : 
-              "No orders found for this table",
-            data: []
-          };
+              "No orders found for this table"
+          );
         }
         
         // Safely extract data from Firestore documents
@@ -137,27 +145,36 @@ const getOrder = functions.https.onCall(async (data, context) => {
         
         console.log(`poopoo Returning ${orders.length} orders for table ${tableId}`);
         
-        return {
-          status: "success",
-          message: "Orders retrieved successfully",
-          data: orders
-        };
+        return ResponseBuilder.success(
+          orders,
+          "Orders retrieved successfully"
+        );
       } 
       // Get just the most recent active order
       else {
         const ordersSnapshot = await db.collection("restaurants").doc(restaurantId)
           .collection("orders")
           .where("tableId", "==", tableId)
-          .where("orderStatus", "in", ["PLACED", "PREPARING", "READY", "PENDING", ORDER_STATUS.ACTIVE])
+          .where('orderStatus', 'in', [
+            ORDER_STATUS.PENDING,
+            ORDER_STATUS.IN_PROGRESS,
+            'pending',
+            'in_progress',
+            'PLACED',
+            'PREPARING',
+            'READY',
+            'active',
+            'ACTIVE'
+          ])
           .orderBy("createdAt", "desc")
           .limit(1)
           .get();
           
         if (ordersSnapshot.empty) {
-          throw new functions.https.HttpsError(
-            'not-found',
-            `No active order found for table ${tableId}`
-          );
+          errorHandler.notFound(`No active order found for table ${tableId}`, {
+            restaurantId,
+            tableId
+          });
         }
         
         const orderDoc = ordersSnapshot.docs[0];
@@ -166,24 +183,19 @@ const getOrder = functions.https.onCall(async (data, context) => {
         
         console.log(`poopoo Retrieved most recent active order ${orderDoc.id} for table ${tableId}`);
         
-        return {
-          status: "success",
-          message: "Order retrieved successfully",
-          data: sanitizedOrder
-        };
+        return ResponseBuilder.success(
+          sanitizedOrder,
+          "Order retrieved successfully"
+        );
       }
     }
   } catch (error) {
     console.error("Error in getOrder:", error.message);
-    
-    if (error instanceof functions.https.HttpsError) {
-      throw error;
-    }
-    
-    throw new functions.https.HttpsError(
-      'internal',
-      error.message || 'An error occurred while retrieving order(s)'
-    );
+    errorHandler.handleError(error, "getOrder", {
+      restaurantId: requestData?.restaurantId,
+      tableId: requestData?.tableId,
+      orderId: requestData?.orderId
+    });
   }
 });
 
@@ -197,15 +209,20 @@ function sanitizeOrderData(id, orderData) {
   return {
     id: id,
     orderNumber: orderData.orderNumber || '',
-    orderStatus: orderData.orderStatus || '',
-    createdAt: orderData.createdAt instanceof Timestamp ? 
+    orderStatus: mapOrderStatus(orderData.orderStatus || orderData.status || ''),
+    createdAt: orderData.createdAt instanceof Timestamp ?
       orderData.createdAt.toDate().toISOString() : orderData.createdAt || '',
-    updatedAt: orderData.updatedAt instanceof Timestamp ? 
+    updatedAt: orderData.updatedAt instanceof Timestamp ?
       orderData.updatedAt.toDate().toISOString() : orderData.updatedAt || '',
     tableId: orderData.tableId || '',
     restaurantId: orderData.restaurantId || '',
     sessionId: orderData.sessionId || null,
-    total: orderData.total || 0,
+    total: orderData.priceInfo?.finalPrice || 0,
+    // Offers V2: expose full priceInfo (incl. offerDiscount) and appliedOffer
+    // so the consumer UI can show a "Saved ₹X with [title]!" banner.
+    priceInfo: orderData.priceInfo || null,
+    offerDiscount: orderData.priceInfo?.offerDiscount || 0,
+    appliedOffer: orderData.appliedOffer || null,
     items: Array.isArray(orderData.items) ? orderData.items.map(item => ({
       menuItemId: item.menuItemId || '',
       name: item.name || (item.menuItem?.meta?.name || ''),

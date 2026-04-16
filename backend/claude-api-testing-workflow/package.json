@@ -1,0 +1,10 @@
+{
+  "name": "claude-api-testing-workflow",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "E2E API test suite for Plattr Pro backend, executable by AI agents",
+  "scripts": {
+    "test": "node run.js",
+    "test:suite": "node run.js --suite"
+  }
+}

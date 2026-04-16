@@ -35,13 +35,13 @@ class ApiResponseFreezed<T> with _$ApiResponseFreezed<T> {
 
 @freezed
 class ErrorDetailsFreezed with _$ErrorDetailsFreezed {
-  const ErrorDetailsFreezed._();
   
   const factory ErrorDetailsFreezed({
     required String message,
     required String code,
     Map<String, dynamic>? details,
   }) = _ErrorDetailsFreezed;
+  const ErrorDetailsFreezed._();
 
   // Manual fromJson function since we're handling special cases
   static ErrorDetailsFreezed fromJson(Map<String, dynamic> json) {
@@ -159,7 +159,7 @@ class ApiResponseParser {
     switch (errorCode) {
       case 'not-found': return 'Resource not found. Please check your input.';
       case 'invalid-argument': return 'Invalid input. Please check your information.';
-      case 'permission-denied': return 'You don\'t have permission to perform this action.';
+      case 'permission-denied': return "You don't have permission to perform this action.";
       case 'timeout_error': return 'Connection timeout. Please check your network.';
       case 'connection_error': return 'Connection error. Please check your internet connection.';
       case 'parse_error': return 'There was an error processing the response.';

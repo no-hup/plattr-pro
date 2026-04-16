@@ -1,0 +1,262 @@
+@startuml Cart_Order_Flow_Complete
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam maxmessagesize 300
+skinparam noteFontSize 11
+skinparam participantPadding 20
+
+title **Plattr - Cart, Pricing & Order Flow**\n(Onboarding Reference for New Developers)
+
+' ============================================================
+'  PARTICIPANTS
+' ============================================================
+actor "Customer App" as Client #LightBlue
+participant "addItemToCart" as AddItem #LightGreen
+participant "calculateItemPrice" as CalcItem #LightYellow
+participant "calculateCartValue" as CalcCart #LightYellow
+participant "checkoutCart" as Checkout #Orange
+participant "validateCart" as Validate #PeachPuff
+participant "createOrUpdateOrder" as OrderService #Salmon
+database "Firestore" as DB #LightGray
+participant "orderTriggers" as Triggers #Plum
+participant "sendFCMNotification" as FCM #Pink
+actor "Server/Waiter App" as ServerApp #LightCoral
+
+' ============================================================
+'  SECTION 1: ADD ITEM TO CART
+' ============================================================
+== **Phase 1: Add Item to Cart** ==
+
+Client -> AddItem: addItemToCart(\n  restaurantId, tableId, menuItemId,\n  quantity, selectedVariants, selectedAddons,\n  sessionId)
+
+note right of AddItem #LightCyan
+  **Feature Flag Check**
+  ""fallbackToSameCustomConfigurationForAddItem""
+  If enabled AND item already in cart:
+    → Inherit existing item's variants/addons
+end note
+
+AddItem -> DB: Fetch menuItem doc
+DB --> AddItem: menuItem { priceInfo, variants[], addons[] }
+
+AddItem -> DB: Fetch variant & addon docs (parallel)
+DB --> AddItem: Variant details, Addon details
+
+note right of AddItem #Wheat
+  **Variant & Addon Processing**
+  • Validate mandatory variants selected
+  • Extract priceInfo for each
+  • Check ""respectParentDiscount"" flag
+end note
+
+AddItem -> CalcItem: calculateItemPrice(\n  menuItem, selectedVariants, selectedAddons)
+
+note over CalcItem #LightYellow
+  **Price Calculation Logic**
+  ─────────────────────────────
+  1. **Item Base**: menuItem.priceInfo.basePrice
+  2. **Item Discount**: menuItem.priceInfo.discount (%)
+  3. **Item Final**: basePrice * (1 - discount/100)
+
+  **For Each Variant/Addon:**
+  IF respectParentDiscount == true:
+    → variantFinal = variantBase * (1 - **itemDiscount**/100)
+  ELSE:
+    → variantFinal = variant's own finalPrice
+
+  **Totals:**
+  totalBase = itemBase + Σ(variantBase) + Σ(addonBase)
+  totalFinal = itemFinal + Σ(variantFinal) + Σ(addonFinal)
+  discountAmount = totalBase - totalFinal
+end note
+
+CalcItem --> AddItem: { priceInfo: CartItemPriceInfo }
+
+note right of AddItem #LightCyan
+  **Feature Flag Check**
+  ""isMultipleVariantOrAddonForMenuItemsSupported""
+  If **false**:
+    → Cannot add same item with different config
+    → Returns error with existing item details
+end note
+
+AddItem -> AddItem: findIdenticalItemInCart()
+alt Identical item exists
+  AddItem -> AddItem: existingItem.quantity += quantity
+  AddItem -> AddItem: Recalculate priceInfo for new quantity
+else New item
+  AddItem -> AddItem: cart.items.push(newItem)
+end
+
+AddItem -> CalcCart: calculateCartValue(cart)
+
+note over CalcCart #LightYellow
+  **Cart Total Calculation**
+  ───────────────────────────
+  Loop through all items (skip cancelled):
+  • Accumulate: basePrice, finalPrice
+  • Accumulate: totalVariantBasePrice
+  • Accumulate: totalAddonBasePrice
+
+  **Cart Discount:**
+  totalDiscountAmount = basePrice - finalPrice
+  totalDiscount (%) = (discountAmount / basePrice) * 100
+end note
+
+CalcCart --> AddItem: CartTotalPriceInfo
+
+AddItem -> DB: **Transaction**: Set cart doc with\n  items[], priceInfo, sessionId, lastUpdated
+DB --> AddItem: Success
+
+AddItem --> Client: { status: "success", cart: {...} }
+
+' ============================================================
+'  SECTION 2: CHECKOUT FLOW
+' ============================================================
+== **Phase 2: Checkout Cart** ==
+
+Client -> Checkout: checkoutCart(\n  restaurantId, tableId, sessionId, notes)
+
+Checkout -> DB: Validate session exists & is active
+DB --> Checkout: Session valid ✓
+
+Checkout -> DB: Fetch cart doc
+DB --> Checkout: cart { items[], priceInfo }
+
+alt Cart empty or not found
+  Checkout --> Client: ERROR: "No active cart found"
+end
+
+Checkout -> Validate: validateCart(cart)
+
+note over Validate #PeachPuff
+  **Validation Checks**
+  ───────────────────────
+  For each item:
+  1. itemFinal ≈ (itemBase + variantBase + addonBase) * (1 - discount%)
+  2. totalBase ≈ itemBase * quantity
+  3. finalPrice ≈ itemFinal * quantity
+
+  For cart totals:
+  4. cart.basePrice ≈ Σ(item.totalBasePrice)
+  5. cart.finalPrice ≈ Σ(item.finalPrice)
+
+  **Tolerance**: 0.01 (for floating point)
+end note
+
+alt Validation FAILS
+  note right of Checkout #Tomato
+    **⚠️ Known Issue**
+    Prices are recalculated in-memory
+    but NOT saved back to Firestore.
+    If order creation fails later,
+    cart remains with stale data.
+  end note
+  Checkout -> CalcCart: Recalculate prices (in-memory only)
+  CalcCart --> Checkout: Fixed priceInfo
+end
+
+Checkout -> DB: validateMenuItemsStock(items)
+DB --> Checkout: stockStatus[]
+
+alt Any item out of stock
+  Checkout --> Client: ERROR: "Items out of stock: [names]"
+end
+
+note right of Checkout #Khaki
+  **⚠️ Race Condition (Tech Debt)**
+  Stock check happens BEFORE transaction.
+  Item could go out of stock between
+  validation and order write.
+end note
+
+Checkout -> OrderService: createOrUpdateOrder(\n  restaurantId, tableId, cart,\n  userId, notes, sessionId)
+
+' ============================================================
+'  SECTION 3: ORDER CREATION
+' ============================================================
+== **Phase 3: Create/Update Order** ==
+
+OrderService -> DB: **Transaction Start**\nQuery orders where tableId == X\nAND status IN (PENDING, IN_PROGRESS)
+
+alt Existing active order found
+  note over OrderService #LightGreen
+    **Append Cart to Order**
+    • order.carts.push(cartSnapshot)
+    • order.items.push(...normalizedItems)
+    • Recalculate total priceInfo
+    • Concatenate notes
+  end note
+  OrderService -> DB: Update order doc
+else No active order
+  note over OrderService #LightGreen
+    **Create New Order**
+    • Generate orderNumber (ORD-00001)
+    • Initialize carts: [cartSnapshot]
+    • Set orderStatus: IN_PROGRESS
+    • Set paymentStatus: UNPAID
+  end note
+  OrderService -> DB: Create new order doc
+end
+
+OrderService -> DB: **Transaction End**
+DB --> OrderService: order { id, orderNumber, ... }
+
+OrderService --> Checkout: order
+
+Checkout -> DB: clearCartInternal(restaurantId, tableId)
+note right of Checkout #Tomato
+  **⚠️ Potential Duplicate Order**
+  If clearCart fails but order was created,
+  user sees success but cart is still full.
+  Re-checkout = duplicate order!
+end note
+
+Checkout --> Client: { orderId, orderNumber, status: IN_PROGRESS }
+
+' ============================================================
+'  SECTION 4: TRIGGERS & NOTIFICATIONS
+' ============================================================
+== **Phase 4: Firestore Triggers & Notifications** ==
+
+DB -[#blue]> Triggers: ""onOrderPlaced"" (order doc created)
+
+note over Triggers #Plum
+  **Feature Flag Check**
+  ""sendServerNotifications""
+  If disabled → skip all notifications
+end note
+
+Triggers -> DB: Fetch table doc (get serverId)
+DB --> Triggers: table { serverId? }
+
+alt No serverId assigned
+  note over Triggers #LightGreen
+    **Auto-Assign Server**
+    Query servers where status == 'active'
+    Pick first available
+    Update table.serverId
+    Update server.assignedTables[]
+  end note
+  Triggers -> DB: Update table & server
+end
+
+Triggers -> DB: Fetch server doc (get FCM token)
+DB --> Triggers: server { fcmToken, ... }
+
+alt FCM token exists
+  Triggers -> FCM: Send notification\n  title: "New Order Placed"\n  body: "Table X: [Item Names]"
+  FCM -> ServerApp: Push Notification 📱
+end
+
+...Later, kitchen marks cart as READY...
+
+DB -[#blue]> Triggers: ""onOrderUpdated""\n(cart.status changed to READY)
+
+Triggers -> DB: Fetch table & server (same logic)
+Triggers -> FCM: Send notification\n  title: "Order Ready"\n  body: "Table X Ready: [Item Names]"
+FCM -> ServerApp: Push Notification 📱
+
+@enduml

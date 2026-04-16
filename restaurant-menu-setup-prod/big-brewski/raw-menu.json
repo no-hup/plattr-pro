@@ -1,0 +1,387 @@
+{
+  "restaurant": "Big Brewski",
+  "service_charge": "7.5%",
+  "menu": [
+    {
+      "category": "Baos",
+      "items": [
+        {
+          "name": "Chilli Paneer Bao",
+          "price": 265,
+          "description": "Spicy paneer and peppers in a savory soy glaze, topped with crispy garlic, served in soft, pillowy open-face baos for the perfect bite."
+        },
+        {
+          "name": "Chilli Chicken Bao",
+          "price": 265,
+          "description": "Freshly steamed open-faced baos, stuffed with zesty street-style chili chicken for a burst of flavor."
+        },
+        {
+          "name": "Naga Pork Bao",
+          "price": 285,
+          "description": "Soft, steamed open-faced baos filled with stir-fried pork, infused with the fiery heat of Naga chili."
+        },
+        {
+          "name": "Lamb Bulgogi Bao",
+          "price": 325,
+          "description": "Steamed open-faced baos filled with tender Korean barbecue grilled lamb, bursting with smoky, savory flavors."
+        }
+      ]
+    },
+    {
+      "category": "Tacos",
+      "items": [
+        {
+          "name": "Grilled Baby Corn",
+          "price": 250,
+          "description": "Khakhra tacos filled with grilled baby corn, creamy guacamole, and tangy sour cream for a satisfying crunch."
+        },
+        {
+          "name": "Coastal Chicken",
+          "price": 250,
+          "description": "Khakhra tacos filled with curried chicken, sweet apricot chutney, and zesty raw mango salsa for a flavorful fusion."
+        },
+        {
+          "name": "Kickin' Pork",
+          "price": 275,
+          "description": "Khakhra tacos filled with spicy, tangy curried pork and a kick of spicy pear salsa for a bold, flavorful bite."
+        },
+        {
+          "name": "Mojito Prawns",
+          "price": 295,
+          "description": "Khakhra taco filled with grilled prawns, topped with a refreshing mint and rum glaze for a burst of flavor."
+        }
+      ]
+    },
+    {
+      "category": "Wings",
+      "items": [
+        {
+          "name": "Zesty Fried Wings",
+          "price": {
+            "6pcs": 295,
+            "12pcs": 495
+          },
+          "description": "Crispy, tangy, and perfectly seasoned, these fried wings pack a bold burst of flavor in every bite."
+        },
+        {
+          "name": "BBQ Blue Cheese",
+          "price": {
+            "6pcs": 315,
+            "12pcs": 545
+          },
+          "description": "Crispy fried chicken wings tossed in tangy barbecue sauce and finished with a creamy blue cheese drizzle for irresistible flavor."
+        },
+        {
+          "name": "Chili Cilantro",
+          "price": {
+            "6pcs": 285,
+            "12pcs": 525
+          },
+          "description": "Marinated in coriander, chilies, and herbs, then grilled to perfection."
+        },
+        {
+          "name": "Byg Garlic Parmesan",
+          "price": {
+            "6pcs": 295,
+            "12pcs": 545
+          },
+          "description": "Delightful patty of vegetables and mushrooms with cheese, grilled onions and jalapeno."
+        },
+        {
+          "name": "Platter Of Wings",
+          "price": 845,
+          "description": "Indulge in our curated platter of magical chicken wings, where you no longer have to choose—enjoy them all! This journey of bold spices and secret recipes takes you through our chef's wildest chicken experiments, each bite a flavorful adventure."
+        }
+      ]
+    },
+    {
+      "category": "Buff",
+      "items": [
+        {
+          "name": "Byg Stir Fried Beef Chilli",
+          "price": 365,
+          "description": "Tender, succulent sliced beef tossed with capsicum, onion, soy, and chili – a BYG Brewski favorite!"
+        },
+        {
+          "name": "Beef Suya Kebab",
+          "price": 315,
+          "description": "Freshly steamed open faced baos filled with the street style chilli chicken."
+        }
+      ]
+    },
+    {
+      "category": "Grills",
+      "items": [
+        {
+          "name": "Grilled Cottage Cheese Steak",
+          "price": {
+            "full": 255,
+            "half": 165
+          },
+          "description": "Sumac-beetroot marinated paneer steak, with earthy, tangy flavors."
+        },
+        {
+          "name": "Lemon Paprika Chicken",
+          "price": {
+            "full": 345,
+            "half": 235
+          },
+          "description": "Our tapas-style grilled chicken – truly legendary!"
+        },
+        {
+          "name": "Rauch and BBQ Pork Ribs",
+          "price": {
+            "3pcs": 385,
+            "2pcs": 295
+          },
+          "description": "Fall-off-the-bone back ribs, slow-cooked in a bold, spiced beer BBQ sauce for an unforgettable flavor."
+        },
+        {
+          "name": "Chimichurri Fish",
+          "price": {
+            "full": 365,
+            "half": 225
+          },
+          "description": "Our Chefs favourite- loaded with buttery garlic and parmesan. These finger licking morsels are your one-way ticket to paradise. Served with creamy tomato mustard."
+        },
+        {
+          "name": "Peppered Tenderloin Medallions",
+          "price": {
+            "full": 395,
+            "half": 245
+          },
+          "description": "Tender, melt-in-your-mouth beef medallions, perfectly complemented by a rich, velvety red wine jus."
+        }
+      ],
+      "add_ons": [
+        { "name": "Mash Potato", "price": 75 },
+        { "name": "Spanish Rice", "price": 75 },
+        { "name": "Summer Salad", "price": 55 }
+      ]
+    },
+    {
+      "category": "Smash Burger",
+      "items": [
+        {
+          "name": "Blaze Bean Burger",
+          "price": 295,
+          "description": "Treat your tastebuds to a foodgasm with a spiced bean patty, grilled vegetables, and zesty bell pepper salsa."
+        },
+        {
+          "name": "Pesto Chick-Cluck Burger",
+          "price": 345,
+          "description": "Smashed chicken patty topped with basil pesto, grilled onions, and gooey melted cheese."
+        },
+        {
+          "name": "Spiced Lamb Burger",
+          "price": 365,
+          "description": "Savor the ultimate spicy, flavorful lamb burger, topped with roasted bell pepper salsa and served in a brioche bun, featuring our chef's secret gourmet recipe!"
+        },
+        {
+          "name": "Works Beef Burger",
+          "price": 345,
+          "description": "Double beef patty with caramelized onions, Chimichurri salsa, melted cheese, and house-made pickles for a mouthwatering bite."
+        }
+      ],
+      "add_ons": [
+        { "name": "Fried egg", "price": 25 },
+        { "name": "Cheese", "price": 55 },
+        { "name": "Bacon", "price": 95 }
+      ]
+    },
+    {
+      "category": "Pizza",
+      "subcategories": [
+        {
+          "name": "Thin Crust",
+          "items": [
+            {
+              "name": "Margherita",
+              "price": 445,
+              "description": "Italian pomodoro, melted mozzarella, tomato and jalapeno relish, fresh basil, and a drizzle of olive oil for a burst of flavor."
+            },
+            {
+              "name": "Mediterranean Bliss",
+              "price": 465,
+              "description": "Roasted bell peppers, broccoli, sundried tomato, grilled onion, kalamata olives, and jalapeno, finished with parmesan, arugula, and feta for a vibrant, satisfying bite."
+            }
+          ]
+        },
+        {
+          "name": "Sourdough",
+          "items": [
+            {
+              "name": "Vegan Senorita (no cheese)",
+              "price": 445,
+              "description": "For the vegans, a classic pizza topped with non-dairy cheese for a delicious, plant-based twist."
+            },
+            {
+              "name": "Caprino",
+              "price": 465,
+              "description": "Sundried tomato pesto, prunes, goat cheese, arugula, and walnuts for a savory, tangy and nutty combination."
+            },
+            {
+              "name": "Four Cheese",
+              "price": 495,
+              "description": "A rich blend of buffalo mozzarella, blue cheese, camembert, and parmesan for a cheesy indulgence."
+            },
+            {
+              "name": "Triple Mushrooms",
+              "price": 495,
+              "description": "Tomato sauce topped with a trio of mushrooms sautéed with thyme and triple beer, finished with a drizzle of truffle oil."
+            }
+          ]
+        }
+      ],
+      "add_ons": [
+        { "name": "Exotic vegetables", "price": 45 },
+        { "name": "Cheese", "price": 55 },
+        { "name": "Chicken", "price": 75 },
+        { "name": "Chicken sausage", "price": 75 },
+        { "name": "Bacon", "price": 95 }
+      ]
+    },
+    {
+      "category": "Pastas",
+      "items": [
+        {
+          "name": "Creamy Alfredo",
+          "price": 345,
+          "description": "The classic Alfredo, made with creamy sauce, parmesan, fresh herbs, and a touch of olives for added depth."
+        },
+        {
+          "name": "Italian Arrabiata",
+          "price": 325,
+          "description": "The quintessential Italian pasta tossed in a fiery tomato sauce, with olives and fresh basil for a vibrant, authentic flavor."
+        },
+        {
+          "name": "Spaghetti Aglio E Olio Peperoncino",
+          "price": 325,
+          "description": "An all-time classic with garlic, chili, olive oil, and fresh herbs for a simple yet irresistible flavor."
+        },
+        {
+          "name": "Spaghetti Lamb Ragout",
+          "price": 345,
+          "description": "A refined twist on the classic Italian favorite, infused with the smoky depth of Rauchbier."
+        }
+      ],
+      "add_ons": [
+        { "name": "Exotic vegetables", "price": 45 },
+        { "name": "Parmesan on side", "price": 65 },
+        { "name": "Chicken", "price": 75 },
+        { "name": "Chicken sausage", "price": 75 },
+        { "name": "Bacon", "price": 95 },
+        { "name": "Prawns", "price": 125 }
+      ]
+    },
+    {
+      "category": "Heart-Warmers",
+      "items": [
+        {
+          "name": "Beer Paella",
+          "description": "This Spanish saffron and rice dish, brimming with bold aromas and vibrant flavors, is simmered with beer for an unforgettable twist!",
+          "options": [
+            { "type": "Vegetarian", "price": 275 },
+            { "type": "Chicken", "price": 325 },
+            { "type": "Seafood", "price": 365 },
+            { "type": "Chorizo", "price": 365 }
+          ]
+        },
+        {
+          "name": "Mushroom Stroganoff",
+          "price": 325,
+          "description": "A one-pot nostalgic delight, featuring mushrooms simmered in wine and onion reduction, served with fragrant herbed rice."
+        },
+        {
+          "name": "Hillside Chicken Curry",
+          "price": 295,
+          "description": "A light recipe from the hills, featuring chicken cooked with bamboo shoots, potatoes, and chilies, served with fragrant cumin rice."
+        },
+        {
+          "name": "Tomatillo Lamb Stew",
+          "price": 375,
+          "description": "The tangy brightness of green tomatoes paired with tender lamb and mild spices, served with soft, pull-apart bread."
+        },
+        {
+          "name": "Burnt Garlic Fried Rice",
+          "description": "A street-style Indo-Chinese comfort dish, bursting with familiar flavors and a touch of spice.",
+          "options": [
+            { "type": "Chili Paneer", "price": 295 },
+            { "type": "Chili Chicken", "price": 325 },
+            { "type": "Chili Pork", "price": 335 }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Desserts",
+      "items": [
+        {
+          "name": "Gourmet Ice Cream",
+          "price": 195,
+          "options": ["Fresh Blueberry", "Guava Chilli", "Coffee", "Rum & Raisin"]
+        },
+        {
+          "name": "Classic Ice Cream",
+          "price": 115,
+          "options": ["Vanilla", "Chocolate", "Strawberry"]
+        },
+        {
+          "name": "Devil's Chocolate Cake",
+          "price": 295,
+          "description": "Chocolate fudge cake soaked in rum, layered with dark chocolate truffle and mascarpone cream for a rich, indulgent treat."
+        },
+        {
+          "name": "Tres Leches",
+          "price": 295,
+          "description": "A classic Latin-American tres leches cake, soaked in three kinds of milk for a rich, creamy indulgence."
+        },
+        {
+          "name": "Five-Star Fudge",
+          "price": 285,
+          "description": "A decadent, melt in mouth chocolate brownie with a rich velvety texture."
+        },
+        {
+          "name": "Mulberry Dark Chocolate Mousse",
+          "price": 295,
+          "description": "Mulberry meets Callebaut dark chocolate to present a perfect medley of flavours in this mousse."
+        },
+        {
+          "name": "Pecan Pie",
+          "price": 295,
+          "description": "A chewy pecan caramel pie slice, baked to perfection and served with a dollop of blueberry cream."
+        },
+        {
+          "name": "Basque Cheese Cake",
+          "price": 275,
+          "description": "Crème caramel with bittersweet notes and a creamy, light center—absolutely heavenly!"
+        }
+      ]
+    },
+    {
+      "category": "Asian",
+      "items": [
+        {
+          "name": "Schezwan Noodles",
+          "price": 250,
+          "description": "All-time favourite!",
+          "add_ons": [
+            { "type": "Vegetarian", "price": 45 },
+            { "type": "Chicken", "price": 75 },
+            { "type": "Seafood", "price": 125 }
+          ]
+        },
+        {
+          "name": "Schezwan Fried Rice",
+          "price": 250,
+          "description": "A Schezwan style fried rice.",
+          "add_ons": [
+            { "type": "Vegetarian", "price": 45 },
+            { "type": "Chicken", "price": 75 },
+            { "type": "Seafood", "price": 125 }
+          ]
+        }
+      ]
+    }
+  ]
+}

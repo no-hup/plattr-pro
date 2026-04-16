@@ -9,8 +9,77 @@ class MenuResponse with _$MenuResponse {
     required MenuData result,
   }) = _MenuResponse;
 
-  factory MenuResponse.fromJson(Map<String, dynamic> json) =>
-      _$MenuResponseFromJson(json);
+  factory MenuResponse.fromJson(Map<String, dynamic> json) {
+    try {
+      // Sanitize the JSON to handle potential type mismatches and null values
+      final sanitizedJson = <String, dynamic>{
+        'result': json['result'] as Map<String, dynamic>? ?? {},
+      };
+
+      // Manually construct to avoid relying on generated _$*FromJson here
+      return MenuResponse(
+        result: MenuData.fromJson(
+          sanitizedJson['result'] as Map<String, dynamic>,
+        ),
+      );
+    } catch (e) {
+      // Return a default response if parsing fails
+      return MenuResponse(
+        result: MenuData(
+          categories: [],
+          menuItems: {},
+          metadata: MenuMetadata(
+            totalCategories: 0,
+            totalMenuItems: 0,
+          ),
+        ),
+      );
+    }
+  }
+}
+
+/// 🆕 NEW MODEL: TableContextData - represents table context for display
+@freezed
+class TableContextData with _$TableContextData {
+  factory TableContextData({
+    required String restaurantName,
+    String? tableNumber,
+    String? otp,
+    @Default(false) bool showOtp,
+    @Default(false) bool showImages,
+  }) = _TableContextData;
+
+  factory TableContextData.fromJson(Map<String, dynamic> json) =>
+      _$TableContextDataFromJson(json);
+}
+
+/// 🆕 NEW MODEL: ActiveMenu - represents the currently active menu
+@freezed
+class ActiveMenu with _$ActiveMenu {
+  factory ActiveMenu({
+    required String menuId,
+    required String name,
+    @Default(false) bool isDefault,
+  }) = _ActiveMenu;
+
+  factory ActiveMenu.fromJson(Map<String, dynamic> json) =>
+      _$ActiveMenuFromJson(json);
+}
+
+/// 🆕 NEW MODEL: Subcategory - represents a subcategory within a category
+@freezed
+class Subcategory with _$Subcategory {
+  factory Subcategory({
+    required String id,
+    required String name,
+    String? description,
+    String? image,
+    String? parentCategoryId, // Made optional for backward compatibility with legacy data
+    @Default(0) int order,
+  }) = _Subcategory;
+
+  factory Subcategory.fromJson(Map<String, dynamic> json) =>
+      _$SubcategoryFromJson(json);
 }
 
 @freezed
@@ -19,10 +88,113 @@ class MenuData with _$MenuData {
     required List<Category> categories,
     required Map<String, List<MenuItem>> menuItems,
     required MenuMetadata metadata,
+    ActiveMenu? activeMenu,
+    TableContextData? tableContext,
+    String? restaurantName, // Fallback for header display
   }) = _MenuData;
 
-  factory MenuData.fromJson(Map<String, dynamic> json) =>
-      _$MenuDataFromJson(json);
+  factory MenuData.fromJson(Map<String, dynamic> json) {
+    try {
+      // Sanitize the JSON to handle potential type mismatches and null values
+      final sanitizedJson = <String, dynamic>{
+        'activeMenu': json['activeMenu'] as Map<String, dynamic>?,
+        'categories': json['categories'] as List<dynamic>? ?? [],
+        'menuItems': json['menuItems'] as Map<String, dynamic>? ?? {},
+        'metadata': json['metadata'] as Map<String, dynamic>? ?? {},
+        'tableContext': json['tableContext'] as Map<String, dynamic>?,
+        'restaurantName': json['restaurantName'] as String?,
+      };
+
+      // Parse activeMenu if present
+      ActiveMenu? activeMenu;
+      if (sanitizedJson['activeMenu'] != null) {
+        activeMenu = ActiveMenu.fromJson(
+          sanitizedJson['activeMenu'] as Map<String, dynamic>,
+        );
+      }
+
+      // Parse tableContext if present
+      TableContextData? tableContext;
+      if (sanitizedJson['tableContext'] != null) {
+        tableContext = TableContextData.fromJson(
+          sanitizedJson['tableContext'] as Map<String, dynamic>,
+        );
+      }
+
+      // Parse categories list
+      final categories = (sanitizedJson['categories'] as List<dynamic>)
+          .whereType<Map<String, dynamic>>()
+          .map(Category.fromJson)
+          .toList();
+
+      // Parse menuItems map (grouped by subcategoryId or categoryId)
+      final rawMenuItems = sanitizedJson['menuItems'] as Map<String, dynamic>;
+      final parsedMenuItems = <String, List<MenuItem>>{};
+      for (final entry in rawMenuItems.entries) {
+        final value = entry.value;
+        if (value is List) {
+          parsedMenuItems[entry.key] = value
+              .whereType<Map<String, dynamic>>()
+              .map((json) {
+                // 🛠️ MOCK DATA INJECTION (Temporary)
+                // Since backend doesn't send these fields yet, we inject them randomly/fixed for demo.
+                final mutableJson = Map<String, dynamic>.from(json);
+                
+                // Mock Dietary Type based on name or random
+                if (mutableJson['dietaryType'] == null) {
+                   final name = (mutableJson['meta'] as Map<String, dynamic>)['name'].toString().toLowerCase();
+                   if (name.contains('chicken') || name.contains('beef') || name.contains('prawn') || name.contains('lamb')) {
+                     mutableJson['dietaryType'] = 'NON_VEG';
+                   } else if (name.contains('egg')) {
+                     mutableJson['dietaryType'] = 'EGG';
+                   } else {
+                     mutableJson['dietaryType'] = 'VEG';
+                   }
+                }
+                
+                // Mock Spice Level
+                if (mutableJson['spiceLevel'] == null) {
+                   final name = (mutableJson['meta'] as Map<String, dynamic>)['name'].toString().toLowerCase();
+                   if (name.contains('spicy') || name.contains('hot') || name.contains('chilli')) {
+                     mutableJson['spiceLevel'] = 'HOT';
+                   } else if (name.contains('mild')) {
+                     mutableJson['spiceLevel'] = 'MILD';
+                   }
+                }
+
+                return MenuItem.fromJson(mutableJson);
+              })
+              .toList();
+        } else {
+          parsedMenuItems[entry.key] = const <MenuItem>[];
+        }
+      }
+
+      // Parse metadata
+      final metadata = MenuMetadata.fromJson(
+        sanitizedJson['metadata'] as Map<String, dynamic>,
+      );
+
+      return MenuData(
+        activeMenu: activeMenu,
+        categories: categories,
+        menuItems: parsedMenuItems,
+        metadata: metadata,
+        tableContext: tableContext,
+        restaurantName: sanitizedJson['restaurantName'] as String?,
+      );
+    } catch (e) {
+      // Return a default MenuData if parsing fails
+      return MenuData(
+        categories: [],
+        menuItems: {},
+        metadata: MenuMetadata(
+          totalCategories: 0,
+          totalMenuItems: 0,
+        ),
+      );
+    }
+  }
 }
 
 @freezed
@@ -30,6 +202,8 @@ class MenuMetadata with _$MenuMetadata {
   factory MenuMetadata({
     required int totalCategories,
     required int totalMenuItems,
+    @Default(0) int totalSubcategories,
+    String? activeMenuId,
   }) = _MenuMetadata;
 
   factory MenuMetadata.fromJson(Map<String, dynamic> json) =>
@@ -42,8 +216,11 @@ class Category with _$Category {
     required String id,
     required String name,
     required String description,
-    String? image,
     required int order,
+    String? image,
+    @Default([]) List<Subcategory> subcategories, // 🆕 NEW - nested subcategories
+    @Default('list') String viewType, // 'list' (default) or 'carousel' for horizontal display
+    @Default(true) bool defaultExpanded, // Backend-controlled: if false, subcategories start collapsed
   }) = _Category;
 
   factory Category.fromJson(Map<String, dynamic> json) =>
@@ -57,13 +234,17 @@ class MenuItem with _$MenuItem {
     required String categoryId,
     required MenuItemMeta meta,
     required PriceInfo priceInfo,
+    required bool isInStock,
+    required bool isCustomizable,
+    String? primarySubcategoryId,
+    @Default([]) List<String> subcategoryIds,
     @Default([]) List<Variant> variants,
     @Default([]) List<Addon> addons,
     NutritionalInfo? nutritionalInfo,
     @Default([]) List<String> allergenTags,
-    required bool isInStock,
-    required bool isCustomizable,
     @Default(0) int quantity,
+    String? dietaryType,
+    String? spiceLevel,
   }) = _MenuItem;
 
   factory MenuItem.fromJson(Map<String, dynamic> json) =>
@@ -76,6 +257,7 @@ class MenuItemMeta with _$MenuItemMeta {
     required String name,
     required String description,
     required String categoryName,
+    String? primarySubcategoryName, // 🆕 NEW - nullable for backward compatibility
     String? image,
   }) = _MenuItemMeta;
 
@@ -135,8 +317,7 @@ class Addon with _$Addon {
     required bool isMandatory,
   }) = _Addon;
 
-  factory Addon.fromJson(Map<String, dynamic> json) =>
-      _$AddonFromJson(json);
+  factory Addon.fromJson(Map<String, dynamic> json) => _$AddonFromJson(json);
 }
 
 @freezed

@@ -3,10 +3,10 @@
  */
 
 const { admin, db, FieldValue, Timestamp } = require("../admin/admin");
-const featureFlags = require('../singleton/FeatureFlags');
-const errorMessages = require('../singleton/ErrorMessages');
 const { compareArraysIgnoringOrder } = require('../utils/arrayUtils');
 const { BasicPriceInfo, CartItemPriceInfo, CartTotalPriceInfo } = require('../genericModels/priceinfo');
+const { FULFILLMENT_STATUS } = require('../orders/orderConstants');
+const { calculateItemPrice } = require('./calculateCartValue');
 
 /**
  * Gets a reference to a cart document in Firestore
@@ -73,7 +73,7 @@ function fetchAddons(db, restaurantId, selectedIds, errorHandler) {
         .doc(id)
         .get()
     );
-    
+
     return Promise.all(promises).then(docs => {
       // Check if any addon is missing
       const missingAddons = docs.filter((doc) => !doc.exists).length;
@@ -108,7 +108,7 @@ function fetchVariants(db, restaurantId, selectedIds, errorHandler) {
         .doc(id)
         .get()
     );
-    
+
     return Promise.all(promises).then(docs => {
       // Check if any variant is missing
       const missingVariants = docs.filter((doc) => !doc.exists).length;
@@ -153,24 +153,24 @@ function validatePriceData(priceInfo, context = 'unknown') {
     console.error(`Invalid priceInfo: not an object in ${context}`);
     return false;
   }
-  
+
   const requiredFields = ['basePrice', 'finalPrice', 'discount'];
   const invalidFields = [];
-  
+
   for (const field of requiredFields) {
     const value = priceInfo[field];
     const isValid = typeof value === 'number' && !isNaN(value) && isFinite(value);
-    
+
     if (!isValid) {
       invalidFields.push(`${field}: ${value}`);
     }
   }
-  
+
   if (invalidFields.length > 0) {
     console.error(`Invalid price data detected in ${context}. Invalid fields: ${invalidFields.join(', ')}`);
     return false;
   }
-  
+
   return true;
 }
 
@@ -191,7 +191,7 @@ function fixInvalidPriceInfo(priceInfo) {
       totalDiscountAmount: 0
     };
   }
-  
+
   return {
     basePrice: sanitizeNumber(priceInfo.basePrice),
     finalPrice: sanitizeNumber(priceInfo.finalPrice),
@@ -226,7 +226,7 @@ function findIdenticalItemInCart(cartItems, newItem, compareArraysIgnoringOrder)
   if (!cartItems || !Array.isArray(cartItems)) {
     return -1;
   }
-  console.log("poopoo Checking for identical item in cart:", { cartItems, newItem }, "tag: cart-item-check");
+  // console.log("Checking for identical item in cart:", { cartItems, newItem }, "tag: cart-item-check");
 
   const { menuItemId, selectedVariantsDetails, selectedAddonsDetails } = newItem;
 
@@ -236,21 +236,21 @@ function findIdenticalItemInCart(cartItems, newItem, compareArraysIgnoringOrder)
 
   return cartItems.findIndex(item => {
     if (item?.menuItemId !== menuItemId) return false;
-    
+
     // Compare variants regardless of order
     const variantsMatch = compareArraysIgnoringOrder(
-      item?.selectedVariantsDetails || [], 
+      item?.selectedVariantsDetails || [],
       selectedVariantsDetails || [],
       'id', 'selected_variant_id'
     );
-    
+
     // Compare addons regardless of order
     const addonsMatch = compareArraysIgnoringOrder(
-      item?.selectedAddonsDetails || [], 
+      item?.selectedAddonsDetails || [],
       selectedAddonsDetails || [],
       'id'
     );
-    
+
     return variantsMatch && addonsMatch;
   });
 }
@@ -270,9 +270,9 @@ function createDefaultCart(restaurantId, tableId, sessionId) {
     tableId,
     sessionId,
     items: [],
-    priceInfo: { 
-      basePrice: 0, 
-      finalPrice: 0, 
+    priceInfo: {
+      basePrice: 0,
+      finalPrice: 0,
       totalDiscount: 0,
       totalDiscountAmount: 0,
       totalAddonBasePrice: 0,
@@ -293,9 +293,14 @@ function createDefaultCart(restaurantId, tableId, sessionId) {
  * @returns {Promise<Array>} - Array of processed variant details
  */
 async function processSelectedVariants(db, restaurantId, menuItem, selectedVariants, errorHandler) {
-  // If no variants selected, return empty array
-  if (!selectedVariants || Object.keys(selectedVariants).length === 0) {
+  // If menu item has no variants, return empty array
+  if (!menuItem.variants || menuItem.variants.length === 0) {
     return [];
+  }
+
+  // Ensure selectedVariants is an object
+  if (!selectedVariants) {
+    selectedVariants = {};
   }
 
   // Map variants to Firebase promises
@@ -310,7 +315,7 @@ async function processSelectedVariants(db, restaurantId, menuItem, selectedVaria
 
   // Wait for all promises to resolve
   const variantDocs = await Promise.all(variantPromises);
-  
+
   // Filter out non-existent docs and extract data
   const validVariants = variantDocs
     .map((doc) => (doc.exists ? doc.data() : null))
@@ -324,13 +329,13 @@ async function processSelectedVariants(db, restaurantId, menuItem, selectedVaria
     if (!variant) {
       errorHandler.badRequest("Variant not found.", { variantId });
     }
-    
+
     // Find the selected option within variant
     const selectedOption = variant.options.find((o) => o.id === optionId);
     if (!selectedOption) {
       errorHandler.badRequest("Selected option not found for the variant.", { variantId, optionId });
     }
-    
+
     // Validate price data for the option
     if (!validatePriceData(selectedOption.priceInfo, `variant.${variant.id}.option.${selectedOption.id}`)) {
       console.warn("Invalid price data in variant option, using defaults:", selectedOption);
@@ -340,7 +345,7 @@ async function processSelectedVariants(db, restaurantId, menuItem, selectedVaria
         discount: 0
       };
     }
-    
+
     // Add processed variant to result array
     selectedVariantsDetails.push({
       id: variant.id,
@@ -361,7 +366,7 @@ async function processSelectedVariants(db, restaurantId, menuItem, selectedVaria
     }
   }
 
-  console.log("poopoo Processed variants:", JSON.stringify(selectedVariantsDetails, null, 2));
+  // console.log("Processed variants:", JSON.stringify(selectedVariantsDetails, null, 2));
   return selectedVariantsDetails;
 }
 
@@ -390,10 +395,10 @@ async function processSelectedAddons(db, restaurantId, selectedAddons, errorHand
       .doc(addonId)
       .get()
   );
-  
+
   // Wait for all promises to resolve
   const addonDocs = await Promise.all(addonPromises);
-  
+
   // Filter out non-existent docs and extract data
   const validAddons = addonDocs
     .map((doc) => (doc.exists ? { id: doc.id, ...doc.data() } : null))
@@ -401,13 +406,13 @@ async function processSelectedAddons(db, restaurantId, selectedAddons, errorHand
 
   // Process each addon
   const selectedAddonsDetails = validAddons.map((addon) => {
-    console.log("poopoo Processing Addon:", {
+    /* console.log("Processing Addon:", {
       id: addon.id,
       name: addon.meta?.name,
       priceInfo: addon.priceInfo,
       respectParentDiscount: addon.respectParentDiscount,
-    });
-    
+    }); */
+
     // Validate price data for the addon
     if (!validatePriceData(addon.priceInfo, `addon.${addon.id}`)) {
       console.warn("Invalid price data in addon, using defaults:", addon);
@@ -417,7 +422,7 @@ async function processSelectedAddons(db, restaurantId, selectedAddons, errorHand
         discount: 0
       };
     }
-    
+
     // Return processed addon data
     return {
       id: addon.id || "N/A",
@@ -427,7 +432,7 @@ async function processSelectedAddons(db, restaurantId, selectedAddons, errorHand
     };
   });
 
-  console.log("poopoo Processed addons:", JSON.stringify(selectedAddonsDetails, null, 2));
+  // console.log("Processed addons:", JSON.stringify(selectedAddonsDetails, null, 2));
   return selectedAddonsDetails;
 }
 
@@ -443,38 +448,87 @@ async function processSelectedAddons(db, restaurantId, selectedAddons, errorHand
  * @param {number} cartItemId - Unique ID for this cart item
  * @returns {Object} - Complete cart item object
  */
-function createCartItem(menuItemId, menuItem, selectedVariantsDetails, selectedAddonsDetails, quantity, priceDetails, cartItemId) {
-  // Ensure we have valid price info, otherwise use defaults
-  if (!priceDetails || !priceDetails.priceInfo) {
-    console.error("Price calculation failed, using defaults");
-    priceDetails = {
-      priceInfo: {
-        itemBasePrice: 0,
-        totalVariantBasePrice: 0,
-        totalAddonBasePrice: 0,
-        finalPrice: 0,
-        discount: 0,
-        totalBasePrice: 0
-      }
-    };
-  }
+/**
+ * Builds a CartItemPriceInfo object for a given quantity by freshly deriving
+ * per-unit prices from the menu item and the immutable variant/addon snapshots
+ * stored on the cart item, then multiplying by quantity.
+ *
+ * This is the single source of truth for "what should an item's priceInfo look
+ * like at quantity N". It replaces the older, non-idempotent
+ * `safeRecalculateItemPrice` helper in `utils/dataUtils.js`, which used to read
+ * its own previous output as if it were per-unit — producing garbage on every
+ * call after the first. See `Plattr_Pro_Context/TODO_Multi_Config_Cart_Feature.md`
+ * Phase 2.5 for the full writeup.
+ *
+ * Callers MUST pass a fresh `menuItem` snapshot (from Firestore) — not a cached
+ * value pulled off the cart item. This guarantees that the per-unit source of
+ * truth is a document we control, not a possibly-corrupted `priceInfo` field.
+ *
+ * Output shape matches the historical `× quantity` schema that
+ * `calculateCartValue`, `cart_page.dart`, and order creation all depend on.
+ *
+ * @param {Object} menuItem - Fresh menu item document (must contain priceInfo)
+ * @param {Array}  selectedVariantsDetails - Variant snapshot stored on the cart item
+ * @param {Array}  selectedAddonsDetails   - Addon snapshot stored on the cart item
+ * @param {number} quantity - New quantity for the cart item
+ * @returns {Object} CartItemPriceInfo-shaped priceInfo with every field × quantity
+ */
+function buildCartItemPriceInfoForQuantity(menuItem, selectedVariantsDetails, selectedAddonsDetails, quantity) {
+  const safeQty = sanitizeNumber(quantity, 1);
 
-  // Get the base price info
-  const priceInfo = priceDetails.priceInfo;
-  
-  // Use CartItemPriceInfo model to standardize the price structure
-  const standardizedPriceInfo = new CartItemPriceInfo({
-    itemBasePrice: sanitizeNumber(priceInfo.itemBasePrice),
-    itemFinalPrice: sanitizeNumber(priceInfo.finalPrice),
-    totalVariantBasePrice: sanitizeNumber(priceInfo.totalVariantBasePrice),
-    totalVariantFinalPrice: sanitizeNumber(priceInfo.totalVariantFinalPrice || priceInfo.totalVariantBasePrice),
-    totalAddonBasePrice: sanitizeNumber(priceInfo.totalAddonBasePrice),
-    totalAddonFinalPrice: sanitizeNumber(priceInfo.totalAddonFinalPrice || priceInfo.totalAddonBasePrice),
-    totalBasePrice: sanitizeNumber(priceInfo.totalBasePrice * quantity),
-    finalPrice: sanitizeNumber(priceInfo.finalPrice * quantity),
-    discount: sanitizeNumber(priceInfo.discount),
-    discountAmount: sanitizeNumber(priceInfo.discountAmount || (priceInfo.totalBasePrice - priceInfo.finalPrice) * quantity)
+  // Delegate per-unit computation to the same function used on initial add.
+  // calculateItemPrice returns per-unit values across the board (see
+  // cart/calculateCartValue.js:104-117).
+  const { priceInfo: unit } = calculateItemPrice(
+    menuItem,
+    Array.isArray(selectedVariantsDetails) ? selectedVariantsDetails : [],
+    Array.isArray(selectedAddonsDetails) ? selectedAddonsDetails : []
+  );
+
+  return new CartItemPriceInfo({
+    itemBasePrice:          sanitizeNumber(unit.itemBasePrice          * safeQty),
+    itemFinalPrice:         sanitizeNumber(unit.itemFinalPrice         * safeQty),
+    totalVariantBasePrice:  sanitizeNumber(unit.totalVariantBasePrice  * safeQty),
+    totalVariantFinalPrice: sanitizeNumber((unit.totalVariantFinalPrice || unit.totalVariantBasePrice) * safeQty),
+    totalAddonBasePrice:    sanitizeNumber(unit.totalAddonBasePrice    * safeQty),
+    totalAddonFinalPrice:   sanitizeNumber((unit.totalAddonFinalPrice  || unit.totalAddonBasePrice) * safeQty),
+    totalBasePrice:         sanitizeNumber(unit.totalBasePrice         * safeQty),
+    finalPrice:             sanitizeNumber(unit.finalPrice             * safeQty),
+    discount:               sanitizeNumber(unit.discount),
+    discountAmount:         sanitizeNumber((unit.discountAmount || 0) * safeQty)
   }).toObject();
+}
+
+function createCartItem(menuItemId, menuItem, selectedVariantsDetails, selectedAddonsDetails, quantity, priceDetails, cartItemId) {
+  // priceDetails is kept in the signature for backward compatibility with the
+  // one caller (addItemToCart.js), but we deliberately re-derive the priceInfo
+  // from `menuItem` so createCartItem and the increment/decrement recalc paths
+  // share exactly the same code. If priceDetails is ever missing or malformed,
+  // buildCartItemPriceInfoForQuantity will still produce a correct priceInfo
+  // from the menu item directly.
+  let standardizedPriceInfo;
+  try {
+    standardizedPriceInfo = buildCartItemPriceInfoForQuantity(
+      menuItem,
+      selectedVariantsDetails,
+      selectedAddonsDetails,
+      quantity
+    );
+  } catch (err) {
+    console.error("createCartItem: priceInfo derivation failed, using zeros", err);
+    standardizedPriceInfo = new CartItemPriceInfo({
+      itemBasePrice: 0,
+      itemFinalPrice: 0,
+      totalVariantBasePrice: 0,
+      totalVariantFinalPrice: 0,
+      totalAddonBasePrice: 0,
+      totalAddonFinalPrice: 0,
+      totalBasePrice: 0,
+      finalPrice: 0,
+      discount: 0,
+      discountAmount: 0
+    }).toObject();
+  }
 
   // Construct cart item with standardized price info
   return {
@@ -485,52 +539,7 @@ function createCartItem(menuItemId, menuItem, selectedVariantsDetails, selectedA
     quantity: sanitizeNumber(quantity, 1),
     priceInfo: standardizedPriceInfo,
     cartItemId,
-    status: CART_ITEM_STATUS.PENDING
-  };
-}
-
-/**
- * Checks if a menu item with different configuration already exists in cart
- * Used when multiple configurations aren't supported
- * 
- * @param {Array} cartItems - Array of items in the cart 
- * @param {string} menuItemId - ID of the menu item to check
- * @param {Object} errorMessages - Error message provider
- * @param {Function} sanitizeCart - Function to sanitize cart for response
- * @returns {Object|null} - Error response if different config found, null otherwise
- */
-function checkDifferentConfigExists(cartItems, menuItemId, errorMessages, sanitizeCart) {
-  if (!cartItems || !Array.isArray(cartItems)) {
-    return null;
-  }
-
-  // Find any item with the same menuItemId
-  const sameMenuItemIndex = cartItems.findIndex(item => item.menuItemId === menuItemId);
-  
-  if (sameMenuItemIndex === -1) {
-    return null; // No item with this menuItemId exists
-  }
-
-  // Found same menu item with different configuration
-  const existingItem = cartItems[sameMenuItemIndex];
-  
-  // Format variant and addon names for error message
-  const existingConfig = {
-    variantNames: (existingItem.selectedVariantsDetails || [])
-      .map(v => v.selected_variant_name || 'unknown')
-      .join(', '),
-    addonNames: (existingItem.selectedAddonsDetails || [])
-      .map(a => a.name || 'unknown')
-      .join(', ')
-  };
-  
-  // Return error response
-  return {
-    message: `${errorMessages.get('CART_DIFFERENT_VARIANT_EXISTS')}: ${existingItem.menuItem?.meta?.name || 'Unknown item'} with ${existingConfig.variantNames || 'no variants'} and ${existingConfig.addonNames || 'no addons'}`,
-    status: CART_STATUS.PENDING,
-    data: {
-      existingItem: sanitizeCart(existingItem)
-    }
+    status: FULFILLMENT_STATUS.PENDING
   };
 }
 
@@ -552,8 +561,8 @@ function validateCartPriceInfo(updatedPriceInfo) {
       totalAddonBasePrice: 0,
       totalVariantBasePrice: 0,
     };
-  } 
-  
+  }
+
   return updatedPriceInfo;
 }
 
@@ -566,11 +575,11 @@ function validateCartPriceInfo(updatedPriceInfo) {
  * @param {Array} selectedAddonsDetails - Processed addon selections
  */
 function logItemDetails(menuItem, selectedVariantsDetails, selectedAddonsDetails) {
-  console.log("poopoo Cart Item Details:", {
+  /* console.log("Cart Item Details:", {
     menuItem: menuItem,
     selectedVariants: selectedVariantsDetails,
     selectedAddons: selectedAddonsDetails
-  });
+  }); */
 }
 
 module.exports = {
@@ -588,7 +597,7 @@ module.exports = {
   processSelectedVariants,
   processSelectedAddons,
   createCartItem,
-  checkDifferentConfigExists,
+  buildCartItemPriceInfoForQuantity,
   validateCartPriceInfo,
   logItemDetails
 };

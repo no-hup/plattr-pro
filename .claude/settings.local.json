@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /Users/shauryajaiswal/Desktop/dev/plattr-pro/Plattr_Pro_Context/TODO_*.md)",
+      "Bash(node -e \"require\\('./orders/getActiveCartsForKitchen.js'\\); require\\('./server/server_auth.js'\\); require\\('./adminApp/staff_admin.js'\\); require\\('./orders/indexOrders.js'\\); console.log\\('OK'\\);\")",
+      "Bash(git stash:*)",
+      "Bash(git checkout:*)",
+      "Bash(dart analyze:*)",
+      "Bash(tee /tmp/plattr-phase4-analyze.log)",
+      "Bash(echo \"exit=$?\")",
+      "Read(//tmp/**)",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(flutter test:*)",
+      "Bash(node -c cart/addItemToCartBoilerplateHelper.js)",
+      "Bash(node -c cart/addItemToCart.js)",
+      "Bash(node -c cart/removeItemFromCart.js)",
+      "Bash(node -c utils/dataUtils.js)",
+      "Bash(npx jest:*)",
+      "Bash(grep -E \"\\\\.\\(dart\\)$\")"
+    ]
+  }
+}
