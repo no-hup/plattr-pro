@@ -8,6 +8,10 @@ const errorHandler = require('../singleton/ErrorHandler');
 const { validateCart } = require('./validateCart');
 const { calculateCartValue } = require('./calculateCartValue');
 const timestamp = require('../utils/timestamp');
+const { ORDER_STATUS } = require('../orders/orderConstants');
+const { mapOrderStatus } = require('../utils/statusUtils');
+const ResponseBuilder = require('../utils/ResponseBuilder');
+const featureFlags = require('../singleton/FeatureFlags');
 
 /**
  * Checkout Cart Cloud Function
@@ -24,12 +28,15 @@ const timestamp = require('../utils/timestamp');
  * @returns {Object} Order details including orderId and status
  */
 const checkoutCart = functions.https.onCall(async (data, context) => {
+  // Load feature flag overrides from Firestore (for test environments)
+  await featureFlags.loadOverrides(db);
+  const requestPayload = data?.data || data || {};
   try {
-    console.log("poopoo Received checkoutCart request for table:", data.data.tableId, "restaurant:", data.data.restaurantId);
-    validateCheckoutFields(data.data);
-    
-    const { tableId, restaurantId, cartId, notes = '', sessionId } = data.data;
-    
+    // console.log("Received checkoutCart request:", JSON.stringify(requestPayload));
+    validateCheckoutFields(requestPayload);
+
+    const { tableId, restaurantId, cartId, notes = '', sessionId } = requestPayload;
+
     // Validate session (now mandatory)
     await validateCheckoutSession(restaurantId, tableId, sessionId);
 
@@ -45,21 +52,21 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
       .doc(tableId);
 
     const cartDoc = await cartRef.get();
-    
+
     if (!cartDoc.exists) {
       // Throw standard error if cart doesn't exist even with valid session
-      errorHandler.failedPrecondition('No active cart found for this table.');
+      errorHandler.preconditionFailed('No active cart found for this table.');
     }
-    
+
     const cart = cartDoc.data();
-    
+
     if (!cart || !cart.items || cart.items.length === 0) {
       // Throw standard error for empty cart
-      errorHandler.failedPrecondition('Cannot checkout an empty cart.');
+      errorHandler.preconditionFailed('Cannot checkout an empty cart.');
     }
-    
-    console.log(`poopoo Processing checkout for table ${tableId} with ${cart.items.length} items`);
-    
+
+    // console.log(`Processing checkout for table ${tableId} with ${cart.items.length} items`);
+
     // Validate cart price calculations before proceeding
     if (!validateCart(cart)) {
       console.error('Cart validation failed. Price calculations are inconsistent.');
@@ -67,25 +74,25 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
       try {
         const recalculatedPriceInfo = await calculateCartValue(cart);
         cart.priceInfo = recalculatedPriceInfo;
-        console.log('poopoo Cart prices recalculated for checkout');
+        // console.log('Cart prices recalculated for checkout');
       } catch (recalcError) {
         console.error('Failed to recalculate cart prices:', recalcError);
-        errorHandler.failedPrecondition('Invalid cart price structure. Please update cart before checkout.');
+        errorHandler.preconditionFailed('Invalid cart price structure. Please update cart before checkout.');
       }
     }
-    
+
     // Verify stock availability for all items in the cart
     try {
       const outOfStockItems = await validateMenuItemsStock(restaurantId, cart.items);
       if (outOfStockItems.length > 0) {
         const itemNames = outOfStockItems.map(item => item.name || item.menuItemId).join(', ');
-        errorHandler.failedPrecondition(`Cannot checkout. The following items are out of stock: ${itemNames}`);
+        errorHandler.preconditionFailed(`Cannot checkout. The following items are out of stock: ${itemNames}`);
       }
     } catch (stockError) {
       console.error('Error validating item stock:', stockError);
       errorHandler.internalError('Failed to validate item stock: ' + stockError.message);
     }
-    
+
     // Create/Update Order and Clear Cart
     try {
       // First, create or update the order (this has its own transaction)
@@ -97,7 +104,7 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
         notes,
         sessionId
       );
-      
+
       // After successful order creation, clear the cart
       // Use clearCartInternal which is already implemented
       try {
@@ -107,20 +114,20 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
         console.error(`Warning: Order created but cart clearing failed: ${clearError.message}`);
         // We don't throw here to avoid leaving the system in an inconsistent state
       }
-      
-      console.log(`poopoo Checkout completed successfully for table ${tableId}, order ID: ${order.id}`);
-      
+
+      // console.log(`Checkout completed successfully for table ${tableId}, order ID: ${order.id}`);
+
       // Return order details
-      return {
-        message: "Checkout completed successfully.",
-        status: "success",
-        data: {
+      const normalizedStatus = mapOrderStatus(order.orderStatus || order.status || ORDER_STATUS.IN_PROGRESS);
+      return ResponseBuilder.success(
+        {
           orderId: order.id,
-          orderNumber: order.orderNumber,
-          orderStatus: order.orderStatus,
+          orderNumber: order.orderNumber || order.order_number || order.id,
+          orderStatus: normalizedStatus,
           timestamp: timestamp.toISOString(order.updatedAt)
-        }
-      };
+        },
+        "Checkout completed successfully."
+      );
     } catch (orderError) {
       console.error(`Error during checkout process: ${orderError.message}`);
       // Throw internal error for order processing failures
@@ -128,24 +135,21 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
     }
   } catch (error) {
     // Log error message but not the full error object
-    console.error(`Error in checkoutCart for table ${data.data?.tableId}: ${error.message}`);
-    
+    console.error(`Error in checkoutCart for table ${requestPayload?.tableId}: ${error.message}`);
+
     // Specific message for createOrUpdateOrder errors
     if (error.message && error.message.includes('Cannot process an empty cart')) {
-      throw new functions.https.HttpsError(
-        'failed-precondition',
-        'Cannot checkout an empty cart'
-      );
+      errorHandler.preconditionFailed('Cannot checkout an empty cart', {
+        restaurantId: requestPayload?.restaurantId,
+        tableId: requestPayload?.tableId
+      });
     }
-    
-    if (error instanceof functions.https.HttpsError) {
-      throw error;
-    }
-    
-    throw new functions.https.HttpsError(
-      "internal",
-      "An unexpected error occurred during checkout."
-    );
+
+    errorHandler.handleError(error, "checkoutCart", {
+      restaurantId: requestPayload?.restaurantId,
+      tableId: requestPayload?.tableId,
+      sessionId: requestPayload?.sessionId
+    });
   }
 });
 
@@ -159,16 +163,16 @@ async function validateMenuItemsStock(restaurantId, cartItems) {
   if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
     return [];
   }
-  
+
   // Get unique menu item IDs from cart
   const menuItemIds = [...new Set(cartItems.map(item => item.menuItemId))];
-  
+
   // Batch get all menu items from Firestore
   const menuItemsRef = db.collection('restaurants').doc(restaurantId).collection('menuItems');
   const menuItemDocs = await Promise.all(
     menuItemIds.map(id => menuItemsRef.doc(id).get())
   );
-  
+
   // Find items that are out of stock
   const outOfStockItems = [];
   menuItemDocs.forEach(doc => {
@@ -186,7 +190,7 @@ async function validateMenuItemsStock(restaurantId, cartItems) {
       }
     }
   });
-  
+
   return outOfStockItems;
 }
 

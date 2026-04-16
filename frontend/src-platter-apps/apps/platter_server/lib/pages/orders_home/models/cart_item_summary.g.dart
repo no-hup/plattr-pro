@@ -12,6 +12,7 @@ CartItemSummary _$CartItemSummaryFromJson(Map<String, dynamic> json) =>
       name: json['name'] as String? ?? '',
       quantity: (json['quantity'] as num?)?.toInt() ?? 0,
       status: json['status'] as String? ?? '',
+      statusColorHex: json['statusColorHex'] as String? ?? '',
     );
 
 Map<String, dynamic> _$CartItemSummaryToJson(CartItemSummary instance) =>
@@ -20,4 +21,5 @@ Map<String, dynamic> _$CartItemSummaryToJson(CartItemSummary instance) =>
       'name': instance.name,
       'quantity': instance.quantity,
       'status': instance.status,
+      'statusColorHex': instance.statusColorHex,
     };

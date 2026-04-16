@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
-import 'models/order_item_detail.dart';
 import 'models/order_detail_response.dart';
 import 'repository/order_api_service.dart';
+
+import '../../widgets/status_chip.dart';
+import '../../widgets/cart_detail_card.dart';
+import '../../widgets/state_views.dart';
 
 class OrderDetailScreen extends StatefulWidget {
   final String restaurantId;
   final String sessionId;
   final String orderId;
-  
+
   const OrderDetailScreen({
-    Key? key,
+    super.key,
     required this.restaurantId,
     required this.sessionId,
     required this.orderId,
-  }) : super(key: key);
+  });
 
   @override
   State<OrderDetailScreen> createState() => _OrderDetailScreenState();
@@ -21,28 +24,38 @@ class OrderDetailScreen extends StatefulWidget {
 
 class _OrderDetailScreenState extends State<OrderDetailScreen> {
   final OrderApiService _apiService = OrderApiService();
-  
+
   bool _isLoading = true;
   String? _errorMessage;
   OrderDetailResponse? _orderDetail;
-  
+
+  // Valid status transitions (mirrors backend)
+  // static const Map<String, List<String>> _validTransitions = {
+  //   'PENDING': ['PREPARING', 'READY', 'CANCELLED'],
+  //   'PREPARING': ['READY', 'CANCELLED'],
+  //   'READY': ['SERVED', 'CANCELLED'],
+  //   'SERVED': ['RETURNED'],
+  //   'RETURNED': [],
+  //   'CANCELLED': [],
+  // };
+
   @override
   void initState() {
     super.initState();
     _fetchOrderDetail();
   }
-  
+
   Future<void> _fetchOrderDetail() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-    
+
     final response = await _apiService.getOrder(
       restaurantId: widget.restaurantId,
       orderId: widget.orderId,
     );
-    
+
     setState(() {
       _isLoading = false;
       if (response.success && response.data != null) {
@@ -52,7 +65,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       }
     });
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,185 +81,127 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       body: _buildContent(),
     );
   }
-  
+
   Widget _buildContent() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      if (_orderDetail == null) {
+        return const Center(child: CircularProgressIndicator());
+      }
     }
-    
-    if (_errorMessage != null) {
+
+    if (_errorMessage != null && _orderDetail == null) {
       return _buildErrorState();
     }
-    
+
     if (_orderDetail == null) {
       return const Center(child: Text('No order data available'));
     }
-    
+
     // This would be replaced with actual order detail UI
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (_errorMessage != null) _buildErrorBanner(_errorMessage!),
           // Order header information
           _buildOrderHeader(),
-          
+
           const SizedBox(height: 16),
           const Divider(),
           const SizedBox(height: 16),
-          
-          // Order items - placeholder for actual implementation
+
+          // Carts & items
           const Text(
-            'Order Items', 
+            'Carts',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          // Actual order items list
-          ListView.separated(
+          ListView.builder(
             shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            itemCount: _orderDetail?.items.length ?? 0,
-            separatorBuilder: (context, index) => Divider(),
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _orderDetail?.carts.length ?? 0,
             itemBuilder: (context, index) {
-              final itemJson = _orderDetail!.items[index];
-              // Defensive: handle both OrderItemDetail and Map
-              final item = itemJson is OrderItemDetail
-                  ? itemJson
-                  : OrderItemDetail.fromJson(Map<String, dynamic>.from(itemJson));
-              return ListTile(
-                title: Text(item.name, style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Quantity: ${item.quantity}'),
-                    if (item.variants?.isNotEmpty ?? false)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Variants:',
-                              style: TextStyle(fontSize: 12, color: Colors.blueGrey, fontWeight: FontWeight.bold),
-                            ),
-                            ...(item.variants ?? []).map((v) => Text(
-                                  '• ${v.id} (Mandatory: ${v.isMandatory ? "Yes" : "No"})',
-                                  style: TextStyle(fontSize: 12, color: Colors.blueGrey),
-                                ))
-                          ],
-                        ),
-                      ),
-                    if (item.addons?.isNotEmpty ?? false)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Addons:',
-                              style: TextStyle(fontSize: 12, color: Colors.teal, fontWeight: FontWeight.bold),
-                            ),
-                            ...(item.addons ?? []).map((a) => Text(
-                                  '• ${a.name} (	${a.price})',
-                                  style: TextStyle(fontSize: 12, color: Colors.teal),
-                                ))
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-                isThreeLine: true,
-              );
+              final cart =
+                  Map<String, dynamic>.from(_orderDetail!.carts[index]);
+              return _buildCartSection(cart, index);
             },
           ),
-          
+
           const SizedBox(height: 16),
           const Divider(),
           const SizedBox(height: 16),
-          
-          // Order actions - placeholder for actual implementation
+
+          // Order actions (Cancel only)
           _buildOrderActions(),
         ],
       ),
     );
   }
-  
+
   Widget _buildOrderHeader() {
     // Placeholder for order header information
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Order #${_orderDetail?.id ?? "N/A"}',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+    // Placeholder for order header information
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context)
+              .colorScheme
+              .outlineVariant
+              .withValues(alpha: 0.5),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.all(12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Order #${_orderDetail?.id ?? "N/A"}',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _buildStatusChip(_orderDetail?.orderStatus ?? ''),
+              const SizedBox(width: 8),
+              Text('Table: ${_orderDetail?.tableId ?? "N/A"}'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                  'Server: ${_orderDetail?.assignedServerName ?? "Unassigned"}'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text('Total: ${_orderDetail?.total ?? 0}'),
+          const SizedBox(height: 4),
+          Text('Created: ${_orderDetail?.createdAt.toIso8601String() ?? "-"}'),
+          Text('Updated: ${_orderDetail?.updatedAt.toIso8601String() ?? "-"}'),
+          if ((_orderDetail?.notes ?? '').isNotEmpty) ...[
             const SizedBox(height: 8),
-            Row(
-              children: [
-                const SizedBox.shrink(),
-                const SizedBox(width: 8),
-                // Note: OrderDetail doesn't have assignedServer field
-                const Text('Server: Unassigned'),
-              ],
-            ),
+            Text('Notes: ${_orderDetail?.notes ?? ""}'),
           ],
-        ),
+        ],
       ),
     );
   }
-  
+
   Widget _buildStatusChip(String status) {
-    Color color;
-    switch (status.toLowerCase()) {
-      case 'pending':
-        color = Colors.orange;
-        break;
-      case 'preparing':
-        color = Colors.blue;
-        break;
-      case 'ready':
-        color = Colors.green;
-        break;
-      case 'served':
-        color = Colors.purple;
-        break;
-      case 'completed':
-        color = Colors.green.shade800;
-        break;
-      case 'cancelled':
-        color = Colors.red;
-        break;
-      default:
-        color = Colors.grey;
-    }
-    
-    return Chip(
-      label: Text(
-        status.toUpperCase(),
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-      ),
-      backgroundColor: color,
-    );
+    return StatusChip(status: status);
   }
-  
+
   Widget _buildOrderActions() {
-    // Placeholder for order action buttons
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        _buildActionButton(
-          icon: Icons.check_circle,
-          label: 'Mark Ready',
-          color: Colors.green,
-          onPressed: () => _updateOrderStatus('ready'),
-        ),
         _buildActionButton(
           icon: Icons.cancel,
           label: 'Cancel Order',
@@ -256,25 +211,27 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       ],
     );
   }
-  
+
   Widget _buildActionButton({
     required IconData icon,
     required String label,
     required Color color,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
   }) {
-    return ElevatedButton.icon(
-      icon: Icon(icon, color: Colors.white),
+    final resolvedColor = onPressed == null ? Colors.grey : color;
+    return OutlinedButton.icon(
+      icon: Icon(icon),
       label: Text(label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: resolvedColor,
+        side: BorderSide(color: resolvedColor.withValues(alpha: 0.4)),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        textStyle: const TextStyle(fontWeight: FontWeight.w500),
       ),
       onPressed: onPressed,
     );
   }
-  
+
   Future<void> _updateOrderStatus(String newStatus) async {
     // Show loading indicator
     showDialog(
@@ -282,55 +239,62 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       barrierDismissible: false,
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
-    
+
     try {
       final response = await _apiService.updateOrderStatus(
         restaurantId: widget.restaurantId,
         orderId: widget.orderId,
-        newStatus: newStatus,
+        orderStatus: newStatus.toUpperCase(),
         sessionId: widget.sessionId,
       );
-      
+
       // Close loading dialog
-      Navigator.of(context).pop();
-      
+      if (mounted) Navigator.of(context).pop();
+
       if (response.success) {
         // Refresh order details after status update
         await _fetchOrderDetail();
-        
+
         // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response.message ?? 'Order status updated')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(response.message ?? 'Status updated')),
+          );
+        }
       } else {
         // Show error message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response.message ?? 'Failed to update status'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      // Show error message
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response.message ?? 'Failed to update order status'),
+            content: Text('Error: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (e) {
-      // Close loading dialog
-      Navigator.of(context).pop();
-      
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
-  
+
   void _showCancelConfirmation() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancel Order?'),
-        content: const Text('Are you sure you want to cancel this order? This action cannot be undone.'),
+        content: const Text(
+            'Are you sure you want to cancel this order? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -341,38 +305,140 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               Navigator.of(context).pop();
               _updateOrderStatus('cancelled');
             },
-            child: const Text('Yes, Cancel Order'),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Yes, Cancel Order'),
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildErrorState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 64, color: Colors.red),
-          const SizedBox(height: 16),
-          const Text(
-            'Failed to load order details',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _errorMessage ?? 'Unknown error occurred',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.red),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _fetchOrderDetail,
-            child: const Text('Try Again'),
-          ),
-        ],
-      ),
+    return ErrorStateWidget(
+      message: _errorMessage ?? 'Unknown error occurred',
+      onRetry: _fetchOrderDetail,
     );
+  }
+
+  Widget _buildErrorBanner(String message) {
+    return MaterialBanner(
+      content: Text(message),
+      backgroundColor: Colors.orange.shade100,
+      actions: [
+        TextButton(
+          onPressed: _fetchOrderDetail,
+          child: const Text('Retry'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCartSection(Map<String, dynamic> cart, int cartIndex) {
+    return CartDetailCard(
+      cart: cart,
+      index: cartIndex,
+      onMarkServed: (index) => _markCartServed(index),
+      onItemServed: (item) => _markItemServed(item),
+    );
+  }
+
+  Future<void> _markCartServed(int cartIndex) async {
+    // Use dedicated endpoint
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await _apiService.markCartAsServed(
+        restaurantId: widget.restaurantId,
+        orderId: widget.orderId,
+        cartIndex: cartIndex,
+        sessionId: widget.sessionId,
+      );
+
+      if (mounted) Navigator.of(context).pop();
+
+      if (response.success) {
+        await _fetchOrderDetail();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(response.message ?? 'Cart marked served')),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response.message ?? 'Failed to mark cart served'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _markItemServed(Map<String, dynamic> item) async {
+    final menuItemId = item['menuItemId']?.toString();
+    final cartItemId = item['cartItemId'];
+
+    if (menuItemId == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await _apiService.markItemAsServed(
+        restaurantId: widget.restaurantId,
+        orderId: widget.orderId,
+        menuItemId: menuItemId,
+        cartItemId: cartItemId is int ? cartItemId : null,
+      );
+
+      if (mounted) Navigator.of(context).pop();
+
+      if (response.success) {
+        await _fetchOrderDetail();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(response.message ?? 'Item marked served')),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response.message ?? 'Failed to mark item served'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

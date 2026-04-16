@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>cart-checkoutCart · New Order</title>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      margin: 0;
+      padding: 2rem;
+      line-height: 1.5;
+    }
+
+    pre {
+      background: #020617;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    code {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>cart-checkoutCart · New Order</h1>
+  <p><strong>Scenario:</strong> Creates a fresh order because no active order exists for the session.</p>
+
+  <h2>Sample Request</h2>
+  <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "tableId": "table009",
+    "sessionId": "sess_table009_primary",
+    "notes": "Less spicy"
+  }
+}</code></pre>
+
+  <h2>Sample Response</h2>
+  <pre><code>{
+  "status": "success",
+  "message": "Checkout completed successfully.",
+  "data": {
+    "orderId": "order_20251114_001",
+    "orderNumber": "ORD-458",
+    "orderStatus": "active",
+    "timestamp": "2025-11-14T10:18:22Z"
+  }
+}</code></pre>
+
+  <h2>Notes</h2>
+  <ul>
+    <li>Clears the cart document upon success.</li>
+    <li>Emits FCM notifications when <code>sendServerNotifications</code> flag is true.</li>
+  </ul>
+</body>
+
+</html>

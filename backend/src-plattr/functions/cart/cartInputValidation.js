@@ -15,14 +15,14 @@ function validateAddItemFields(data) {
   }
 
   const { tableId, restaurantId, menuItemId, quantity } = data;
-  
+
   if (!tableId || !restaurantId || !menuItemId || !quantity) {
     throw new functions.https.HttpsError(
       "invalid-argument",
       "tableId, restaurantId, menuItemId, and quantity are required."
     );
   }
-  
+
   if (typeof quantity !== 'number' || quantity < 1) {
     throw new functions.https.HttpsError(
       'invalid-argument',
@@ -42,7 +42,7 @@ function validateRemoveItemFields(data) {
   }
 
   const { tableId, restaurantId, menuItemId } = data;
-  
+
   if (!tableId || !restaurantId || !menuItemId) {
     throw new functions.https.HttpsError(
       "invalid-argument",
@@ -92,12 +92,13 @@ function validateCheckoutFields(data) {
       "Request data is missing."
     );
   }
-  
+
   const { tableId, restaurantId, sessionId } = data;
-  if (!tableId || !restaurantId || !sessionId) {
+  // sessionId is validated separately in validateCheckoutSession to standardize unauthenticated errors
+  if (!tableId || !restaurantId) {
     throw new functions.https.HttpsError(
       "invalid-argument",
-      "tableId, restaurantId, and sessionId are required."
+      "tableId and restaurantId are required."
     );
   }
 }
@@ -131,14 +132,14 @@ function validateGetCartFields(data) {
  */
 async function validateSessionId(restaurantId, sessionId) {
   if (!sessionId) return; // Skip validation if no sessionId provided
-  
+
   try {
     const sessionRef = db
       .collection('restaurants')
       .doc(restaurantId)
       .collection('sessions')
       .doc(sessionId);
-    
+
     const sessionDoc = await sessionRef.get();
     if (!sessionDoc.exists || sessionDoc.data().status !== 'active') {
       throw new functions.https.HttpsError(
@@ -148,6 +149,11 @@ async function validateSessionId(restaurantId, sessionId) {
     }
   } catch (error) {
     console.error('Error validating session:', error);
+    if (error.code && error.details === undefined && error.httpErrorCode) { // simple check for HttpsError structure or rethrow if it has code
+      // functions.https.HttpsError objects usually have code property.
+      // Better yet, just rethrow if it looks like one or simply don't wrap if we threw it.
+      throw error;
+    }
     throw new functions.https.HttpsError(
       'internal',
       'Error validating session'

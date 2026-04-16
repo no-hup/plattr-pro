@@ -1,0 +1,3817 @@
+{
+  "customers": {
+    "9876543210": {
+      "phoneNumber": "9876543210",
+      "name": "Customer One",
+      "email": "c1@example.com",
+      "createdAt": {
+        "_seconds": 1700000000,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1700000000,
+        "_nanoseconds": 0
+      },
+      "visits": [],
+      "preferences": {
+        "favoriteItems": [],
+        "dietaryRestrictions": []
+      }
+    },
+    "9876543211": {
+      "phoneNumber": "9876543211",
+      "name": "Customer Two",
+      "email": "c2@example.com",
+      "createdAt": {
+        "_seconds": 1700000000,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1700000000,
+        "_nanoseconds": 0
+      },
+      "visits": [],
+      "preferences": {
+        "favoriteItems": [],
+        "dietaryRestrictions": []
+      }
+    }
+  },
+  "restaurants": {
+    "res_e2e_all_on": {
+      "info": {
+        "name": "E2E - All Features ON",
+        "address": "123 Testing Lane",
+        "phone": "1234567890",
+        "email": "e2e_all@plattr.com",
+        "location": {
+          "_latitude": 12.9716,
+          "_longitude": 77.5946
+        }
+      },
+      "menus": {
+        "menu_main": {
+          "menuId": "menu_main",
+          "name": "Main Menu",
+          "isActive": true,
+          "isDefault": true,
+          "categoryIds": [
+            "cat_food",
+            "cat_bar"
+          ],
+          "menuItemIds": [
+            "item_burger_1",
+            "item_pizza_1",
+            "item_tiramisu",
+            "item_whiskey_1",
+            "item_beer_1"
+          ],
+          "order": 0
+        }
+      },
+      "categories": {
+        "cat_food": {
+          "id": "cat_food",
+          "name": "Food",
+          "order": 0,
+          "subcategoryIds": [
+            "sub_burger",
+            "sub_pizza",
+            "sub_dessert"
+          ]
+        },
+        "cat_bar": {
+          "id": "cat_bar",
+          "name": "Bar",
+          "order": 1,
+          "subcategoryIds": [
+            "sub_whiskey",
+            "sub_beer"
+          ]
+        }
+      },
+      "subcategories": {
+        "sub_burger": {
+          "id": "sub_burger",
+          "name": "Burger",
+          "parentCategoryId": "cat_food",
+          "order": 0
+        },
+        "sub_pizza": {
+          "id": "sub_pizza",
+          "name": "Pizza",
+          "parentCategoryId": "cat_food",
+          "order": 1
+        },
+        "sub_dessert": {
+          "id": "sub_dessert",
+          "name": "Dessert",
+          "parentCategoryId": "cat_food",
+          "order": 2
+        },
+        "sub_whiskey": {
+          "id": "sub_whiskey",
+          "name": "Whiskey",
+          "parentCategoryId": "cat_bar",
+          "order": 0
+        },
+        "sub_beer": {
+          "id": "sub_beer",
+          "name": "Beer",
+          "parentCategoryId": "cat_bar",
+          "order": 1
+        }
+      },
+      "menuItems": {
+        "item_burger_1": {
+          "menuItemId": "item_burger_1",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_burger",
+          "subcategoryIds": [
+            "sub_burger"
+          ],
+          "meta": {
+            "name": "Classic Burger",
+            "description": "Juicy beef burger",
+            "categoryName": "Food",
+            "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"
+          },
+          "priceInfo": {
+            "basePrice": 200,
+            "discount": 10,
+            "finalPrice": 180
+          },
+          "variants": [
+            {
+              "id": "var_size_burger",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_cheese"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_pizza_1": {
+          "menuItemId": "item_pizza_1",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_pizza",
+          "subcategoryIds": [
+            "sub_pizza"
+          ],
+          "meta": {
+            "name": "Margherita Pizza",
+            "description": "Classic cheese pizza",
+            "categoryName": "Food",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 500,
+            "discount": 10,
+            "finalPrice": 450
+          },
+          "variants": [
+            {
+              "id": "var_size_pizza",
+              "name": "Size"
+            },
+            {
+              "id": "var_crust_pizza",
+              "name": "Crust"
+            }
+          ],
+          "addons": [
+            "addon_olives",
+            "addon_jalapeno"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_tiramisu": {
+          "menuItemId": "item_tiramisu",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_dessert",
+          "subcategoryIds": [
+            "sub_dessert"
+          ],
+          "meta": {
+            "name": "Tiramisu",
+            "description": "Coffee-flavored Italian dessert",
+            "categoryName": "Food",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 200,
+            "discount": 0,
+            "finalPrice": 200
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_whiskey_1": {
+          "menuItemId": "item_whiskey_1",
+          "categoryId": "cat_bar",
+          "primarySubcategoryId": "sub_whiskey",
+          "subcategoryIds": [
+            "sub_whiskey"
+          ],
+          "meta": {
+            "name": "Scotch Whiskey",
+            "description": "Premium aged scotch",
+            "categoryName": "Bar",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 500,
+            "discount": 0,
+            "finalPrice": 500
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_beer_1": {
+          "menuItemId": "item_beer_1",
+          "categoryId": "cat_bar",
+          "primarySubcategoryId": "sub_beer",
+          "subcategoryIds": [
+            "sub_beer"
+          ],
+          "meta": {
+            "name": "Craft Beer",
+            "description": "Local brewery special",
+            "categoryName": "Bar",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 100,
+            "discount": 0,
+            "finalPrice": 100
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": false,
+          "isCustomizable": false
+        }
+      },
+      "variants": {
+        "var_size_burger": {
+          "id": "var_size_burger",
+          "meta": {
+            "name": "Size",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Choose size"
+          },
+          "options": [
+            {
+              "id": "opt_reg",
+              "name": "Regular",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "opt_large",
+              "name": "Large",
+              "priceInfo": {
+                "basePrice": 50,
+                "finalPrice": 50,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_burger_1"
+          ]
+        },
+        "var_size_pizza": {
+          "id": "var_size_pizza",
+          "meta": {
+            "name": "Size",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Choose size"
+          },
+          "options": [
+            {
+              "id": "opt_med",
+              "name": "Medium",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "opt_lrg",
+              "name": "Large",
+              "priceInfo": {
+                "basePrice": 100,
+                "finalPrice": 100,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_pizza_1"
+          ]
+        },
+        "var_crust_pizza": {
+          "id": "var_crust_pizza",
+          "meta": {
+            "name": "Crust",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Choose crust type (optional)"
+          },
+          "options": [
+            {
+              "id": "opt_thin",
+              "name": "Thin Crust",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "opt_stuffed",
+              "name": "Stuffed Crust",
+              "priceInfo": {
+                "basePrice": 75,
+                "finalPrice": 75,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": false,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_pizza_1"
+          ]
+        }
+      },
+      "addons": {
+        "addon_cheese": {
+          "id": "addon_cheese",
+          "meta": {
+            "name": "Extra Cheese",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Add extra cheese"
+          },
+          "priceInfo": {
+            "basePrice": 20,
+            "finalPrice": 20,
+            "discount": 0
+          },
+          "isInStock": true,
+          "respectParentDiscount": false,
+          "isMandatory": false,
+          "itemsAssociatedWith": [
+            "item_burger_1"
+          ]
+        },
+        "addon_olives": {
+          "id": "addon_olives",
+          "meta": {
+            "name": "Black Olives",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Add black olives"
+          },
+          "priceInfo": {
+            "basePrice": 30,
+            "finalPrice": 30,
+            "discount": 0
+          },
+          "isInStock": true,
+          "respectParentDiscount": false,
+          "isMandatory": false,
+          "itemsAssociatedWith": [
+            "item_pizza_1"
+          ]
+        },
+        "addon_jalapeno": {
+          "id": "addon_jalapeno",
+          "meta": {
+            "name": "Jalape\u00f1os",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Add spicy jalape\u00f1os"
+          },
+          "priceInfo": {
+            "basePrice": 25,
+            "finalPrice": 25,
+            "discount": 0
+          },
+          "isInStock": true,
+          "respectParentDiscount": true,
+          "isMandatory": false,
+          "itemsAssociatedWith": [
+            "item_pizza_1"
+          ]
+        }
+      },
+      "kitchens": {
+        "kitchen_food": {
+          "name": "Food Kitchen",
+          "status": "active"
+        },
+        "kitchen_bar": {
+          "name": "Bar Kitchen",
+          "status": "active"
+        }
+      },
+      "servers": {
+        "server_1": {
+          "name": "Server One",
+          "role": "waiter",
+          "status": "active",
+          "email": "server1@e2e.com",
+          "password": "1234"
+        },
+        "server_2": {
+          "name": "Server Two",
+          "role": "waiter",
+          "status": "active",
+          "email": "server2@e2e.com",
+          "password": "1234"
+        },
+        "kitchen_staff_1": {
+          "name": "Kitchen One",
+          "role": "kitchen",
+          "status": "active",
+          "email": "kitchen1@e2e.com",
+          "password": "1234"
+        },
+        "admin_1": {
+          "name": "Admin One",
+          "role": "admin",
+          "status": "active",
+          "email": "admin1@e2e.com",
+          "password": "1234"
+        }
+      },
+      "tables": {
+        "table_1": {
+          "number": "1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_2": {
+          "number": "2",
+          "capacity": 2,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_1": {
+          "number": "C1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_2": {
+          "number": "C2",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_3": {
+          "number": "C3",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_4": {
+          "number": "C4",
+          "capacity": 2,
+          "status": "disabled",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_5": {
+          "number": "C5",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_6": {
+          "number": "C6",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_7": {
+          "number": "C7",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        }
+      },
+      "sessions": {},
+      "carts": {
+        "cart_served_1": {
+          "cartId": "cart_served_1",
+          "sessionId": "session_active_1",
+          "orderId": "order_active_1",
+          "status": "served",
+          "items": [
+            {
+              "cartItemId": "ci_1",
+              "menuItemId": "item_burger_1",
+              "name": "Classic Burger",
+              "quantity": 1,
+              "basePrice": 180,
+              "finalPrice": 200,
+              "selectedVariants": [
+                {
+                  "variantId": "var_size_burger",
+                  "optionId": "opt_reg",
+                  "name": "Size: Regular",
+                  "price": 0
+                }
+              ],
+              "selectedAddons": [
+                {
+                  "addonId": "addon_cheese",
+                  "name": "Extra Cheese",
+                  "price": 20
+                }
+              ],
+              "notes": "No onions",
+              "kitchenStatus": "served"
+            }
+          ],
+          "subtotal": 200,
+          "submittedAt": {
+            "_seconds": 1738200300,
+            "_nanoseconds": 0
+          }
+        },
+        "cart_pending_1": {
+          "cartId": "cart_pending_1",
+          "sessionId": "session_active_1",
+          "orderId": "order_active_1",
+          "status": "in_kitchen",
+          "items": [
+            {
+              "cartItemId": "ci_2",
+              "menuItemId": "item_pizza_1",
+              "name": "Margherita Pizza",
+              "quantity": 1,
+              "basePrice": 450,
+              "finalPrice": 580,
+              "selectedVariants": [
+                {
+                  "variantId": "var_size_pizza",
+                  "optionId": "opt_lrg",
+                  "name": "Size: Large",
+                  "price": 100
+                }
+              ],
+              "selectedAddons": [
+                {
+                  "addonId": "addon_olives",
+                  "name": "Black Olives",
+                  "price": 30
+                }
+              ],
+              "notes": "",
+              "kitchenStatus": "preparing"
+            },
+            {
+              "cartItemId": "ci_3",
+              "menuItemId": "item_whiskey_1",
+              "name": "Scotch Whiskey",
+              "quantity": 2,
+              "basePrice": 500,
+              "finalPrice": 1000,
+              "selectedVariants": [],
+              "selectedAddons": [],
+              "notes": "On the rocks",
+              "kitchenStatus": "pending"
+            }
+          ],
+          "subtotal": 1580,
+          "submittedAt": {
+            "_seconds": 1738200600,
+            "_nanoseconds": 0
+          }
+        }
+      },
+      "orders": {
+        "order_active_1": {
+          "orderId": "order_active_1",
+          "sessionId": "session_active_1",
+          "tableId": "table_1",
+          "customerId": "9876543210",
+          "status": "in_progress",
+          "cartIds": [
+            "cart_served_1",
+            "cart_pending_1"
+          ],
+          "totalAmount": 1780,
+          "createdAt": {
+            "_seconds": 1738200300,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1738200600,
+            "_nanoseconds": 0
+          }
+        }
+      },
+      "offers": {
+        "offer_dessert_50": {
+          "id": "offer_dessert_50",
+          "title": "50% Off Desserts",
+          "description": "Get 50% off on all dessert items",
+          "type": "PERCENTAGE",
+          "scope": "CATEGORY",
+          "targetIds": [
+            "sub_dessert"
+          ],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {},
+          "benefit": {
+            "value": 50,
+            "maxDiscount": 500
+          }
+        },
+        "offer_flat_100": {
+          "id": "offer_flat_100",
+          "title": "\u20b9100 Off on Bar",
+          "description": "Flat \u20b9100 off on bar orders above \u20b9500",
+          "type": "FLAT",
+          "scope": "CATEGORY",
+          "targetIds": [
+            "cat_bar"
+          ],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {
+            "minOrderValue": 500
+          },
+          "benefit": {
+            "value": 100
+          }
+        },
+        "offer_first_time_20": {
+          "id": "offer_first_time_20",
+          "title": "20% Off First Order",
+          "description": "First-time customers get 20% off",
+          "type": "PERCENTAGE",
+          "scope": "ORDER",
+          "targetIds": [],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {
+            "isFirstTimeUser": true
+          },
+          "benefit": {
+            "value": 20,
+            "maxDiscount": 200
+          }
+        },
+        "offer_bogo_burger": {
+          "id": "offer_bogo_burger",
+          "title": "BOGO Burger",
+          "description": "Buy one burger, get one free",
+          "type": "BOGO",
+          "scope": "ITEM",
+          "targetIds": [
+            "item_burger_1"
+          ],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {},
+          "benefit": {
+            "buyQuantity": 1,
+            "getQuantity": 1
+          }
+        },
+        "offer_pct_food_15": {
+          "id": "offer_pct_food_15",
+          "title": "15% Off Food",
+          "description": "15% off food",
+          "type": "PERCENTAGE",
+          "scope": "CATEGORY",
+          "targetIds": [
+            "cat_food"
+          ],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {},
+          "benefit": {
+            "value": 15,
+            "maxDiscount": 300
+          }
+        },
+        "offer_maxdiscount_cap": {
+          "id": "offer_maxdiscount_cap",
+          "title": "50% Off (Max 100)",
+          "description": "50% off capped at 100",
+          "type": "PERCENTAGE",
+          "scope": "ORDER",
+          "targetIds": [],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {},
+          "benefit": {
+            "value": 50,
+            "maxDiscount": 100
+          }
+        }
+      },
+      "config": {
+        "settings": {
+          "billing": {
+            "charges": [
+              { "type": "SERVICE_CHARGE", "percentage": 7.5 }
+            ]
+          }
+        }
+      }
+    },
+    "res_e2e_multi_variant_off": {
+      "info": {
+        "name": "E2E - Multi-Variant OFF",
+        "address": "456 Variant Blvd",
+        "phone": "1234567891",
+        "email": "e2e_mv@plattr.com",
+        "location": {
+          "_latitude": 12.9716,
+          "_longitude": 77.5946
+        }
+      },
+      "menus": {
+        "menu_main": {
+          "menuId": "menu_main",
+          "name": "Main Menu",
+          "isActive": true,
+          "isDefault": true,
+          "categoryIds": [
+            "cat_food",
+            "cat_bar"
+          ],
+          "menuItemIds": [
+            "item_burger_1",
+            "item_pizza_1",
+            "item_tiramisu",
+            "item_whiskey_1",
+            "item_beer_1"
+          ],
+          "order": 0
+        }
+      },
+      "categories": {
+        "cat_food": {
+          "id": "cat_food",
+          "name": "Food",
+          "order": 0,
+          "subcategoryIds": [
+            "sub_burger",
+            "sub_pizza",
+            "sub_dessert"
+          ]
+        },
+        "cat_bar": {
+          "id": "cat_bar",
+          "name": "Bar",
+          "order": 1,
+          "subcategoryIds": [
+            "sub_whiskey",
+            "sub_beer"
+          ]
+        }
+      },
+      "subcategories": {
+        "sub_burger": {
+          "id": "sub_burger",
+          "name": "Burger",
+          "parentCategoryId": "cat_food",
+          "order": 0
+        },
+        "sub_pizza": {
+          "id": "sub_pizza",
+          "name": "Pizza",
+          "parentCategoryId": "cat_food",
+          "order": 1
+        },
+        "sub_dessert": {
+          "id": "sub_dessert",
+          "name": "Dessert",
+          "parentCategoryId": "cat_food",
+          "order": 2
+        },
+        "sub_whiskey": {
+          "id": "sub_whiskey",
+          "name": "Whiskey",
+          "parentCategoryId": "cat_bar",
+          "order": 0
+        },
+        "sub_beer": {
+          "id": "sub_beer",
+          "name": "Beer",
+          "parentCategoryId": "cat_bar",
+          "order": 1
+        }
+      },
+      "menuItems": {
+        "item_burger_1": {
+          "menuItemId": "item_burger_1",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_burger",
+          "subcategoryIds": [
+            "sub_burger"
+          ],
+          "meta": {
+            "name": "Classic Burger",
+            "description": "Juicy beef burger",
+            "categoryName": "Food",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 200,
+            "discount": 10,
+            "finalPrice": 180
+          },
+          "variants": [
+            {
+              "id": "var_size_burger",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_cheese"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_pizza_1": {
+          "menuItemId": "item_pizza_1",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_pizza",
+          "subcategoryIds": [
+            "sub_pizza"
+          ],
+          "meta": {
+            "name": "Margherita Pizza",
+            "description": "Classic cheese pizza",
+            "categoryName": "Food",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 500,
+            "discount": 10,
+            "finalPrice": 450
+          },
+          "variants": [
+            {
+              "id": "var_size_pizza",
+              "name": "Size"
+            }
+          ],
+          "addons": [],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_tiramisu": {
+          "menuItemId": "item_tiramisu",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_dessert",
+          "subcategoryIds": [
+            "sub_dessert"
+          ],
+          "meta": {
+            "name": "Tiramisu",
+            "description": "Coffee-flavored Italian dessert",
+            "categoryName": "Food",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 200,
+            "discount": 0,
+            "finalPrice": 200
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_whiskey_1": {
+          "menuItemId": "item_whiskey_1",
+          "categoryId": "cat_bar",
+          "primarySubcategoryId": "sub_whiskey",
+          "subcategoryIds": [
+            "sub_whiskey"
+          ],
+          "meta": {
+            "name": "Scotch Whiskey",
+            "description": "Premium aged scotch",
+            "categoryName": "Bar",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 500,
+            "discount": 0,
+            "finalPrice": 500
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_beer_1": {
+          "menuItemId": "item_beer_1",
+          "categoryId": "cat_bar",
+          "primarySubcategoryId": "sub_beer",
+          "subcategoryIds": [
+            "sub_beer"
+          ],
+          "meta": {
+            "name": "Craft Beer",
+            "description": "Local brewery special",
+            "categoryName": "Bar",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 100,
+            "discount": 0,
+            "finalPrice": 100
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": true,
+          "isCustomizable": false
+        }
+      },
+      "variants": {
+        "var_size_burger": {
+          "id": "var_size_burger",
+          "meta": {
+            "name": "Size",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Choose size"
+          },
+          "options": [
+            {
+              "id": "opt_reg",
+              "name": "Regular",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "opt_large",
+              "name": "Large",
+              "priceInfo": {
+                "basePrice": 50,
+                "finalPrice": 50,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_burger_1"
+          ]
+        },
+        "var_size_pizza": {
+          "id": "var_size_pizza",
+          "meta": {
+            "name": "Size",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Choose size"
+          },
+          "options": [
+            {
+              "id": "opt_med",
+              "name": "Medium",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "opt_lrg",
+              "name": "Large",
+              "priceInfo": {
+                "basePrice": 100,
+                "finalPrice": 100,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_pizza_1"
+          ]
+        }
+      },
+      "addons": {
+        "addon_cheese": {
+          "id": "addon_cheese",
+          "meta": {
+            "name": "Extra Cheese",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Add extra cheese"
+          },
+          "priceInfo": {
+            "basePrice": 20,
+            "finalPrice": 20,
+            "discount": 0
+          },
+          "isInStock": true,
+          "respectParentDiscount": false,
+          "isMandatory": false,
+          "itemsAssociatedWith": [
+            "item_burger_1"
+          ]
+        }
+      },
+      "kitchens": {
+        "kitchen_food": {
+          "name": "Food Kitchen",
+          "status": "active"
+        },
+        "kitchen_bar": {
+          "name": "Bar Kitchen",
+          "status": "active"
+        }
+      },
+      "servers": {
+        "server_1": {
+          "name": "Server One",
+          "role": "waiter",
+          "status": "active",
+          "email": "server1@e2e-mv.com",
+          "password": "1234"
+        },
+        "server_2": {
+          "name": "Server Two",
+          "role": "waiter",
+          "status": "active",
+          "email": "server2@e2e-mv.com",
+          "password": "1234"
+        },
+        "kitchen_staff_1": {
+          "name": "Kitchen One",
+          "role": "kitchen",
+          "status": "active",
+          "email": "kitchen1@e2e-mv.com",
+          "password": "1234"
+        },
+        "admin_1": {
+          "name": "Admin One",
+          "role": "admin",
+          "status": "active",
+          "email": "admin1@e2e-mv.com",
+          "password": "1234"
+        }
+      },
+      "tables": {
+        "table_1": {
+          "number": "1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_2": {
+          "number": "2",
+          "capacity": 2,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_1": {
+          "number": "C1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_2": {
+          "number": "C2",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_3": {
+          "number": "C3",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_4": {
+          "number": "C4",
+          "capacity": 2,
+          "status": "disabled",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_5": {
+          "number": "C5",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_6": {
+          "number": "C6",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_7": {
+          "number": "C7",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        }
+      },
+      "sessions": {},
+      "carts": {},
+      "orders": {},
+      "offers": {
+        "offer_dessert_50": {
+          "id": "offer_dessert_50",
+          "title": "50% Off Desserts",
+          "description": "Get 50% off on all dessert items",
+          "type": "PERCENTAGE",
+          "scope": "CATEGORY",
+          "targetIds": [
+            "sub_dessert"
+          ],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {},
+          "benefit": {
+            "value": 50,
+            "maxDiscount": 500
+          }
+        }
+      }
+    },
+    "res_e2e_fallback_off": {
+      "info": {
+        "name": "E2E - Fallback Config OFF",
+        "address": "789 Fallback Rd",
+        "phone": "1234567892",
+        "email": "e2e_fb@plattr.com",
+        "location": {
+          "_latitude": 12.9716,
+          "_longitude": 77.5946
+        }
+      },
+      "menus": {
+        "menu_main": {
+          "menuId": "menu_main",
+          "name": "Main Menu",
+          "isActive": true,
+          "isDefault": true,
+          "categoryIds": [
+            "cat_food",
+            "cat_bar"
+          ],
+          "menuItemIds": [
+            "item_burger_1",
+            "item_pizza_1",
+            "item_tiramisu",
+            "item_whiskey_1",
+            "item_beer_1"
+          ],
+          "order": 0
+        }
+      },
+      "categories": {
+        "cat_food": {
+          "id": "cat_food",
+          "name": "Food",
+          "order": 0,
+          "subcategoryIds": [
+            "sub_burger",
+            "sub_pizza",
+            "sub_dessert"
+          ]
+        },
+        "cat_bar": {
+          "id": "cat_bar",
+          "name": "Bar",
+          "order": 1,
+          "subcategoryIds": [
+            "sub_whiskey",
+            "sub_beer"
+          ]
+        }
+      },
+      "subcategories": {
+        "sub_burger": {
+          "id": "sub_burger",
+          "name": "Burger",
+          "parentCategoryId": "cat_food",
+          "order": 0
+        },
+        "sub_pizza": {
+          "id": "sub_pizza",
+          "name": "Pizza",
+          "parentCategoryId": "cat_food",
+          "order": 1
+        },
+        "sub_dessert": {
+          "id": "sub_dessert",
+          "name": "Dessert",
+          "parentCategoryId": "cat_food",
+          "order": 2
+        },
+        "sub_whiskey": {
+          "id": "sub_whiskey",
+          "name": "Whiskey",
+          "parentCategoryId": "cat_bar",
+          "order": 0
+        },
+        "sub_beer": {
+          "id": "sub_beer",
+          "name": "Beer",
+          "parentCategoryId": "cat_bar",
+          "order": 1
+        }
+      },
+      "menuItems": {
+        "item_burger_1": {
+          "menuItemId": "item_burger_1",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_burger",
+          "subcategoryIds": [
+            "sub_burger"
+          ],
+          "meta": {
+            "name": "Classic Burger",
+            "description": "Juicy beef burger",
+            "categoryName": "Food",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 200,
+            "discount": 10,
+            "finalPrice": 180
+          },
+          "variants": [
+            {
+              "id": "var_size_burger",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_cheese"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_pizza_1": {
+          "menuItemId": "item_pizza_1",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_pizza",
+          "subcategoryIds": [
+            "sub_pizza"
+          ],
+          "meta": {
+            "name": "Margherita Pizza",
+            "description": "Classic cheese pizza",
+            "categoryName": "Food",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 500,
+            "discount": 10,
+            "finalPrice": 450
+          },
+          "variants": [
+            {
+              "id": "var_size_pizza",
+              "name": "Size"
+            }
+          ],
+          "addons": [],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_tiramisu": {
+          "menuItemId": "item_tiramisu",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_dessert",
+          "subcategoryIds": [
+            "sub_dessert"
+          ],
+          "meta": {
+            "name": "Tiramisu",
+            "description": "Coffee-flavored Italian dessert",
+            "categoryName": "Food",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 200,
+            "discount": 0,
+            "finalPrice": 200
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_whiskey_1": {
+          "menuItemId": "item_whiskey_1",
+          "categoryId": "cat_bar",
+          "primarySubcategoryId": "sub_whiskey",
+          "subcategoryIds": [
+            "sub_whiskey"
+          ],
+          "meta": {
+            "name": "Scotch Whiskey",
+            "description": "Premium aged scotch",
+            "categoryName": "Bar",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 500,
+            "discount": 0,
+            "finalPrice": 500
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_beer_1": {
+          "menuItemId": "item_beer_1",
+          "categoryId": "cat_bar",
+          "primarySubcategoryId": "sub_beer",
+          "subcategoryIds": [
+            "sub_beer"
+          ],
+          "meta": {
+            "name": "Craft Beer",
+            "description": "Local brewery special",
+            "categoryName": "Bar",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 100,
+            "discount": 0,
+            "finalPrice": 100
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": true,
+          "isCustomizable": false
+        }
+      },
+      "variants": {
+        "var_size_burger": {
+          "id": "var_size_burger",
+          "meta": {
+            "name": "Size",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Choose size"
+          },
+          "options": [
+            {
+              "id": "opt_reg",
+              "name": "Regular",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "opt_large",
+              "name": "Large",
+              "priceInfo": {
+                "basePrice": 50,
+                "finalPrice": 50,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_burger_1"
+          ]
+        },
+        "var_size_pizza": {
+          "id": "var_size_pizza",
+          "meta": {
+            "name": "Size",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Choose size"
+          },
+          "options": [
+            {
+              "id": "opt_med",
+              "name": "Medium",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "opt_lrg",
+              "name": "Large",
+              "priceInfo": {
+                "basePrice": 100,
+                "finalPrice": 100,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_pizza_1"
+          ]
+        }
+      },
+      "addons": {
+        "addon_cheese": {
+          "id": "addon_cheese",
+          "meta": {
+            "name": "Extra Cheese",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Add extra cheese"
+          },
+          "priceInfo": {
+            "basePrice": 20,
+            "finalPrice": 20,
+            "discount": 0
+          },
+          "isInStock": true,
+          "respectParentDiscount": false,
+          "isMandatory": false,
+          "itemsAssociatedWith": [
+            "item_burger_1"
+          ]
+        }
+      },
+      "kitchens": {
+        "kitchen_food": {
+          "name": "Food Kitchen",
+          "status": "active"
+        },
+        "kitchen_bar": {
+          "name": "Bar Kitchen",
+          "status": "active"
+        }
+      },
+      "servers": {
+        "server_1": {
+          "name": "Server One",
+          "role": "waiter",
+          "status": "active",
+          "email": "server1@e2e-fb.com",
+          "password": "1234"
+        },
+        "server_2": {
+          "name": "Server Two",
+          "role": "waiter",
+          "status": "active",
+          "email": "server2@e2e-fb.com",
+          "password": "1234"
+        },
+        "kitchen_staff_1": {
+          "name": "Kitchen One",
+          "role": "kitchen",
+          "status": "active",
+          "email": "kitchen1@e2e-fb.com",
+          "password": "1234"
+        },
+        "admin_1": {
+          "name": "Admin One",
+          "role": "admin",
+          "status": "active",
+          "email": "admin1@e2e-fb.com",
+          "password": "1234"
+        }
+      },
+      "tables": {
+        "table_1": {
+          "number": "1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_2": {
+          "number": "2",
+          "capacity": 2,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_1": {
+          "number": "C1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_2": {
+          "number": "C2",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_3": {
+          "number": "C3",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_4": {
+          "number": "C4",
+          "capacity": 2,
+          "status": "disabled",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_5": {
+          "number": "C5",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_6": {
+          "number": "C6",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_7": {
+          "number": "C7",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        }
+      },
+      "sessions": {},
+      "carts": {},
+      "orders": {},
+      "offers": {
+        "offer_dessert_50": {
+          "id": "offer_dessert_50",
+          "title": "50% Off Desserts",
+          "description": "Get 50% off on all dessert items",
+          "type": "PERCENTAGE",
+          "scope": "CATEGORY",
+          "targetIds": [
+            "sub_dessert"
+          ],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {},
+          "benefit": {
+            "value": 50,
+            "maxDiscount": 500
+          }
+        }
+      }
+    },
+    "res_e2e_empty_menu": {
+      "info": {
+        "name": "E2E - Empty Menu",
+        "address": "000 Empty Blvd",
+        "phone": "1234567893",
+        "email": "e2e_empty@plattr.com",
+        "location": {
+          "_latitude": 12.9716,
+          "_longitude": 77.5946
+        }
+      },
+      "menus": {
+        "menu_main": {
+          "menuId": "menu_main",
+          "name": "Main Menu",
+          "isActive": true,
+          "isDefault": true,
+          "categoryIds": [],
+          "menuItemIds": [],
+          "order": 0
+        }
+      },
+      "categories": {},
+      "subcategories": {},
+      "menuItems": {},
+      "variants": {},
+      "addons": {},
+      "kitchens": {
+        "kitchen_food": {
+          "name": "Food Kitchen",
+          "status": "active"
+        },
+        "kitchen_bar": {
+          "name": "Bar Kitchen",
+          "status": "active"
+        }
+      },
+      "servers": {
+        "server_1": {
+          "name": "Server One",
+          "role": "waiter",
+          "status": "active",
+          "email": "server1@e2e-empty.com",
+          "password": "1234"
+        },
+        "server_2": {
+          "name": "Server Two",
+          "role": "waiter",
+          "status": "active",
+          "email": "server2@e2e-empty.com",
+          "password": "1234"
+        },
+        "kitchen_staff_1": {
+          "name": "Kitchen One",
+          "role": "kitchen",
+          "status": "active",
+          "email": "kitchen1@e2e-empty.com",
+          "password": "1234"
+        },
+        "admin_1": {
+          "name": "Admin One",
+          "role": "admin",
+          "status": "active",
+          "email": "admin1@e2e-empty.com",
+          "password": "1234"
+        }
+      },
+      "tables": {
+        "table_1": {
+          "number": "1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_2": {
+          "number": "2",
+          "capacity": 2,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_1": {
+          "number": "C1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_2": {
+          "number": "C2",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_3": {
+          "number": "C3",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_4": {
+          "number": "C4",
+          "capacity": 2,
+          "status": "disabled",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_5": {
+          "number": "C5",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_6": {
+          "number": "C6",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_7": {
+          "number": "C7",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        }
+      },
+      "sessions": {},
+      "carts": {},
+      "orders": {},
+      "offers": {}
+    },
+    "res_e2e_all_out_of_stock": {
+      "info": {
+        "name": "E2E - All Out of Stock",
+        "address": "111 OOS St",
+        "phone": "1234567894",
+        "email": "e2e_oos@plattr.com",
+        "location": {
+          "_latitude": 12.9716,
+          "_longitude": 77.5946
+        }
+      },
+      "menus": {
+        "menu_main": {
+          "menuId": "menu_main",
+          "name": "Main Menu",
+          "isActive": true,
+          "isDefault": true,
+          "categoryIds": [
+            "cat_food",
+            "cat_bar"
+          ],
+          "menuItemIds": [
+            "item_burger_1",
+            "item_pizza_1",
+            "item_tiramisu",
+            "item_whiskey_1",
+            "item_beer_1"
+          ],
+          "order": 0
+        }
+      },
+      "categories": {
+        "cat_food": {
+          "id": "cat_food",
+          "name": "Food",
+          "order": 0,
+          "subcategoryIds": [
+            "sub_burger",
+            "sub_pizza",
+            "sub_dessert"
+          ]
+        },
+        "cat_bar": {
+          "id": "cat_bar",
+          "name": "Bar",
+          "order": 1,
+          "subcategoryIds": [
+            "sub_whiskey",
+            "sub_beer"
+          ]
+        }
+      },
+      "subcategories": {
+        "sub_burger": {
+          "id": "sub_burger",
+          "name": "Burger",
+          "parentCategoryId": "cat_food",
+          "order": 0
+        },
+        "sub_pizza": {
+          "id": "sub_pizza",
+          "name": "Pizza",
+          "parentCategoryId": "cat_food",
+          "order": 1
+        },
+        "sub_dessert": {
+          "id": "sub_dessert",
+          "name": "Dessert",
+          "parentCategoryId": "cat_food",
+          "order": 2
+        },
+        "sub_whiskey": {
+          "id": "sub_whiskey",
+          "name": "Whiskey",
+          "parentCategoryId": "cat_bar",
+          "order": 0
+        },
+        "sub_beer": {
+          "id": "sub_beer",
+          "name": "Beer",
+          "parentCategoryId": "cat_bar",
+          "order": 1
+        }
+      },
+      "menuItems": {
+        "item_burger_1": {
+          "menuItemId": "item_burger_1",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_burger",
+          "subcategoryIds": [
+            "sub_burger"
+          ],
+          "meta": {
+            "name": "Classic Burger",
+            "description": "Juicy beef burger",
+            "categoryName": "Food",
+            "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"
+          },
+          "priceInfo": {
+            "basePrice": 200,
+            "discount": 10,
+            "finalPrice": 180
+          },
+          "variants": [
+            {
+              "id": "var_size_burger",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_cheese"
+          ],
+          "isInStock": false,
+          "isCustomizable": true
+        },
+        "item_pizza_1": {
+          "menuItemId": "item_pizza_1",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_pizza",
+          "subcategoryIds": [
+            "sub_pizza"
+          ],
+          "meta": {
+            "name": "Margherita Pizza",
+            "description": "Classic cheese pizza",
+            "categoryName": "Food",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 500,
+            "discount": 10,
+            "finalPrice": 450
+          },
+          "variants": [
+            {
+              "id": "var_size_pizza",
+              "name": "Size"
+            },
+            {
+              "id": "var_crust_pizza",
+              "name": "Crust"
+            }
+          ],
+          "addons": [
+            "addon_olives",
+            "addon_jalapeno"
+          ],
+          "isInStock": false,
+          "isCustomizable": true
+        },
+        "item_tiramisu": {
+          "menuItemId": "item_tiramisu",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_dessert",
+          "subcategoryIds": [
+            "sub_dessert"
+          ],
+          "meta": {
+            "name": "Tiramisu",
+            "description": "Coffee-flavored Italian dessert",
+            "categoryName": "Food",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 200,
+            "discount": 0,
+            "finalPrice": 200
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": false,
+          "isCustomizable": false
+        },
+        "item_whiskey_1": {
+          "menuItemId": "item_whiskey_1",
+          "categoryId": "cat_bar",
+          "primarySubcategoryId": "sub_whiskey",
+          "subcategoryIds": [
+            "sub_whiskey"
+          ],
+          "meta": {
+            "name": "Scotch Whiskey",
+            "description": "Premium aged scotch",
+            "categoryName": "Bar",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 500,
+            "discount": 0,
+            "finalPrice": 500
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": false,
+          "isCustomizable": false
+        },
+        "item_beer_1": {
+          "menuItemId": "item_beer_1",
+          "categoryId": "cat_bar",
+          "primarySubcategoryId": "sub_beer",
+          "subcategoryIds": [
+            "sub_beer"
+          ],
+          "meta": {
+            "name": "Craft Beer",
+            "description": "Local brewery special",
+            "categoryName": "Bar",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 100,
+            "discount": 0,
+            "finalPrice": 100
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": false,
+          "isCustomizable": false
+        }
+      },
+      "variants": {
+        "var_size_burger": {
+          "id": "var_size_burger",
+          "meta": {
+            "name": "Size",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Choose size"
+          },
+          "options": [
+            {
+              "id": "opt_reg",
+              "name": "Regular",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "opt_large",
+              "name": "Large",
+              "priceInfo": {
+                "basePrice": 50,
+                "finalPrice": 50,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_burger_1"
+          ]
+        },
+        "var_size_pizza": {
+          "id": "var_size_pizza",
+          "meta": {
+            "name": "Size",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Choose size"
+          },
+          "options": [
+            {
+              "id": "opt_med",
+              "name": "Medium",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "opt_lrg",
+              "name": "Large",
+              "priceInfo": {
+                "basePrice": 100,
+                "finalPrice": 100,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_pizza_1"
+          ]
+        },
+        "var_crust_pizza": {
+          "id": "var_crust_pizza",
+          "meta": {
+            "name": "Crust",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Choose crust type (optional)"
+          },
+          "options": [
+            {
+              "id": "opt_thin",
+              "name": "Thin Crust",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "opt_stuffed",
+              "name": "Stuffed Crust",
+              "priceInfo": {
+                "basePrice": 75,
+                "finalPrice": 75,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": false,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_pizza_1"
+          ]
+        }
+      },
+      "addons": {
+        "addon_cheese": {
+          "id": "addon_cheese",
+          "meta": {
+            "name": "Extra Cheese",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Add extra cheese"
+          },
+          "priceInfo": {
+            "basePrice": 20,
+            "finalPrice": 20,
+            "discount": 0
+          },
+          "isInStock": true,
+          "respectParentDiscount": false,
+          "isMandatory": false,
+          "itemsAssociatedWith": [
+            "item_burger_1"
+          ]
+        },
+        "addon_olives": {
+          "id": "addon_olives",
+          "meta": {
+            "name": "Black Olives",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Add black olives"
+          },
+          "priceInfo": {
+            "basePrice": 30,
+            "finalPrice": 30,
+            "discount": 0
+          },
+          "isInStock": true,
+          "respectParentDiscount": false,
+          "isMandatory": false,
+          "itemsAssociatedWith": [
+            "item_pizza_1"
+          ]
+        },
+        "addon_jalapeno": {
+          "id": "addon_jalapeno",
+          "meta": {
+            "name": "Jalape\u00f1os",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Add spicy jalape\u00f1os"
+          },
+          "priceInfo": {
+            "basePrice": 25,
+            "finalPrice": 25,
+            "discount": 0
+          },
+          "isInStock": true,
+          "respectParentDiscount": true,
+          "isMandatory": false,
+          "itemsAssociatedWith": [
+            "item_pizza_1"
+          ]
+        }
+      },
+      "kitchens": {
+        "kitchen_food": {
+          "name": "Food Kitchen",
+          "status": "active"
+        },
+        "kitchen_bar": {
+          "name": "Bar Kitchen",
+          "status": "active"
+        }
+      },
+      "servers": {
+        "server_1": {
+          "name": "Server One",
+          "role": "waiter",
+          "status": "active",
+          "email": "server1@e2e-oos.com",
+          "password": "1234"
+        },
+        "server_2": {
+          "name": "Server Two",
+          "role": "waiter",
+          "status": "active",
+          "email": "server2@e2e-oos.com",
+          "password": "1234"
+        },
+        "kitchen_staff_1": {
+          "name": "Kitchen One",
+          "role": "kitchen",
+          "status": "active",
+          "email": "kitchen1@e2e-oos.com",
+          "password": "1234"
+        },
+        "admin_1": {
+          "name": "Admin One",
+          "role": "admin",
+          "status": "active",
+          "email": "admin1@e2e-oos.com",
+          "password": "1234"
+        }
+      },
+      "tables": {
+        "table_1": {
+          "number": "1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_2": {
+          "number": "2",
+          "capacity": 2,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_1": {
+          "number": "C1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_2": {
+          "number": "C2",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_3": {
+          "number": "C3",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_4": {
+          "number": "C4",
+          "capacity": 2,
+          "status": "disabled",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_5": {
+          "number": "C5",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_6": {
+          "number": "C6",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_7": {
+          "number": "C7",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        }
+      },
+      "sessions": {},
+      "carts": {},
+      "orders": {},
+      "offers": {}
+    },
+    "res_e2e_simple_menu": {
+      "info": {
+        "name": "E2E - Simple Menu",
+        "address": "222 Simple Ave",
+        "phone": "1234567895",
+        "email": "e2e_simple@plattr.com",
+        "location": {
+          "_latitude": 12.9716,
+          "_longitude": 77.5946
+        }
+      },
+      "menus": {
+        "menu_main": {
+          "menuId": "menu_main",
+          "name": "Simple Menu",
+          "isActive": true,
+          "isDefault": true,
+          "categoryIds": [
+            "cat_food"
+          ],
+          "menuItemIds": [
+            "item_simple_1",
+            "item_simple_2",
+            "item_simple_3",
+            "item_simple_4"
+          ],
+          "order": 0
+        }
+      },
+      "categories": {
+        "cat_food": {
+          "id": "cat_food",
+          "name": "Mains",
+          "order": 0,
+          "subcategoryIds": [
+            "sub_mains"
+          ]
+        }
+      },
+      "subcategories": {
+        "sub_mains": {
+          "id": "sub_mains",
+          "name": "All Items",
+          "parentCategoryId": "cat_food",
+          "order": 0
+        }
+      },
+      "menuItems": {
+        "item_simple_1": {
+          "menuItemId": "item_simple_1",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_mains",
+          "subcategoryIds": [
+            "sub_mains"
+          ],
+          "meta": {
+            "name": "Grilled Chicken",
+            "description": "Simple grilled chicken",
+            "categoryName": "Mains",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 150,
+            "discount": 0,
+            "finalPrice": 150
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_simple_2": {
+          "menuItemId": "item_simple_2",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_mains",
+          "subcategoryIds": [
+            "sub_mains"
+          ],
+          "meta": {
+            "name": "Pasta Alfredo",
+            "description": "Creamy pasta",
+            "categoryName": "Mains",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 300,
+            "discount": 20,
+            "finalPrice": 240
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_simple_3": {
+          "menuItemId": "item_simple_3",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_mains",
+          "subcategoryIds": [
+            "sub_mains"
+          ],
+          "meta": {
+            "name": "Caesar Salad",
+            "description": "Fresh salad",
+            "categoryName": "Mains",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 100,
+            "discount": 0,
+            "finalPrice": 100
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_simple_4": {
+          "menuItemId": "item_simple_4",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_mains",
+          "subcategoryIds": [
+            "sub_mains"
+          ],
+          "meta": {
+            "name": "Steak",
+            "description": "Premium steak",
+            "categoryName": "Mains",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 500,
+            "discount": 10,
+            "finalPrice": 450
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": true,
+          "isCustomizable": false
+        }
+      },
+      "variants": {},
+      "addons": {},
+      "kitchens": {
+        "kitchen_food": {
+          "name": "Food Kitchen",
+          "status": "active"
+        },
+        "kitchen_bar": {
+          "name": "Bar Kitchen",
+          "status": "active"
+        }
+      },
+      "servers": {
+        "server_1": {
+          "name": "Server One",
+          "role": "waiter",
+          "status": "active",
+          "email": "server1@e2e-simple.com",
+          "password": "1234"
+        },
+        "server_2": {
+          "name": "Server Two",
+          "role": "waiter",
+          "status": "active",
+          "email": "server2@e2e-simple.com",
+          "password": "1234"
+        },
+        "kitchen_staff_1": {
+          "name": "Kitchen One",
+          "role": "kitchen",
+          "status": "active",
+          "email": "kitchen1@e2e-simple.com",
+          "password": "1234"
+        },
+        "admin_1": {
+          "name": "Admin One",
+          "role": "admin",
+          "status": "active",
+          "email": "admin1@e2e-simple.com",
+          "password": "1234"
+        }
+      },
+      "tables": {
+        "table_1": {
+          "number": "1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_2": {
+          "number": "2",
+          "capacity": 2,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_1": {
+          "number": "C1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_2": {
+          "number": "C2",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_3": {
+          "number": "C3",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_4": {
+          "number": "C4",
+          "capacity": 2,
+          "status": "disabled",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_5": {
+          "number": "C5",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_6": {
+          "number": "C6",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_7": {
+          "number": "C7",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        }
+      },
+      "sessions": {},
+      "carts": {},
+      "orders": {},
+      "offers": {}
+    },
+    "res_e2e_offer_configs": {
+      "info": {
+        "name": "E2E - Rich Offer Configs",
+        "address": "333 Offer Ln",
+        "phone": "1234567896",
+        "email": "e2e_offers@plattr.com",
+        "location": {
+          "_latitude": 12.9716,
+          "_longitude": 77.5946
+        }
+      },
+      "menus": {
+        "menu_main": {
+          "menuId": "menu_main",
+          "name": "Main Menu",
+          "isActive": true,
+          "isDefault": true,
+          "categoryIds": [
+            "cat_food",
+            "cat_bar"
+          ],
+          "menuItemIds": [
+            "item_burger_1",
+            "item_pizza_1",
+            "item_tiramisu",
+            "item_whiskey_1",
+            "item_beer_1"
+          ],
+          "order": 0
+        }
+      },
+      "categories": {
+        "cat_food": {
+          "id": "cat_food",
+          "name": "Food",
+          "order": 0,
+          "subcategoryIds": [
+            "sub_burger",
+            "sub_pizza",
+            "sub_dessert"
+          ]
+        },
+        "cat_bar": {
+          "id": "cat_bar",
+          "name": "Bar",
+          "order": 1,
+          "subcategoryIds": [
+            "sub_whiskey",
+            "sub_beer"
+          ]
+        }
+      },
+      "subcategories": {
+        "sub_burger": {
+          "id": "sub_burger",
+          "name": "Burger",
+          "parentCategoryId": "cat_food",
+          "order": 0
+        },
+        "sub_pizza": {
+          "id": "sub_pizza",
+          "name": "Pizza",
+          "parentCategoryId": "cat_food",
+          "order": 1
+        },
+        "sub_dessert": {
+          "id": "sub_dessert",
+          "name": "Dessert",
+          "parentCategoryId": "cat_food",
+          "order": 2
+        },
+        "sub_whiskey": {
+          "id": "sub_whiskey",
+          "name": "Whiskey",
+          "parentCategoryId": "cat_bar",
+          "order": 0
+        },
+        "sub_beer": {
+          "id": "sub_beer",
+          "name": "Beer",
+          "parentCategoryId": "cat_bar",
+          "order": 1
+        }
+      },
+      "menuItems": {
+        "item_burger_1": {
+          "menuItemId": "item_burger_1",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_burger",
+          "subcategoryIds": [
+            "sub_burger"
+          ],
+          "meta": {
+            "name": "Classic Burger",
+            "description": "Juicy beef burger",
+            "categoryName": "Food",
+            "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"
+          },
+          "priceInfo": {
+            "basePrice": 200,
+            "discount": 10,
+            "finalPrice": 180
+          },
+          "variants": [
+            {
+              "id": "var_size_burger",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_cheese"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_pizza_1": {
+          "menuItemId": "item_pizza_1",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_pizza",
+          "subcategoryIds": [
+            "sub_pizza"
+          ],
+          "meta": {
+            "name": "Margherita Pizza",
+            "description": "Classic cheese pizza",
+            "categoryName": "Food",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 500,
+            "discount": 10,
+            "finalPrice": 450
+          },
+          "variants": [
+            {
+              "id": "var_size_pizza",
+              "name": "Size"
+            },
+            {
+              "id": "var_crust_pizza",
+              "name": "Crust"
+            }
+          ],
+          "addons": [
+            "addon_olives",
+            "addon_jalapeno"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_tiramisu": {
+          "menuItemId": "item_tiramisu",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "sub_dessert",
+          "subcategoryIds": [
+            "sub_dessert"
+          ],
+          "meta": {
+            "name": "Tiramisu",
+            "description": "Coffee-flavored Italian dessert",
+            "categoryName": "Food",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 200,
+            "discount": 0,
+            "finalPrice": 200
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_whiskey_1": {
+          "menuItemId": "item_whiskey_1",
+          "categoryId": "cat_bar",
+          "primarySubcategoryId": "sub_whiskey",
+          "subcategoryIds": [
+            "sub_whiskey"
+          ],
+          "meta": {
+            "name": "Scotch Whiskey",
+            "description": "Premium aged scotch",
+            "categoryName": "Bar",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 500,
+            "discount": 0,
+            "finalPrice": 500
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_beer_1": {
+          "menuItemId": "item_beer_1",
+          "categoryId": "cat_bar",
+          "primarySubcategoryId": "sub_beer",
+          "subcategoryIds": [
+            "sub_beer"
+          ],
+          "meta": {
+            "name": "Craft Beer",
+            "description": "Local brewery special",
+            "categoryName": "Bar",
+            "image": ""
+          },
+          "priceInfo": {
+            "basePrice": 100,
+            "discount": 0,
+            "finalPrice": 100
+          },
+          "variants": [],
+          "addons": [],
+          "isInStock": false,
+          "isCustomizable": false
+        }
+      },
+      "variants": {
+        "var_size_burger": {
+          "id": "var_size_burger",
+          "meta": {
+            "name": "Size",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Choose size"
+          },
+          "options": [
+            {
+              "id": "opt_reg",
+              "name": "Regular",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "opt_large",
+              "name": "Large",
+              "priceInfo": {
+                "basePrice": 50,
+                "finalPrice": 50,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_burger_1"
+          ]
+        },
+        "var_size_pizza": {
+          "id": "var_size_pizza",
+          "meta": {
+            "name": "Size",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Choose size"
+          },
+          "options": [
+            {
+              "id": "opt_med",
+              "name": "Medium",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "opt_lrg",
+              "name": "Large",
+              "priceInfo": {
+                "basePrice": 100,
+                "finalPrice": 100,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": true,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_pizza_1"
+          ]
+        },
+        "var_crust_pizza": {
+          "id": "var_crust_pizza",
+          "meta": {
+            "name": "Crust",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Choose crust type (optional)"
+          },
+          "options": [
+            {
+              "id": "opt_thin",
+              "name": "Thin Crust",
+              "priceInfo": {
+                "basePrice": 0,
+                "finalPrice": 0,
+                "discount": 0
+              }
+            },
+            {
+              "id": "opt_stuffed",
+              "name": "Stuffed Crust",
+              "priceInfo": {
+                "basePrice": 75,
+                "finalPrice": 75,
+                "discount": 0
+              }
+            }
+          ],
+          "isMandatory": false,
+          "respectParentDiscount": true,
+          "itemsAssociatedWith": [
+            "item_pizza_1"
+          ]
+        }
+      },
+      "addons": {
+        "addon_cheese": {
+          "id": "addon_cheese",
+          "meta": {
+            "name": "Extra Cheese",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Add extra cheese"
+          },
+          "priceInfo": {
+            "basePrice": 20,
+            "finalPrice": 20,
+            "discount": 0
+          },
+          "isInStock": true,
+          "respectParentDiscount": false,
+          "isMandatory": false,
+          "itemsAssociatedWith": [
+            "item_burger_1"
+          ]
+        },
+        "addon_olives": {
+          "id": "addon_olives",
+          "meta": {
+            "name": "Black Olives",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Add black olives"
+          },
+          "priceInfo": {
+            "basePrice": 30,
+            "finalPrice": 30,
+            "discount": 0
+          },
+          "isInStock": true,
+          "respectParentDiscount": false,
+          "isMandatory": false,
+          "itemsAssociatedWith": [
+            "item_pizza_1"
+          ]
+        },
+        "addon_jalapeno": {
+          "id": "addon_jalapeno",
+          "meta": {
+            "name": "Jalape\u00f1os",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ],
+            "description": "Add spicy jalape\u00f1os"
+          },
+          "priceInfo": {
+            "basePrice": 25,
+            "finalPrice": 25,
+            "discount": 0
+          },
+          "isInStock": true,
+          "respectParentDiscount": true,
+          "isMandatory": false,
+          "itemsAssociatedWith": [
+            "item_pizza_1"
+          ]
+        }
+      },
+      "kitchens": {
+        "kitchen_food": {
+          "name": "Food Kitchen",
+          "status": "active"
+        },
+        "kitchen_bar": {
+          "name": "Bar Kitchen",
+          "status": "active"
+        }
+      },
+      "servers": {
+        "server_1": {
+          "name": "Server One",
+          "role": "waiter",
+          "status": "active",
+          "email": "server1@e2e-offer.com",
+          "password": "1234"
+        },
+        "server_2": {
+          "name": "Server Two",
+          "role": "waiter",
+          "status": "active",
+          "email": "server2@e2e-offer.com",
+          "password": "1234"
+        },
+        "kitchen_staff_1": {
+          "name": "Kitchen One",
+          "role": "kitchen",
+          "status": "active",
+          "email": "kitchen1@e2e-offer.com",
+          "password": "1234"
+        },
+        "admin_1": {
+          "name": "Admin One",
+          "role": "admin",
+          "status": "active",
+          "email": "admin1@e2e-offer.com",
+          "password": "1234"
+        }
+      },
+      "tables": {
+        "table_1": {
+          "number": "1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_2": {
+          "number": "2",
+          "capacity": 2,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_1": {
+          "number": "C1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_2": {
+          "number": "C2",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_3": {
+          "number": "C3",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_4": {
+          "number": "C4",
+          "capacity": 2,
+          "status": "disabled",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_5": {
+          "number": "C5",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_6": {
+          "number": "C6",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_7": {
+          "number": "C7",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        }
+      },
+      "sessions": {},
+      "carts": {},
+      "orders": {},
+      "offers": {
+        "offer_dessert_50": {
+          "id": "offer_dessert_50",
+          "title": "50% Off Desserts",
+          "description": "50% off desserts",
+          "type": "PERCENTAGE",
+          "scope": "CATEGORY",
+          "targetIds": [
+            "sub_dessert"
+          ],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {},
+          "benefit": {
+            "value": 50,
+            "maxDiscount": 500
+          }
+        },
+        "offer_flat_100": {
+          "id": "offer_flat_100",
+          "title": "Rs.100 Off Bar",
+          "description": "Flat 100 off bar above 500",
+          "type": "FLAT",
+          "scope": "CATEGORY",
+          "targetIds": [
+            "cat_bar"
+          ],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {
+            "minOrderValue": 500
+          },
+          "benefit": {
+            "value": 100
+          }
+        },
+        "offer_bogo_burger": {
+          "id": "offer_bogo_burger",
+          "title": "BOGO Burger",
+          "description": "Buy one get one free",
+          "type": "BOGO",
+          "scope": "ITEM",
+          "targetIds": [
+            "item_burger_1"
+          ],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {},
+          "benefit": {
+            "buyQuantity": 1,
+            "getQuantity": 1
+          }
+        },
+        "offer_pct_food_15": {
+          "id": "offer_pct_food_15",
+          "title": "15% Off Food",
+          "description": "15% off food",
+          "type": "PERCENTAGE",
+          "scope": "CATEGORY",
+          "targetIds": [
+            "cat_food"
+          ],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {},
+          "benefit": {
+            "value": 15,
+            "maxDiscount": 300
+          }
+        },
+        "offer_flat_item_50": {
+          "id": "offer_flat_item_50",
+          "title": "Rs.50 Off Pizza",
+          "description": "Flat 50 off pizza above 400",
+          "type": "FLAT",
+          "scope": "ITEM",
+          "targetIds": [
+            "item_pizza_1"
+          ],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {
+            "minOrderValue": 400
+          },
+          "benefit": {
+            "value": 50
+          }
+        },
+        "offer_expired": {
+          "id": "offer_expired",
+          "title": "30% Off (Expired)",
+          "description": "Expired offer",
+          "type": "PERCENTAGE",
+          "scope": "ORDER",
+          "targetIds": [],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2024-12-31T23:59:59Z"
+          },
+          "conditions": {},
+          "benefit": {
+            "value": 30,
+            "maxDiscount": 1000
+          }
+        },
+        "offer_complex_conditions": {
+          "id": "offer_complex_conditions",
+          "title": "25% Off (Burger+800 Min)",
+          "description": "Needs burger and 800 min",
+          "type": "PERCENTAGE",
+          "scope": "ORDER",
+          "targetIds": [],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {
+            "minCartValue": 800,
+            "requiredItems": [
+              {
+                "menuItemId": "item_burger_1",
+                "quantity": 1
+              }
+            ]
+          },
+          "benefit": {
+            "value": 25,
+            "maxDiscount": 500
+          }
+        },
+        "offer_maxdiscount_cap": {
+          "id": "offer_maxdiscount_cap",
+          "title": "50% Off (Max 100)",
+          "description": "50% off capped at 100",
+          "type": "PERCENTAGE",
+          "scope": "ORDER",
+          "targetIds": [],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {},
+          "benefit": {
+            "value": 50,
+            "maxDiscount": 100
+          }
+        },
+        "offer_first_time_20": {
+          "id": "offer_first_time_20",
+          "title": "20% Off First Order",
+          "description": "First-timers 20% off",
+          "type": "PERCENTAGE",
+          "scope": "ORDER",
+          "targetIds": [],
+          "isActive": true,
+          "validity": {
+            "startDate": "2024-01-01T00:00:00Z",
+            "endDate": "2030-12-31T23:59:59Z"
+          },
+          "conditions": {
+            "isFirstTimeUser": true
+          },
+          "benefit": {
+            "value": 20,
+            "maxDiscount": 200
+          }
+        }
+      },
+      "config": {
+        "settings": {
+          "billing": {
+            "charges": [
+              { "type": "SERVICE_CHARGE", "percentage": 7.5 },
+              { "type": "GLOBAL_DISCOUNT", "percentage": -5 }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

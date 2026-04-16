@@ -1,9 +1,16 @@
 {
   "dependencies": {
     "dotenv": "^16.4.5",
-    "firebase-admin": "^13.2.0"
+    "firebase-admin": "^13.2.0",
+    "firebase-tools": "^13.10.0"
   },
   "scripts": {
-    "import-mock": "cross-env NODE_ENV=development FUNCTIONS_EMULATOR=true FIRESTORE_EMULATOR_HOST=localhost:8080 node functions/mock/importMockData.js"
+    "import-mock": "cross-env NODE_ENV=development FUNCTIONS_EMULATOR=true node functions/mock/importMockData.js",
+    "preflight-ports": "bash tests/preflight_ports.sh",
+    "emulators": "export GOOGLE_APPLICATION_CREDENTIALS=./secure_stuff/service-account.json && firebase emulators:start --config firebase.temp.json --project rms-app-dd875 --only firestore,functions --debug",
+    "cart-flow": "bash tests/api_workflow_test.sh",
+    "cart-flow:exec": "firebase emulators:exec --config firebase.temp.json --project rms-app-dd875 --only firestore,functions \"NODE_ENV=development FUNCTIONS_EMULATOR=true FIRESTORE_EMULATOR_HOST=127.0.0.1:$(awk -F= '/FIRESTORE_PORT/ {print $2}' tests/.env.ports) node functions/mock/importMockData.js && EMULATOR_HOST=127.0.0.1 FUNCTIONS_PORT=$(awk -F= '/FUNCTIONS_PORT/ {print $2}' tests/.env.ports) bash tests/api_workflow_test.sh\"",
+    "cart-flow:ci": "bash tests/api_workflow_test.sh",
+    "cart-flow:full": "firebase emulators:exec --config firebase.temp.json --project rms-app-dd875 --only firestore,functions \"NODE_ENV=development FUNCTIONS_EMULATOR=true FIRESTORE_EMULATOR_HOST=127.0.0.1:$(awk -F= '/FIRESTORE_PORT/ {print $2}' tests/.env.ports) node functions/mock/importMockData.js && EMULATOR_HOST=127.0.0.1 FUNCTIONS_PORT=$(awk -F= '/FUNCTIONS_PORT/ {print $2}' tests/.env.ports) bash tests/api_workflow_test.sh && CONTRACT_DIR=$(pwd)/tests/responses_runtime cd /Users/shauryajaiswal/Desktop/dev/plattr-pro/consumer && flutter test test/cart_contract_check_test.dart\""
   }
 }

@@ -2,11 +2,12 @@ const functions = require('firebase-functions');
 const admin = require('../admin/admin');
 const db = admin.firestore();
 const { Timestamp } = require("firebase-admin/firestore");
-const { CART_STATUS, ORDER_STATUS, PAYMENT_STATUS } = require('./orderConstants');
+const { FULFILLMENT_STATUS, ORDER_STATUS, PAYMENT_STATUS } = require('./orderConstants');
 const featureFlags = require('../singleton/FeatureFlags');
 const { calculateCartValue } = require('../cart/calculateCartValue');
 const OrderInputValidation = require('./orderInputValidation');
-const { timestamp } = require('../utils/timestamp');
+const timestamp = require('../utils/timestamp');
+const { evaluateAndPickBestOffer, buildAppliedOfferObject } = require('../offers/evaluateOrderOffers');
 
 /**
  * Updates the status of a specific menu item within an order
@@ -43,8 +44,8 @@ const updateMenuItemStatus = functions.https.onCall(async (data, context) => {
       
       const order = orderDoc.data();
       
-      // Check if order is active
-      if (order.orderStatus !== ORDER_STATUS.ACTIVE) {
+      // Check if order is in progress
+      if (order.orderStatus !== ORDER_STATUS.IN_PROGRESS) {
         throw new functions.https.HttpsError(
           'failed-precondition',
           'Cannot update items in a non-active order'
@@ -70,7 +71,7 @@ const updateMenuItemStatus = functions.https.onCall(async (data, context) => {
           itemFound = true;
           
           // Special handling for cancelled items
-          if (newStatus === CART_STATUS.CANCELLED) {
+          if (newStatus === FULFILLMENT_STATUS.CANCELLED) {
             // Mark this item as cancelled in all relevant cart items too
             let needsPriceRecalculation = false;
             
@@ -84,7 +85,7 @@ const updateMenuItemStatus = functions.https.onCall(async (data, context) => {
                 
                 if (cartItemIndex !== -1) {
                   // Update the status in cart.items
-                  updatedOrder.carts[cartIndex].items[cartItemIndex].status = CART_STATUS.CANCELLED;
+                  updatedOrder.carts[cartIndex].items[cartItemIndex].status = FULFILLMENT_STATUS.CANCELLED;
                   updatedOrder.carts[cartIndex].items[cartItemIndex].statusUpdatedAt = timestamp.now();
                   updatedOrder.carts[cartIndex].items[cartItemIndex].statusUpdatedBy = context.auth.uid;
                   needsPriceRecalculation = true;
@@ -101,9 +102,34 @@ const updateMenuItemStatus = functions.https.onCall(async (data, context) => {
                 updatedOrder.carts[i].priceInfo = updatedPriceInfo;
               }
               
-              // Recalculate total order price across all carts
-              const recalculatedTotalPrice = calculateTotalPriceInfo(updatedOrder.carts);
-              updatedOrder.priceInfo = recalculatedTotalPrice;
+              // Recalculate total order price across all carts (item-level only)
+              const recalculatedBasePrice = calculateTotalPriceInfo(updatedOrder.carts);
+
+              // Offers V2: re-evaluate best order-level offer after cancellation
+              const allCartItems = (updatedOrder.carts || [])
+                .flatMap(c => Array.isArray(c.items) ? c.items : []);
+              const bestOffer = await evaluateAndPickBestOffer(
+                restaurantId,
+                allCartItems,
+                recalculatedBasePrice.basePrice || 0,
+                updatedOrder.sessionId
+              );
+              const baseFinalPrice = recalculatedBasePrice.finalPrice || 0;
+              const offerDiscount = bestOffer
+                ? Math.min(bestOffer.discountAmount || 0, baseFinalPrice)
+                : 0;
+
+              updatedOrder.appliedOffer = bestOffer
+                ? buildAppliedOfferObject(bestOffer)
+                : null;
+
+              updatedOrder.priceInfo = {
+                ...recalculatedBasePrice,
+                finalPrice: Math.max(0, baseFinalPrice - offerDiscount),
+                totalDiscountAmount:
+                  (recalculatedBasePrice.totalDiscountAmount || 0) + offerDiscount,
+                offerDiscount
+              };
             }
           }
         }

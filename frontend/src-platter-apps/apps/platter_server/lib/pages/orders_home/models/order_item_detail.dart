@@ -20,7 +20,8 @@ class OrderItemDetail {
     this.variants, // Now nullable, 'required' can be removed if they can be omitted in constructor
   });
 
-  factory OrderItemDetail.fromJson(Map<String, dynamic> json) => _$OrderItemDetailFromJson(json);
+  factory OrderItemDetail.fromJson(Map<String, dynamic> json) =>
+      _$OrderItemDetailFromJson(json);
 
   Map<String, dynamic> toJson() => _$OrderItemDetailToJson(this);
 }

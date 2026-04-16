@@ -1,0 +1,12 @@
+stateDiagram-v2
+    [*] --> VACANT: Table Created
+    
+    VACANT --> OTP_PENDING: QR Scanned\n(OTP Generated)
+    OTP_PENDING --> ACTIVE: OTP Validated\n(Session Created)
+    OTP_PENDING --> VACANT: OTP Expired\n(5 min timeout)
+    
+    ACTIVE --> ACTIVE: Secondary User Joins\n(Same Session)
+    ACTIVE --> VACANT: Session Ended\n(Bill Paid / Timeout)
+    
+    VACANT --> DISABLED: Admin Disables
+    DISABLED --> VACANT: Admin Enables

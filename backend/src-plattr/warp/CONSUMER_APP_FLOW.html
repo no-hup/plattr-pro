@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plattr Pro - Consumer App Flow</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #12122a;
+            --bg-card: #1a1a3a;
+            --accent: #6366f1;
+            --accent2: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --info: #3b82f6;
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --border: #2d2d5a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 26, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .nav-logo {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--accent);
+        }
+
+        .nav a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .nav a:hover {
+            background: var(--bg-card);
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 50px 16px 24px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 16px 0 24px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 12px;
+        }
+
+        .badges {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            font-size: 10px;
+            padding: 3px 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-dim);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        @media (min-width: 1200px) {
+            .grid-2 {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .section {
+            margin-bottom: 24px;
+            scroll-margin-top: 60px;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-icon {
+            font-size: 16px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card p {
+            color: var(--text-dim);
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+
+        .diagram {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            overflow-x: auto;
+            margin: 8px 0;
+        }
+
+        .diagram .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .diagram-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .flag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin: 2px;
+        }
+
+        .flag-on {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .flag-off {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .flag-info {
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--accent);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .status-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin: 8px 0;
+        }
+
+        .status {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .s-pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .s-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .s-done {
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--accent);
+        }
+
+        .s-error {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+        }
+
+        .s-info {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--info);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        th,
+        td {
+            padding: 6px 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
+        code {
+            background: var(--bg-primary);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'SF Mono', monospace;
+            font-size: 10px;
+            color: var(--accent);
+        }
+
+        .legend {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 8px;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            color: var(--text-dim);
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .note {
+            font-size: 10px;
+            padding: 6px 10px;
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid var(--info);
+            border-radius: 0 4px 4px 0;
+            margin: 8px 0;
+            color: var(--text-dim);
+        }
+
+        .warn {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: var(--warning);
+        }
+
+        .cols {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <span class="nav-logo">🍽️ Plattr Pro</span>
+        <a href="#main-flow">Main Flow</a>
+        <a href="#auth">Auth</a>
+        <a href="#table">Table States</a>
+        <a href="#session">Sessions</a>
+        <a href="#menu">Menu</a>
+        <a href="#cart">Cart</a>
+        <a href="#order">Orders</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#flags">Feature Flags</a>
+        <a href="#api">API</a>
+        <span style="margin-left: auto; display: flex; gap: 8px;">
+            <a href="CART_CHECKOUT_SYSTEM.html" style="color:#a78bfa;border:1px solid #7c3aed;background:rgba(124,58,237,0.1);">🛒 Cart & Checkout</a>
+            <a href="ORDER_LIFECYCLE_SYSTEM.html" style="color:#f97316;border:1px solid #f97316;">📦 Order Lifecycle</a>
+            <a href="AUTH_SYSTEM.html" style="color:#10b981;border:1px solid #10b981;">🔐 Auth System</a>
+        </span>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>Consumer App Flow Documentation</h1>
+            <p>Complete technical flow with feature flags, edge cases, and nuances</p>
+            <div class="badges">
+                <span class="badge">🔥 Firebase Functions</span>
+                <span class="badge">📱 Flutter Web</span>
+                <span class="badge">🔐 OTP Auth</span>
+                <span class="badge">👥 Multi-User</span>
+                <span class="badge">⚡ Real-time</span>
+            </div>
+        </div>
+
+        <!-- Feature Flags Reference -->
+        <section class="section" id="flags">
+            <div class="section-title"><span class="section-icon">🚩</span> Feature Flags (affect flow behavior)</div>
+            <div class="cols">
+                <div class="card">
+                    <div class="card-title">🔑 isOtpMandatoryAtScan</div>
+                    <p>When ON: OTP required at every QR scan<br>When OFF: Skip OTP if valid session exists</p>
+                </div>
+                <div class="card">
+                    <div class="card-title">👤 isUsernameEnabled</div>
+                    <p>When ON: Name field required during auth<br>When OFF: Only phone number needed</p>
+                </div>
+                <div class="card">
+                    <div class="card-title">👥 isMultiUserSupportEnabled</div>
+                    <p>When ON: Multiple users can join same table<br>When OFF: Only primary customer allowed</p>
+                </div>
+                <div class="card">
+                    <div class="card-title">🔀 isMultipleVariantOrAddonSupported</div>
+                    <p>When ON: Consolidate identical items in cart<br>When OFF: Each addition is separate entry</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN EXHAUSTIVE FLOW -->
+        <section class="section" id="main-flow">
+            <div class="section-title"><span class="section-icon">🗺️</span> Complete Consumer Flow (Exhaustive)</div>
+            <div class="legend">
+                <div class="legend-item"><span class="legend-color" style="background:#e1f5fe"></span> Entry</div>
+                <div class="legend-item"><span class="legend-color" style="background:#fff3e0"></span> Authentication
+                </div>
+                <div class="legend-item"><span class="legend-color" style="background:#e8f5e9"></span> Menu</div>
+                <div class="legend-item"><span class="legend-color" style="background:#fce4ec"></span> Cart</div>
+                <div class="legend-item"><span class="legend-color" style="background:#f3e5f5"></span> Order</div>
+                <div class="legend-item"><span class="legend-color" style="background:#ef4444"></span> Error</div>
+                <div class="legend-item"><span class="legend-color" style="background:#f59e0b"></span> Decision</div>
+            </div>
+            <div class="diagram">
+                <div class="mermaid">
+                    flowchart TB
+                    subgraph ENTRY["📱 QR SCAN ENTRY"]
+                    QR["Scan QR Code"]
+                    URL["Parse URL: /r/{rid}/t/{tid}"]
+                    LOC["Get User Location"]
+                    CALL1["API: validateTableAndLocation"]
+                    end
+
+                    subgraph VALIDATE["🔍 TABLE VALIDATION"]
+                    CHK_TABLE{"Table Exists?"}
+                    CHK_STATUS{"Table Status?"}
+                    CHK_LOC{"Location Valid?"}
+                    CHK_SESSION{"Has Valid Session?"}
+                    FLAG_OTP{"🚩 isOtpMandatoryAtScan?"}
+                    end
+
+                    subgraph ERRORS["❌ ERROR STATES"]
+                    ERR_404["404: Table Not Found"]
+                    ERR_403["403: Table Disabled"]
+                    ERR_412["412: Location Mismatch"]
+                    ERR_OTP["Invalid/Expired OTP"]
+                    ERR_STOCK["Item Out of Stock"]
+                    ERR_SESSION["Session Expired"]
+                    end
+
+                    subgraph OTP_FLOW["🔐 OTP AUTHENTICATION"]
+                    GEN_OTP["Generate 6-digit OTP"]
+                    SHOW_OTP["Display OTP on Table Screen"]
+                    ENTER_OTP["User Enters OTP"]
+                    FLAG_NAME{"🚩 isUsernameEnabled?"}
+                    ENTER_PHONE["Enter Phone Number"]
+                    ENTER_NAME["Enter Name"]
+                    VERIFY_OTP["API: validateOTP"]
+                    CHK_OTP{"OTP Valid & Not Expired?"}
+                    end
+
+                    subgraph SESSION_MGMT["🔗 SESSION MANAGEMENT"]
+                    CHK_PRIMARY{"First User on Table?"}
+                    CREATE_PROFILE["API: createOrUpdateCustomerProfile"]
+                    CREATE_SESSION["Create New Session"]
+                    JOIN_SESSION["Join Existing Session"]
+                    FLAG_MULTI{"🚩 isMultiUserSupportEnabled?"}
+                    SET_PRIMARY["Set as Primary Customer"]
+                    ADD_SECONDARY["Add as Secondary User"]
+                    GEN_TOKEN["Generate Firebase Auth Token"]
+                    STORE_SESSION["Store Session in LocalStorage"]
+                    end
+
+                    subgraph MENU_FLOW["📋 MENU BROWSING"]
+                    FETCH_MENU["API: fetchMenu(inStock:true)"]
+                    SHOW_CATS["Display Categories"]
+                    SHOW_ITEMS["Display Menu Items"]
+                    CHK_STOCK{"Item In Stock?"}
+                    SELECT_ITEM["Select Menu Item"]
+                    CHK_CUSTOM{"Has Variants/Addons?"}
+                    SHOW_CUSTOM["Show Customization Modal"]
+                    CHK_MANDATORY{"Mandatory Variants Selected?"}
+                    SELECT_VARIANT["Select Variants"]
+                    SELECT_ADDON["Select Addons"]
+                    end
+
+                    subgraph CART_FLOW["🛒 CART MANAGEMENT"]
+                    ADD_CART["API: addItemToCart"]
+                    CHK_IDENTICAL{"🚩 Identical Config Exists?"}
+                    INC_QTY["Increase Quantity"]
+                    NEW_ITEM["Add New Cart Item"]
+                    CALC_PRICE["Calculate Item Price"]
+                    SHOW_CART["View Cart"]
+                    FETCH_CART["API: getCart"]
+                    REPAIR_CART["Repair Missing Data"]
+                    MODIFY_CART["Modify Quantities"]
+                    REMOVE_ITEM["API: removeItemFromCart"]
+                    CLEAR_CART["API: clearCart"]
+                    end
+
+                    subgraph CHECKOUT_FLOW["💳 CHECKOUT"]
+                    CHK_EMPTY{"Cart Empty?"}
+                    CHK_SESSION_VALID{"Session Still Valid?"}
+                    REVALIDATE_STOCK["Re-validate Stock"]
+                    REVALIDATE_PRICE["Re-validate Prices"]
+                    CHECKOUT["API: checkoutCart"]
+                    CREATE_ORDER["API: createOrUpdateOrder"]
+                    CHK_EXISTING_ORDER{"Active Order Exists?"}
+                    NEW_ORDER["Create New Order"]
+                    APPEND_CART["Append Cart to Order"]
+                    CLEAR_CART_INTERNAL["Clear Cart"]
+                    RETURN_ORDER["Return Order Details"]
+                    end
+
+                    subgraph ORDER_FLOW["📦 ORDER TRACKING"]
+                    FETCH_ORDER["API: getOrder"]
+                    SHOW_STATUS["Display Order Status"]
+                    REALTIME["Real-time Firestore Listener"]
+                    CART_STATUS["Track Cart Status"]
+                    ITEM_STATUS["Track Item Status"]
+                    NOTIFY["Push Notification"]
+                    end
+
+                    %% Entry Flow
+                    QR --> URL --> LOC --> CALL1
+
+                    %% Validation
+                    CALL1 --> CHK_TABLE
+                    CHK_TABLE -->|No| ERR_404
+                    CHK_TABLE -->|Yes| CHK_STATUS
+                    CHK_STATUS -->|DISABLED| ERR_403
+                    CHK_STATUS -->|VACANT/OTP_PENDING/ACTIVE| CHK_LOC
+                    CHK_LOC -->|No| ERR_412
+                    CHK_LOC -->|Yes| CHK_SESSION
+                    CHK_SESSION -->|Valid| FLAG_OTP
+                    CHK_SESSION -->|Invalid/None| GEN_OTP
+                    FLAG_OTP -->|ON| GEN_OTP
+                    FLAG_OTP -->|OFF| FETCH_MENU
+
+                    %% OTP Flow
+                    GEN_OTP --> SHOW_OTP --> ENTER_OTP --> FLAG_NAME
+                    FLAG_NAME -->|ON| ENTER_NAME --> ENTER_PHONE
+                    FLAG_NAME -->|OFF| ENTER_PHONE
+                    ENTER_PHONE --> VERIFY_OTP --> CHK_OTP
+                    CHK_OTP -->|No| ERR_OTP --> ENTER_OTP
+                    CHK_OTP -->|Yes| CHK_PRIMARY
+
+                    %% Session Management
+                    CHK_PRIMARY -->|Yes| CREATE_PROFILE --> CREATE_SESSION --> SET_PRIMARY --> GEN_TOKEN
+                    CHK_PRIMARY -->|No| FLAG_MULTI
+                    FLAG_MULTI -->|OFF| ERR_403
+                    FLAG_MULTI -->|ON| JOIN_SESSION --> ADD_SECONDARY --> GEN_TOKEN
+                    GEN_TOKEN --> STORE_SESSION --> FETCH_MENU
+
+                    %% Menu Flow
+                    FETCH_MENU --> SHOW_CATS --> SHOW_ITEMS --> SELECT_ITEM
+                    SELECT_ITEM --> CHK_STOCK
+                    CHK_STOCK -->|No| ERR_STOCK
+                    CHK_STOCK -->|Yes| CHK_CUSTOM
+                    CHK_CUSTOM -->|No| ADD_CART
+                    CHK_CUSTOM -->|Yes| SHOW_CUSTOM --> SELECT_VARIANT --> CHK_MANDATORY
+                    CHK_MANDATORY -->|No| SELECT_VARIANT
+                    CHK_MANDATORY -->|Yes| SELECT_ADDON --> ADD_CART
+
+                    %% Cart Flow
+                    ADD_CART --> CHK_IDENTICAL
+                    CHK_IDENTICAL -->|Yes| INC_QTY --> CALC_PRICE
+                    CHK_IDENTICAL -->|No| NEW_ITEM --> CALC_PRICE
+                    CALC_PRICE --> SHOW_ITEMS
+                    SHOW_CART --> FETCH_CART --> REPAIR_CART --> MODIFY_CART
+                    MODIFY_CART --> REMOVE_ITEM
+                    MODIFY_CART --> CLEAR_CART
+                    MODIFY_CART --> CHK_EMPTY
+
+                    %% Checkout Flow
+                    CHK_EMPTY -->|Yes| SHOW_ITEMS
+                    CHK_EMPTY -->|No| CHK_SESSION_VALID
+                    CHK_SESSION_VALID -->|No| ERR_SESSION
+                    CHK_SESSION_VALID -->|Yes| REVALIDATE_STOCK
+                    REVALIDATE_STOCK --> REVALIDATE_PRICE --> CHECKOUT
+                    CHECKOUT --> CREATE_ORDER --> CHK_EXISTING_ORDER
+                    CHK_EXISTING_ORDER -->|No| NEW_ORDER --> CLEAR_CART_INTERNAL
+                    CHK_EXISTING_ORDER -->|Yes| APPEND_CART --> CLEAR_CART_INTERNAL
+                    CLEAR_CART_INTERNAL --> RETURN_ORDER --> FETCH_ORDER
+
+                    %% Order Tracking
+                    FETCH_ORDER --> SHOW_STATUS --> REALTIME
+                    REALTIME --> CART_STATUS --> ITEM_STATUS
+                    ITEM_STATUS --> NOTIFY
+
+                    %% Styling
+                    style ENTRY fill:#e1f5fe,color:#000
+                    style VALIDATE fill:#fff3e0,color:#000
+                    style ERRORS fill:#fee2e2,color:#000
+                    style OTP_FLOW fill:#fff3e0,color:#000
+                    style SESSION_MGMT fill:#fef3c7,color:#000
+                    style MENU_FLOW fill:#e8f5e9,color:#000
+                    style CART_FLOW fill:#fce4ec,color:#000
+                    style CHECKOUT_FLOW fill:#ede9fe,color:#000
+                    style ORDER_FLOW fill:#f3e5f5,color:#000
+                </div>
+            </div>
+            <div class="note">🚩 Feature flags shown in decision nodes affect the flow path. Hover over nodes for
+                details.</div>
+        </section>
+
+        <!-- Table State Machine -->
+        <section class="section" id="table">
+            <div class="section-title"><span class="section-icon">🪑</span> Table State Machine</div>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">State Transitions</div>
+                    <div class="diagram">
+                        <div class="mermaid">
+                            stateDiagram-v2
+                            [*] --> VACANT
+                            VACANT --> OTP_PENDING: QR Scanned
+                            OTP_PENDING --> ACTIVE: OTP Validated
+                            OTP_PENDING --> VACANT: OTP Expired (5m)
+                            ACTIVE --> ACTIVE: User Joins
+                            ACTIVE --> VACANT: Session Ended
+                            VACANT --> DISABLED: Admin
+                            DISABLED --> VACANT: Admin
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Table Document Fields</div>
+                    <table>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td><code>status</code></td>
+                            <td>enum</td>
+                            <td>VACANT, OTP_PENDING, ACTIVE, DISABLED</td>
+                        </tr>
+                        <tr>
+                            <td><code>currentOTP</code></td>
+                            <td>object</td>
+                            <td>{code, createdAt, expiresAt}</td>
+                        </tr>
+                        <tr>
+                            <td><code>session</code></td>
+                            <td>string</td>
+                            <td>Active session ID</td>
+                        </tr>
+                        <tr>
+                            <td><code>occupiedBy</code></td>
+                            <td>array</td>
+                            <td>Customer phone numbers</td>
+                        </tr>
+                        <tr>
+                            <td><code>primaryCustomer</code></td>
+                            <td>object</td>
+                            <td>{phoneNumber, name}</td>
+                        </tr>
+                        <tr>
+                            <td><code>assignedServerId</code></td>
+                            <td>string</td>
+                            <td>Waiter ID</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Session Management -->
+        <section class="section" id="session">
+            <div class="section-title"><span class="section-icon">🔗</span> Session Management</div>
+            <div class="card">
+                <div class="card-title">Session Lifecycle</div>
+                <div class="diagram">
+                    <div class="mermaid">
+                        flowchart LR
+                        subgraph CREATE["Session Creation"]
+                        A["Primary User Validates OTP"] --> B["createOrGetTableSession()"]
+                        B --> C["Generate Session ID"]
+                        C --> D["Set expiresAt = now + 5hrs"]
+                        end
+                        subgraph JOIN["User Joins"]
+                        E["Secondary User Validates OTP"] --> F{"isMultiUserSupportEnabled?"}
+                        F -->|Yes| G["addUserToTableSession()"]
+                        F -->|No| H["❌ Reject"]
+                        G --> I["Add to users array"]
+                        end
+                        subgraph END["Session End"]
+                        J["Bill Paid / Timeout"] --> K["endSession()"]
+                        K --> L["Set status = ended"]
+                        L --> M["Table → VACANT"]
+                        end
+                        CREATE --> JOIN --> END
+
+                        style CREATE fill:#e8f5e9,color:#000
+                        style JOIN fill:#fff3e0,color:#000
+                        style END fill:#fee2e2,color:#000
+                    </div>
+                </div>
+                <div class="status-row">
+                    <span class="status s-active">active</span>
+                    <span class="status s-done">ended</span>
+                    <span class="status s-error">expired</span>
+                </div>
+                <div class="note">Sessions expire after 5 hours. Users stored in <code>users[]</code> array. Primary
+                    user identified by <code>primaryUserId</code>.</div>
+            </div>
+        </section>
+
+        <!-- Authentication Details -->
+        <section class="section" id="auth">
+            <div class="section-title"><span class="section-icon">🔐</span> Authentication Details</div>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">OTP Configuration</div>
+                    <table>
+                        <tr>
+                            <th>Property</th>
+                            <th>Value</th>
+                        </tr>
+                        <tr>
+                            <td>Format</td>
+                            <td>6-digit numeric</td>
+                        </tr>
+                        <tr>
+                            <td>Expiry</td>
+                            <td>5 minutes</td>
+                        </tr>
+                        <tr>
+                            <td>Display</td>
+                            <td>Table screen / POS</td>
+                        </tr>
+                        <tr>
+                            <td>Regenerate</td>
+                            <td>Server can regenerate</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="card">
+                    <div class="card-title">Auth Requirements by Flag</div>
+                    <table>
+                        <tr>
+                            <th>Flag Combination</th>
+                            <th>Required Fields</th>
+                        </tr>
+                        <tr>
+                            <td><span class="flag flag-on">isUsernameEnabled</span></td>
+                            <td>Phone + Name</td>
+                        </tr>
+                        <tr>
+                            <td><span class="flag flag-off">isUsernameEnabled</span></td>
+                            <td>Phone only</td>
+                        </tr>
+                        <tr>
+                            <td>Primary Customer</td>
+                            <td>Always: Phone + Name</td>
+                        </tr>
+                        <tr>
+                            <td>Secondary Customer</td>
+                            <td>Based on flags</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Menu & Cart -->
+        <section class="section" id="menu">
+            <div class="section-title"><span class="section-icon">📋</span> Menu Structure</div>
+            <div class="card">
+                <div class="diagram">
+                    <div class="mermaid">
+                        flowchart LR
+                        subgraph MENU["Menu Hierarchy"]
+                        CAT["Categories"] --> ITEM["Menu Items"]
+                        ITEM --> VAR["Variants"]
+                        ITEM --> ADD["Addons"]
+                        end
+                        subgraph VARIANT["Variant Structure"]
+                        V1["Variant Group"] --> V2["Options[]"]
+                        V2 --> V3["priceInfo"]
+                        V1 --> V4{"isMandatory?"}
+                        V1 --> V5{"respectParentDiscount?"}
+                        end
+                        subgraph ADDON_S["Addon Structure"]
+                        A1["Addon"] --> A2["priceInfo"]
+                        A1 --> A3{"isMandatory?"}
+                        A1 --> A4{"respectParentDiscount?"}
+                        A1 --> A5{"isInStock?"}
+                        end
+                        MENU --> VARIANT
+                        MENU --> ADDON_S
+
+                        style MENU fill:#e8f5e9,color:#000
+                        style VARIANT fill:#fff3e0,color:#000
+                        style ADDON_S fill:#fce4ec,color:#000
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="cart">
+            <div class="section-title"><span class="section-icon">🛒</span> Cart Operations</div>
+            <div class="card">
+                <div class="card-title">addItemToCart Logic</div>
+                <div class="diagram">
+                    <div class="mermaid">
+                        flowchart LR
+                        A["addItemToCart()"] --> B{"Item In Stock?"}
+                        B -->|No| C["❌ Error"]
+                        B -->|Yes| D{"Mandatory Variants?"}
+                        D -->|Missing| E["❌ Validation Error"]
+                        D -->|OK| F{"Identical Config in Cart?"}
+                        F -->|Yes| G["Increment quantity"]
+                        F -->|No| H["Create new cart item"]
+                        G --> I["Calculate Price"]
+                        H --> I
+                        I --> J["Update cart total"]
+                        J --> K["Return updated cart"]
+
+                        style C fill:#fee2e2,color:#000
+                        style E fill:#fee2e2,color:#000
+                    </div>
+                </div>
+                <div class="note warn">⚠️ "Identical config" means same menuItemId + selectedVariants + selectedAddons
+                    combination</div>
+            </div>
+        </section>
+
+        <!-- Order Status -->
+        <section class="section" id="order">
+            <div class="section-title"><span class="section-icon">📦</span> Order & Status Lifecycle</div>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">Order Status</div>
+                    <div class="status-row">
+                        <span class="status s-pending">PENDING</span>
+                        <span class="status s-info">IN_PROGRESS</span>
+                        <span class="status s-done">COMPLETED</span>
+                        <span class="status s-error">CANCELLED</span>
+                    </div>
+                    <div class="diagram">
+                        <div class="mermaid">
+                            flowchart LR
+                            P[PENDING] --> I[IN_PROGRESS]
+                            I --> C[COMPLETED]
+                            I --> X[CANCELLED]
+                            P --> X
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Cart Status (within Order)</div>
+                    <div class="status-row">
+                        <span class="status s-pending">PENDING</span>
+                        <span class="status s-info">ACCEPTED</span>
+                        <span class="status s-active">PREPARING</span>
+                        <span class="status s-done">READY</span>
+                        <span class="status s-done">SERVED</span>
+                    </div>
+                    <div class="diagram">
+                        <div class="mermaid">
+                            flowchart LR
+                            P[PENDING] --> A[ACCEPTED]
+                            A --> PR[PREPARING]
+                            PR --> R[READY]
+                            R --> S[SERVED]
+                            P --> C[CANCELLED]
+                            A --> C
+                            P --> RT[RETURNED]
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing -->
+        <section class="section" id="pricing">
+            <div class="section-title"><span class="section-icon">💰</span> Price Calculation</div>
+            <div class="card">
+                <div class="diagram">
+                    <div class="mermaid">
+                        flowchart LR
+                        subgraph ITEM["Base Item"]
+                        B["basePrice: ₹100"] --> D["discount: 10%"]
+                        D --> F["finalPrice: ₹90"]
+                        end
+                        subgraph VAR["Variant"]
+                        VB["variantPrice: ₹20"] --> VD{"respectParentDiscount?"}
+                        VD -->|Yes| VF["₹18 (10% off)"]
+                        VD -->|No| VN["₹20"]
+                        end
+                        subgraph ADD["Addon"]
+                        AB["addonPrice: ₹30"] --> AD{"respectParentDiscount?"}
+                        AD -->|Yes| AF["₹27 (10% off)"]
+                        AD -->|No| AN["₹30"]
+                        end
+                        subgraph TOTAL["Total"]
+                        T["itemTotal = base + variant + addon"]
+                        T --> Q["× quantity"]
+                        Q --> CT["Cart Total"]
+                        end
+                        ITEM --> VAR --> ADD --> TOTAL
+
+                        style ITEM fill:#e8f5e9,color:#000
+                        style VAR fill:#fff3e0,color:#000
+                        style ADD fill:#fce4ec,color:#000
+                        style TOTAL fill:#ede9fe,color:#000
+                    </div>
+                </div>
+                <div class="note">Example: ₹90 (item) + ₹18 (variant@10%off) + ₹27 (addon@10%off) = ₹135 per unit</div>
+            </div>
+        </section>
+
+        <!-- API Reference -->
+        <section class="section" id="api">
+            <div class="section-title"><span class="section-icon">🎯</span> API Reference</div>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Stage</th>
+                            <th>Function</th>
+                            <th>Key Parameters</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Entry</td>
+                            <td><code>validateTableAndLocation</code></td>
+                            <td>restaurantId, tableId, location, sessionId?</td>
+                            <td>Returns OTP requirement or grants access</td>
+                        </tr>
+                        <tr>
+                            <td>Auth</td>
+                            <td><code>validateOTP</code></td>
+                            <td>restaurantId, tableId, otp, phoneNumber, name?</td>
+                            <td>Creates profile & session, returns token</td>
+                        </tr>
+                        <tr>
+                            <td>Menu</td>
+                            <td><code>fetchMenu</code></td>
+                            <td>restaurantId, inStock?</td>
+                            <td>Returns categories + items + variants + addons</td>
+                        </tr>
+                        <tr>
+                            <td>Cart</td>
+                            <td><code>addItemToCart</code></td>
+                            <td>menuItemId, variants, addons, qty, sessionId</td>
+                            <td>Validates stock & mandatory variants</td>
+                        </tr>
+                        <tr>
+                            <td>Cart</td>
+                            <td><code>getCart</code></td>
+                            <td>restaurantId, tableId</td>
+                            <td>Auto-repairs missing data</td>
+                        </tr>
+                        <tr>
+                            <td>Cart</td>
+                            <td><code>removeItemFromCart</code></td>
+                            <td>restaurantId, tableId, cartItemId</td>
+                            <td>Removes specific item</td>
+                        </tr>
+                        <tr>
+                            <td>Cart</td>
+                            <td><code>clearCart</code></td>
+                            <td>restaurantId, tableId</td>
+                            <td>Clears entire cart</td>
+                        </tr>
+                        <tr>
+                            <td>Checkout</td>
+                            <td><code>checkoutCart</code></td>
+                            <td>restaurantId, tableId, sessionId, notes?</td>
+                            <td>Re-validates stock/price, creates order</td>
+                        </tr>
+                        <tr>
+                            <td>Order</td>
+                            <td><code>getOrder</code></td>
+                            <td>restaurantId, orderId?, tableId?, sessionId?</td>
+                            <td>Flexible retrieval options</td>
+                        </tr>
+                        <tr>
+                            <td>Order</td>
+                            <td><code>updateCartStatus</code></td>
+                            <td>restaurantId, orderId, cartId, status</td>
+                            <td>Kitchen updates cart status</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Database Schema -->
+        <section class="section" id="schema">
+            <div class="section-title"><span class="section-icon">🗄️</span> Database Schema</div>
+            <div class="card">
+                <div class="diagram">
+                    <div class="mermaid">
+                        flowchart TB
+                        FS["Firestore"] --> CUST["customers/{phone}"]
+                        FS --> REST["restaurants/{rid}"]
+                        REST --> INFO["info"]
+                        REST --> CAT["categories/{cid}"]
+                        REST --> VAR["variants/{vid}"]
+                        REST --> ADD["addons/{aid}"]
+                        REST --> MENU["menuItems/{mid}"]
+                        REST --> TAB["tables/{tid}"]
+                        REST --> SRV["servers/{sid}"]
+                        REST --> ORD["orders/{oid}"]
+                        REST --> CART["carts/{tid}"]
+                        REST --> SESS["sessions/{sid}"]
+
+                        style FS fill:#6366f1,color:#fff
+                        style REST fill:#8b5cf6,color:#fff
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                fontSize: '11px',
+                primaryColor: '#6366f1',
+                primaryTextColor: '#e2e8f0',
+                primaryBorderColor: '#2d2d5a',
+                lineColor: '#64748b',
+                secondaryColor: '#12122a',
+                tertiaryColor: '#1a1a3a',
+                background: '#0a0a1a',
+                mainBkg: '#1a1a3a',
+                nodeBorder: '#2d2d5a',
+                clusterBkg: '#12122a',
+                clusterBorder: '#2d2d5a'
+            },
+            flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis', nodeSpacing: 30, rankSpacing: 40 },
+            sequence: { useMaxWidth: true, wrap: true, actorFontSize: 11, noteFontSize: 10, messageFontSize: 11 }
+        });
+    </script>
+</body>
+
+</html>

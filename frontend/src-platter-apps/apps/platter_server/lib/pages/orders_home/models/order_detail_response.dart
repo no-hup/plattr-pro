@@ -25,6 +25,7 @@ class OrderDetailResponse {
     }
     return DateTime.fromMillisecondsSinceEpoch(0);
   }
+
   final String tableId;
   final String restaurantId;
   final String? sessionId;
@@ -32,6 +33,8 @@ class OrderDetailResponse {
   final List<dynamic> items;
   final String notes;
   final List<dynamic> carts;
+  final String? assignedServerName;
+  final String? assignedServerId;
 
   OrderDetailResponse({
     required this.id,
@@ -46,13 +49,16 @@ class OrderDetailResponse {
     required this.items,
     required this.notes,
     required this.carts,
+    this.assignedServerName,
+    this.assignedServerId,
   });
 
   factory OrderDetailResponse.fromJson(Map<String, dynamic> json) {
     try {
       return _$OrderDetailResponseFromJson(json);
     } catch (e, stackTrace) {
-      if (e is TypeError && e.toString().contains("is not a subtype of type 'String'")) {
+      if (e is TypeError &&
+          e.toString().contains("is not a subtype of type 'String'")) {
         // Define the keys of non-nullable String fields in OrderDetailResponse
         final nonNullableStringKeys = [
           'id',
@@ -68,7 +74,8 @@ class OrderDetailResponse {
             // Assuming you have AppLogger available, similar to ResponseParser
             // If not, you can use print() or your preferred logging mechanism.
             // import '../../../../app_logger.dart'; // You might need to adjust this import
-            print('OrderDetailResponse.fromJson: Field \'$key\' is null, but expected a String. JSON: $json');
+            print(
+                'OrderDetailResponse.fromJson: Field \'$key\' is null, but expected a String. JSON: $json');
             // Consider rethrowing a more specific error if needed:
             // throw FormatException(
             //   "Field '$key' is null but expected String in OrderDetailResponse. Original error: $e",

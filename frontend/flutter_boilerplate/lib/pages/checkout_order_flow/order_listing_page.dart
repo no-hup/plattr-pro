@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutterboilerplate/pages/checkout_order_flow/models/order_models.dart';
 import 'package:flutterboilerplate/pages/checkout_order_flow/order_listing_state.dart';
-import 'package:flutterboilerplate/pages/menuListing/models/cart.dart';
-import 'package:flutterboilerplate/pages/menuListing/models/cart_item.dart';
 import 'package:flutterboilerplate/singletonGods/featureFlags.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
+import 'package:flutterboilerplate/widgets/consumer_app_bar.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class OrderListingPage extends StatefulWidget {
   const OrderListingPage({
-    super.key,
-    required this.restaurantId,
-    required this.tableId,
+    required this.restaurantId, required this.tableId, super.key,
     this.orderId,
   });
 
@@ -47,26 +45,26 @@ class _OrderListingPageState extends State<OrderListingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.orderId != null ? 'Order Details' : 'Orders'),
-        actions: [
-          // Feature flag toggle switch for cart breakup view
+      appBar: ConsumerAppBar(
+        titleWidget: Text(
+          widget.orderId != null ? 'Order Details' : 'Orders',
+          style: AppTypography.uiSerif.copyWith(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: AppColors.primary,
+          ),
+        ),
+        trailingActions: [
           _buildFeatureFlagToggle(context),
-          IconButton(
-            icon: const Icon(Icons.menu_book),
-            onPressed: () {
-              AppLogger.log('📋 ORDER: Navigate back to menu');
-              context.go('/r/${widget.restaurantId}/t/${widget.tableId}/menu');
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.shopping_cart),
-            onPressed: () {
-              AppLogger.log('📋 ORDER: Navigate to cart');
-              context.go('/r/${widget.restaurantId}/t/${widget.tableId}/cart');
-            },
-          ),
         ],
+        onMenuTap: () {
+          AppLogger.log('📋 ORDER: Navigate back to menu');
+          context.go('/r/${widget.restaurantId}/t/${widget.tableId}/menu');
+        },
+        onCartTap: () {
+          AppLogger.log('📋 ORDER: Navigate to cart');
+          context.go('/r/${widget.restaurantId}/t/${widget.tableId}/cart');
+        },
       ),
       body: Consumer<OrderListingState>(
         builder: (context, state, child) {
@@ -119,21 +117,21 @@ class _OrderListingPageState extends State<OrderListingPage> {
             size: 64,
             color: Theme.of(context).colorScheme.error,
           ),
-          const SizedBox(height: 16),
+          AppSpacing.verticalLG,
           Text(
             'Oops! Something went wrong',
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 8),
+          AppSpacing.verticalSM,
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
             child: Text(
               error,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
-          const SizedBox(height: 24),
+          AppSpacing.verticalXL,
           ElevatedButton(
             onPressed: () {
               AppLogger.log('📋 ORDER: Retrying order fetch');
@@ -159,17 +157,17 @@ class _OrderListingPageState extends State<OrderListingPage> {
             size: 64,
             color: Theme.of(context).colorScheme.outline,
           ),
-          const SizedBox(height: 16),
+          AppSpacing.verticalLG,
           Text(
             'No orders found',
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 8),
+          AppSpacing.verticalSM,
           Text(
-            'You haven\'t placed any orders yet',
+            "You haven't placed any orders yet",
             style: Theme.of(context).textTheme.bodyMedium,
           ),
-          const SizedBox(height: 24),
+          AppSpacing.verticalXL,
           ElevatedButton(
             onPressed: () {
               AppLogger.log('📋 ORDER: Navigate to menu from empty orders');
@@ -195,7 +193,7 @@ class _OrderListingPageState extends State<OrderListingPage> {
       ),
       onPressed: () {
         // Show a dialog to toggle the feature flag
-        showDialog(
+        showDialog<void>(
           context: context,
           builder: (BuildContext dialogContext) {
             // Using StatefulBuilder to update the dialog content when the switch changes
@@ -207,11 +205,11 @@ class _OrderListingPageState extends State<OrderListingPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Choose how orders are displayed:',
-                        style: TextStyle(fontSize: 14),
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
-                      const SizedBox(height: 16),
+                        AppSpacing.verticalLG,
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -260,11 +258,7 @@ class _OrderListingPageState extends State<OrderListingPage> {
 
 class OrderDetailsView extends StatelessWidget {
   const OrderDetailsView({
-    super.key,
-    required this.orderData,
-    required this.orderStatusText,
-    required this.orderStatusColor,
-    required this.formattedDate,
+    required this.orderData, required this.orderStatusText, required this.orderStatusColor, required this.formattedDate, super.key,
   });
 
   final OrderData orderData;
@@ -274,10 +268,9 @@ class OrderDetailsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     // Feature flag to determine how to display order items
     final featureFlags = FeatureFlags();
-    final bool showCartBreakup = featureFlags.showCartLevelBreakupForOrder;
+    final showCartBreakup = featureFlags.showCartLevelBreakupForOrder;
     
     // Log the feature flag state for debugging
     AppLogger.log('📋 ORDERS: Using cart level breakup: $showCartBreakup');
@@ -287,7 +280,11 @@ class OrderDetailsView extends StatelessWidget {
       children: [
         // Order header with status
         _buildOrderHeader(context),
-        
+
+        // Applied offer banner (auto-applied by backend)
+        if (orderData.appliedOffer != null)
+          _buildAppliedOfferBanner(context),
+
         // Order items based on feature flag
         if (showCartBreakup && orderData.carts.isNotEmpty) 
           // Display the items grouped by cart
@@ -307,19 +304,12 @@ class OrderDetailsView extends StatelessWidget {
   }
   
   Widget _buildOrderHeader(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 2,
-            offset: const Offset(0, 2),
-          ),
-        ],
+      padding: AppSpacing.pagePadding,
+      decoration: const BoxDecoration(
+        color: AppColors.paper,
+        boxShadow: AppDimensions.shadowPaper,
+        border: Border(bottom: BorderSide(color: AppColors.divider)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,42 +319,46 @@ class OrderDetailsView extends StatelessWidget {
             children: [
               Text(
                 'Order #${orderData.orderNumber}',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTypography.h3,
               ),
-              Chip(
-                label: Text(
-                  orderStatusText,
-                  style: TextStyle(
-                    color: Colors.white,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
+                decoration: BoxDecoration(
+                  color: orderStatusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+                  border: Border.all(color: orderStatusColor.withOpacity(0.3)),
+                ),
+                child: Text(
+                  orderStatusText.toUpperCase(),
+                  style: AppTypography.labelSmall.copyWith(
+                    color: orderStatusColor,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                backgroundColor: orderStatusColor,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          AppSpacing.verticalSM,
           Text(
             'Placed on $formattedDate',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.inkLight,
             ),
           ),
           if (orderData.notes.isNotEmpty) ...[
-            const SizedBox(height: 16),
+            AppSpacing.verticalLG,
             Text(
               'Notes:',
-              style: theme.textTheme.bodyMedium?.copyWith(
+              style: AppTypography.labelMedium.copyWith(
                 fontWeight: FontWeight.bold,
+                color: AppColors.ink,
               ),
             ),
-            const SizedBox(height: 4),
+            AppSpacing.verticalXS,
             Text(
               orderData.notes,
-              style: theme.textTheme.bodyMedium,
+              style: AppTypography.body,
             ),
           ],
         ],
@@ -372,20 +366,48 @@ class OrderDetailsView extends StatelessWidget {
     );
   }
   
-  Widget _buildOrderSummary(BuildContext context) {
-    final theme = Theme.of(context);
-    
+  Widget _buildAppliedOfferBanner(BuildContext context) {
+    final offer = orderData.appliedOffer!;
+    final amount = orderData.offerDiscount > 0
+        ? orderData.offerDiscount
+        : offer.discountAmount;
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
+        color: Colors.green.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+        border: Border.all(color: Colors.green.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.redeem, color: Colors.green),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              'You saved ₹${amount.toStringAsFixed(2)} with ${offer.title}!',
+              style: AppTypography.body.copyWith(
+                color: Colors.green.shade800,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildOrderSummary(BuildContext context) {
+    return Container(
+      padding: AppSpacing.pagePadding,
+      decoration: const BoxDecoration(
+        color: AppColors.paper,
+        border: Border(top: BorderSide(color: AppColors.divider)),
+        boxShadow: AppDimensions.shadowPaper,
       ),
       child: SafeArea(
         child: Column(
@@ -396,15 +418,12 @@ class OrderDetailsView extends StatelessWidget {
               children: [
                 Text(
                   'Total Amount:',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppTypography.h3,
                 ),
                 Text(
                   '₹${orderData.total.toStringAsFixed(2)}',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
+                  style: AppTypography.h3.copyWith(
+                    color: AppColors.primary,
                   ),
                 ),
               ],
@@ -419,8 +438,7 @@ class OrderDetailsView extends StatelessWidget {
 /// Displays a list of order items
 class OrderItemsList extends StatelessWidget {
   const OrderItemsList({
-    super.key,
-    required this.items,
+    required this.items, super.key,
   });
 
   final List<OrderItem> items;
@@ -428,8 +446,8 @@ class OrderItemsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(16.0),
+      return Padding(
+        padding: AppSpacing.pagePadding,
         child: Center(
           child: Text('No items in this order'),
         ),
@@ -437,7 +455,7 @@ class OrderItemsList extends StatelessWidget {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.pagePadding,
       // Use shrinkWrap and physics when used inside another scrollable widget (like in CartHistoryCard)
       shrinkWrap: true,
       physics: const ClampingScrollPhysics(),
@@ -453,8 +471,7 @@ class OrderItemsList extends StatelessWidget {
 
 class OrderItemTile extends StatelessWidget {
   const OrderItemTile({
-    super.key,
-    required this.item,
+    required this.item, super.key,
   });
 
   final OrderItem item;
@@ -475,62 +492,61 @@ class OrderItemTile extends StatelessWidget {
     // Calculate total price (price * quantity)
     final totalPrice = item.price * item.quantity;
     
-    return Card(
-      elevation: 1,
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Item Name and Price Row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Quantity indicator
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '${item.quantity}x',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.paper,
+      ),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Item Name and Price Row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Quantity indicator
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+                ),
+                child: Text(
+                  '${item.quantity}x',
+                  style: AppTypography.labelMedium.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
                   ),
                 ),
-                const SizedBox(width: 12),
-                
-                // Item name and details
-                Expanded(
-                  child: Text(
-                    item.name,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                
-                // Price
-                Text(
-                  '₹${totalPrice.toStringAsFixed(2)}',
-                  style: theme.textTheme.titleMedium?.copyWith(
+              ),
+              AppSpacing.horizontalMD,
+              
+              // Item name and details
+              Expanded(
+                child: Text(
+                  item.name,
+                  style: AppTypography.body.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              ],
-            ),
-            
-            // Variants Section
-            _buildVariantsSection(theme),
-            
-            // Addons Section
-            _buildAddonsSection(theme),
-          ],
-        ),
+              ),
+              
+              // Price
+              Text(
+                '₹${totalPrice.toStringAsFixed(2)}',
+                style: AppTypography.body.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          
+          // Variants Section
+          _buildVariantsSection(theme),
+          
+          // Addons Section
+          _buildAddonsSection(theme),
+        ],
       ),
     );
   }
@@ -543,9 +559,9 @@ class OrderItemTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 12),
+        AppSpacing.verticalMD,
         const Divider(height: 1),
-        const SizedBox(height: 8),
+        AppSpacing.verticalSM,
         Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: Text(
@@ -566,7 +582,7 @@ class OrderItemTile extends StatelessWidget {
                   size: 16,
                   color: theme.colorScheme.primary,
                 ),
-                const SizedBox(width: 8),
+                AppSpacing.horizontalSM,
                 Expanded(
                   child: Text(
                     variant.selected_variant_name,
@@ -581,7 +597,7 @@ class OrderItemTile extends StatelessWidget {
               ],
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -594,9 +610,9 @@ class OrderItemTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 12),
+        AppSpacing.verticalMD,
         if (item.variants.isEmpty) const Divider(height: 1),
-        const SizedBox(height: 8),
+        AppSpacing.verticalSM,
         Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: Text(
@@ -617,7 +633,7 @@ class OrderItemTile extends StatelessWidget {
                   size: 16,
                   color: theme.colorScheme.secondary,
                 ),
-                const SizedBox(width: 8),
+                AppSpacing.horizontalSM,
                 Expanded(
                   child: Text(
                     addon.name,
@@ -634,7 +650,7 @@ class OrderItemTile extends StatelessWidget {
               ],
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -642,12 +658,11 @@ class OrderItemTile extends StatelessWidget {
 
 /// Widget to display a list of carts from the order history
 class CartHistoryList extends StatelessWidget {
-  final List<CartHistoryItem> carts;
 
   const CartHistoryList({
-    super.key,
-    required this.carts,
+    required this.carts, super.key,
   });
+  final List<CartHistoryItem> carts;
 
   @override
   Widget build(BuildContext context) {
@@ -660,7 +675,7 @@ class CartHistoryList extends StatelessWidget {
     AppLogger.log('📋 CART_LIST: Building cart history list with ${carts.length} carts');
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.pagePadding,
       itemCount: carts.length,
       itemBuilder: (context, index) {
         final cart = carts[index];
@@ -673,9 +688,7 @@ class CartHistoryList extends StatelessWidget {
 /// Widget to display a single cart from the order history
 class CartHistoryCard extends StatelessWidget {
   const CartHistoryCard({
-    super.key,
-    required this.cart,
-    required this.index,
+    required this.cart, required this.index, super.key,
   });
 
   final CartHistoryItem cart;
@@ -683,27 +696,31 @@ class CartHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final dateFormat = DateFormat('MMM d, yyyy • h:mm a');
     final checkoutTimeString = cart.checkoutTime != null 
         ? dateFormat.format(cart.checkoutTime!) 
         : 'Unknown time';
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+      decoration: const BoxDecoration(
+        color: AppColors.paper,
+        boxShadow: AppDimensions.shadowPaper,
+        borderRadius: BorderRadius.all(Radius.circular(AppDimensions.radiusMD)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Cart header with checkout time
           Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceVariant,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
+            padding: AppSpacing.pagePadding,
+            decoration: const BoxDecoration(
+              color: AppColors.paperAlt,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(AppDimensions.radiusMD),
+                topRight: Radius.circular(AppDimensions.radiusMD),
               ),
+              border: Border(bottom: BorderSide(color: AppColors.divider)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -713,28 +730,30 @@ class CartHistoryCard extends StatelessWidget {
                   children: [
                     Text(
                       'Cart #${index + 1}',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTypography.h3,
                     ),
-                    Chip(
-                      label: Text(
-                        cart.status,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(cart.status).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+                        border: Border.all(color: _getStatusColor(cart.status).withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        cart.status.toUpperCase(),
+                        style: AppTypography.labelSmall.copyWith(
+                          color: _getStatusColor(cart.status),
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      backgroundColor: _getStatusColor(cart.status),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Checked out on $checkoutTimeString',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.inkLight,
                   ),
                 ),
               ],
@@ -746,21 +765,20 @@ class CartHistoryCard extends StatelessWidget {
           
           // Cart summary
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: AppSpacing.pagePadding,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'Cart total:',
-                  style: theme.textTheme.bodyLarge?.copyWith(
+                  style: AppTypography.body.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
                   '₹${cart.total.toStringAsFixed(2)}',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
+                  style: AppTypography.h3.copyWith(
+                    color: AppColors.primary,
                   ),
                 ),
               ],
@@ -775,16 +793,20 @@ class CartHistoryCard extends StatelessWidget {
     switch (status.toLowerCase()) {
       case 'pending':
         return Colors.orange;
-      case 'processing':
-        return Colors.blue;
-      case 'confirmed':
-        return Colors.green;
+      case 'preparing':
+        return Colors.purple;
+      case 'ready':
+        return Colors.teal;
+      case 'served':
       case 'completed':
         return Colors.green.shade800;
       case 'cancelled':
         return Colors.red;
+      case 'returned':
+        return Colors.brown;
       default:
         return Colors.grey;
     }
   }
+
 } 

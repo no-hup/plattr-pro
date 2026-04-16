@@ -1,5 +1,6 @@
 const { db } = require('../admin/admin'); // Use the exported db from admin.js
 const { BasicPriceInfo, CartItemPriceInfo, CartTotalPriceInfo } = require('../genericModels/priceinfo');
+const { FULFILLMENT_STATUS } = require('../orders/orderConstants');
 
 /**
  * Calculates the price of an item based on its base price, selected variants, and addons.
@@ -95,7 +96,7 @@ function calculateItemPrice(menuItem, selectedVariants = [], addonDetails = []) 
   // Step 5: Calculate Totals
   const totalBasePrice = itemBasePrice + variantBaseTotal + addonBaseTotal;
   const totalFinalPrice = itemFinalPrice + variantFinalTotal + addonFinalTotal;
-  
+
   // Ensure discount amount is never negative
   const totalDiscountAmount = Math.max(0, roundPrice(totalBasePrice - totalFinalPrice));
 
@@ -113,7 +114,6 @@ function calculateItemPrice(menuItem, selectedVariants = [], addonDetails = []) 
     discountAmount: totalDiscountAmount,
   });
 
-  console.log("poopoo Price Info:", cartItemPriceInfo.toObject());
   return { priceInfo: cartItemPriceInfo.toObject() };
 }
 
@@ -124,8 +124,15 @@ function calculateItemPrice(menuItem, selectedVariants = [], addonDetails = []) 
  */
 async function calculateCartValue(cart) {
   try {
-    if (!cart || !Array.isArray(cart.items)) {
-      throw new Error("Invalid cart structure.");
+    if (!cart || !cart.items || !Array.isArray(cart.items) || cart.items.length === 0) {
+      return {
+        basePrice: 0,
+        finalPrice: 0,
+        totalVariantBasePrice: 0,
+        totalAddonBasePrice: 0,
+        totalDiscount: 0,
+        totalDiscountAmount: 0
+      };
     }
 
     let basePrice = 0;
@@ -141,8 +148,7 @@ async function calculateCartValue(cart) {
       }
 
       // Skip cancelled items
-      if (item.status === 'cancelled') {
-        console.log(`poopoo Skipping cancelled item ${item.menuItemId} in price calculation`);
+      if (item.status === FULFILLMENT_STATUS.CANCELLED) {
         continue;
       }
 
@@ -157,7 +163,7 @@ async function calculateCartValue(cart) {
 
       // Use our CartItemPriceInfo model to validate item price info
       const itemPriceInfo = new CartItemPriceInfo(item.priceInfo);
-      
+
       // Use validated values for accumulation
       basePrice += itemPriceInfo.totalBasePrice;
       finalPrice += itemPriceInfo.finalPrice;
@@ -165,17 +171,20 @@ async function calculateCartValue(cart) {
       addonTotalPrice += itemPriceInfo.totalAddonBasePrice;
     }
 
-    const totalDiscountAmount = Math.max(0, basePrice - finalPrice);
-    const totalDiscountPercentage = basePrice > 0 ? (totalDiscountAmount / basePrice) * 100 : 0;
+    // Offers V2: carts no longer carry offer fields. Offers are evaluated and
+    // applied at the ORDER level in createOrUpdateOrder.js. The cart priceInfo
+    // only reflects item-level discounts (if any).
+    const itemDiscountAmount = Math.max(0, basePrice - finalPrice);
+    const totalDiscountPercentage = basePrice > 0 ? (itemDiscountAmount / basePrice) * 100 : 0;
 
     // Create cart total price info using our model
     const cartTotalPriceInfo = new CartTotalPriceInfo({
       basePrice: roundPrice(basePrice),
-      finalPrice: roundPrice(finalPrice),
+      finalPrice: roundPrice(Math.max(0, finalPrice)),
       totalVariantBasePrice: roundPrice(variantTotalPrice),
       totalAddonBasePrice: roundPrice(addonTotalPrice),
       totalDiscount: roundPrice(totalDiscountPercentage),
-      totalDiscountAmount: roundPrice(totalDiscountAmount)
+      totalDiscountAmount: roundPrice(itemDiscountAmount)
     });
 
     return cartTotalPriceInfo.toObject();
@@ -190,7 +199,7 @@ function roundPrice(price) {
   return Math.round(price * 100) / 100;
 }
 
-module.exports = { 
+module.exports = {
   calculateCartValue,
   calculateItemPrice,
 };

@@ -13,20 +13,20 @@
  * @returns {Object} Sanitized data
  */
 function sanitizeData(data, options = {}) {
-  const { 
-    criticalProps = [], 
-    defaultValues = {} 
+  const {
+    criticalProps = [],
+    defaultValues = {}
   } = options;
-  
+
   if (!data) {
     console.error("sanitizeData received null or undefined data");
     return {};
   }
-  
+
   try {
     // Track original properties for validation
     const originalProps = new Set(criticalProps.filter(prop => data[prop] !== undefined));
-    
+
     // Clone and sanitize the data
     const clone = JSON.parse(JSON.stringify(data, (key, value) => {
       // Handle NaN values
@@ -34,21 +34,21 @@ function sanitizeData(data, options = {}) {
         console.error(`Found NaN value at field: ${key}`);
         return 0; // Replace NaN with 0
       }
-      
+
       // Handle Infinity values
       if (typeof value === "number" && !isFinite(value)) {
         console.error(`Found Infinity value at field: ${key}`);
         return 0; // Replace Infinity with 0
       }
-      
+
       return value;
     }));
-    
+
     // Verify critical properties were preserved
     for (const prop of originalProps) {
       if (clone[prop] === undefined) {
         console.warn(`Sanitization removed critical property: ${prop}`);
-        
+
         // Restore from default values if available
         if (defaultValues[prop] !== undefined) {
           clone[prop] = defaultValues[prop];
@@ -63,14 +63,14 @@ function sanitizeData(data, options = {}) {
         }
       }
     }
-    
+
     return clone;
   } catch (error) {
     console.error("Error during data sanitization:", error);
-    
+
     // Create a minimal safe object with critical properties
     const safeObject = {};
-    
+
     for (const prop of criticalProps) {
       if (defaultValues[prop] !== undefined) {
         safeObject[prop] = defaultValues[prop];
@@ -84,7 +84,7 @@ function sanitizeData(data, options = {}) {
         }
       }
     }
-    
+
     return safeObject;
   }
 }
@@ -101,16 +101,16 @@ function detectNaNValues(obj, prefix = '') {
   if (!obj || typeof obj !== 'object') {
     return [];
   }
-  
+
   const nanPaths = [];
-  
+
   // Check all properties in the object
   for (const key in obj) {
     if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
-    
+
     const value = obj[key];
     const currentPath = prefix ? `${prefix}.${key}` : key;
-    
+
     if (typeof value === 'number' && isNaN(value)) {
       nanPaths.push(currentPath);
       console.error(`NaN detected at ${currentPath}`);
@@ -122,7 +122,7 @@ function detectNaNValues(obj, prefix = '') {
       }
     }
   }
-  
+
   return nanPaths;
 }
 
@@ -138,14 +138,14 @@ function sanitizeCart(cartData) {
   if (nanPaths.length > 0) {
     console.warn(`Found ${nanPaths.length} NaN values in cart data at: ${nanPaths.join(', ')}`);
   }
-  
+
   return sanitizeData(cartData, {
     criticalProps: ['items', 'priceInfo', 'restaurantId', 'menuItem', 'selectedVariantsDetails', 'selectedAddonsDetails'],
     defaultValues: {
       items: [],
-      priceInfo: { 
-        basePrice: 0, 
-        finalPrice: 0, 
+      priceInfo: {
+        basePrice: 0,
+        finalPrice: 0,
         totalDiscount: 0,
         totalDiscountAmount: 0,
         totalAddonBasePrice: 0,
@@ -157,60 +157,6 @@ function sanitizeCart(cartData) {
 }
 
 /**
- * Safely calculates cart item price totals to prevent NaN propagation
- * @param {Object} item - Cart item
- * @param {number} quantity - Item quantity
- * @returns {Object} Safe price info object with recalculated totals
- */
-function safeRecalculateItemPrice(item, quantity = 1) {
-  if (!item || typeof item !== 'object') {
-    console.error('safeRecalculateItemPrice: Invalid item object');
-    return {
-      itemBasePrice: 0,
-      itemVariantBasePrice: 0,
-      itemAddonBasePrice: 0,
-      itemFinalPrice: 0,
-      discount: 0,
-      totalBasePrice: 0,
-      totalVariantBasePrice: 0,
-      totalAddonBasePrice: 0,
-      finalPrice: 0
-    };
-  }
-  
-  // Ensure valid quantity
-  const safeQuantity = typeof quantity === 'number' && !isNaN(quantity) && quantity > 0
-    ? quantity
-    : 1;
-  
-  // Ensure priceInfo object exists
-  const priceInfo = item.priceInfo || {};
-  
-  // Get unit prices, defaulting to 0 if invalid
-  const safeUnitPrices = {
-    itemBasePrice: safeGetNumber(priceInfo.itemBasePrice),
-    itemVariantBasePrice: safeGetNumber(priceInfo.itemVariantBasePrice),
-    itemAddonBasePrice: safeGetNumber(priceInfo.itemAddonBasePrice),
-    itemFinalPrice: safeGetNumber(priceInfo.itemFinalPrice),
-    discount: safeGetNumber(priceInfo.discount)
-  };
-  
-  // Calculate totals based on quantity
-  const totals = {
-    totalBasePrice: safeUnitPrices.itemBasePrice * safeQuantity,
-    totalVariantBasePrice: safeUnitPrices.itemVariantBasePrice * safeQuantity,
-    totalAddonBasePrice: safeUnitPrices.itemAddonBasePrice * safeQuantity,
-    finalPrice: safeUnitPrices.itemFinalPrice * safeQuantity
-  };
-  
-  // Return merged object with unit prices and totals
-  return {
-    ...safeUnitPrices,
-    ...totals
-  };
-}
-
-/**
  * Safely get a number value, defaulting to 0 if NaN or invalid
  * @param {any} value - Value to sanitize
  * @returns {number} Sanitized number
@@ -219,10 +165,19 @@ function safeGetNumber(value) {
   return typeof value === 'number' && !isNaN(value) && isFinite(value) ? value : 0;
 }
 
+// NOTE: `safeRecalculateItemPrice` used to live here but was removed in
+// Phase 2.5 of TODO_Multi_Config_Cart_Feature.md. The function was
+// non-idempotent — it read `priceInfo.itemBasePrice` as per-unit but wrote
+// it back as `per-unit × quantity`, so every call after the first compounded
+// the multiplication and corrupted cart totals. Its two callers
+// (addItemToCart merge path, removeItemFromCart decrement path) now use
+// `buildCartItemPriceInfoForQuantity` in
+// `cart/addItemToCartBoilerplateHelper.js`, which always re-derives from a
+// fresh menuItem snapshot via `calculateItemPrice`.
+
 module.exports = {
   sanitizeData,
   sanitizeCart,
   detectNaNValues,
-  safeRecalculateItemPrice,
   safeGetNumber
-}; 
+};

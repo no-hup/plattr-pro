@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>table-validateTableAndLocation · OTP Required</title>
+  <style>
+    body { font-family: 'SFMono-Regular', Consolas, monospace; margin: 24px; line-height: 1.4; }
+    pre { background: #1f2933; color: #f1f5f9; padding: 16px; border-radius: 8px; overflow-x: auto; }
+    code { font-family: inherit; }
+    h1 { margin-bottom: 0; }
+    h2 { margin-top: 32px; }
+  </style>
+</head>
+<body>
+  <h1>table-validateTableAndLocation</h1>
+  <p><strong>Scenario:</strong> OTP Needed – vacant table with OTP mandate enabled.</p>
+
+  <h2>Request</h2>
+  <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "tableId": "table009",
+    "userLocation": { "latitude": 12.9717, "longitude": 77.5945 },
+    "sessionId": null
+  }
+}</code></pre>
+
+  <h2>Response</h2>
+  <pre><code>{
+  "status": "success",
+  "message": "OTP required",
+  "data": {
+    "tableState": "OTP_PENDING",
+    "requiresOtp": true,
+    "requiresUsername": true,
+    "otpExpiryMinutes": 5,
+    "multiUserSupported": true
+  }
+}</code></pre>
+
+  <h2>Notes</h2>
+  <ul>
+    <li>Triggers the <code>table-validateOTP</code> function.</li>
+    <li>GPS radius check must succeed before OTP can be sent.</li>
+  </ul>
+</body>
+</html>

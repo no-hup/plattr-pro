@@ -1,0 +1,116 @@
+# E2E API Test Suite — Agent Instructions
+
+## Quick Start
+
+```bash
+bash run-tests.sh                         # run all (summary-only output)
+bash run-tests.sh --suite cart            # run single suite
+bash run-tests.sh --suite cart pricing    # run multiple suites
+bash run-tests.sh --verbose               # full output (for debugging)
+bash run-tests.sh --no-reset              # skip data reset (fast iteration)
+```
+
+## Reading Results
+
+1. Check exit code: `0` = all passed, `1` = failures exist
+2. Read `results/summary.json` — look at `failedTests` array only
+3. DO NOT read full test output or `results/narrative.log` — those are for human observation
+
+```bash
+# Quick check
+cat results/last_run.txt
+
+# If failures, read only the failed tests
+node -e "const s=require('./results/summary.json'); console.log(s.failedTests)"
+```
+
+## Debugging a Failure
+
+1. Read the failure output — it shows `[suite] test name → expected vs actual`
+2. Re-run the failing suite with verbose output:
+   ```bash
+   node run.js --suite <failing_suite> --verbose --no-reset
+   ```
+3. Check `BUGS.md` for known backend bugs (failures with "KNOWN BUG" or "SKIP" are documented issues)
+4. DO NOT dump full emulator logs. If needed: `tail -20 /tmp/plattr-emulator.log`
+
+## Available Suites
+
+| Name | Tests | What it covers |
+|------|-------|----------------|
+| **admin** | 16 | Settings, staff CRUD, tables, categories, orders |
+| **cart** | 16 | Add/remove/get/clear/checkout, variants, addons |
+| **customer-journey** | 13 | Full flow: OTP → menu → cart → checkout → multi-cart |
+| **error-cases** | 25 | Missing params, invalid IDs, auth failures, cross-restaurant |
+| **feature-flags** | 7 | Toggle flags, verify behavior changes |
+| **menu** | 10 | Fetch menu, structure, stock status, empty/OOS restaurants |
+| **offer-pricing** | 13 | Offer × pricing interactions: BOGO, PERCENTAGE, FLAT, caps |
+| **offers** | 16 | Offer lifecycle: get/apply/remove, conditions, recalculation |
+| **order-lifecycle** | 18 | State machine: PENDING → COMPLETED, CANCELLED, cart-level status |
+| **pricing** | 23 | Exact price verification: discounts, variants, addons, multi-item |
+| **server-journey** | 8 | Server login, tables, orders, mark served |
+| **table** | 20 | Scan, OTP, session resume, disabled table, assignment |
+
+## Suite Isolation
+
+Each suite uses dedicated tables to avoid interference:
+
+| Table | Suite |
+|-------|-------|
+| `table_clean_1` | customer-journey, order-lifecycle |
+| `table_clean_2` | cart |
+| `table_clean_3` | pricing |
+| `table_clean_4` | error-cases (DISABLED table) |
+| `table_clean_5` | offer-pricing |
+| `table_clean_6` | order-lifecycle (cancel flow) |
+| `table_clean_7` | customer-journey (expanded) |
+
+## Known Issues
+
+See `BUGS.md` for full details. Key blockers:
+- **BUG-1**: Firestore transaction ordering blocks checkout → affects order-lifecycle, customer-journey
+- **BUG-2**: Admin endpoint dash-naming fails in emulator
+- **BUG-3**: server-getTables param validation issue
+
+## Architecture
+
+```
+run-tests.sh          ← Wrapper: check emulator, run, report
+run.js                ← Entry: reset data, discover suites, run, summarize
+lib/
+  config.js           ← All constants (IDs, prices, offers)
+  api.js              ← fetch wrapper for Cloud Functions
+  assert.js           ← assertSuccess, assertError, assertField, assertPrice, etc.
+  auth.js             ← customerLogin(), serverLogin()
+  data.js             ← resetData(), setFeatureFlags(), checkEmulator()
+  narrator.js         ← Narrative log writer (results/narrative.log)
+suites/
+  *.js                ← Each exports default async → { name, pass, fail, tests }
+results/
+  summary.json        ← Structured results with failedTests array
+  last_run.txt        ← One-line status
+  narrative.log       ← Human-readable narrative (tail -f in separate terminal)
+```
+
+## Human Observation
+
+While tests run, tail the narrative log in a separate terminal:
+```bash
+tail -f results/narrative.log
+```
+
+This shows a business-logic-focused story: what items were added, with what configurations, what prices were expected, what offers were applied, what order status transitions happened.
+
+## Adding a New Test
+
+1. Find the appropriate suite in `suites/`
+2. Add an async block:
+```js
+{
+  const resp = await call('endpoint-name', { restaurantId, ... });
+  record(assertSuccess(resp, 'N. Description'));
+  narrator.cartAdd('Item Name', { variant: 'Large', addon: 'Cheese' }, 245);
+}
+```
+3. Add expected prices to `lib/config.js` `EXPECTED_PRICES`
+4. Add narrator calls for the narrative log

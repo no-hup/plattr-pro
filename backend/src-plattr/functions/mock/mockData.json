@@ -13,7 +13,7 @@
         "_nanoseconds": 0
       },
       "currentVisit": {
-        "restaurantId": "rest001",
+        "restaurantId": "rest_full_hierarchy",
         "tableId": "table001",
         "startTime": {
           "_seconds": 1678901234,
@@ -22,7 +22,7 @@
       },
       "visits": [
         {
-          "restaurantId": "rest001",
+          "restaurantId": "rest_full_hierarchy",
           "tableId": "table001",
           "startTime": {
             "_seconds": 1678901234,
@@ -52,147 +52,807 @@
         "favoriteItems": [],
         "dietaryRestrictions": []
       }
+    },
+    "test_customer_001": {
+      "phoneNumber": "test_customer_001",
+      "name": "Test Customer One",
+      "email": "test1@example.com",
+      "createdAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1678901234,
+        "_nanoseconds": 0
+      },
+      "visits": [],
+      "preferences": {
+        "favoriteItems": [],
+        "dietaryRestrictions": []
+      }
     }
   },
   "restaurants": {
-    "rest001": {
+    "rest_full_hierarchy": {
       "info": {
-        "name": "The Gourmet Grove",
-        "address": "123 Culinary Lane, Foodville, FV 12345",
+        "name": "FULL HIERARCHY - Day & Night Kitchen (Menus + Subcategories)",
+        "address": "42 All-Day Avenue, Foodville, FV 12345",
         "phone": "5551234567",
-        "email": "info@gourmetgrove.com",
+        "email": "hello@daynightkitchen.com",
         "location": {
           "_latitude": 40.7128,
           "_longitude": -74.006
         }
       },
+      "menus": {
+        "menu_allday": {
+          "menuId": "menu_allday",
+          "name": "All Day Menu",
+          "description": "Our complete selection available anytime",
+          "isActive": true,
+          "isDefault": true,
+          "categoryIds": [
+            "cat_food",
+            "cat_beverages"
+          ],
+          "menuItemIds": [
+            "item_pancakes",
+            "item_eggs_benedict",
+            "item_classic_burger",
+            "item_veggie_burger",
+            "item_margherita",
+            "item_pepperoni",
+            "item_caesar_salad",
+            "item_chocolate_cake",
+            "item_cappuccino",
+            "item_espresso",
+            "item_iced_lemonade",
+            "item_iced_coffee",
+            "item_berry_smoothie"
+          ],
+          "order": 0,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "menu_breakfast": {
+          "menuId": "menu_breakfast",
+          "name": "Breakfast Menu",
+          "description": "Available 7am - 11am",
+          "isActive": false,
+          "isDefault": false,
+          "categoryIds": [
+            "cat_food",
+            "cat_beverages"
+          ],
+          "menuItemIds": [
+            "item_pancakes",
+            "item_eggs_benedict",
+            "item_cappuccino",
+            "item_espresso",
+            "item_iced_coffee",
+            "item_berry_smoothie"
+          ],
+          "order": 1,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "menu_lunch": {
+          "menuId": "menu_lunch",
+          "name": "Lunch Menu",
+          "description": "Available 11am - 4pm",
+          "isActive": false,
+          "isDefault": false,
+          "categoryIds": [
+            "cat_food",
+            "cat_beverages"
+          ],
+          "menuItemIds": [
+            "item_classic_burger",
+            "item_veggie_burger",
+            "item_margherita",
+            "item_pepperoni",
+            "item_caesar_salad",
+            "item_iced_lemonade",
+            "item_iced_coffee"
+          ],
+          "order": 2,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "menu_dinner": {
+          "menuId": "menu_dinner",
+          "name": "Dinner Menu",
+          "description": "Available 5pm - 10pm",
+          "isActive": false,
+          "isDefault": false,
+          "categoryIds": [
+            "cat_food",
+            "cat_beverages"
+          ],
+          "menuItemIds": [
+            "item_classic_burger",
+            "item_veggie_burger",
+            "item_margherita",
+            "item_pepperoni",
+            "item_caesar_salad",
+            "item_chocolate_cake",
+            "item_iced_lemonade",
+            "item_iced_coffee",
+            "item_cappuccino",
+            "item_espresso"
+          ],
+          "order": 3,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        }
+      },
+      "categories": {
+        "cat_food": {
+          "id": "cat_food",
+          "name": "Food",
+          "description": "Delicious meals for every appetite",
+          "image": "https://example.com/images/cat-food.jpg",
+          "order": 1,
+          "subcategoryIds": [
+            "subcat_bestsellers",
+            "subcat_breakfast",
+            "subcat_burgers",
+            "subcat_pizzas",
+            "subcat_salads",
+            "subcat_desserts"
+          ]
+        },
+        "cat_beverages": {
+          "id": "cat_beverages",
+          "name": "Beverages",
+          "description": "Hot and cold drinks",
+          "image": "https://example.com/images/cat-beverages.jpg",
+          "order": 2,
+          "subcategoryIds": [
+            "subcat_hot_drinks",
+            "subcat_cold_drinks",
+            "subcat_smoothies"
+          ]
+        }
+      },
+      "subcategories": {
+        "subcat_bestsellers": {
+          "id": "subcat_bestsellers",
+          "name": "Best Sellers",
+          "description": "Our most popular items",
+          "image": "https://example.com/images/bestsellers.jpg",
+          "parentCategoryId": "cat_food",
+          "order": 0,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "subcat_breakfast": {
+          "id": "subcat_breakfast",
+          "name": "Breakfast",
+          "description": "Start your day right",
+          "image": "https://example.com/images/breakfast.jpg",
+          "parentCategoryId": "cat_food",
+          "order": 1,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "subcat_burgers": {
+          "id": "subcat_burgers",
+          "name": "Burgers",
+          "description": "Handcrafted gourmet burgers",
+          "image": "https://example.com/images/burgers.jpg",
+          "parentCategoryId": "cat_food",
+          "order": 2,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "subcat_pizzas": {
+          "id": "subcat_pizzas",
+          "name": "Pizzas",
+          "description": "Wood-fired artisan pizzas",
+          "image": "https://example.com/images/pizzas.jpg",
+          "parentCategoryId": "cat_food",
+          "order": 3,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "subcat_salads": {
+          "id": "subcat_salads",
+          "name": "Salads",
+          "description": "Fresh and healthy options",
+          "image": "https://example.com/images/salads.jpg",
+          "parentCategoryId": "cat_food",
+          "order": 4,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "subcat_desserts": {
+          "id": "subcat_desserts",
+          "name": "Desserts",
+          "description": "Sweet endings",
+          "image": "https://example.com/images/desserts.jpg",
+          "parentCategoryId": "cat_food",
+          "order": 5,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "subcat_hot_drinks": {
+          "id": "subcat_hot_drinks",
+          "name": "Hot Drinks",
+          "description": "Warm beverages",
+          "image": "https://example.com/images/hot-drinks.jpg",
+          "parentCategoryId": "cat_beverages",
+          "order": 0,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "subcat_cold_drinks": {
+          "id": "subcat_cold_drinks",
+          "name": "Cold Drinks",
+          "description": "Refreshing cold beverages",
+          "image": "https://example.com/images/cold-drinks.jpg",
+          "parentCategoryId": "cat_beverages",
+          "order": 1,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        },
+        "subcat_smoothies": {
+          "id": "subcat_smoothies",
+          "name": "Smoothies",
+          "description": "Blended fruit goodness",
+          "image": "https://example.com/images/smoothies.jpg",
+          "parentCategoryId": "cat_beverages",
+          "order": 2,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        }
+      },
       "menuItems": {
-        "item001": {
-          "menuItemId": "item001",
-          "categoryId": "cat_1_food",
-          "meta": {
-            "name": "Classic Cheeseburger",
-            "description": "Juicy beef patty with melted cheddar cheese",
-            "categoryName": "Burgers",
-            "image": "https://example.com/images/classic-cheeseburger.jpg"
-          },
-          "priceInfo": {
-            "basePrice": 100,
-            "discount": 10,
-            "finalPrice": 90
-          },
-          "variants": [
-            {
-              "id": "variant_burger_size",
-              "name": "Size"
-            }
+        "item_pancakes": {
+          "menuItemId": "item_pancakes",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "subcat_breakfast",
+          "subcategoryIds": [
+            "subcat_breakfast",
+            "subcat_bestsellers"
           ],
-          "addons": ["addon_burger_fries", "addon_burger_potato_chips"],
-          "nutritionalInfo": {
-            "calories": 650,
-            "protein": 35,
-            "carbs": 40,
-            "fat": 38
-          },
-          "allergenTags": ["dairy", "gluten"],
-          "isInStock": true,
-          "isCustomizable": true
-        },
-        "item002": {
-          "menuItemId": "item002",
-          "categoryId": "cat_2_beverages",
           "meta": {
-            "name": "Gourmet Coffee",
-            "description": "Rich, aromatic coffee made from freshly ground beans",
-            "categoryName": "Beverages",
-            "image": "https://example.com/images/gourmet-coffee.jpg"
-          },
-          "priceInfo": {
-            "basePrice": 50,
-            "discount": 5,
-            "finalPrice": 45
-          },
-          "variants": [
-            {
-              "id": "variant_temperature_beverage",
-              "name": "Temperature"
-            },
-            {
-              "id": "variant_beverage_size",
-              "name": "Size"
-            }
-          ],
-          "addons": [
-            "addon_beverage_hazelnut_syrup",
-            "addon_beverage_vanilla_syrup"
-          ],
-          "nutritionalInfo": {
-            "calories": 5,
-            "protein": 0,
-            "carbs": 0,
-            "fat": 0
-          },
-          "allergenTags": [],
-          "isInStock": true,
-          "isCustomizable": true
-        },
-        "item003": {
-          "menuItemId": "item003",
-          "categoryId": "cat_1_food",
-          "meta": {
-            "name": "Veggie Burger",
-            "description": "A delicious plant-based burger",
-            "categoryName": "Burgers",
-            "image": "https://example.com/images/veggie-burger.jpg"
+            "name": "Fluffy Pancakes",
+            "description": "Stack of three buttermilk pancakes with maple syrup",
+            "categoryName": "Food",
+            "primarySubcategoryName": "Breakfast",
+            "image": "https://example.com/images/pancakes.jpg"
           },
           "priceInfo": {
             "basePrice": 80,
             "discount": 0,
             "finalPrice": 80
           },
+          "variants": [],
+          "addons": [
+            "addon_bacon",
+            "addon_berries"
+          ],
+          "nutritionalInfo": {
+            "calories": 450,
+            "protein": 10,
+            "carbs": 65,
+            "fat": 15
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy",
+            "eggs"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_eggs_benedict": {
+          "menuItemId": "item_eggs_benedict",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "subcat_breakfast",
+          "subcategoryIds": [
+            "subcat_breakfast"
+          ],
+          "meta": {
+            "name": "Eggs Benedict",
+            "description": "Poached eggs with hollandaise on English muffin",
+            "categoryName": "Food",
+            "primarySubcategoryName": "Breakfast",
+            "image": "https://example.com/images/eggs-benedict.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 120,
+            "discount": 0,
+            "finalPrice": 120
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 550,
+            "protein": 25,
+            "carbs": 30,
+            "fat": 35
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy",
+            "eggs"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_classic_burger": {
+          "menuItemId": "item_classic_burger",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "subcat_burgers",
+          "subcategoryIds": [
+            "subcat_burgers",
+            "subcat_bestsellers"
+          ],
+          "meta": {
+            "name": "Classic Cheeseburger",
+            "description": "Angus beef patty with cheddar, lettuce, tomato",
+            "categoryName": "Food",
+            "primarySubcategoryName": "Burgers",
+            "image": "https://example.com/images/classic-burger.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 140,
+            "discount": 10,
+            "finalPrice": 126
+          },
           "variants": [
             {
-              "id": "variant_burger_size",
+              "id": "var_burger_size",
               "name": "Size"
             }
           ],
-          "addons": ["addon_burger_fries"],
+          "addons": [
+            "addon_fries",
+            "addon_bacon"
+          ],
           "nutritionalInfo": {
-            "calories": 500,
-            "protein": 20,
+            "calories": 650,
+            "protein": 35,
             "carbs": 45,
-            "fat": 15
+            "fat": 38
           },
-          "allergenTags": ["gluten"],
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_veggie_burger": {
+          "menuItemId": "item_veggie_burger",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "subcat_burgers",
+          "subcategoryIds": [
+            "subcat_burgers"
+          ],
+          "meta": {
+            "name": "Garden Veggie Burger",
+            "description": "Plant-based patty with fresh vegetables",
+            "categoryName": "Food",
+            "primarySubcategoryName": "Burgers",
+            "image": "https://example.com/images/veggie-burger.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 130,
+            "discount": 0,
+            "finalPrice": 130
+          },
+          "variants": [
+            {
+              "id": "var_burger_size",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_fries"
+          ],
+          "nutritionalInfo": {
+            "calories": 480,
+            "protein": 22,
+            "carbs": 50,
+            "fat": 18
+          },
+          "allergenTags": [
+            "gluten"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_margherita": {
+          "menuItemId": "item_margherita",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "subcat_pizzas",
+          "subcategoryIds": [
+            "subcat_pizzas",
+            "subcat_bestsellers"
+          ],
+          "meta": {
+            "name": "Margherita Pizza",
+            "description": "Fresh mozzarella, tomato sauce, basil",
+            "categoryName": "Food",
+            "primarySubcategoryName": "Pizzas",
+            "image": "https://example.com/images/margherita.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 180,
+            "discount": 0,
+            "finalPrice": 180
+          },
+          "variants": [
+            {
+              "id": "var_pizza_size",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_extra_cheese"
+          ],
+          "nutritionalInfo": {
+            "calories": 800,
+            "protein": 30,
+            "carbs": 90,
+            "fat": 35
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_pepperoni": {
+          "menuItemId": "item_pepperoni",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "subcat_pizzas",
+          "subcategoryIds": [
+            "subcat_pizzas"
+          ],
+          "meta": {
+            "name": "Pepperoni Pizza",
+            "description": "Loaded with premium pepperoni slices",
+            "categoryName": "Food",
+            "primarySubcategoryName": "Pizzas",
+            "image": "https://example.com/images/pepperoni.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 200,
+            "discount": 10,
+            "finalPrice": 180
+          },
+          "variants": [
+            {
+              "id": "var_pizza_size",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_jalapenos"
+          ],
+          "nutritionalInfo": {
+            "calories": 950,
+            "protein": 40,
+            "carbs": 85,
+            "fat": 45
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_caesar_salad": {
+          "menuItemId": "item_caesar_salad",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "subcat_salads",
+          "subcategoryIds": [
+            "subcat_salads"
+          ],
+          "meta": {
+            "name": "Caesar Salad",
+            "description": "Romaine lettuce, parmesan, croutons, Caesar dressing",
+            "categoryName": "Food",
+            "primarySubcategoryName": "Salads",
+            "image": "https://example.com/images/caesar-salad.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 100,
+            "discount": 0,
+            "finalPrice": 100
+          },
+          "variants": [],
+          "addons": [
+            "addon_grilled_chicken"
+          ],
+          "nutritionalInfo": {
+            "calories": 350,
+            "protein": 12,
+            "carbs": 20,
+            "fat": 25
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy",
+            "eggs"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_chocolate_cake": {
+          "menuItemId": "item_chocolate_cake",
+          "categoryId": "cat_food",
+          "primarySubcategoryId": "subcat_desserts",
+          "subcategoryIds": [
+            "subcat_desserts",
+            "subcat_bestsellers"
+          ],
+          "meta": {
+            "name": "Chocolate Lava Cake",
+            "description": "Warm chocolate cake with molten center",
+            "categoryName": "Food",
+            "primarySubcategoryName": "Desserts",
+            "image": "https://example.com/images/chocolate-cake.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 80,
+            "discount": 0,
+            "finalPrice": 80
+          },
+          "variants": [],
+          "addons": [
+            "addon_ice_cream"
+          ],
+          "nutritionalInfo": {
+            "calories": 450,
+            "protein": 6,
+            "carbs": 55,
+            "fat": 25
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy",
+            "eggs"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_cappuccino": {
+          "menuItemId": "item_cappuccino",
+          "categoryId": "cat_beverages",
+          "primarySubcategoryId": "subcat_hot_drinks",
+          "subcategoryIds": [
+            "subcat_hot_drinks",
+            "subcat_bestsellers"
+          ],
+          "meta": {
+            "name": "Cappuccino",
+            "description": "Espresso with steamed milk foam",
+            "categoryName": "Beverages",
+            "primarySubcategoryName": "Hot Drinks",
+            "image": "https://example.com/images/cappuccino.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 60,
+            "discount": 0,
+            "finalPrice": 60
+          },
+          "variants": [
+            {
+              "id": "var_coffee_size",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_vanilla_syrup"
+          ],
+          "nutritionalInfo": {
+            "calories": 80,
+            "protein": 4,
+            "carbs": 8,
+            "fat": 4
+          },
+          "allergenTags": [
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_espresso": {
+          "menuItemId": "item_espresso",
+          "categoryId": "cat_beverages",
+          "primarySubcategoryId": "subcat_hot_drinks",
+          "subcategoryIds": [
+            "subcat_hot_drinks"
+          ],
+          "meta": {
+            "name": "Espresso",
+            "description": "Rich double shot espresso",
+            "categoryName": "Beverages",
+            "primarySubcategoryName": "Hot Drinks",
+            "image": "https://example.com/images/espresso.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 40,
+            "discount": 0,
+            "finalPrice": 40
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 5,
+            "protein": 0,
+            "carbs": 1,
+            "fat": 0
+          },
+          "allergenTags": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_iced_lemonade": {
+          "menuItemId": "item_iced_lemonade",
+          "categoryId": "cat_beverages",
+          "primarySubcategoryId": "subcat_cold_drinks",
+          "subcategoryIds": [
+            "subcat_cold_drinks"
+          ],
+          "meta": {
+            "name": "Fresh Lemonade",
+            "description": "Freshly squeezed lemonade with ice",
+            "categoryName": "Beverages",
+            "primarySubcategoryName": "Cold Drinks",
+            "image": "https://example.com/images/lemonade.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 45,
+            "discount": 0,
+            "finalPrice": 45
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 100,
+            "protein": 0,
+            "carbs": 25,
+            "fat": 0
+          },
+          "allergenTags": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_iced_coffee": {
+          "menuItemId": "item_iced_coffee",
+          "categoryId": "cat_beverages",
+          "primarySubcategoryId": "subcat_cold_drinks",
+          "subcategoryIds": [
+            "subcat_cold_drinks"
+          ],
+          "meta": {
+            "name": "Iced Coffee",
+            "description": "Cold brew coffee on ice",
+            "categoryName": "Beverages",
+            "primarySubcategoryName": "Cold Drinks",
+            "image": "https://example.com/images/iced-coffee.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 55,
+            "discount": 0,
+            "finalPrice": 55
+          },
+          "variants": [
+            {
+              "id": "var_coffee_size",
+              "name": "Size"
+            }
+          ],
+          "addons": [
+            "addon_vanilla_syrup"
+          ],
+          "nutritionalInfo": {
+            "calories": 10,
+            "protein": 0,
+            "carbs": 2,
+            "fat": 0
+          },
+          "allergenTags": [],
+          "isInStock": true,
+          "isCustomizable": true
+        },
+        "item_berry_smoothie": {
+          "menuItemId": "item_berry_smoothie",
+          "categoryId": "cat_beverages",
+          "primarySubcategoryId": "subcat_smoothies",
+          "subcategoryIds": [
+            "subcat_smoothies"
+          ],
+          "meta": {
+            "name": "Mixed Berry Smoothie",
+            "description": "Strawberry, blueberry, raspberry blend",
+            "categoryName": "Beverages",
+            "primarySubcategoryName": "Smoothies",
+            "image": "https://example.com/images/berry-smoothie.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 70,
+            "discount": 0,
+            "finalPrice": 70
+          },
+          "variants": [],
+          "addons": [
+            "addon_protein"
+          ],
+          "nutritionalInfo": {
+            "calories": 180,
+            "protein": 3,
+            "carbs": 40,
+            "fat": 2
+          },
+          "allergenTags": [],
           "isInStock": true,
           "isCustomizable": true
         }
       },
-      "categories": {
-        "cat_1_food": {
-          "name": "Burgers",
-          "description": "Delicious handcrafted burgers",
-          "image": "https://example.com/images/burger-category.jpg",
-          "order": 1
-        },
-        "cat_2_beverages": {
-          "name": "Beverages",
-          "description": "Refreshing drinks and hot beverages",
-          "image": "https://example.com/images/beverages-category.jpg",
-          "order": 2
-        }
-      },
       "variants": {
-        "variant_burger_size": {
-          "id": "variant_burger_size",
+        "var_burger_size": {
+          "id": "var_burger_size",
           "meta": {
             "name": "Burger Size",
-            "description": "Choose your preferred burger size",
-            "categoryAssociatedWith": ["cat_1_food"]
+            "description": "Choose your preferred size",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ]
           },
           "options": [
             {
-              "id": "burger_size_regular",
+              "id": "size_regular",
               "name": "Regular",
               "priceInfo": {
                 "basePrice": 0,
@@ -201,8 +861,8 @@
               }
             },
             {
-              "id": "burger_size_large",
-              "name": "Large",
+              "id": "size_large",
+              "name": "Large (+20)",
               "priceInfo": {
                 "basePrice": 20,
                 "finalPrice": 20,
@@ -212,19 +872,24 @@
           ],
           "isMandatory": true,
           "respectParentDiscount": true,
-          "itemsAssociatedWith": ["item001", "item003"]
+          "itemsAssociatedWith": [
+            "item_classic_burger",
+            "item_veggie_burger"
+          ]
         },
-        "variant_temperature_beverage": {
-          "id": "variant_temperature_beverage",
+        "var_pizza_size": {
+          "id": "var_pizza_size",
           "meta": {
-            "name": "Temperature",
-            "description": "Choose between hot or cold coffee",
-            "categoryAssociatedWith": ["cat_2_beverages"]
+            "name": "Pizza Size",
+            "description": "Choose pizza size",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ]
           },
           "options": [
             {
-              "id": "beverage_temp_hot",
-              "name": "Hot",
+              "id": "pizza_regular",
+              "name": "Regular (10\")",
               "priceInfo": {
                 "basePrice": 0,
                 "finalPrice": 0,
@@ -232,29 +897,34 @@
               }
             },
             {
-              "id": "beverage_temp_cold",
-              "name": "Cold",
+              "id": "pizza_large",
+              "name": "Large (14\")",
               "priceInfo": {
-                "basePrice": 5,
-                "finalPrice": 5,
+                "basePrice": 50,
+                "finalPrice": 50,
                 "discount": 0
               }
             }
           ],
           "isMandatory": true,
           "respectParentDiscount": true,
-          "itemsAssociatedWith": ["item002"]
+          "itemsAssociatedWith": [
+            "item_margherita",
+            "item_pepperoni"
+          ]
         },
-        "variant_beverage_size": {
-          "id": "variant_beverage_size",
+        "var_coffee_size": {
+          "id": "var_coffee_size",
           "meta": {
-            "name": "Beverage Size",
-            "description": "Choose your preferred coffee size",
-            "categoryAssociatedWith": ["cat_2_beverages"]
+            "name": "Cup Size",
+            "description": "Choose your cup size",
+            "categoryAssociatedWith": [
+              "cat_beverages"
+            ]
           },
           "options": [
             {
-              "id": "beverage_size_regular",
+              "id": "cup_regular",
               "name": "Regular",
               "priceInfo": {
                 "basePrice": 0,
@@ -263,25 +933,117 @@
               }
             },
             {
-              "id": "beverage_size_large",
-              "name": "Large",
+              "id": "cup_large",
+              "name": "Large (+15)",
               "priceInfo": {
-                "basePrice": 10,
-                "finalPrice": 10,
+                "basePrice": 15,
+                "finalPrice": 15,
                 "discount": 0
               }
             }
           ],
           "isMandatory": true,
           "respectParentDiscount": true,
-          "itemsAssociatedWith": ["item002"]
+          "itemsAssociatedWith": [
+            "item_cappuccino",
+            "item_iced_coffee"
+          ]
+        }
+      },
+      "addons": {
+        "addon_fries": {
+          "id": "addon_fries",
+          "meta": {
+            "name": "French Fries",
+            "description": "Crispy golden fries",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ]
+          },
+          "priceInfo": {
+            "basePrice": 30,
+            "finalPrice": 30,
+            "discount": 0
+          },
+          "respectParentDiscount": true,
+          "isInStock": true,
+          "itemsAssociatedWith": [
+            "item_classic_burger",
+            "item_veggie_burger"
+          ],
+          "isMandatory": false
+        },
+        "addon_bacon": {
+          "id": "addon_bacon",
+          "meta": {
+            "name": "Extra Bacon",
+            "description": "Crispy bacon strips",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ]
+          },
+          "priceInfo": {
+            "basePrice": 25,
+            "finalPrice": 25,
+            "discount": 0
+          },
+          "respectParentDiscount": true,
+          "isInStock": true,
+          "itemsAssociatedWith": [
+            "item_classic_burger",
+            "item_pancakes"
+          ],
+          "isMandatory": false
+        },
+        "addon_vanilla_syrup": {
+          "id": "addon_vanilla_syrup",
+          "meta": {
+            "name": "Vanilla Syrup",
+            "description": "Sweet vanilla flavor",
+            "categoryAssociatedWith": [
+              "cat_beverages"
+            ]
+          },
+          "priceInfo": {
+            "basePrice": 10,
+            "finalPrice": 10,
+            "discount": 0
+          },
+          "respectParentDiscount": false,
+          "isInStock": true,
+          "itemsAssociatedWith": [
+            "item_cappuccino",
+            "item_iced_coffee"
+          ],
+          "isMandatory": false
+        },
+        "addon_ice_cream": {
+          "id": "addon_ice_cream",
+          "meta": {
+            "name": "Vanilla Ice Cream",
+            "description": "Creamy vanilla ice cream",
+            "categoryAssociatedWith": [
+              "cat_food"
+            ]
+          },
+          "priceInfo": {
+            "basePrice": 20,
+            "finalPrice": 20,
+            "discount": 0
+          },
+          "respectParentDiscount": false,
+          "isInStock": true,
+          "itemsAssociatedWith": [
+            "item_chocolate_cake"
+          ],
+          "isMandatory": false
         }
       },
       "tables": {
         "table001": {
           "number": "T1",
           "capacity": 4,
-          "status": "active",
+          "status": "vacant",
           "currentOTP": {
             "code": "123456",
             "createdAt": {
@@ -293,20 +1055,867 @@
               "_nanoseconds": 0
             }
           },
-          "session": "session001",
-          "occupiedBy": ["1234567890"],
+          "session": null,
+          "occupiedBy": [],
           "primaryCustomer": {
-            "phoneNumber": "1234567890",
-            "name": "John Customer"
+            "phoneNumber": "",
+            "name": ""
           },
           "assignedServerId": "server001",
-          "lastActivity": {
+          "lastActivity": null
+        },
+        "table002": {
+          "number": "T2",
+          "capacity": 6,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "",
+            "createdAt": null,
+            "expiresAt": null
+          },
+          "session": null,
+          "occupiedBy": [],
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          },
+          "assignedServerId": "server001",
+          "lastActivity": null
+        }
+      },
+      "servers": {
+        "server001": {
+          "name": "Alex Server",
+          "email": "alex@daynightkitchen.com",
+          "phoneNumber": "1111111111",
+          "role": "waiter",
+          "status": "active",
+          "assignedTables": [
+            "table001",
+            "table002"
+          ],
+          "fcmToken": "",
+          "password": "1234"
+        }
+      },
+      "kitchens": {
+        "kitchen1": {
+          "name": "Main Kitchen",
+          "status": "active"
+        }
+      },
+      "sessions": {},
+      "carts": {},
+      "orders": {}
+    },
+    "rest_menus_only": {
+      "info": {
+        "name": "MENUS ONLY - Express Cafe (Menus, NO Subcategories)",
+        "address": "456 Quick Street, Foodville, FV 12345",
+        "phone": "5552345678",
+        "email": "hello@expresscafe.com",
+        "location": {
+          "_latitude": 40.7200,
+          "_longitude": -74.010
+        }
+      },
+      "menus": {
+        "menu_morning": {
+          "menuId": "menu_morning",
+          "name": "Morning Menu",
+          "description": "Served 6am-11am",
+          "isActive": true,
+          "isDefault": true,
+          "categoryIds": [
+            "cat_breakfast",
+            "cat_coffee"
+          ],
+          "menuItemIds": [
+            "item_croissant",
+            "item_pancake_stack",
+            "item_flat_white",
+            "item_chai_latte",
+            "item_muffin"
+          ],
+          "order": 0,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
             "_seconds": 1678901234,
             "_nanoseconds": 0
           }
         },
+        "menu_afternoon": {
+          "menuId": "menu_afternoon",
+          "name": "Afternoon Menu",
+          "description": "Served 11am-6pm",
+          "isActive": false,
+          "isDefault": false,
+          "categoryIds": [
+            "cat_lunch",
+            "cat_coffee",
+            "cat_snacks"
+          ],
+          "menuItemIds": [
+            "item_club_sandwich",
+            "item_caesar_wrap",
+            "item_flat_white",
+            "item_chai_latte",
+            "item_cookie",
+            "item_muffin"
+          ],
+          "order": 1,
+          "createdAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          },
+          "updatedAt": {
+            "_seconds": 1678901234,
+            "_nanoseconds": 0
+          }
+        }
+      },
+      "categories": {
+        "cat_breakfast": {
+          "id": "cat_breakfast",
+          "name": "Breakfast",
+          "description": "Start your morning right",
+          "image": "https://example.com/images/breakfast.jpg",
+          "order": 1
+        },
+        "cat_lunch": {
+          "id": "cat_lunch",
+          "name": "Lunch",
+          "description": "Midday meals",
+          "image": "https://example.com/images/lunch.jpg",
+          "order": 2
+        },
+        "cat_coffee": {
+          "id": "cat_coffee",
+          "name": "Coffee & Tea",
+          "description": "Hot beverages",
+          "image": "https://example.com/images/coffee.jpg",
+          "order": 3
+        },
+        "cat_snacks": {
+          "id": "cat_snacks",
+          "name": "Snacks",
+          "description": "Quick bites",
+          "image": "https://example.com/images/snacks.jpg",
+          "order": 4
+        }
+      },
+      "menuItems": {
+        "item_croissant": {
+          "menuItemId": "item_croissant",
+          "categoryId": "cat_breakfast",
+          "meta": {
+            "name": "Butter Croissant",
+            "description": "Flaky French pastry",
+            "categoryName": "Breakfast",
+            "image": "https://example.com/images/croissant.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 45,
+            "discount": 0,
+            "finalPrice": 45
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 280,
+            "protein": 5,
+            "carbs": 32,
+            "fat": 15
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_pancake_stack": {
+          "menuItemId": "item_pancake_stack",
+          "categoryId": "cat_breakfast",
+          "meta": {
+            "name": "Pancake Stack",
+            "description": "Three fluffy pancakes with syrup",
+            "categoryName": "Breakfast",
+            "image": "https://example.com/images/pancakes.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 75,
+            "discount": 0,
+            "finalPrice": 75
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 400,
+            "protein": 8,
+            "carbs": 60,
+            "fat": 14
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy",
+            "eggs"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_club_sandwich": {
+          "menuItemId": "item_club_sandwich",
+          "categoryId": "cat_lunch",
+          "meta": {
+            "name": "Club Sandwich",
+            "description": "Triple decker with chicken and bacon",
+            "categoryName": "Lunch",
+            "image": "https://example.com/images/club-sandwich.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 130,
+            "discount": 10,
+            "finalPrice": 117
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 600,
+            "protein": 32,
+            "carbs": 48,
+            "fat": 30
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_caesar_wrap": {
+          "menuItemId": "item_caesar_wrap",
+          "categoryId": "cat_lunch",
+          "meta": {
+            "name": "Caesar Wrap",
+            "description": "Grilled chicken Caesar in a wrap",
+            "categoryName": "Lunch",
+            "image": "https://example.com/images/caesar-wrap.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 110,
+            "discount": 0,
+            "finalPrice": 110
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 480,
+            "protein": 28,
+            "carbs": 38,
+            "fat": 22
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy",
+            "eggs"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_flat_white": {
+          "menuItemId": "item_flat_white",
+          "categoryId": "cat_coffee",
+          "meta": {
+            "name": "Flat White",
+            "description": "Smooth espresso with steamed milk",
+            "categoryName": "Coffee & Tea",
+            "image": "https://example.com/images/flat-white.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 55,
+            "discount": 0,
+            "finalPrice": 55
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 70,
+            "protein": 4,
+            "carbs": 6,
+            "fat": 4
+          },
+          "allergenTags": [
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_chai_latte": {
+          "menuItemId": "item_chai_latte",
+          "categoryId": "cat_coffee",
+          "meta": {
+            "name": "Chai Latte",
+            "description": "Spiced chai tea with steamed milk",
+            "categoryName": "Coffee & Tea",
+            "image": "https://example.com/images/chai-latte.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 60,
+            "discount": 0,
+            "finalPrice": 60
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 120,
+            "protein": 4,
+            "carbs": 20,
+            "fat": 3
+          },
+          "allergenTags": [
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_muffin": {
+          "menuItemId": "item_muffin",
+          "categoryId": "cat_snacks",
+          "meta": {
+            "name": "Blueberry Muffin",
+            "description": "Fresh baked with real blueberries",
+            "categoryName": "Snacks",
+            "image": "https://example.com/images/muffin.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 40,
+            "discount": 0,
+            "finalPrice": 40
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 320,
+            "protein": 4,
+            "carbs": 48,
+            "fat": 12
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy",
+            "eggs"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_cookie": {
+          "menuItemId": "item_cookie",
+          "categoryId": "cat_snacks",
+          "meta": {
+            "name": "Chocolate Chip Cookie",
+            "description": "Warm, gooey chocolate chip cookie",
+            "categoryName": "Snacks",
+            "image": "https://example.com/images/cookie.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 35,
+            "discount": 0,
+            "finalPrice": 35
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 280,
+            "protein": 3,
+            "carbs": 40,
+            "fat": 14
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy",
+            "eggs"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        }
+      },
+      "variants": {},
+      "addons": {},
+      "tables": {
+        "table001": {
+          "number": "C1",
+          "capacity": 2,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "",
+            "createdAt": null,
+            "expiresAt": null
+          },
+          "session": null,
+          "occupiedBy": [],
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          },
+          "assignedServerId": "server001",
+          "lastActivity": null
+        }
+      },
+      "servers": {
+        "server001": {
+          "name": "Express Server",
+          "email": "server@expresscafe.com",
+          "phoneNumber": "2222222222",
+          "role": "waiter",
+          "status": "active",
+          "assignedTables": [
+            "table001"
+          ],
+          "fcmToken": "",
+          "password": "1234"
+        }
+      },
+      "kitchens": {
+        "kitchen1": {
+          "name": "Cafe Kitchen",
+          "status": "active"
+        }
+      },
+      "sessions": {},
+      "carts": {},
+      "orders": {}
+    },
+    "rest_legacy": {
+      "info": {
+        "name": "LEGACY - Classic Diner (NO Menus, NO Subcategories)",
+        "address": "789 Traditional Road, Foodville, FV 12345",
+        "phone": "5553456789",
+        "email": "info@classicdiner.com",
+        "location": {
+          "_latitude": 40.7300,
+          "_longitude": -74.020
+        }
+      },
+      "categories": {
+        "cat_burgers": {
+          "id": "cat_burgers",
+          "name": "Burgers",
+          "description": "Classic American burgers",
+          "image": "https://example.com/images/burgers.jpg",
+          "order": 1
+        },
+        "cat_hot_dogs": {
+          "id": "cat_hot_dogs",
+          "name": "Hot Dogs",
+          "description": "All-beef hot dogs",
+          "image": "https://example.com/images/hotdogs.jpg",
+          "order": 2
+        },
+        "cat_sides": {
+          "id": "cat_sides",
+          "name": "Sides",
+          "description": "Perfect accompaniments",
+          "image": "https://example.com/images/sides.jpg",
+          "order": 3
+        },
+        "cat_drinks": {
+          "id": "cat_drinks",
+          "name": "Drinks",
+          "description": "Beverages",
+          "image": "https://example.com/images/drinks.jpg",
+          "order": 4
+        },
+        "cat_desserts": {
+          "id": "cat_desserts",
+          "name": "Desserts",
+          "description": "Sweet treats",
+          "image": "https://example.com/images/desserts.jpg",
+          "order": 5
+        }
+      },
+      "menuItems": {
+        "item_plain_burger": {
+          "menuItemId": "item_plain_burger",
+          "categoryId": "cat_burgers",
+          "meta": {
+            "name": "Plain Burger",
+            "description": "Simple beef burger on a bun",
+            "categoryName": "Burgers",
+            "image": "https://example.com/images/plain-burger.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 65,
+            "discount": 0,
+            "finalPrice": 65
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 450,
+            "protein": 22,
+            "carbs": 32,
+            "fat": 25
+          },
+          "allergenTags": [
+            "gluten"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_cheese_burger": {
+          "menuItemId": "item_cheese_burger",
+          "categoryId": "cat_burgers",
+          "meta": {
+            "name": "Cheese Burger",
+            "description": "Beef burger with American cheese",
+            "categoryName": "Burgers",
+            "image": "https://example.com/images/cheese-burger.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 75,
+            "discount": 0,
+            "finalPrice": 75
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 520,
+            "protein": 26,
+            "carbs": 34,
+            "fat": 30
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_double_burger": {
+          "menuItemId": "item_double_burger",
+          "categoryId": "cat_burgers",
+          "meta": {
+            "name": "Double Cheese Burger",
+            "description": "Two patties with double cheese",
+            "categoryName": "Burgers",
+            "image": "https://example.com/images/double-burger.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 110,
+            "discount": 10,
+            "finalPrice": 99
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 850,
+            "protein": 48,
+            "carbs": 42,
+            "fat": 52
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_classic_dog": {
+          "menuItemId": "item_classic_dog",
+          "categoryId": "cat_hot_dogs",
+          "meta": {
+            "name": "Classic Hot Dog",
+            "description": "All-beef frank in a steamed bun",
+            "categoryName": "Hot Dogs",
+            "image": "https://example.com/images/classic-dog.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 50,
+            "discount": 0,
+            "finalPrice": 50
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 350,
+            "protein": 12,
+            "carbs": 28,
+            "fat": 22
+          },
+          "allergenTags": [
+            "gluten"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_chili_dog": {
+          "menuItemId": "item_chili_dog",
+          "categoryId": "cat_hot_dogs",
+          "meta": {
+            "name": "Chili Cheese Dog",
+            "description": "Hot dog topped with chili and cheese",
+            "categoryName": "Hot Dogs",
+            "image": "https://example.com/images/chili-dog.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 70,
+            "discount": 0,
+            "finalPrice": 70
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 480,
+            "protein": 18,
+            "carbs": 32,
+            "fat": 30
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_fries": {
+          "menuItemId": "item_fries",
+          "categoryId": "cat_sides",
+          "meta": {
+            "name": "French Fries",
+            "description": "Classic crispy fries",
+            "categoryName": "Sides",
+            "image": "https://example.com/images/fries.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 35,
+            "discount": 0,
+            "finalPrice": 35
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 300,
+            "protein": 4,
+            "carbs": 40,
+            "fat": 15
+          },
+          "allergenTags": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_onion_rings": {
+          "menuItemId": "item_onion_rings",
+          "categoryId": "cat_sides",
+          "meta": {
+            "name": "Onion Rings",
+            "description": "Crispy battered onion rings",
+            "categoryName": "Sides",
+            "image": "https://example.com/images/onion-rings.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 40,
+            "discount": 0,
+            "finalPrice": 40
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 350,
+            "protein": 5,
+            "carbs": 45,
+            "fat": 18
+          },
+          "allergenTags": [
+            "gluten"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_coleslaw": {
+          "menuItemId": "item_coleslaw",
+          "categoryId": "cat_sides",
+          "meta": {
+            "name": "Coleslaw",
+            "description": "Creamy cabbage slaw",
+            "categoryName": "Sides",
+            "image": "https://example.com/images/coleslaw.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 25,
+            "discount": 0,
+            "finalPrice": 25
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 150,
+            "protein": 1,
+            "carbs": 12,
+            "fat": 11
+          },
+          "allergenTags": [
+            "eggs"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_soda": {
+          "menuItemId": "item_soda",
+          "categoryId": "cat_drinks",
+          "meta": {
+            "name": "Fountain Soda",
+            "description": "Choice of sodas",
+            "categoryName": "Drinks",
+            "image": "https://example.com/images/soda.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 25,
+            "discount": 0,
+            "finalPrice": 25
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 150,
+            "protein": 0,
+            "carbs": 40,
+            "fat": 0
+          },
+          "allergenTags": [],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_milkshake": {
+          "menuItemId": "item_milkshake",
+          "categoryId": "cat_drinks",
+          "meta": {
+            "name": "Thick Milkshake",
+            "description": "Creamy milkshake - vanilla, chocolate, or strawberry",
+            "categoryName": "Drinks",
+            "image": "https://example.com/images/milkshake.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 55,
+            "discount": 0,
+            "finalPrice": 55
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 450,
+            "protein": 10,
+            "carbs": 65,
+            "fat": 18
+          },
+          "allergenTags": [
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_apple_pie": {
+          "menuItemId": "item_apple_pie",
+          "categoryId": "cat_desserts",
+          "meta": {
+            "name": "Apple Pie",
+            "description": "Warm apple pie with cinnamon",
+            "categoryName": "Desserts",
+            "image": "https://example.com/images/apple-pie.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 45,
+            "discount": 0,
+            "finalPrice": 45
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 350,
+            "protein": 3,
+            "carbs": 52,
+            "fat": 16
+          },
+          "allergenTags": [
+            "gluten",
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        },
+        "item_ice_cream": {
+          "menuItemId": "item_ice_cream",
+          "categoryId": "cat_desserts",
+          "meta": {
+            "name": "Ice Cream Sundae",
+            "description": "Two scoops with toppings",
+            "categoryName": "Desserts",
+            "image": "https://example.com/images/sundae.jpg"
+          },
+          "priceInfo": {
+            "basePrice": 50,
+            "discount": 0,
+            "finalPrice": 50
+          },
+          "variants": [],
+          "addons": [],
+          "nutritionalInfo": {
+            "calories": 400,
+            "protein": 6,
+            "carbs": 50,
+            "fat": 20
+          },
+          "allergenTags": [
+            "dairy"
+          ],
+          "isInStock": true,
+          "isCustomizable": false
+        }
+      },
+      "variants": {},
+      "addons": {},
+      "tables": {
+        "table001": {
+          "number": "D-1",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "",
+            "createdAt": null,
+            "expiresAt": null
+          },
+          "session": null,
+          "occupiedBy": [],
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          },
+          "assignedServerId": "server001",
+          "lastActivity": null
+        },
         "table002": {
-          "number": "T2",
+          "number": "D-2",
+          "capacity": 2,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "",
+            "createdAt": null,
+            "expiresAt": null
+          },
+          "session": null,
+          "occupiedBy": [],
+          "primaryCustomer": {
+            "phoneNumber": "",
+            "name": ""
+          },
+          "assignedServerId": "server001",
+          "lastActivity": null
+        },
+        "table003": {
+          "number": "D-3",
           "capacity": 6,
           "status": "vacant",
           "currentOTP": {
@@ -326,462 +1935,40 @@
       },
       "servers": {
         "server001": {
-          "name": "John Doe",
-          "email": "john.doe@gourmetgrove.com",
-          "phoneNumber": "9876543210",
+          "name": "Diner Server 1",
+          "email": "server1@classicdiner.com",
+          "phoneNumber": "3333333333",
           "role": "waiter",
           "status": "active",
-          "assignedTables": ["table001"],
+          "assignedTables": [
+            "table001",
+            "table002"
+          ],
           "fcmToken": "",
           "password": "1234"
         },
         "server002": {
-          "name": "Jane Smith",
-          "email": "jane.smith@gourmetgrove.com",
-          "phoneNumber": "9123456780",
+          "name": "Diner Server 2",
+          "email": "server2@classicdiner.com",
+          "phoneNumber": "4444444444",
           "role": "waiter",
           "status": "active",
-          "assignedTables": ["table002"],
+          "assignedTables": [
+            "table003"
+          ],
           "fcmToken": "",
-          "password": "2345"
-        },
-        "server003": {
-          "name": "Bob Brown",
-          "email": "bob.brown@gourmetgrove.com",
-          "phoneNumber": "9988776655",
-          "role": "waiter",
-          "status": "inactive",
-          "assignedTables": [],
-          "fcmToken": "",
-          "password": "3456"
-        }
-      },
-      "orders": {
-        "order001": {
-          "orderId": "order001",
-          "restaurantId": "rest001",
-          "tableId": "table001",
-          "status": "pending",
-          "assignedServer": "system",
-          "updatedAt": 1678901234,
-          "carts": [
-            {
-              "status": "pending",
-              "statusHistory": [
-                {
-                  "status": "pending",
-                  "timestamp": {
-                    "_seconds": 1678901234,
-                    "_nanoseconds": 0
-                  },
-                  "userId": "system"
-                }
-              ],
-              "checkoutTime": {
-                "_seconds": 1678901234,
-                "_nanoseconds": 0
-              },
-              "notes": "",
-              "estimatedPrepTime": 12,
-              "assignedTo": null,
-              "items": [
-                {
-                  "menuItemId": "item001",
-                  "menuItem": {
-                    "meta": {
-                      "name": "Classic Cheeseburger",
-                      "description": "Juicy beef patty with melted cheddar cheese",
-                      "image": "https://example.com/images/classic-cheeseburger.jpg",
-                      "categoryName": "Burgers"
-                    }
-                  },
-                  "selectedVariantsDetails": [
-                    {
-                      "id": "variant_burger_size",
-                      "isMandatory": true,
-                      "respectParentDiscount": true,
-                      "selected_variant_id": "burger_size_large",
-                      "selected_variant_name": "Large",
-                      "priceInfo": {
-                        "basePrice": 20,
-                        "finalPrice": 18,
-                        "discount": 10
-                      }
-                    }
-                  ],
-                  "selectedAddonsDetails": [
-                    {
-                      "id": "addon_burger_fries",
-                      "name": "French Fries",
-                      "priceInfo": {
-                        "basePrice": 20,
-                        "finalPrice": 18,
-                        "discount": 10
-                      },
-                      "respectParentDiscount": true
-                    }
-                  ],
-                  "priceInfo": {
-                    "itemBasePrice": 100,
-                    "itemVariantBasePrice": 20,
-                    "itemAddonBasePrice": 20,
-                    "itemFinalPrice": 126,
-                    "discount": 10,
-                    "totalBasePrice": 140,
-                    "totalVariantBasePrice": 20,
-                    "totalAddonBasePrice": 20,
-                    "finalPrice": 126
-                  },
-                  "quantity": 1,
-                  "status": "pending",
-                  "statusUpdatedAt": {
-                    "_seconds": 1678901234,
-                    "_nanoseconds": 0
-                  },
-                  "statusUpdatedBy": "system",
-                  "cartItemId": 1
-                }
-              ],
-              "priceInfo": {
-                "basePrice": 140,
-                "finalPrice": 126,
-                "totalDiscount": 10,
-                "totalDiscountAmount": 14,
-                "totalVariantBasePrice": 20,
-                "totalAddonBasePrice": 20
-              }
-            }
-          ],
-          "items": [
-            {
-              "menuItemId": "item001",
-              "menuItem": {
-                "meta": {
-                  "name": "Classic Cheeseburger",
-                  "description": "Juicy beef patty with melted cheddar cheese",
-                  "image": "https://example.com/images/classic-cheeseburger.jpg",
-                  "categoryName": "Burgers"
-                }
-              },
-              "selectedVariantsDetails": [
-                {
-                  "id": "variant_burger_size",
-                  "isMandatory": true,
-                  "respectParentDiscount": true,
-                  "selected_variant_id": "burger_size_large",
-                  "selected_variant_name": "Large",
-                  "priceInfo": {
-                    "basePrice": 20,
-                    "finalPrice": 18,
-                    "discount": 10
-                  }
-                }
-              ],
-              "selectedAddonsDetails": [
-                {
-                  "id": "addon_burger_fries",
-                  "name": "French Fries",
-                  "priceInfo": {
-                    "basePrice": 20,
-                    "finalPrice": 18,
-                    "discount": 10
-                  },
-                  "respectParentDiscount": true
-                }
-              ],
-              "priceInfo": {
-                "itemBasePrice": 100,
-                "itemVariantBasePrice": 20,
-                "itemAddonBasePrice": 20,
-                "itemFinalPrice": 126,
-                "discount": 10,
-                "totalBasePrice": 140,
-                "totalVariantBasePrice": 20,
-                "totalAddonBasePrice": 20,
-                "finalPrice": 126
-              },
-              "quantity": 1,
-              "status": "pending",
-              "statusUpdatedAt": {
-                "_seconds": 1678901234,
-                "_nanoseconds": 0
-              },
-              "statusUpdatedBy": "system",
-              "cartItemId": 1
-            }
-          ],
-          "priceInfo": {
-            "basePrice": 140,
-            "finalPrice": 126,
-            "totalDiscount": 10,
-            "totalDiscountAmount": 14,
-            "totalAddonBasePrice": 20,
-            "totalVariantBasePrice": 20
-          },
-          "timestamps": {
-            "createdAt": {
-              "_seconds": 1678901234,
-              "_nanoseconds": 0
-            },
-            "updatedAt": {
-              "_seconds": 1678905678,
-              "_nanoseconds": 0
-            }
-          },
-          "paymentInfo": {
-            "paymentStatus": "unpaid",
-            "paymentMethod": "cash",
-            "transactionId": null
-          }
-        }
-      },
-      "addons": {
-        "addon_burger_fries": {
-          "meta": {
-            "name": "French Fries",
-            "description": "Crispy golden fries",
-            "categoryAssociatedWith": ["cat_1_food"]
-          },
-          "priceInfo": {
-            "basePrice": 20,
-            "discount": 0,
-            "finalPrice": 20
-          },
-          "isMandatory": false,
-          "respectParentDiscount": true,
-          "itemsAssociatedWith": ["item001"],
-          "isInStock": true
-        },
-        "addon_burger_potato_chips": {
-          "meta": {
-            "name": "Potato Chips",
-            "description": "Crunchy house-made potato chips",
-            "categoryAssociatedWith": ["cat_1_food"]
-          },
-          "priceInfo": {
-            "basePrice": 10,
-            "discount": 0,
-            "finalPrice": 10
-          },
-          "isMandatory": false,
-          "respectParentDiscount": true,
-          "itemsAssociatedWith": ["item001"],
-          "isInStock": true
-        },
-        "addon_beverage_hazelnut_syrup": {
-          "meta": {
-            "name": "Hazelnut Syrup",
-            "description": "Rich hazelnut flavored syrup",
-            "categoryAssociatedWith": ["cat_2_beverages"]
-          },
-          "priceInfo": {
-            "basePrice": 5,
-            "discount": 0,
-            "finalPrice": 5
-          },
-          "isMandatory": false,
-          "respectParentDiscount": true,
-          "itemsAssociatedWith": ["item002"],
-          "isInStock": true
-        },
-        "addon_beverage_vanilla_syrup": {
-          "meta": {
-            "name": "Vanilla Syrup",
-            "description": "Sweet vanilla flavored syrup",
-            "categoryAssociatedWith": ["cat_2_beverages"]
-          },
-          "priceInfo": {
-            "basePrice": 5,
-            "discount": 0,
-            "finalPrice": 5
-          },
-          "isMandatory": false,
-          "respectParentDiscount": true,
-          "itemsAssociatedWith": ["item002"],
-          "isInStock": true
-        }
-      },
-      "carts": {
-        "table001": {
-          "restaurantId": "rest001",
-          "tableId": "table001",
-          "sessionId": "session001",
-          "items": [
-            {
-              "cartItemId": 1,
-              "menuItemId": "item001",
-              "quantity": 2,
-              "menuItem": {
-                "meta": {
-                  "name": "Classic Cheeseburger",
-                  "description": "Juicy beef patty with melted cheddar cheese",
-                  "image": "https://example.com/images/classic-cheeseburger.jpg",
-                  "categoryName": "Burgers"
-                },
-                "categoryId": "cat_1_food",
-                "nutritionalInfo": {
-                  "calories": 650,
-                  "protein": 35,
-                  "carbs": 40,
-                  "fat": 38
-                },
-                "allergenTags": ["dairy", "gluten"],
-                "isCustomizable": true,
-                "isInStock": true
-              },
-              "selectedVariantsDetails": [
-                {
-                  "id": "variant_burger_size",
-                  "isMandatory": true,
-                  "respectParentDiscount": true,
-                  "selected_variant_id": "burger_size_large",
-                  "selected_variant_name": "Large",
-                  "priceInfo": {
-                    "basePrice": 20,
-                    "finalPrice": 18,
-                    "discount": 10
-                  }
-                }
-              ],
-              "selectedAddonsDetails": [
-                {
-                  "id": "addon_burger_fries",
-                  "name": "French Fries",
-                  "priceInfo": {
-                    "basePrice": 20,
-                    "finalPrice": 18,
-                    "discount": 10
-                  },
-                  "respectParentDiscount": true
-                }
-              ],
-              "priceInfo": {
-                "itemBasePrice": 100,
-                "itemVariantBasePrice": 20,
-                "itemAddonBasePrice": 20,
-                "itemFinalPrice": 126,
-                "discount": 10,
-                "totalBasePrice": 140,
-                "totalVariantBasePrice": 20,
-                "totalAddonBasePrice": 20,
-                "finalPrice": 126
-              },
-              "status": "pending",
-              "statusUpdatedAt": {
-                "_seconds": 1678901234,
-                "_nanoseconds": 0
-              },
-              "statusUpdatedBy": "system"
-            }
-          ],
-          "priceInfo": {
-            "basePrice": 140,
-            "finalPrice": 126,
-            "totalDiscount": 10,
-            "totalDiscountAmount": 14,
-            "totalAddonBasePrice": 20,
-            "totalVariantBasePrice": 20
-          },
-          "lastUpdated": {
-            "_seconds": 1678901234,
-            "_nanoseconds": 0
-          }
+          "password": "1234"
         }
       },
       "kitchens": {
         "kitchen1": {
-          "chefs": {
-            "chef1": {
-              "name": "John Doe",
-              "role": "Head Chef",
-              "fcmToken": "fcm_token_here"
-            }
-          }
-        },
-        "kitchen2": {
-          "chefs": {
-            "chef2": {
-              "name": "Jane Smith",
-              "role": "Sous Chef",
-              "fcmToken": "fcm_token_here"
-            }
-          }
+          "name": "Diner Kitchen",
+          "status": "active"
         }
       },
-      "sessions": {
-        "session001": {
-          "entity": "table",
-          "tableId": "table001",
-          "primaryUserId": "1234567890",
-          "users": ["1234567890"],
-          "status": "active",
-          "createdAt": {
-            "_seconds": 1678901234,
-            "_nanoseconds": 0
-          },
-          "updatedAt": {
-            "_seconds": 1678901234,
-            "_nanoseconds": 0
-          },
-          "expiresAt": {
-            "_seconds": 2767225600,
-            "_nanoseconds": 0
-          }
-        },
-        "session002": {
-          "entity": "table",
-          "tableId": "table002",
-          "primaryUserId": "9876543210",
-          "users": ["9876543210"],
-          "status": "active",
-          "createdAt": {
-            "_seconds": 1678901234,
-            "_nanoseconds": 0
-          },
-          "updatedAt": {
-            "_seconds": 1678901234,
-            "_nanoseconds": 0
-          },
-          "expiresAt": {
-            "_seconds": 1735689600,
-            "_nanoseconds": 0
-          }
-        },
-        "session003": {
-          "entity": "server",
-          "serverId": "server001",
-          "status": "active",
-          "createdAt": {
-            "_seconds": 1678901234,
-            "_nanoseconds": 0
-          },
-          "updatedAt": {
-            "_seconds": 1678901234,
-            "_nanoseconds": 0
-          },
-          "expiresAt": {
-            "_seconds": 1735689600,
-            "_nanoseconds": 0
-          }
-        },
-        "session004": {
-          "entity": "server",
-          "serverId": "server002",
-          "status": "active",
-          "createdAt": {
-            "_seconds": 1678901234,
-            "_nanoseconds": 0
-          },
-          "updatedAt": {
-            "_seconds": 1678901234,
-            "_nanoseconds": 0
-          },
-          "expiresAt": {
-            "_seconds": 1735689600,
-            "_nanoseconds": 0
-          }
-        }
-      }
+      "sessions": {},
+      "carts": {},
+      "orders": {}
     }
   }
 }

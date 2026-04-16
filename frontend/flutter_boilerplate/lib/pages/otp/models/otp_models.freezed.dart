@@ -249,11 +249,11 @@ OtpValidationResponse _$OtpValidationResponseFromJson(
 
 /// @nodoc
 mixin _$OtpValidationResponse {
-  String get status =>
+  String get status => throw _privateConstructorUsedError;
+  String get sessionId =>
       throw _privateConstructorUsedError; // Should be 'success' on successful validation
   String? get customToken => throw _privateConstructorUsedError;
   bool get isPrimaryCustomer => throw _privateConstructorUsedError;
-  String get sessionId => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -269,9 +269,9 @@ abstract class $OtpValidationResponseCopyWith<$Res> {
   @useResult
   $Res call(
       {String status,
+      String sessionId,
       String? customToken,
-      bool isPrimaryCustomer,
-      String sessionId});
+      bool isPrimaryCustomer});
 }
 
 /// @nodoc
@@ -289,14 +289,18 @@ class _$OtpValidationResponseCopyWithImpl<$Res,
   @override
   $Res call({
     Object? status = null,
+    Object? sessionId = null,
     Object? customToken = freezed,
     Object? isPrimaryCustomer = null,
-    Object? sessionId = null,
   }) {
     return _then(_value.copyWith(
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
+              as String,
+      sessionId: null == sessionId
+          ? _value.sessionId
+          : sessionId // ignore: cast_nullable_to_non_nullable
               as String,
       customToken: freezed == customToken
           ? _value.customToken
@@ -306,10 +310,6 @@ class _$OtpValidationResponseCopyWithImpl<$Res,
           ? _value.isPrimaryCustomer
           : isPrimaryCustomer // ignore: cast_nullable_to_non_nullable
               as bool,
-      sessionId: null == sessionId
-          ? _value.sessionId
-          : sessionId // ignore: cast_nullable_to_non_nullable
-              as String,
     ) as $Val);
   }
 }
@@ -325,9 +325,9 @@ abstract class _$$OtpValidationResponseImplCopyWith<$Res>
   @useResult
   $Res call(
       {String status,
+      String sessionId,
       String? customToken,
-      bool isPrimaryCustomer,
-      String sessionId});
+      bool isPrimaryCustomer});
 }
 
 /// @nodoc
@@ -343,14 +343,18 @@ class __$$OtpValidationResponseImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? status = null,
+    Object? sessionId = null,
     Object? customToken = freezed,
     Object? isPrimaryCustomer = null,
-    Object? sessionId = null,
   }) {
     return _then(_$OtpValidationResponseImpl(
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
+              as String,
+      sessionId: null == sessionId
+          ? _value.sessionId
+          : sessionId // ignore: cast_nullable_to_non_nullable
               as String,
       customToken: freezed == customToken
           ? _value.customToken
@@ -360,10 +364,6 @@ class __$$OtpValidationResponseImplCopyWithImpl<$Res>
           ? _value.isPrimaryCustomer
           : isPrimaryCustomer // ignore: cast_nullable_to_non_nullable
               as bool,
-      sessionId: null == sessionId
-          ? _value.sessionId
-          : sessionId // ignore: cast_nullable_to_non_nullable
-              as String,
     ));
   }
 }
@@ -373,9 +373,9 @@ class __$$OtpValidationResponseImplCopyWithImpl<$Res>
 class _$OtpValidationResponseImpl extends _OtpValidationResponse {
   const _$OtpValidationResponseImpl(
       {required this.status,
+      required this.sessionId,
       this.customToken,
-      this.isPrimaryCustomer = false,
-      required this.sessionId})
+      this.isPrimaryCustomer = false})
       : super._();
 
   factory _$OtpValidationResponseImpl.fromJson(Map<String, dynamic> json) =>
@@ -383,18 +383,18 @@ class _$OtpValidationResponseImpl extends _OtpValidationResponse {
 
   @override
   final String status;
+  @override
+  final String sessionId;
 // Should be 'success' on successful validation
   @override
   final String? customToken;
   @override
   @JsonKey()
   final bool isPrimaryCustomer;
-  @override
-  final String sessionId;
 
   @override
   String toString() {
-    return 'OtpValidationResponse(status: $status, customToken: $customToken, isPrimaryCustomer: $isPrimaryCustomer, sessionId: $sessionId)';
+    return 'OtpValidationResponse(status: $status, sessionId: $sessionId, customToken: $customToken, isPrimaryCustomer: $isPrimaryCustomer)';
   }
 
   @override
@@ -403,18 +403,18 @@ class _$OtpValidationResponseImpl extends _OtpValidationResponse {
         (other.runtimeType == runtimeType &&
             other is _$OtpValidationResponseImpl &&
             (identical(other.status, status) || other.status == status) &&
+            (identical(other.sessionId, sessionId) ||
+                other.sessionId == sessionId) &&
             (identical(other.customToken, customToken) ||
                 other.customToken == customToken) &&
             (identical(other.isPrimaryCustomer, isPrimaryCustomer) ||
-                other.isPrimaryCustomer == isPrimaryCustomer) &&
-            (identical(other.sessionId, sessionId) ||
-                other.sessionId == sessionId));
+                other.isPrimaryCustomer == isPrimaryCustomer));
   }
 
   @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(
-      runtimeType, status, customToken, isPrimaryCustomer, sessionId);
+      runtimeType, status, sessionId, customToken, isPrimaryCustomer);
 
   @JsonKey(ignore: true)
   @override
@@ -434,9 +434,9 @@ class _$OtpValidationResponseImpl extends _OtpValidationResponse {
 abstract class _OtpValidationResponse extends OtpValidationResponse {
   const factory _OtpValidationResponse(
       {required final String status,
+      required final String sessionId,
       final String? customToken,
-      final bool isPrimaryCustomer,
-      required final String sessionId}) = _$OtpValidationResponseImpl;
+      final bool isPrimaryCustomer}) = _$OtpValidationResponseImpl;
   const _OtpValidationResponse._() : super._();
 
   factory _OtpValidationResponse.fromJson(Map<String, dynamic> json) =
@@ -444,12 +444,12 @@ abstract class _OtpValidationResponse extends OtpValidationResponse {
 
   @override
   String get status;
+  @override
+  String get sessionId;
   @override // Should be 'success' on successful validation
   String? get customToken;
   @override
   bool get isPrimaryCustomer;
-  @override
-  String get sessionId;
   @override
   @JsonKey(ignore: true)
   _$$OtpValidationResponseImplCopyWith<_$OtpValidationResponseImpl>

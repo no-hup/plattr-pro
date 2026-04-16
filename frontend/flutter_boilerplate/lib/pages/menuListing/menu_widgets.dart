@@ -1,12 +1,21 @@
 // File: menu_item_card.dart
 import 'package:flutter/material.dart';
-import 'package:flutterboilerplate/pages/menuListing/mennu_bottomsheet.dart';
+import 'package:flutterboilerplate/pages/menuListing/models/cart_item.dart';
+import 'package:flutterboilerplate/pages/menuListing/widgets/cart_variant_picker_sheet.dart';
+import 'package:flutterboilerplate/pages/menuListing/widgets/menu_customization_sheet.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/menu_state.dart';
+import 'package:flutterboilerplate/pages/menuListing/widgets/category_carousel.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+import 'package:flutterboilerplate/theme/design_system/app_colors.dart';
+import 'package:flutterboilerplate/theme/design_system/app_dimensions.dart';
+import 'package:flutterboilerplate/theme/app_typography.dart';
+import 'package:flutterboilerplate/widgets/price_display.dart';
+import 'package:flutterboilerplate/widgets/quantity_selector.dart';
+import 'package:flutterboilerplate/widgets/status_badge.dart';
 import 'package:provider/provider.dart';
 
-class MenuItemCard extends StatelessWidget {
+class MenuItemCard extends StatefulWidget {
   const MenuItemCard({
     required this.item,
     required this.quantity,
@@ -14,33 +23,47 @@ class MenuItemCard extends StatelessWidget {
     required this.tableId,
     required this.restaurantId,
     super.key,
+    this.showImage = false,
   });
 
   final MenuItem item;
   final int quantity;
-  final Function(bool increment) onQuantityChanged;
+  final void Function(bool increment) onQuantityChanged;
   final String tableId;
   final String restaurantId;
+  
+  /// Whether to show the item image. Defaults to false.
+  final bool showImage;
+
+  @override
+  State<MenuItemCard> createState() => _MenuItemCardState();
+}
+
+class _MenuItemCardState extends State<MenuItemCard> {
+  bool _imageFailed = false;
 
   void _showCustomizationSheet(BuildContext context) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: AppColors.paper,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusLG)),
       ),
       builder: (context) => MenuCustomizationSheet(
-        item: item,
-        onConfirm: (selectedVariants, selectedAddons) {
+        item: widget.item,
+        onConfirm: (selectedVariants, selectedAddons, quantity) {
           AppLogger.log(
-              '🛒 MENU: Adding customized item with variants: $selectedVariants, addons: $selectedAddons');
+            '🛒 MENU: Adding customized item with variants: $selectedVariants, addons: $selectedAddons, quantity: $quantity',
+          );
           context.read<MenuState>().updateCartItem(
-                item,
+                widget.item,
                 true,
-                tableId: tableId,
-                restaurantId: restaurantId,
+                tableId: widget.tableId,
+                restaurantId: widget.restaurantId,
                 selectedVariants: selectedVariants,
-                selectedAddons: selectedAddons,
+                selectedAddons: selectedAddons.toList(),
+                quantity: quantity,
                 context: context,
               );
         },
@@ -51,44 +74,192 @@ class MenuItemCard extends StatelessWidget {
   void _handleAddToCart(BuildContext context) {
     final menuState = context.read<MenuState>();
 
-    if (menuState.needsCustomization(item)) {
-      final storedCustomization =
-          menuState.getStoredCustomization(item.id);
-
-      if (quantity == 0 || storedCustomization == null) {
-        AppLogger.log(
-            '🛒 MENU: Showing customization sheet for item ${item.id}');
-        _showCustomizationSheet(context);
-      } else {
-        AppLogger.log(
-            '🛒 MENU: Using stored customization for item ${item.id}');
-        onQuantityChanged(true);
-      }
-    } else {
-      AppLogger.log('🛒 MENU: Adding non-customizable item ${item.id}');
-      onQuantityChanged(true);
+    if (!menuState.needsCustomization(widget.item)) {
+      widget.onQuantityChanged(true);
+      return;
     }
+
+    final totalQty = menuState.getItemQuantity(widget.item.id);
+    if (totalQty == 0) {
+      _showCustomizationSheet(context);
+      return;
+    }
+
+    // Customizable item with qty >= 1 → always open the picker so the user
+    // disambiguates which variant config they are incrementing / adding.
+    _showCartVariantPicker(context);
+  }
+
+  void _handleDecrement(BuildContext context) {
+    final menuState = context.read<MenuState>();
+
+    if (!menuState.needsCustomization(widget.item)) {
+      menuState.updateCartItem(
+        widget.item,
+        false,
+        tableId: widget.tableId,
+        restaurantId: widget.restaurantId,
+        context: context,
+      );
+      return;
+    }
+
+    final entries = menuState.getCartEntriesFor(widget.item.id);
+    final totalQty = menuState.getItemQuantity(widget.item.id);
+
+    // Fast path: exactly one entry, qty 1 → direct remove, no picker flash.
+    // Targets the entry's cartItemId so the backend deletes the right row.
+    if (totalQty == 1 && entries.length == 1) {
+      final entry = entries.first;
+      menuState.updateCartItem(
+        widget.item,
+        false,
+        cartItemId: entry.cartItemId,
+        selectedVariants: entry.selectedVariantsMap,
+        selectedAddons: entry.selectedAddonsList,
+        tableId: widget.tableId,
+        restaurantId: widget.restaurantId,
+        context: context,
+      );
+      return;
+    }
+
+    // Any ambiguity (qty >= 2 or multiple entries) → picker disambiguates.
+    _showCartVariantPicker(context);
+  }
+
+  void _showCartVariantPicker(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.paper,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusLG)),
+      ),
+      builder: (_) => CartVariantPickerSheet(
+        menuItem: widget.item,
+        tableId: widget.tableId,
+        restaurantId: widget.restaurantId,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Expanded(
-              child: _MenuItemDetails(item: item),
+    final hasImage = widget.showImage && 
+                     widget.item.meta.image != null && 
+                     widget.item.meta.image!.isNotEmpty && 
+                     !_imageFailed;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppDimensions.space24, vertical: AppDimensions.space4),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.divider)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+             // Optional: Show details or customization on tap
+          },
+          hoverColor: AppColors.paperAlt,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppDimensions.space20),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Details Section (Expanded)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: AppDimensions.space16),
+                    child: _MenuItemDetails(item: widget.item),
+                  ),
+                ),
+                
+                // Actions & Price Section
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                   PriceDisplay(
+                      finalPrice: widget.item.priceInfo.finalPrice.toDouble(),
+                      basePrice: widget.item.priceInfo.discount > 0
+                          ? widget.item.priceInfo.basePrice.toDouble()
+                          : null,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      isVertical: true,
+                      reverseDiscountOrder: true,
+                    ),
+                    const SizedBox(height: AppDimensions.space8),
+                    _QuantityControl(
+                      item: widget.item,
+                      quantity: widget.quantity,
+                      onAddToCart: () => _handleAddToCart(context),
+                      onDecrement: () => _handleDecrement(context),
+                    ),
+                  ],
+                ),
+                
+                 if (hasImage) ...[
+                  const SizedBox(width: AppDimensions.space16),
+                  _MenuItemImage(
+                    imageUrl: widget.item.meta.image!,
+                    onError: () {
+                      if (mounted) {
+                        setState(() {
+                          _imageFailed = true;
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ],
             ),
-            _QuantityControl(
-              item: item,
-              quantity: quantity,
-              onAddToCart: () => _handleAddToCart(context),
-              tableId: tableId,
-              restaurantId: restaurantId,
-            ),
-          ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Fixed-height image container for menu items
+class _MenuItemImage extends StatelessWidget {
+  const _MenuItemImage({required this.imageUrl, this.onError});
+
+  final String imageUrl;
+  final VoidCallback? onError;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+      child: SizedBox(
+        width: 80,
+        height: 80,
+        child: Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            // Use microtask to call onError after build completes
+            // Parent widget has mounted check to prevent setState on unmounted widget
+            if (onError != null) {
+              Future.microtask(onError!);
+            }
+            return const SizedBox.shrink();
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Container(
+              color: AppColors.paperAlt,
+              child: const Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -105,88 +276,44 @@ class _MenuItemDetails extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          item.meta.name,
-          style: Theme.of(context).textTheme.titleMedium,
+        // Name with inline dietary/spice markers
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (item.dietaryType != null) ...[
+              if (item.dietaryType == 'NON_VEG') StatusBadge.nonVeg()
+              else if (item.dietaryType == 'EGG') StatusBadge.egg()
+              else if (item.dietaryType == 'VEG') StatusBadge.veg(),
+              const SizedBox(width: 6),
+            ],
+            if (item.spiceLevel != null && item.spiceLevel != 'MILD') ...[
+              StatusBadge.spicy(level: item.spiceLevel!),
+              const SizedBox(width: 6),
+            ],
+            Expanded(
+              child: Text(
+                item.meta.name,
+                style: AppTypography.h3,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppDimensions.space4),
         Text(
           item.meta.description,
-          style: Theme.of(context).textTheme.bodyMedium,
+          style: AppTypography.body,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: 8),
-        _PriceInfo(item: item),
         if (item.isCustomizable) ...[
-          const SizedBox(height: 4),
-          _CustomizableIndicator(),
+          const SizedBox(height: AppDimensions.space8),
+          StatusBadge.customizable(), // Note: StatusBadge might need updates to match design
         ],
         if (!item.isInStock) ...[
-          const SizedBox(height: 4),
-          _OutOfStockIndicator(),
+          const SizedBox(height: AppDimensions.space8),
+          StatusBadge.outOfStock(),
         ],
       ],
-    );
-  }
-}
-
-class _PriceInfo extends StatelessWidget {
-  const _PriceInfo({required this.item});
-
-  final MenuItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(
-          'Price: ₹${item.priceInfo.finalPrice}',
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-        if (item.priceInfo.discount > 0) ...[
-          const SizedBox(width: 8),
-          Text(
-            '₹${item.priceInfo.basePrice}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  decoration: TextDecoration.lineThrough,
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _CustomizableIndicator extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(
-          Icons.edit_outlined,
-          size: 16,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        const SizedBox(width: 4),
-        Text(
-          'Customizable',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-        ),
-      ],
-    );
-  }
-}
-
-class _OutOfStockIndicator extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      'Out of Stock',
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.error,
-          ),
     );
   }
 }
@@ -196,248 +323,211 @@ class _QuantityControl extends StatelessWidget {
     required this.item,
     required this.quantity,
     required this.onAddToCart,
-    required this.tableId,
-    required this.restaurantId,
+    required this.onDecrement,
   });
 
   final MenuItem item;
   final int quantity;
   final VoidCallback onAddToCart;
-  final String tableId;
-  final String restaurantId;
+  final VoidCallback onDecrement;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        if (!item.isInStock)
-          ElevatedButton(
-            onPressed: null,
-            child: const Text('Add'),
-          )
-        else if (quantity > 0) ...[
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.remove),
-                onPressed: () => context.read<MenuState>().updateCartItem(
-                    item, false,
-                    tableId: tableId, restaurantId: restaurantId),
-              ),
-              Text(
-                '$quantity',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: onAddToCart,
-              ),
-            ],
-          ),
-        ] else
-          ElevatedButton(
-            onPressed: onAddToCart,
-            child: const Text('Add'),
-          ),
-      ],
-    );
-  }
-}
+    if (!item.isInStock) {
+      return const SizedBox.shrink(); // Hide button if out of stock, managed by badge
+    }
 
-class CategorySection extends StatelessWidget {
-  const CategorySection({
-    required this.category,
-    required this.items,
-    required this.itemQuantities,
-    required this.onQuantityChanged,
-    required this.tableId,
-    required this.restaurantId,
-    super.key,
-  });
+    if (quantity > 0) {
+      return QuantitySelector(
+        quantity: quantity,
+        onIncrement: onAddToCart,
+        onDecrement: onDecrement,
+        compact: true, // Use compact mode in list
+      );
+    }
 
-  final Category category;
-  final List<MenuItem> items;
-  final Map<String, int> itemQuantities;
-  final Function(String itemId, bool increment) onQuantityChanged;
-  final String tableId;
-  final String restaurantId;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            category.name,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
+    return TextButton(
+      onPressed: onAddToCart,
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.primary,
+        backgroundColor: AppColors.paper,
+        side: const BorderSide(color: AppColors.divider),
+        shape: const RoundedRectangleBorder(
+           borderRadius: BorderRadius.all(Radius.circular(AppDimensions.radiusPill)),
         ),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const ClampingScrollPhysics(),
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            final item = items[index];
-            return MenuItemCard(
-              item: item,
-              quantity: itemQuantities[item.id] ?? 0,
-              onQuantityChanged: (increment) {
-                onQuantityChanged(item.id, increment);
-              },
-              tableId: tableId,
-              restaurantId: restaurantId,
-            );
-          },
-        ),
-      ],
-    );
-  }
-}
-
-class MenuErrorView extends StatelessWidget {
-  const MenuErrorView({
-    required this.error,
-    required this.onRetry,
-    super.key,
-  });
-
-  final String error;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Error',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(error, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: onRetry,
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: AppDimensions.space20, vertical: AppDimensions.space6),
+        minimumSize: Size.zero, 
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Text(
+        'ADD',
+        style: AppTypography.label.copyWith(letterSpacing: 1.0, fontWeight: FontWeight.bold),
       ),
     );
   }
 }
 
-class MenuLoadingView extends StatelessWidget {
-  const MenuLoadingView({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: CircularProgressIndicator(),
-    );
-  }
-}
 
-class FloatingCartWidget extends StatelessWidget {
-  const FloatingCartWidget({
+
+class CategorySection extends StatelessWidget {
+  const CategorySection({
+    required this.category,
+    required this.menuItemsMap,
+    required this.itemQuantities,
+    required this.onQuantityChanged,
+    required this.tableId,
+    required this.restaurantId,
     super.key,
+    this.isSubcategoryExpanded,
+    this.onSubcategoryToggle,
+    this.showImages = false,
   });
 
+  final Category category;
+  final Map<String, List<MenuItem>> menuItemsMap;
+  final Map<String, int> itemQuantities;
+  final void Function(String itemId, bool increment) onQuantityChanged;
+  final String tableId;
+  final String restaurantId;
+  final bool Function(String subcategoryId)? isSubcategoryExpanded;
+  final void Function(String subcategoryId)? onSubcategoryToggle;
+  final bool showImages;
+
   @override
   Widget build(BuildContext context) {
-    return Consumer<MenuState>(
-      builder: (context, menuState, child) {
-        final cart = menuState.cart;
-        if (cart == null || cart.items.isEmpty) return const SizedBox.shrink();
-
-        final totalItems = cart.items.fold<int>(
-          0,
-          (sum, item) => sum + (item.quantity ?? 0),
-        );
-
-        // Hide the entire widget if total items is zero
-        if (totalItems <= 0) return const SizedBox.shrink();
-
-        final cartPriceInfo = cart.priceInfo;
-        final finalPrice = cartPriceInfo?.finalPrice ?? 0;
-        final basePrice = cartPriceInfo?.basePrice ?? 0;
-
-        return Positioned(
-          bottom: 16,
-          left: 16,
-          right: 16,
-          child: Material(
-            elevation: 8,
-            borderRadius: BorderRadius.circular(8),
-            color: Theme.of(context).colorScheme.primaryContainer,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '$totalItems ${totalItems == 1 ? 'item' : 'items'}',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onPrimaryContainer,
-                                ),
-                      ),
-                      // Only show base price if it's non-zero and different from final price
-                      if (cartPriceInfo != null && 
-                          basePrice > 0 && 
-                          basePrice != finalPrice)
-                        Text(
-                          '₹${basePrice.toStringAsFixed(2)}',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    decoration: TextDecoration.lineThrough,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimaryContainer
-                                        .withOpacity(0.7),
-                                  ),
-                        ),
-                      // Only show final price if it's non-zero
-                      if (finalPrice > 0)
-                        Text(
-                          '₹${finalPrice.toStringAsFixed(2)}',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onPrimaryContainer,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                        ),
-                    ],
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      // TODO: Navigate to cart page
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Theme.of(context).colorScheme.onPrimaryContainer,
-                      foregroundColor:
-                          Theme.of(context).colorScheme.primaryContainer,
-                    ),
-                    child: const Text('View Cart'),
-                  ),
-                ],
+    if (category.viewType == 'carousel') {
+      return CategoryCarousel(
+        category: category,
+        items: menuItemsMap[category.id] ?? [],
+        itemQuantities: itemQuantities,
+        onQuantityChanged: onQuantityChanged,
+        tableId: tableId,
+        restaurantId: restaurantId,
+      );
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Category Header (Sticky supported by scroll view usually, but here just styled)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.space24, 
+            vertical: AppDimensions.space16
+          ),
+          decoration: const BoxDecoration(
+             color: AppColors.paper, // Should be sticky/opaque
+             border: Border(bottom: BorderSide(color: AppColors.divider)),
+          ),
+          child: Row(
+            children: [
+              Container(width: 8, height: 2, color: AppColors.primary),
+              const SizedBox(width: AppDimensions.space12),
+              Text(
+                category.name.toUpperCase(),
+                style: AppTypography.uiSerif.copyWith( // Header serif
+                  fontSize: 20, 
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                  color: AppColors.primary,
+                ),
               ),
+            ],
+          ),
+        ),
+        
+        if (category.subcategories.isNotEmpty)
+          ..._buildSubcategorySections(context)
+        else
+          _buildItemsList(menuItemsMap[category.id] ?? []),
+      ],
+    );
+  }
+
+  List<Widget> _buildSubcategorySections(BuildContext context) {
+    final sections = <Widget>[];
+    
+    for (final subcat in category.subcategories) {
+      final subcatItems = menuItemsMap[subcat.id] ?? [];
+      if (subcatItems.isEmpty) continue;
+      
+      final isExpanded = isSubcategoryExpanded?.call(subcat.id) ?? true;
+      
+      sections.add(
+        InkWell(
+          onTap: onSubcategoryToggle != null 
+              ? () => onSubcategoryToggle!(subcat.id)
+              : null,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.space24, 
+              vertical: AppDimensions.space12
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.paperAlt.withOpacity(0.5),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    subcat.name,
+                    style: AppTypography.h3.copyWith(fontSize: 16),
+                  ),
+                ),
+                if (onSubcategoryToggle != null)
+                  AnimatedRotation(
+                    duration: const Duration(milliseconds: 200),
+                    turns: isExpanded ? 0.5 : 0,
+                    child: const Icon(
+                      Icons.keyboard_arrow_down,
+                      color: AppColors.primary,
+                    ),
+                  ),
+              ],
             ),
           ),
+        ),
+      );
+      
+      sections.add(
+        ClipRect(
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 150),
+            opacity: isExpanded ? 1.0 : 0.0,
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeOut,
+              alignment: Alignment.topCenter,
+              child: isExpanded 
+                  ? _buildItemsList(subcatItems)
+                  : const SizedBox.shrink(),
+            ),
+          ),
+        ),
+      );
+    }
+    
+    return sections;
+  }
+
+  Widget _buildItemsList(List<MenuItem> items) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const ClampingScrollPhysics(),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return MenuItemCard(
+          item: item,
+          quantity: itemQuantities[item.id] ?? 0,
+          onQuantityChanged: (increment) {
+            onQuantityChanged(item.id, increment);
+          },
+          tableId: tableId,
+          restaurantId: restaurantId,
+          showImage: showImages,
         );
       },
     );

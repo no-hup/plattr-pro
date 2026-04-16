@@ -3,11 +3,9 @@ const { admin, db, FieldValue, Timestamp } = require("../admin/admin");
 const { calculateItemPrice } = require("./calculateCartValue");
 const { calculateCartValue } = require("./calculateCartValue");
 const featureFlags = require('../singleton/FeatureFlags');
-const errorMessages = require('../singleton/ErrorMessages');
 const { compareArraysIgnoringOrder } = require('../utils/arrayUtils');
-const { sanitizeCart, safeRecalculateItemPrice } = require('../utils/dataUtils');
+const { sanitizeCart } = require('../utils/dataUtils');
 const { validateAddItemFields, validateSessionId } = require('./cartInputValidation');
-const { getExistingItemConfiguration } = require('./addItemToCartCustomisationHelper');
 const timestamp = require('../utils/timestamp');
 const errorHandler = require('../singleton/ErrorHandler');
 const { BasicPriceInfo, CartItemPriceInfo, CartTotalPriceInfo } = require('../genericModels/priceinfo');
@@ -23,12 +21,14 @@ const {
   processSelectedVariants,
   processSelectedAddons,
   createCartItem,
-  checkDifferentConfigExists,
+  buildCartItemPriceInfoForQuantity,
   validateCartPriceInfo
 } = require('./addItemToCartBoilerplateHelper');
 
 const addItemToCart = functions.https.onCall(async (data, context) => {
-  console.log("poopoo addItemToCart request received");
+  // Load feature flag overrides from Firestore (for test environments)
+  await featureFlags.loadOverrides(db);
+  // console.log("addItemToCart request received");
   validateAddItemFields(data.data);
   let {
     tableId,
@@ -50,19 +50,6 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
     if (sessionId) {
       await validateSessionId(restaurantId, sessionId);
     }
-    
-    // Get existing item configuration if available
-    // This will update selectedVariants and selectedAddons if the item exists in cart
-    const updatedRequestData = await getExistingItemConfiguration(
-      restaurantId, 
-      tableId, 
-      menuItemId, 
-      { selectedVariants, selectedAddons }
-    );
-    
-    // Update variables with values from existing item configuration
-    selectedVariants = updatedRequestData.selectedVariants;
-    selectedAddons = updatedRequestData.selectedAddons;
 
     const cartRef = getCartsCollectionRef(db, restaurantId, tableId);
     const menuItemRef = getMenuItemRef(db, restaurantId, menuItemId);
@@ -110,30 +97,26 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
         errorHandler.internalError("Menu item has invalid price data.", { menuItemId });
       }
 
-      console.log("poopoo Menu Item Details:", JSON.stringify(menuItem));
+      // console.log("Menu Item Details:", JSON.stringify(menuItem));
 
       // Process selected variants and addons
       const selectedVariantsDetails = await processSelectedVariants(
-        db, 
-        restaurantId, 
-        menuItem, 
-        selectedVariants, 
-        errorHandler
-      );
-      
-      const selectedAddonsDetails = await processSelectedAddons(
-        db, 
-        restaurantId, 
-        selectedAddons, 
+        db,
+        restaurantId,
+        menuItem,
+        selectedVariants,
         errorHandler
       );
 
-      console.log("poopoo Selected Variants:",
-        JSON.stringify(selectedVariantsDetails, null, 2)
+      const selectedAddonsDetails = await processSelectedAddons(
+        db,
+        restaurantId,
+        selectedAddons,
+        errorHandler
       );
-      console.log("poopoo Selected Addons:",
-        JSON.stringify(selectedAddonsDetails, null, 2)
-      );
+
+      // console.log("Selected Variants:", JSON.stringify(selectedVariantsDetails, null, 2));
+      // console.log("Selected Addons:", JSON.stringify(selectedAddonsDetails, null, 2));
 
       const itemPriceDetails = calculateItemPrice(
         menuItem,
@@ -168,43 +151,33 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
         getNextCartItemId(cart.items)
       );
 
-      const isMultipleConfigsSupported = featureFlags.isEnabled('isMultipleVariantOrAddonForMenuItemsSupported');
-      
-      // First check if identical item exists
+      // Check if identical item (same variants + addons) already exists
       const existingItemIndex = findIdenticalItemInCart(cart.items, itemToAdd, compareArraysIgnoringOrder);
-
-      // If multiple configs not supported, check if same menu item with different config exists
-      if (!isMultipleConfigsSupported && existingItemIndex === -1) {
-        const differentConfigError = checkDifferentConfigExists(
-          cart.items, 
-          menuItemId, 
-          errorMessages, 
-          sanitizeCart
-        );
-        
-        if (differentConfigError) {
-          return differentConfigError;
-        }
-      }
 
       if (existingItemIndex > -1) {
         // Update existing item
         const existingItem = cart.items[existingItemIndex];
-        
+
         // Ensure existingItem.quantity is a valid number
         if (typeof existingItem.quantity !== 'number' || isNaN(existingItem.quantity)) {
           console.error(`Critical: Invalid quantity for existing item ${existingItem.menuItemId}, was: ${existingItem.quantity}, resetting to 0`);
           existingItem.quantity = 0;
         }
-        
-        // Store the old quantity for debugging
-        const oldQuantity = existingItem.quantity;
+
         existingItem.quantity += quantity;
-        
-        // Recalculate prices using safe utility function
-        existingItem.priceInfo = safeRecalculateItemPrice(existingItem, existingItem.quantity);
-        
-        console.log(`poopoo Updated item quantity from ${oldQuantity} to ${existingItem.quantity} with new final price: ${existingItem.priceInfo.finalPrice}`);
+
+        // Re-derive priceInfo from the freshly-fetched menuItem (already in
+        // scope above) + the item's immutable variant/addon snapshots. Do NOT
+        // read the existing item.priceInfo — it's stored as "× old quantity"
+        // and re-reading it would compound the multiplication on every
+        // subsequent merge. See Phase 2.5 in
+        // Plattr_Pro_Context/TODO_Multi_Config_Cart_Feature.md.
+        existingItem.priceInfo = buildCartItemPriceInfoForQuantity(
+          menuItem,
+          existingItem.selectedVariantsDetails,
+          existingItem.selectedAddonsDetails,
+          existingItem.quantity
+        );
       } else {
         // Add new item
         cart.items.push(itemToAdd);
@@ -212,13 +185,13 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
 
       // Use calculateCartValue to update the cart's total values
       const updatedPriceInfo = await calculateCartValue(cart);
-      
+
       // Validate calculated cart price info
       cart.priceInfo = validateCartPriceInfo(updatedPriceInfo);
 
       // Perform one final check for NaN values before saving
       const sanitizedCart = sanitizeCart(cart);
-      
+
       // Verify no NaN values remain in price fields
       const finalCheck = JSON.stringify(sanitizedCart, (key, value) => {
         if (typeof value === 'number' && isNaN(value)) {
@@ -239,8 +212,8 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
         { merge: true }
       );
 
-      console.log("poopoo Sanitized cart to be saved:", JSON.stringify(sanitizedCart, null, 2));
-      
+      // console.log("Sanitized cart to be saved:", JSON.stringify(sanitizedCart, null, 2));
+
       return {
         message: "Item added to cart successfully.",
         status: "success",

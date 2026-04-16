@@ -17,21 +17,3 @@ Map<String, dynamic> _$$UserLocationImplToJson(_$UserLocationImpl instance) =>
       'latitude': instance.latitude,
       'longitude': instance.longitude,
     };
-
-_$TableValidationResponseImpl _$$TableValidationResponseImplFromJson(
-        Map<String, dynamic> json) =>
-    _$TableValidationResponseImpl(
-      status: json['status'] as String,
-      message: json['message'] as String,
-      data: json['data'] as Map<String, dynamic>?,
-      requiresOtp: json['requiresOtp'] as bool? ?? false,
-    );
-
-Map<String, dynamic> _$$TableValidationResponseImplToJson(
-        _$TableValidationResponseImpl instance) =>
-    <String, dynamic>{
-      'status': instance.status,
-      'message': instance.message,
-      'data': instance.data,
-      'requiresOtp': instance.requiresOtp,
-    };

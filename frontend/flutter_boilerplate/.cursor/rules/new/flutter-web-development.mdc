@@ -1,0 +1,275 @@
+---
+description: "Flutter Web Development with Live Reload - Comprehensive development commands for Plattr Pro Flutter Web App"
+globs: ["lib/**/*.dart", "pubspec.yaml", "web/**", "*.sh", ".vscode/**"]
+---
+
+## Flutter Web Development with Live Reload
+
+### Overview
+Comprehensive Flutter web development commands optimized for live editing, hot reload, and debugging in the Plattr Pro Flutter Web App.
+
+### Primary Development Commands
+
+#### Quick Start (Recommended)
+```bash
+# 🚀 Quick start with logging (uses existing script)
+./run_with_logs.sh
+
+# 🌐 Standard development with consistent port
+flutter run -d chrome --web-port 8080 --web-renderer html
+
+# 🔍 Debug mode with verbose logging
+flutter run -d chrome --web-port 8080 --debug --verbose --web-renderer html
+```
+
+#### Alternative Development Commands
+```bash
+# 🧪 Chrome with isolated profile (testing)
+flutter run -d chrome --web-port 8080 --web-browser-flag="--user-data-dir=/tmp/chrome_dev_test"
+
+# ⚡ Hot reload with verbose output
+flutter run -d chrome --web-port 8080 --verbose --web-renderer html
+
+# 🎯 Auto web renderer selection
+flutter run -d chrome --web-port 8080 --web-renderer auto
+```
+
+### Development Workflow
+
+#### Standard Development Flow
+1. **Start the app**: `./run_with_logs.sh` or `flutter run -d chrome --web-port 8080`
+2. **Live editing**: Make changes to your Dart files
+3. **Hot reload**: Press `r` in terminal or save files (auto-reload)
+4. **Hot restart**: Press `R` for full app restart
+5. **Quit**: Press `q` to stop development server
+
+#### Advanced Development Flow
+```bash
+# 🔨 Complete development setup
+flutter clean && \
+flutter pub get && \
+flutter packages pub run build_runner build --delete-conflicting-outputs && \
+flutter run -d chrome --web-port 8080 --web-renderer html --debug
+```
+
+### Build Modes
+
+#### Debug Mode (Default)
+```bash
+# 🐛 Full debug with DevTools
+flutter run -d chrome --web-port 8080 --debug --web-renderer html
+```
+
+#### Profile Mode (Performance Testing)
+```bash
+# 🔧 Performance profiling
+flutter run -d chrome --web-port 8080 --profile --web-renderer html
+```
+
+#### Release Mode (Production Testing)
+```bash
+# 🚀 Production-like testing
+flutter run -d chrome --web-port 8080 --release --web-renderer html
+```
+
+### Environment-Specific Development
+
+#### Development Environment
+```bash
+# 🔧 Development with full features
+flutter run -d chrome \
+  --web-port 8080 \
+  --web-renderer html \
+  --debug \
+  --dart-define=ENV=development \
+  --dart-define=API_DEBUG=true
+```
+
+#### Staging Environment
+```bash
+# 🧪 Staging environment testing
+flutter run -d chrome \
+  --web-port 8080 \
+  --web-renderer html \
+  --profile \
+  --dart-define=ENV=staging
+```
+
+### Development Features
+
+#### Hot Reload & Hot Restart
+- **Hot Reload**: Instant UI changes without losing app state
+- **Hot Restart**: Full app restart while maintaining development session
+- **Chrome DevTools**: Full debugging with breakpoints, network inspection
+- **Live Error Display**: Compilation errors shown directly in browser
+
+#### Debugging Tools
+```bash
+# 🔍 Network debugging
+flutter run -d chrome --web-port 8080 --web-renderer html \
+  --dart-define=API_DEBUG=true --dart-define=LOG_LEVEL=verbose
+
+# 📊 Performance monitoring
+flutter run -d chrome --web-port 8080 --web-renderer html \
+  --profile --trace-startup
+
+# 🛠️ CORS testing (disable web security)
+flutter run -d chrome --web-port 8080 --web-renderer html \
+  --web-browser-flag="--disable-web-security" \
+  --web-browser-flag="--allow-running-insecure-content"
+```
+
+### Code Generation & Dependencies
+
+#### Code Generation (JSON, Freezed, etc.)
+```bash
+# 🔨 Generate code once
+flutter packages pub run build_runner build --delete-conflicting-outputs
+
+# 👀 Watch mode (continuous generation)
+flutter packages pub run build_runner watch --delete-conflicting-outputs
+
+# 🧹 Clean generated files
+flutter packages pub run build_runner clean
+```
+
+#### Dependencies Management
+```bash
+# 📦 Get dependencies
+flutter pub get
+
+# 🔄 Upgrade dependencies
+flutter pub upgrade
+
+# 🧹 Clean project
+flutter clean && flutter pub get
+```
+
+### Building for Production
+
+#### Standard Build
+```bash
+# 🏗️ Optimized web build
+flutter build web --web-renderer html --release
+
+# 📦 Build with environment
+flutter build web --web-renderer html --release \
+  --dart-define=ENV=production \
+  --dart-define=API_BASE_URL=https://api.plattr.pro
+```
+
+#### Testing Built App Locally
+```bash
+# 🌐 Serve built app for testing
+python3 -m http.server 8000 -d build/web
+
+# 🔍 Alternative with Node.js
+npx http-server build/web -p 8000 -c-1
+```
+
+### Logging & Debugging
+
+#### Log Filtering (using existing script)
+```bash
+# 📝 Cart-specific logs
+./run_with_logs.sh && grep -E '(CART|💰|🛒)' logs/flutter_run.log
+
+# 🔍 API logs
+flutter run -d chrome --web-port 8080 --debug | grep -E '(API|HTTP|RESPONSE)'
+
+# ❌ Error logs only
+flutter run -d chrome --web-port 8080 --debug | grep -E '(ERROR|EXCEPTION|FAILED)'
+```
+
+### Troubleshooting
+
+#### Common Issues
+```bash
+# 🔄 Complete reset
+flutter clean && rm -rf .dart_tool && rm -f pubspec.lock && flutter pub get
+
+# 🏥 Flutter doctor check
+flutter doctor -v
+
+# 📱 List available devices
+flutter devices
+
+# 🔧 Fix pub cache issues
+flutter pub cache repair
+```
+
+#### Hot Reload Issues
+- If hot reload stops: Press `R` for hot restart
+- Clear browser cache: `Cmd+Shift+R` (Mac) or `Ctrl+Shift+R` (Windows/Linux)
+- Check terminal for compilation errors
+- Ensure port 8080 is not used by other processes
+
+#### Performance Issues
+```bash
+# 🐌 Slow build debugging
+flutter run -d chrome --web-port 8080 --web-renderer html \
+  --verbose --trace-startup
+
+# 💾 Memory issues
+flutter run -d chrome --web-port 8080 --web-renderer html \
+  --profile --dart-vm-options="--old-gen-heap-size=4096"
+```
+
+### Testing
+
+#### Running Tests
+```bash
+# 🧪 Run all tests
+flutter test
+
+# 📋 Run specific test file
+flutter test test/widget_test.dart
+
+# 🔍 Verbose test output
+flutter test --verbose
+
+# 📊 Test with coverage
+flutter test --coverage
+```
+
+**Note**: Some test compilation issues exist but don't affect main app functionality.
+
+### Project Structure
+- **Main entry**: `lib/main.dart`
+- **Web files**: `web/` directory
+- **Tests**: `test/` directory (excluded from builds)
+- **Configuration**: `pubspec.yaml`
+- **Logs**: `logs/` directory (created by `run_with_logs.sh`)
+
+### Development Tips
+
+#### Best Practices
+- Use `--web-port 8080` for consistent localhost URL
+- Access Chrome DevTools: F12 or right-click → Inspect
+- Auto-reload works with most editors on file save
+- Use `flutter run --help` for all available options
+- Monitor logs with `./run_with_logs.sh` for debugging
+
+#### Browser Access
+- **Development server**: http://localhost:8080
+- **Built app testing**: http://localhost:8000
+- **Hot reload**: Automatic on file save
+- **DevTools**: Available in Chrome developer tools
+
+### Quick Reference
+
+#### Essential Commands
+```bash
+./run_with_logs.sh                           # 🚀 Quick start
+flutter run -d chrome --web-port 8080        # 🌐 Standard run  
+flutter run -d chrome --web-port 8080 -v     # 🔍 Verbose run
+flutter build web --web-renderer html        # 🏗️ Production build
+```
+
+#### Terminal Controls
+- **Hot reload**: Press `r` or save file
+- **Hot restart**: Press `R`  
+- **Stop server**: Press `q`
+- **Help**: Press `h`
+
+This rule provides comprehensive Flutter web development capabilities optimized for your Plattr Pro development workflow!

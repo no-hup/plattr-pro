@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>menu-fetchMenu-fetchMenu · Full Menu</title>
+    <style>
+      body { font-family: 'Inter', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 2rem; line-height: 1.5; }
+      pre { background: #020617; padding: 1rem; border-radius: 8px; overflow-x: auto; border: 1px solid rgba(148, 163, 184, 0.3); }
+      code { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+      h1 { margin-top: 0; }
+    </style>
+  </head>
+  <body>
+    <h1>menu-fetchMenu-fetchMenu · Full Payload</h1>
+    <p>
+      Demonstrates the expanded payload when <code>inStock</code> is omitted. Includes stock=false items and full variant/addon graph.
+    </p>
+
+    <h2>Sample Request</h2>
+    <pre><code>{
+  "data": {
+    "restaurantId": "rest001"
+  }
+}</code></pre>
+
+    <h2>Sample Response (truncated)</h2>
+    <pre><code>{
+  "status": "success",
+  "message": "Menu fetched",
+  "data": {
+    "categories": [
+      { "id": "cat_1_food", "name": "Burgers" },
+      { "id": "cat_2_food", "name": "Sides" }
+    ],
+    "menuItems": {
+      "cat_1_food": [
+        {
+          "id": "item001",
+          "isInStock": true,
+          "variants": [...],
+          "addons": [...]
+        }
+      ],
+      "cat_2_food": [
+        {
+          "id": "item010",
+          "name": "Sweet Potato Fries",
+          "isInStock": false,
+          "isCustomizable": false
+        }
+      ]
+    }
+  }
+}</code></pre>
+  </body>
+</html>

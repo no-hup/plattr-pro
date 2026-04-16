@@ -1,18 +1,21 @@
 import 'package:dio/dio.dart';
 import '../models/order_list_response.dart';
 import '../models/order_detail_response.dart';
+import '../models/served_cart.dart';
+import 'package:platter_core/platter_core.dart' hide DioClient;
 import '../../../network/api_constants.dart';
-import '../../../network/response_parser.dart';
-import '../../../network/api_response.dart';
 import '../../../network/dio_client.dart';
 
 class OrderApiService {
   final Dio _dio = DioClient().dio;
 
   /// Fetches active orders for a restaurant
-  /// 
+  ///
   /// Returns a list of active orders for the given restaurant.
-  /// If [serverId] is provided, returns only orders assigned to that server.
+  /// Orders are filtered server-side to include only those:
+  /// - Assigned to the current server
+  /// - OR unassigned (no server)
+  /// - OR with carts assigned to the current server
   Future<ApiResponse<OrderListResponse>> getActiveOrdersForRestaurant({
     required String restaurantId,
     required String sessionId,
@@ -31,35 +34,37 @@ class OrderApiService {
       );
       return ResponseParser.parse<OrderListResponse>(
         response,
-        (jsonData) => OrderListResponse.fromJson(jsonData as Map<String, dynamic>),
-        dataExtractor: (envelope) => {'orders': envelope['data']},
+        (jsonData) =>
+            OrderListResponse.fromJson(jsonData as Map<String, dynamic>),
       );
     } on DioException catch (e) {
-      final code = e.response?.statusCode?.toString() ?? 'dio_error';
-      final msg = e.message ?? 'Failed to fetch orders';
+      final (code, msg) = DioClient.handleDioError(
+        e,
+        context: 'getActiveOrdersForRestaurant',
+      );
       return ApiResponse<OrderListResponse>.error(
-        'Network error: $msg', 
+        msg,
         errorCode: code,
       );
     } catch (e) {
       return ApiResponse<OrderListResponse>.error(
-        'Unexpected error while fetching orders: $e', 
+        'Unexpected error while fetching orders: $e',
         errorCode: 'parsing_error',
       );
     }
   }
 
-  /// Fetches details for a specific order
-  /// 
+  /// Fetches server-enriched details for a specific order
+  ///
   /// Returns detailed information about the order with [orderId]
-  /// from the restaurant with [restaurantId].
+  /// from the restaurant with [restaurantId], including server name.
   Future<ApiResponse<OrderDetailResponse>> getOrder({
     required String restaurantId,
     required String orderId,
   }) async {
     try {
       final response = await _dio.post(
-        ApiConstants.getOrder,
+        ApiConstants.getOrderDetails,
         data: {
           'data': {
             'restaurantId': restaurantId,
@@ -69,13 +74,16 @@ class OrderApiService {
       );
       return ResponseParser.parse<OrderDetailResponse>(
         response,
-        (jsonData) => OrderDetailResponse.fromJson(jsonData as Map<String, dynamic>),
+        (jsonData) =>
+            OrderDetailResponse.fromJson(jsonData as Map<String, dynamic>),
       );
     } on DioException catch (e) {
-      final code = e.response?.statusCode?.toString() ?? 'dio_error';
-      final msg = e.message ?? 'Failed to fetch order details';
+      final (code, msg) = DioClient.handleDioError(
+        e,
+        context: 'getOrder',
+      );
       return ApiResponse<OrderDetailResponse>.error(
-        'Network error: $msg',
+        msg,
         errorCode: code,
       );
     } catch (e) {
@@ -85,43 +93,84 @@ class OrderApiService {
       );
     }
   }
-  
-  /// Updates the status of an order
-  /// 
-  /// Changes the status of the order with [orderId] to [newStatus].
-  /// Returns the updated order details on success.
-  Future<ApiResponse<bool>> updateOrderStatus({
+
+  /// Mark a specific item as served (server-only endpoint)
+  ///
+  /// Requires [menuItemId] and optionally [cartItemId] for precise matching.
+  Future<ApiResponse<bool>> markItemAsServed({
     required String restaurantId,
     required String orderId,
-    required String newStatus,
-    required String sessionId,
+    required String menuItemId,
+    int? cartItemId,
   }) async {
     try {
-      // Note: This is a placeholder for the actual API endpoint
-      // Implement when the backend endpoint is available
       final response = await _dio.post(
-        ApiConstants.getOrder, // Replace with actual endpoint
+        ApiConstants.markItemServed,
         data: {
           'data': {
             'restaurantId': restaurantId,
             'orderId': orderId,
-            'status': newStatus,
+            'menuItemId': menuItemId,
+            if (cartItemId != null) 'cartItemId': cartItemId,
+          }
+        },
+      );
+
+      return ResponseParser.parse<bool>(
+        response,
+        (_) => true,
+      );
+    } on DioException catch (e) {
+      final (code, msg) = DioClient.handleDioError(
+        e,
+        context: 'markItemAsServed',
+      );
+      return ApiResponse<bool>.error(
+        msg,
+        errorCode: code,
+      );
+    } catch (e) {
+      return ApiResponse<bool>.error(
+        'Unexpected error while marking item as served: $e',
+        errorCode: 'parsing_error',
+      );
+    }
+  }
+
+  /// Updates the status of an order (e.g., marking as COMPLETED)
+  ///
+  /// Changes the status of the order with [orderId] to [newStatus].
+  /// Valid statuses: PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  Future<ApiResponse<bool>> updateOrderStatus({
+    required String restaurantId,
+    required String orderId,
+    required String orderStatus,
+    required String sessionId,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.updateOrderStatus,
+        data: {
+          'data': {
+            'restaurantId': restaurantId,
+            'orderId': orderId,
+            'orderStatus': orderStatus,
             'sessionId': sessionId,
           }
         },
       );
-      
-      // Simplified response handling for the placeholder
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return ApiResponse<bool>.success(true, message: 'Order status updated successfully');
-      } else {
-        return ApiResponse<bool>.error('Failed to update order status', errorCode: 'api_error');
-      }
+
+      return ResponseParser.parse<bool>(
+        response,
+        (_) => true,
+      );
     } on DioException catch (e) {
-      final code = e.response?.statusCode?.toString() ?? 'dio_error';
-      final msg = e.message ?? 'Failed to update order status';
+      final (code, msg) = DioClient.handleDioError(
+        e,
+        context: 'updateOrderStatus',
+      );
       return ApiResponse<bool>.error(
-        'Network error: $msg',
+        msg,
         errorCode: code,
       );
     } catch (e) {
@@ -130,5 +179,175 @@ class OrderApiService {
         errorCode: 'parsing_error',
       );
     }
+  }
+
+  /// Updates the status of a cart within an order
+  ///
+  /// Used to mark cart items as delivered (SERVED), preparing, etc.
+  /// Valid transitions: PENDING → PREPARING → READY → SERVED
+  ///
+  /// [cartIndex] is the zero-based index of the cart in the order's carts array.
+  /// [newStatus] should be one of: PENDING, PREPARING, READY, SERVED, CANCELLED, RETURNED
+  Future<ApiResponse<bool>> updateCartStatus({
+    required String restaurantId,
+    required String orderId,
+    required int cartIndex,
+    required String newStatus,
+    String? sessionId,
+    String? notes,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.updateCartStatus,
+        data: {
+          'data': {
+            'restaurantId': restaurantId,
+            'orderId': orderId,
+            'cartIndex': cartIndex,
+            'newStatus': newStatus,
+            if (sessionId != null) 'sessionId': sessionId,
+            if (notes != null) 'notes': notes,
+          }
+        },
+      );
+
+      return ResponseParser.parse<bool>(
+        response,
+        (_) => true,
+      );
+    } on DioException catch (e) {
+      final (code, msg) = DioClient.handleDioError(
+        e,
+        context: 'updateCartStatus',
+      );
+      return ApiResponse<bool>.error(
+        msg,
+        errorCode: code,
+      );
+    } catch (e) {
+      return ApiResponse<bool>.error(
+        'Unexpected error while updating cart status: $e',
+        errorCode: 'parsing_error',
+      );
+    }
+  }
+
+  /// Mark a cart as served using the dedicated endpoint
+  ///
+  /// This endpoint:
+  /// - Updates cart status to SERVED
+  /// - Assigns the current server to the cart (for served tab filtering)
+  /// - Marks all non-cancelled items as SERVED
+  /// - Updates status history
+  Future<ApiResponse<bool>> markCartAsServed({
+    required String restaurantId,
+    required String orderId,
+    required int cartIndex,
+    required String sessionId,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.markCartAsServed,
+        data: {
+          'data': {
+            'restaurantId': restaurantId,
+            'orderId': orderId,
+            'cartIndex': cartIndex,
+            'sessionId': sessionId,
+          }
+        },
+      );
+
+      return ResponseParser.parse<bool>(
+        response,
+        (_) => true,
+      );
+    } on DioException catch (e) {
+      final (code, msg) = DioClient.handleDioError(
+        e,
+        context: 'markCartAsServed',
+      );
+      return ApiResponse<bool>.error(
+        msg,
+        errorCode: code,
+      );
+    } catch (e) {
+      return ApiResponse<bool>.error(
+        'Unexpected error while marking cart as served: $e',
+        errorCode: 'parsing_error',
+      );
+    }
+  }
+
+  /// Fetch served carts for the current server
+  ///
+  /// Returns carts that were served by or assigned to the current server
+  /// within the last 6 hours (configurable via SERVED_CARTS_LOOKBACK_HOURS).
+  Future<ApiResponse<ServedCartsResponse>> getServedCartsForServer({
+    required String restaurantId,
+    required String sessionId,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.getServedCartsForServer,
+        data: {
+          'data': {
+            'restaurantId': restaurantId,
+            'sessionId': sessionId,
+          }
+        },
+      );
+
+      return ResponseParser.parse<ServedCartsResponse>(
+        response,
+        (jsonData) =>
+            ServedCartsResponse.fromJson(jsonData as Map<String, dynamic>),
+      );
+    } on DioException catch (e) {
+      final (code, msg) = DioClient.handleDioError(
+        e,
+        context: 'getServedCartsForServer',
+      );
+      return ApiResponse<ServedCartsResponse>.error(
+        msg,
+        errorCode: code,
+      );
+    } catch (e) {
+      return ApiResponse<ServedCartsResponse>.error(
+        'Unexpected error while fetching served carts: $e',
+        errorCode: 'parsing_error',
+      );
+    }
+  }
+
+  /// Convenience method to mark a cart as delivered (SERVED)
+  /// @deprecated Use markCartAsServed instead for better served tab tracking
+  Future<ApiResponse<bool>> markCartAsDelivered({
+    required String restaurantId,
+    required String orderId,
+    required int cartIndex,
+    String? sessionId,
+  }) {
+    return updateCartStatus(
+      restaurantId: restaurantId,
+      orderId: orderId,
+      cartIndex: cartIndex,
+      newStatus: 'SERVED',
+      sessionId: sessionId,
+    );
+  }
+
+  /// Convenience method to mark an order as completed
+  Future<ApiResponse<bool>> markOrderAsDone({
+    required String restaurantId,
+    required String orderId,
+    required String sessionId,
+  }) {
+    return updateOrderStatus(
+      restaurantId: restaurantId,
+      orderId: orderId,
+      orderStatus: 'COMPLETED',
+      sessionId: sessionId,
+    );
   }
 }

@@ -36,11 +36,14 @@
  */
 
 /**
- * @typedef {Object} OrderPriceInfoObj 
+ * @typedef {Object} OrderPriceInfoObj
  * @property {number} basePrice - Total original price
  * @property {number} finalPrice - Total price after discounts
  * @property {number} totalDiscount - Overall discount percentage
  * @property {number} totalDiscountAmount - Total discount amount in currency
+ * @property {number} [offerDiscount] - Offers V2: order-level offer discount (post-item-discount)
+ * @property {Array<{type:string,percentage:number,amount:number}>} [charges] - Charges V1: percentage-based overlays computed on finalPrice (positive = fee, negative = discount). Only present when restaurant has billing.charges configured.
+ * @property {number} [chargesTotal] - Sum of charges[].amount (can be negative)
  */
 
 /**
@@ -50,7 +53,7 @@
  * @example
  * // Create a new basic price info for a menu item
  * const menuItemPrice = new BasicPriceInfo(10.99, 15);
- * console.log('poopoo ' + menuItemPrice.toObject()); // { basePrice: 10.99, discount: 15, finalPrice: 9.34 }
+ * console.log(menuItemPrice.toObject()); // { basePrice: 10.99, discount: 15, finalPrice: 9.34 }
  * 
  * @example
  * // Validate an existing price info object
@@ -70,20 +73,20 @@ class BasicPriceInfo {
       console.warn(`PriceInfo: Invalid basePrice sanitized: ${basePrice} → ${sanitizedBasePrice}`);
     }
     this.basePrice = sanitizedBasePrice;
-    
+
     const rawDiscount = discount;
     const sanitizedDiscount = this._sanitizeNumber(discount);
     let clampedDiscount = Math.max(0, Math.min(100, sanitizedDiscount));
-    
+
     // Log when discount values are clamped or sanitized
     if (rawDiscount !== sanitizedDiscount && rawDiscount !== undefined) {
       console.warn(`PriceInfo: Invalid discount sanitized: ${rawDiscount} → ${sanitizedDiscount}`);
     } else if (sanitizedDiscount !== clampedDiscount) {
       console.warn(`PriceInfo: Discount clamped to valid range: ${sanitizedDiscount} → ${clampedDiscount}`);
     }
-    
+
     this.discount = clampedDiscount;
-    
+
     // Handle final price calculation or validation
     if (finalPrice !== null) {
       const sanitizedFinalPrice = this._sanitizeNumber(finalPrice);
@@ -91,11 +94,11 @@ class BasicPriceInfo {
         console.warn(`PriceInfo: Invalid finalPrice sanitized: ${finalPrice} → ${sanitizedFinalPrice}`);
       }
       this.finalPrice = sanitizedFinalPrice;
-      
+
       // Check if provided finalPrice deviates significantly from calculated value
       const calculatedFinalPrice = this._roundPrice(this.basePrice * (1 - this.discount / 100));
       const deviation = Math.abs(calculatedFinalPrice - this.finalPrice);
-      
+
       // Log significant deviation (more than 1% and at least $0.02)
       if (deviation > Math.max(this.finalPrice * 0.01, 0.02)) {
         console.warn(`PriceInfo: Provided finalPrice ${this.finalPrice} differs significantly from calculated value ${calculatedFinalPrice}`);
@@ -105,7 +108,7 @@ class BasicPriceInfo {
       this.finalPrice = this._roundPrice(this.basePrice * (1 - this.discount / 100));
     }
   }
-  
+
   /**
    * Create from an existing object with validation
    * @param {Object} data - Raw price info data
@@ -116,14 +119,14 @@ class BasicPriceInfo {
       console.error('PriceInfo: Invalid data object provided to BasicPriceInfo.fromObject', data);
       return new BasicPriceInfo();
     }
-    
+
     return new BasicPriceInfo(
       data.basePrice,
       data.discount,
       data.finalPrice
     );
   }
-  
+
   /**
    * Convert to plain object for API responses and storage
    * @returns {BasicPriceInfoObj} - Plain object representation
@@ -135,7 +138,7 @@ class BasicPriceInfo {
       finalPrice: this.finalPrice
     };
   }
-  
+
   /**
    * Sanitize numeric values
    * @private
@@ -143,7 +146,7 @@ class BasicPriceInfo {
   _sanitizeNumber(value, defaultValue = 0) {
     return typeof value === 'number' && !isNaN(value) && isFinite(value) ? value : defaultValue;
   }
-  
+
   /**
    * Round to 2 decimal places
    * @private
@@ -179,19 +182,19 @@ class CartItemPriceInfo {
       console.error('PriceInfo: Invalid data object provided to CartItemPriceInfo constructor', data);
       data = {};
     }
-    
+
     // Handle legacy property names
     if (data.itemVariantBasePrice !== undefined && data.totalVariantBasePrice === undefined) {
       data.totalVariantBasePrice = data.itemVariantBasePrice;
     }
-    
+
     if (data.itemAddonBasePrice !== undefined && data.totalAddonBasePrice === undefined) {
       data.totalAddonBasePrice = data.itemAddonBasePrice;
     }
-    
+
     // Track the number of sanitized fields to avoid excessive logging
     let sanitizedFieldCount = 0;
-    
+
     // Helper to sanitize and track changes
     const sanitizeField = (fieldName, value) => {
       const sanitized = this._sanitizeNumber(value);
@@ -200,7 +203,7 @@ class CartItemPriceInfo {
       }
       return sanitized;
     };
-    
+
     // Sanitize all fields
     this.itemBasePrice = sanitizeField('itemBasePrice', data.itemBasePrice);
     this.itemFinalPrice = sanitizeField('itemFinalPrice', data.itemFinalPrice);
@@ -210,32 +213,32 @@ class CartItemPriceInfo {
     this.totalAddonFinalPrice = sanitizeField('totalAddonFinalPrice', data.totalAddonFinalPrice || data.totalAddonBasePrice);
     this.totalBasePrice = sanitizeField('totalBasePrice', data.totalBasePrice);
     this.finalPrice = sanitizeField('finalPrice', data.finalPrice);
-    
+
     // Handle discount specially as it needs clamping
     const rawDiscount = data.discount;
     const sanitizedDiscount = this._sanitizeNumber(rawDiscount);
     this.discount = Math.max(0, Math.min(100, sanitizedDiscount));
-    
+
     if (rawDiscount !== this.discount && rawDiscount !== undefined) {
       sanitizedFieldCount++;
     }
-    
+
     this.discountAmount = sanitizeField('discountAmount', data.discountAmount);
-    
+
     // If discountAmount is missing, calculate it
     if (data.discountAmount === undefined) {
       this.discountAmount = Math.max(0, this.totalBasePrice - this.finalPrice);
     }
-    
+
     // Log if multiple fields were sanitized
     if (sanitizedFieldCount > 0) {
       console.warn(`PriceInfo: Fixed ${sanitizedFieldCount} invalid fields in CartItemPriceInfo`);
     }
-    
+
     // Validate price consistency
     this._validatePriceConsistency();
   }
-  
+
   /**
    * Create from component prices (item, variants, addons)
    * @param {Object} itemPrice - Menu item price info
@@ -250,23 +253,23 @@ class CartItemPriceInfo {
       console.error('PriceInfo: Invalid itemPrice in CartItemPriceInfo.fromComponents', itemPrice);
       itemPrice = {};
     }
-    
+
     if (typeof variantPrice !== 'number' || isNaN(variantPrice)) {
       console.warn(`PriceInfo: Invalid variantPrice in CartItemPriceInfo.fromComponents: ${variantPrice}, using 0`);
       variantPrice = 0;
     }
-    
+
     if (typeof addonPrice !== 'number' || isNaN(addonPrice)) {
       console.warn(`PriceInfo: Invalid addonPrice in CartItemPriceInfo.fromComponents: ${addonPrice}, using 0`);
       addonPrice = 0;
     }
-    
+
     const itemPriceObj = BasicPriceInfo.fromObject(itemPrice).toObject();
-    
+
     const totalBasePrice = itemPriceObj.basePrice + variantPrice + addonPrice;
     const finalPrice = itemPriceObj.finalPrice + variantPrice + addonPrice;
     const discountAmount = Math.max(0, totalBasePrice - finalPrice);
-    
+
     return new CartItemPriceInfo({
       itemBasePrice: itemPriceObj.basePrice,
       itemFinalPrice: itemPriceObj.finalPrice,
@@ -280,7 +283,7 @@ class CartItemPriceInfo {
       discountAmount: discountAmount
     });
   }
-  
+
   /**
    * Validate internal price consistency
    * @private
@@ -291,14 +294,14 @@ class CartItemPriceInfo {
     if (Math.abs(this.totalBasePrice - expectedTotalBasePrice) > 0.02) {
       console.warn(`PriceInfo: Total base price inconsistency detected: ${this.totalBasePrice} vs expected ${expectedTotalBasePrice}`);
     }
-    
+
     // Check if discount amount is consistent with base and final price
     const expectedDiscountAmount = Math.max(0, this.totalBasePrice - this.finalPrice);
     if (Math.abs(this.discountAmount - expectedDiscountAmount) > 0.02) {
       console.warn(`PriceInfo: Discount amount inconsistency detected: ${this.discountAmount} vs expected ${expectedDiscountAmount}`);
     }
   }
-  
+
   /**
    * Convert to plain object for API responses and storage
    * @returns {CartItemPriceInfoObj} - Plain object representation
@@ -317,7 +320,7 @@ class CartItemPriceInfo {
       discountAmount: this.discountAmount
     };
   }
-  
+
   /**
    * Sanitize numeric values
    * @private
@@ -349,10 +352,10 @@ class CartTotalPriceInfo {
       console.error('PriceInfo: Invalid data object provided to CartTotalPriceInfo constructor', data);
       data = {};
     }
-    
+
     // Track sanitized fields
     let sanitizedFieldCount = 0;
-    
+
     // Helper to sanitize and track changes
     const sanitizeField = (fieldName, value) => {
       const sanitized = this._sanitizeNumber(value);
@@ -361,32 +364,32 @@ class CartTotalPriceInfo {
       }
       return sanitized;
     };
-    
+
     this.basePrice = sanitizeField('basePrice', data.basePrice);
     this.finalPrice = sanitizeField('finalPrice', data.finalPrice);
     this.totalVariantBasePrice = sanitizeField('totalVariantBasePrice', data.totalVariantBasePrice);
     this.totalAddonBasePrice = sanitizeField('totalAddonBasePrice', data.totalAddonBasePrice);
     this.totalDiscount = sanitizeField('totalDiscount', data.totalDiscount);
     this.totalDiscountAmount = sanitizeField('totalDiscountAmount', data.totalDiscountAmount);
-    
+
     if (sanitizedFieldCount > 0) {
       console.warn(`PriceInfo: Fixed ${sanitizedFieldCount} invalid fields in CartTotalPriceInfo`);
     }
-    
+
     // Validate total discount calculation
     const expectedDiscountAmount = Math.max(0, this.basePrice - this.finalPrice);
     if (Math.abs(this.totalDiscountAmount - expectedDiscountAmount) > 0.05) {
       console.warn(`PriceInfo: Cart discount amount inconsistency detected: ${this.totalDiscountAmount} vs expected ${expectedDiscountAmount}`);
       this.totalDiscountAmount = expectedDiscountAmount;
     }
-    
+
     // Ensure finalPrice is non-negative
     if (this.finalPrice < 0) {
       console.warn(`PriceInfo: Negative final price corrected: ${this.finalPrice} → 0`);
       this.finalPrice = 0;
     }
   }
-  
+
   /**
    * Calculate total price from cart items
    * @param {Array} cartItems - Array of cart items with price info
@@ -397,35 +400,38 @@ class CartTotalPriceInfo {
       console.error('PriceInfo: Invalid cartItems array in CartTotalPriceInfo.fromCartItems', cartItems);
       return new CartTotalPriceInfo();
     }
-    
+
     let basePrice = 0;
     let finalPrice = 0;
     let totalVariantBasePrice = 0;
     let totalAddonBasePrice = 0;
-    
+
+    // Helper for static context
+    const sanitize = (value) => typeof value === 'number' && !isNaN(value) && isFinite(value) ? value : 0;
+
     let invalidItemCount = 0;
-    
+
     for (const item of cartItems) {
       if (item.status === 'cancelled') continue;
-      
+
       if (!item.priceInfo) {
         invalidItemCount++;
         continue;
       }
-      
-      basePrice += this._sanitizeNumber(item.priceInfo.totalBasePrice);
-      finalPrice += this._sanitizeNumber(item.priceInfo.finalPrice);
-      totalVariantBasePrice += this._sanitizeNumber(item.priceInfo.totalVariantBasePrice);
-      totalAddonBasePrice += this._sanitizeNumber(item.priceInfo.totalAddonBasePrice);
+
+      basePrice += sanitize(item.priceInfo.totalBasePrice);
+      finalPrice += sanitize(item.priceInfo.finalPrice);
+      totalVariantBasePrice += sanitize(item.priceInfo.totalVariantBasePrice);
+      totalAddonBasePrice += sanitize(item.priceInfo.totalAddonBasePrice);
     }
-    
+
     if (invalidItemCount > 0) {
       console.warn(`PriceInfo: Skipped ${invalidItemCount} invalid items in cart total calculation`);
     }
-    
+
     const totalDiscountAmount = Math.max(0, basePrice - finalPrice);
     const totalDiscount = basePrice > 0 ? (totalDiscountAmount / basePrice) * 100 : 0;
-    
+
     return new CartTotalPriceInfo({
       basePrice,
       finalPrice,
@@ -435,7 +441,7 @@ class CartTotalPriceInfo {
       totalDiscountAmount
     });
   }
-  
+
   /**
    * Convert to plain object for API responses and storage
    * @returns {CartTotalPriceInfoObj} - Plain object representation
@@ -450,7 +456,7 @@ class CartTotalPriceInfo {
       totalDiscountAmount: this.totalDiscountAmount
     };
   }
-  
+
   /**
    * Sanitize numeric values
    * @private
@@ -479,10 +485,10 @@ class OrderPriceInfo {
       console.error('PriceInfo: Invalid data object provided to OrderPriceInfo constructor', data);
       data = {};
     }
-    
+
     // Track sanitized fields
     let sanitizedFieldCount = 0;
-    
+
     // Helper to sanitize and track changes
     const sanitizeField = (fieldName, value) => {
       const sanitized = this._sanitizeNumber(value);
@@ -491,20 +497,29 @@ class OrderPriceInfo {
       }
       return sanitized;
     };
-    
+
     this.basePrice = sanitizeField('basePrice', data.basePrice);
     this.finalPrice = sanitizeField('finalPrice', data.finalPrice);
     this.totalDiscount = sanitizeField('totalDiscount', data.totalDiscount);
     this.totalDiscountAmount = sanitizeField('totalDiscountAmount', data.totalDiscountAmount);
-    
+    // Offers V2: order-level offer discount (separate from item-level discounts)
+    this.offerDiscount = sanitizeField('offerDiscount', data.offerDiscount);
+
+    // Charges V1: percentage-based overlays on finalPrice (service charge, global
+    // discount, etc.). NOT part of the basePrice/finalPrice/totalDiscountAmount
+    // equation — they are a separate line-item list stored for downstream UI.
+    // chargesTotal can be negative. Empty by default, caller passes through.
+    this.charges = Array.isArray(data.charges) ? data.charges : [];
+    this.chargesTotal = sanitizeField('chargesTotal', data.chargesTotal);
+
     if (sanitizedFieldCount > 0) {
       console.warn(`PriceInfo: Fixed ${sanitizedFieldCount} invalid fields in OrderPriceInfo`);
     }
-    
+
     // Validate and correct any inconsistencies
     this._validateAndCorrect();
   }
-  
+
   /**
    * Validate and correct price relationships
    * @private
@@ -515,15 +530,21 @@ class OrderPriceInfo {
       console.warn(`PriceInfo: Negative final price corrected: ${this.finalPrice} → 0`);
       this.finalPrice = 0;
     }
-    
-    // Check discount amount consistency
+
+    // Ensure offerDiscount is non-negative
+    if (this.offerDiscount < 0) {
+      this.offerDiscount = 0;
+    }
+
+    // Offers V2: totalDiscountAmount = item-level discount + offerDiscount.
+    // basePrice - finalPrice should equal totalDiscountAmount.
     const expectedDiscountAmount = Math.max(0, this.basePrice - this.finalPrice);
     if (Math.abs(this.totalDiscountAmount - expectedDiscountAmount) > 0.05) {
       console.warn(`PriceInfo: Order discount amount inconsistency detected: ${this.totalDiscountAmount} vs expected ${expectedDiscountAmount}`);
       this.totalDiscountAmount = expectedDiscountAmount;
     }
   }
-  
+
   /**
    * Create order price info from cart total price info
    * @param {CartTotalPriceInfo} cartTotalPriceInfo - Cart total price info
@@ -534,7 +555,7 @@ class OrderPriceInfo {
       console.error('PriceInfo: Invalid cartTotalPriceInfo in OrderPriceInfo.fromCartTotal', cartTotalPriceInfo);
       return new OrderPriceInfo();
     }
-    
+
     return new OrderPriceInfo({
       basePrice: cartTotalPriceInfo.basePrice,
       finalPrice: cartTotalPriceInfo.finalPrice,
@@ -542,20 +563,28 @@ class OrderPriceInfo {
       totalDiscountAmount: cartTotalPriceInfo.totalDiscountAmount
     });
   }
-  
+
   /**
    * Convert to plain object for API responses and storage
    * @returns {OrderPriceInfoObj} - Plain object representation
    */
   toObject() {
-    return {
+    const obj = {
       basePrice: this.basePrice,
       finalPrice: this.finalPrice,
       totalDiscount: this.totalDiscount,
-      totalDiscountAmount: this.totalDiscountAmount
+      totalDiscountAmount: this.totalDiscountAmount,
+      offerDiscount: this.offerDiscount
     };
+    // Only surface charges when non-empty so existing orders and restaurants
+    // without `billing.charges` config see no shape change.
+    if (Array.isArray(this.charges) && this.charges.length > 0) {
+      obj.charges = this.charges;
+      obj.chargesTotal = this.chargesTotal;
+    }
+    return obj;
   }
-  
+
   /**
    * Sanitize numeric values
    * @private

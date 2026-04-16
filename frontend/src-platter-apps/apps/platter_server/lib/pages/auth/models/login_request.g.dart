@@ -13,10 +13,19 @@ LoginRequest _$LoginRequestFromJson(Map<String, dynamic> json) => LoginRequest(
       sessionId: json['sessionId'] as String?,
     );
 
-Map<String, dynamic> _$LoginRequestToJson(LoginRequest instance) =>
-    <String, dynamic>{
-      'restaurantId': instance.restaurantId,
-      if (instance.username case final value?) 'username': value,
-      if (instance.password case final value?) 'password': value,
-      if (instance.sessionId case final value?) 'sessionId': value,
-    };
+Map<String, dynamic> _$LoginRequestToJson(LoginRequest instance) {
+  final val = <String, dynamic>{
+    'restaurantId': instance.restaurantId,
+  };
+
+  void writeNotNull(String key, dynamic value) {
+    if (value != null) {
+      val[key] = value;
+    }
+  }
+
+  writeNotNull('username', instance.username);
+  writeNotNull('password', instance.password);
+  writeNotNull('sessionId', instance.sessionId);
+  return val;
+}

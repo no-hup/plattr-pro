@@ -1,0 +1,28 @@
+stateDiagram-v2
+    direction LR
+    
+    state "ORDER STATUS" as OS {
+        [*] --> PENDING: Checkout
+        PENDING --> IN_PROGRESS: Kitchen Accepts
+        IN_PROGRESS --> COMPLETED: All Items Served
+        IN_PROGRESS --> CANCELLED: Order Cancelled
+        COMPLETED --> [*]
+        CANCELLED --> [*]
+    }
+    
+    state "CART STATUS (within Order)" as CS {
+        [*] --> PENDING_C: Created
+        PENDING_C --> ACCEPTED: Kitchen Sees
+        ACCEPTED --> PREPARING: Cooking Started
+        PREPARING --> READY: Ready for Pickup
+        READY --> SERVED: Delivered to Table
+        SERVED --> [*]
+        
+        PENDING_C --> CANCELLED_C: Cancelled
+        ACCEPTED --> CANCELLED_C: Cancelled
+        CANCELLED_C --> [*]
+        
+        PENDING_C --> RETURNED: Item Returned
+        ACCEPTED --> RETURNED: Item Returned
+        RETURNED --> [*]
+    }

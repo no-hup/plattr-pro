@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plattr Pro - Auth System Documentation</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <nav class="nav">
+        <span class="nav-logo">🔐 Auth System</span>
+        <a href="#overview">Overview</a>
+        <a href="#entities">Entities</a>
+        <a href="#flags">Flags</a>
+        <a href="#main-flow">Main Flow</a>
+        <a href="#otp">OTP</a>
+        <a href="#session">Sessions</a>
+        <a href="#validation">Validation</a>
+        <a href="#cross-entity">Cross-Entity</a>
+        <a href="#edge-cases">Edge Cases</a>
+        <a href="#api">API</a>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Authentication System Documentation</h1>
+            <p>OTP, Session Management, Validation, and Cross-Entity Effects</p>
+        </div>
+
+        <!-- Overview -->
+        <section class="section" id="overview">
+            <div class="section-title"><span class="section-icon">📋</span> System Overview</div>
+            <div class="card">
+                <p>The Plattr authentication system uses <strong>OTP-based table access</strong> with <strong>session
+                        management</strong> for multi-user collaboration. Authentication involves coordination between 4
+                    entities: <code>Table</code>, <code>Session</code>, <code>Customer</code>, and <code>Server</code>.
+                </p>
+                <div class="diagram">
+                    <div class="mermaid">
+                        flowchart LR
+                        subgraph AUTH["Authentication Flow"]
+                        QR["📱 QR Scan"] --> VALIDATE["🔍 Validate Table"]
+                        VALIDATE --> OTP["🔑 OTP Check"]
+                        OTP --> SESSION["🔗 Session"]
+                        SESSION --> TOKEN["🎫 Auth Token"]
+                        end
+                        subgraph ENTITIES["Affected Entities"]
+                        T["🪑 Table"]
+                        S["🔗 Session"]
+                        C["👤 Customer"]
+                        SV["👨‍🍳 Server"]
+                        end
+                        AUTH --> ENTITIES
+                        style AUTH fill:#1a1a3a,color:#e2e8f0
+                        style ENTITIES fill:#12122a,color:#e2e8f0
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Entities Involved -->
+        <section class="section" id="entities">
+            <div class="section-title"><span class="section-icon">🏢</span> Entities Involved in Auth</div>
+            <div class="grid grid-2">
+                <div class="entity">
+                    <div class="entity-name"><span class="entity-icon">🪑</span> Table</div>
+                    <ul class="bullet-list">
+                        <li>Holds <code>status</code>: VACANT, OTP_PENDING, ACTIVE, DISABLED</li>
+                        <li>Stores <code>currentOTP</code>: {code, createdAt, expiresAt}</li>
+                        <li>Links to <code>session</code> ID when active</li>
+                        <li>Tracks <code>occupiedBy</code>: array of customer phones</li>
+                        <li>Records <code>primaryCustomer</code>: {phone, name}</li>
+                    </ul>
+                </div>
+                <div class="entity">
+                    <div class="entity-name"><span class="entity-icon">🔗</span> Session</div>
+                    <ul class="bullet-list">
+                        <li>Created when first customer validates OTP</li>
+                        <li>Stores <code>primaryUserId</code>: phone of first customer</li>
+                        <li>Maintains <code>users[]</code>: all customers at table</li>
+                        <li>Has <code>status</code>: active, ended, expired</li>
+                        <li>Expires after <code>5 hours</code> or on manual end</li>
+                    </ul>
+                </div>
+                <div class="entity">
+                    <div class="entity-name"><span class="entity-icon">👤</span> Customer</div>
+                    <ul class="bullet-list">
+                        <li>Document keyed by <code>phoneNumber</code></li>
+                        <li>Created/updated during OTP validation</li>
+                        <li>Tracks <code>currentVisit</code>: {restaurantId, tableId, startTime}</li>
+                        <li>Stores historical <code>visits[]</code> array</li>
+                        <li>Holds <code>preferences</code> and profile data</li>
+                    </ul>
+                </div>
+                <div class="entity">
+                    <div class="entity-name"><span class="entity-icon">👨‍🍳</span> Server (Waiter)</div>
+                    <ul class="bullet-list">
+                        <li>Can generate/regenerate OTP for tables</li>
+                        <li>Assigned to tables via <code>assignedServerId</code></li>
+                        <li>Receives notifications on session start</li>
+                        <li>Can view active sessions for assigned tables</li>
+                        <li>Can manually end sessions (clearing table)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Feature Flags -->
+        <section class="section" id="flags">
+            <div class="section-title"><span class="section-icon">🚩</span> Feature Flags Affecting Auth</div>
+            <div class="grid grid-2">
+                <div class="flag-box">
+                    <div class="flag-name">🔑 isOtpMandatoryAtScan</div>
+                    <div class="flag-desc">
+                        <strong>ON:</strong> OTP required on every QR scan, even if valid session exists<br>
+                        <strong>OFF:</strong> Skip OTP if sessionId in localStorage is still valid<br>
+                        <strong>Impact:</strong> Controls entry friction vs security
+                    </div>
+                </div>
+                <div class="flag-box">
+                    <div class="flag-name">👤 isUsernameEnabled</div>
+                    <div class="flag-desc">
+                        <strong>ON:</strong> Name field required along with phone during auth<br>
+                        <strong>OFF:</strong> Only phone number required (name optional)<br>
+                        <strong>Impact:</strong> Customer profile completeness
+                    </div>
+                </div>
+                <div class="flag-box">
+                    <div class="flag-name">👥 isMultiUserSupportEnabled</div>
+                    <div class="flag-desc">
+                        <strong>ON:</strong> Multiple users can join same table session<br>
+                        <strong>OFF:</strong> Only primary customer allowed, others rejected<br>
+                        <strong>Impact:</strong> Group dining vs single-user mode
+                    </div>
+                </div>
+                <div class="flag-box">
+                    <div class="flag-name">📍 Location Validation</div>
+                    <div class="flag-desc">
+                        <strong>Always ON:</strong> User location validated against restaurant geofence<br>
+                        <strong>Failure:</strong> Returns 412 error, blocks access<br>
+                        <strong>Impact:</strong> Prevents remote ordering abuse
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Auth Flow Diagram -->
+        <section class="section" id="main-flow">
+            <div class="section-title"><span class="section-icon">🗺️</span> Complete Authentication Flow</div>
+            <div class="card">
+                <div class="diagram">
+                    <div class="mermaid">
+                        flowchart TB
+                        subgraph ENTRY["📱 ENTRY POINT"]
+                        QR["Scan QR Code"]
+                        PARSE["Parse /r/{rid}/t/{tid}"]
+                        GET_LOC["Get User Location"]
+                        GET_SESSION["Check localStorage for sessionId"]
+                        end
+
+                        subgraph VALIDATE["🔍 INITIAL VALIDATION"]
+                        API1["API: validateTableAndLocation"]
+                        CHK_TABLE{"Table Exists?"}
+                        CHK_DISABLED{"Status = DISABLED?"}
+                        CHK_LOC{"Location Valid?"}
+                        CHK_SESS{"Session Provided & Valid?"}
+                        FLAG1{"🚩 isOtpMandatoryAtScan?"}
+                        end
+
+                        subgraph OTP_GEN["🔑 OTP GENERATION"]
+                        GEN["Generate 6-digit OTP"]
+                        STORE_OTP["Store in table.currentOTP"]
+                        SET_EXP["Set expiresAt = now + 5min"]
+                        SET_PENDING["Table status → OTP_PENDING"]
+                        DISPLAY["Display OTP on table screen/POS"]
+                        end
+
+                        subgraph OTP_VALIDATE["✅ OTP VALIDATION"]
+                        ENTER["User enters OTP + Phone"]
+                        FLAG2{"🚩 isUsernameEnabled?"}
+                        ENTER_NAME["Enter Name"]
+                        API2["API: validateOTP"]
+                        CHK_OTP{"OTP matches & not expired?"}
+                        CHK_FORMAT{"Phone format valid?"}
+                        end
+
+                        subgraph SESSION_CREATE["🔗 SESSION CREATION"]
+                        CHK_PRIMARY{"Table status = VACANT or OTP_PENDING?"}
+                        CREATE_PROFILE["API: createOrUpdateCustomerProfile"]
+                        CREATE_SESS["sessionService.createOrGetTableSession"]
+                        SET_PRIMARY["Set primaryUserId"]
+                        SET_ACTIVE["Table status → ACTIVE"]
+                        LINK_SESSION["Table.session = sessionId"]
+                        ADD_OCCUPIED["Add phone to occupiedBy[]"]
+                        SET_PRIMARY_CUST["Set primaryCustomer = {phone, name}"]
+                        end
+
+                        subgraph SESSION_JOIN["👥 SESSION JOINING"]
+                        FLAG3{"🚩 isMultiUserSupportEnabled?"}
+                        JOIN_SESS["sessionService.addUserToTableSession"]
+                        ADD_USER["Add phone to session.users[]"]
+                        ADD_OCC2["Add phone to table.occupiedBy[]"]
+                        UPDATE_VISIT["Update customer.currentVisit"]
+                        end
+
+                        subgraph TOKEN_GEN["🎫 TOKEN GENERATION"]
+                        GEN_TOKEN["Generate Firebase Custom Token"]
+                        STORE_LOCAL["Store sessionId in localStorage"]
+                        RETURN["Return: {sessionId, token, tableInfo}"]
+                        end
+
+                        subgraph ERRORS["❌ ERROR STATES"]
+                        ERR_404["404: Table not found"]
+                        ERR_403["403: Table disabled"]
+                        ERR_412["412: Location mismatch"]
+                        ERR_OTP["OTP invalid/expired"]
+                        ERR_MULTI["Multi-user disabled"]
+                        ERR_PHONE["Invalid phone format"]
+                        end
+
+                        %% Entry Flow
+                        QR --> PARSE --> GET_LOC --> GET_SESSION --> API1
+
+                        %% Validation
+                        API1 --> CHK_TABLE
+                        CHK_TABLE -->|No| ERR_404
+                        CHK_TABLE -->|Yes| CHK_DISABLED
+                        CHK_DISABLED -->|Yes| ERR_403
+                        CHK_DISABLED -->|No| CHK_LOC
+                        CHK_LOC -->|No| ERR_412
+                        CHK_LOC -->|Yes| CHK_SESS
+                        CHK_SESS -->|Valid| FLAG1
+                        CHK_SESS -->|Invalid/None| GEN
+                        FLAG1 -->|ON| GEN
+                        FLAG1 -->|OFF| RETURN
+
+                        %% OTP Generation
+                        GEN --> STORE_OTP --> SET_EXP --> SET_PENDING --> DISPLAY --> ENTER
+
+                        %% OTP Validation
+                        ENTER --> FLAG2
+                        FLAG2 -->|ON| ENTER_NAME --> API2
+                        FLAG2 -->|OFF| API2
+                        API2 --> CHK_FORMAT
+                        CHK_FORMAT -->|No| ERR_PHONE
+                        CHK_FORMAT -->|Yes| CHK_OTP
+                        CHK_OTP -->|No| ERR_OTP
+                        CHK_OTP -->|Yes| CHK_PRIMARY
+
+                        %% Session Creation (Primary)
+                        CHK_PRIMARY -->|Yes| CREATE_PROFILE
+                        CREATE_PROFILE --> CREATE_SESS --> SET_PRIMARY --> SET_ACTIVE
+                        SET_ACTIVE --> LINK_SESSION --> ADD_OCCUPIED --> SET_PRIMARY_CUST --> GEN_TOKEN
+
+                        %% Session Joining (Secondary)
+                        CHK_PRIMARY -->|No - Table ACTIVE| FLAG3
+                        FLAG3 -->|OFF| ERR_MULTI
+                        FLAG3 -->|ON| CREATE_PROFILE
+                        CREATE_PROFILE --> JOIN_SESS --> ADD_USER --> ADD_OCC2 --> UPDATE_VISIT --> GEN_TOKEN
+
+                        %% Token Generation
+                        GEN_TOKEN --> STORE_LOCAL --> RETURN
+
+                        %% Styling
+                        style ENTRY fill:#e1f5fe,color:#000
+                        style VALIDATE fill:#fff3e0,color:#000
+                        style OTP_GEN fill:#fef3c7,color:#000
+                        style OTP_VALIDATE fill:#fef3c7,color:#000
+                        style SESSION_CREATE fill:#e8f5e9,color:#000
+                        style SESSION_JOIN fill:#e8f5e9,color:#000
+                        style TOKEN_GEN fill:#f3e5f5,color:#000
+                        style ERRORS fill:#fee2e2,color:#000
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- OTP Details -->
+        <section class="section" id="otp">
+            <div class="section-title"><span class="section-icon">🔑</span> OTP System</div>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">OTP Configuration</div>
+                    <table>
+                        <tr>
+                            <th>Property</th>
+                            <th>Value</th>
+                        </tr>
+                        <tr>
+                            <td>Format</td>
+                            <td>6-digit numeric (000000-999999)</td>
+                        </tr>
+                        <tr>
+                            <td>Expiry</td>
+                            <td>5 minutes from generation</td>
+                        </tr>
+                        <tr>
+                            <td>Storage</td>
+                            <td><code>table.currentOTP</code></td>
+                        </tr>
+                        <tr>
+                            <td>Display</td>
+                            <td>Table screen, POS, or server app</td>
+                        </tr>
+                        <tr>
+                            <td>Regeneration</td>
+                            <td>Server can regenerate anytime</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="card">
+                    <div class="card-title">OTP Lifecycle</div>
+                    <div class="diagram">
+                        <div class="mermaid">
+                            flowchart LR
+                            A["Generate"] --> B["Store in Table"]
+                            B --> C["Display to User"]
+                            C --> D{"User Enters"}
+                            D -->|Correct| E["Validate ✓"]
+                            D -->|Wrong| F["Retry"]
+                            D -->|Expired| G["Regenerate"]
+                            F --> D
+                            G --> A
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">OTP Flow Nuances</div>
+                <div class="bullet-section">
+                    <ul class="bullet-list">
+                        <li class="success">OTP is stored in
+                            <code>table.currentOTP = {code, createdAt, expiresAt}</code>
+                        </li>
+                        <li>Table status changes to <code>OTP_PENDING</code> when OTP is generated</li>
+                        <li class="edge">If OTP expires, table status reverts to <code>VACANT</code> (no active session)
+                        </li>
+                        <li>Server can call <code>regenerateTableOTP</code> to issue new OTP at any time</li>
+                        <li class="edge">Regenerating OTP invalidates the previous one immediately</li>
+                        <li class="error">Max 3 OTP validation attempts before temporary lockout (configurable)</li>
+                        <li>OTP validation is case-insensitive (numeric only)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Session Management -->
+        <section class="section" id="session">
+            <div class="section-title"><span class="section-icon">🔗</span> Session Management</div>
+            <div class="card">
+                <div class="card-title">Session Lifecycle</div>
+                <div class="diagram">
+                    <div class="mermaid">
+                        stateDiagram-v2
+                        [*] --> active: OTP Validated
+                        active --> active: User Joins
+                        active --> ended: Manual End
+                        active --> expired: 5hr Timeout
+                        ended --> [*]
+                        expired --> [*]
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-3">
+                <div class="card">
+                    <div class="card-title">Session Creation</div>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-title">1. Generate Session ID</div>
+                            <div class="timeline-desc">UUID created for new session</div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-title">2. Set Primary User</div>
+                            <div class="timeline-desc"><code>primaryUserId</code> = customer phone</div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-title">3. Initialize Users Array</div>
+                            <div class="timeline-desc"><code>users = [primaryUserId]</code></div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-title">4. Set Expiry</div>
+                            <div class="timeline-desc"><code>expiresAt = now + 5hrs</code></div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-title">5. Link to Table</div>
+                            <div class="timeline-desc"><code>table.session = sessionId</code></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">User Joining</div>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-title">1. Validate OTP</div>
+                            <div class="timeline-desc">Same OTP for all users</div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-title">2. Check Flag</div>
+                            <div class="timeline-desc"><code>isMultiUserSupportEnabled</code></div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-title">3. Add to Session</div>
+                            <div class="timeline-desc">Append to <code>users[]</code></div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-title">4. Update Table</div>
+                            <div class="timeline-desc">Add to <code>occupiedBy[]</code></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Session End</div>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-title">1. Trigger End</div>
+                            <div class="timeline-desc">Payment complete or manual</div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-title">2. Update Session</div>
+                            <div class="timeline-desc"><code>status = ended</code></div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-title">3. Clear Table</div>
+                            <div class="timeline-desc"><code>status = VACANT</code></div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-title">4. End Customer Visits</div>
+                            <div class="timeline-desc">Update all <code>currentVisit</code></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">Session Nuances & Edge Cases</div>
+                <div class="bullet-section">
+                    <ul class="bullet-list">
+                        <li class="success">Session is stored in browser's <code>localStorage</code> for persistence
+                            across page refreshes</li>
+                        <li>Session validation checks both <code>status = active</code> AND <code>expiresAt > now</code>
+                        </li>
+                        <li class="edge">If session expires mid-order, user must re-authenticate but cart is preserved
+                        </li>
+                        <li class="edge">Primary user leaving doesn't end session - other users can continue</li>
+                        <li>Session expiry (5hrs) calculated from creation, not last activity</li>
+                        <li class="success">All users in same session share the same cart view</li>
+                        <li class="error">If <code>isMultiUserSupportEnabled = OFF</code>, secondary users get 403 error
+                        </li>
+                        <li>Server/admin can force-end session via <code>endSession</code> API</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Validation Logic -->
+        <section class="section" id="validation">
+            <div class="section-title"><span class="section-icon">✅</span> Validation Logic</div>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">validateTableAndLocation</div>
+                    <table>
+                        <tr>
+                            <th>Check</th>
+                            <th>Error</th>
+                            <th>Code</th>
+                        </tr>
+                        <tr>
+                            <td>Table exists</td>
+                            <td>Table not found</td>
+                            <td>404</td>
+                        </tr>
+                        <tr>
+                            <td>Table not disabled</td>
+                            <td>Table unavailable</td>
+                            <td>403</td>
+                        </tr>
+                        <tr>
+                            <td>Location within geofence</td>
+                            <td>Location mismatch</td>
+                            <td>412</td>
+                        </tr>
+                        <tr>
+                            <td>Session valid (if provided)</td>
+                            <td>Session expired</td>
+                            <td>401</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="card">
+                    <div class="card-title">validateOTP</div>
+                    <table>
+                        <tr>
+                            <th>Check</th>
+                            <th>Error</th>
+                            <th>Code</th>
+                        </tr>
+                        <tr>
+                            <td>OTP matches</td>
+                            <td>Invalid OTP</td>
+                            <td>400</td>
+                        </tr>
+                        <tr>
+                            <td>OTP not expired</td>
+                            <td>OTP expired</td>
+                            <td>400</td>
+                        </tr>
+                        <tr>
+                            <td>Phone format valid</td>
+                            <td>Invalid phone</td>
+                            <td>400</td>
+                        </tr>
+                        <tr>
+                            <td>Name provided (if flag ON)</td>
+                            <td>Name required</td>
+                            <td>400</td>
+                        </tr>
+                        <tr>
+                            <td>Multi-user allowed (if joining)</td>
+                            <td>Not allowed</td>
+                            <td>403</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">Session Validation</div>
+                <div class="diagram">
+                    <div class="mermaid">
+                        flowchart LR
+                        A["sessionId from localStorage"] --> B{"Exists in Firestore?"}
+                        B -->|No| C["❌ Invalid"]
+                        B -->|Yes| D{"status = active?"}
+                        D -->|No| E["❌ Ended/Expired"]
+                        D -->|Yes| F{"expiresAt > now?"}
+                        F -->|No| G["❌ Expired"]
+                        F -->|Yes| H{"tableId matches?"}
+                        H -->|No| I["❌ Wrong table"]
+                        H -->|Yes| J["✅ Valid"]
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cross-Entity Effects -->
+        <section class="section" id="cross-entity">
+            <div class="section-title"><span class="section-icon">🔄</span> Cross-Entity Effects</div>
+            <div class="card">
+                <div class="card-title">What happens when...</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Event</th>
+                            <th>🪑 Table</th>
+                            <th>🔗 Session</th>
+                            <th>👤 Customer</th>
+                            <th>👨‍🍳 Server</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>QR Scanned (new)</strong></td>
+                            <td><code>status → OTP_PENDING</code><br><code>currentOTP</code> set</td>
+                            <td>No change yet</td>
+                            <td>No change yet</td>
+                            <td>Gets OTP notification</td>
+                        </tr>
+                        <tr>
+                            <td><strong>OTP Validated (primary)</strong></td>
+                            <td><code>status → ACTIVE</code><br><code>session</code> linked<br><code>occupiedBy[]</code>
+                                updated<br><code>primaryCustomer</code> set</td>
+                            <td>Created<br><code>primaryUserId</code> set<br><code>users[]</code> initialized</td>
+                            <td>Created/updated<br><code>currentVisit</code> set<br>Added to <code>visits[]</code></td>
+                            <td>Session start notification</td>
+                        </tr>
+                        <tr>
+                            <td><strong>OTP Validated (secondary)</strong></td>
+                            <td><code>occupiedBy[]</code> updated</td>
+                            <td><code>users[]</code> appended</td>
+                            <td>Created/updated<br><code>currentVisit</code> set</td>
+                            <td>New user notification</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Session Ended</strong></td>
+                            <td><code>status → VACANT</code><br><code>session</code>
+                                cleared<br><code>occupiedBy[]</code> cleared<br><code>primaryCustomer</code> cleared
+                            </td>
+                            <td><code>status → ended</code></td>
+                            <td><code>currentVisit</code> cleared<br><code>visits[]</code> updated with endTime</td>
+                            <td>Table available notification</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Session Expired</strong></td>
+                            <td><code>status → VACANT</code><br>(same as ended)</td>
+                            <td><code>status → expired</code></td>
+                            <td>Same as ended</td>
+                            <td>Auto-clear notification</td>
+                        </tr>
+                        <tr>
+                            <td><strong>OTP Expired</strong></td>
+                            <td><code>status → VACANT</code><br><code>currentOTP</code> cleared</td>
+                            <td>Never created</td>
+                            <td>No change</td>
+                            <td>OTP timeout notification</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Edge Cases -->
+        <section class="section" id="edge-cases">
+            <div class="section-title"><span class="section-icon">⚠️</span> Edge Cases & Error Handling</div>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">Authentication Edge Cases</div>
+                    <ul class="bullet-list">
+                        <li class="edge"><strong>Same phone, different device:</strong> Both devices can join same
+                            session</li>
+                        <li class="edge"><strong>OTP entered on wrong table:</strong> Validation fails (tableId
+                            mismatch)</li>
+                        <li class="edge"><strong>Internet disconnect during auth:</strong> Retry with same OTP if not
+                            expired</li>
+                        <li class="error"><strong>LocalStorage cleared:</strong> Must re-authenticate via OTP</li>
+                        <li class="edge"><strong>Page refresh during OTP entry:</strong> OTP still valid, can retry</li>
+                        <li class="edge"><strong>Multiple tabs same session:</strong> All tabs share same session state
+                        </li>
+                        <li class="error"><strong>Firebase token expired:</strong> Must re-authenticate (token refresh
+                            not implemented)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-title">Session Edge Cases</div>
+                    <ul class="bullet-list">
+                        <li class="edge"><strong>All users leave table:</strong> Session remains active until
+                            timeout/manual end</li>
+                        <li class="edge"><strong>Primary user clears localStorage:</strong> Can rejoin with OTP, remains
+                            primary</li>
+                        <li class="edge"><strong>Session expires with active cart:</strong> Cart preserved, re-auth
+                            required to checkout</li>
+                        <li class="edge"><strong>Server ends session mid-order:</strong> Users get "session ended" error
+                            on next action</li>
+                        <li class="error"><strong>Concurrent OTP validation:</strong> First success wins, second gets
+                            "already active"</li>
+                        <li class="edge"><strong>Table reassigned mid-session:</strong> Old session ends immediately
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">Recovery Scenarios</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Scenario</th>
+                            <th>User Experience</th>
+                            <th>Recovery Path</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Session expired</td>
+                            <td>Error on any action</td>
+                            <td>Re-scan QR → OTP → New session (cart preserved)</td>
+                        </tr>
+                        <tr>
+                            <td>OTP expired</td>
+                            <td>OTP validation fails</td>
+                            <td>Ask server to regenerate OTP</td>
+                        </tr>
+                        <tr>
+                            <td>Wrong OTP 3x</td>
+                            <td>Temporary lockout</td>
+                            <td>Wait 5 min or ask server to regenerate</td>
+                        </tr>
+                        <tr>
+                            <td>Table disabled</td>
+                            <td>403 on scan</td>
+                            <td>Contact staff, move to different table</td>
+                        </tr>
+                        <tr>
+                            <td>Location mismatch</td>
+                            <td>412 on validation</td>
+                            <td>Enable location, retry; or use different network</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- API Reference -->
+        <section class="section" id="api">
+            <div class="section-title"><span class="section-icon">🎯</span> Auth API Reference</div>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Function</th>
+                            <th>Module</th>
+                            <th>Parameters</th>
+                            <th>Returns</th>
+                            <th>Side Effects</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>validateTableAndLocation</code></td>
+                            <td>table</td>
+                            <td><code>restaurantId, tableId, location, sessionId?</code></td>
+                            <td>Table info + auth requirements or access granted</td>
+                            <td>May generate OTP, update table status</td>
+                        </tr>
+                        <tr>
+                            <td><code>validateOTP</code></td>
+                            <td>table</td>
+                            <td><code>restaurantId, tableId, otp, phoneNumber, name?</code></td>
+                            <td>Session info + Firebase token</td>
+                            <td>Creates/updates customer, session, table</td>
+                        </tr>
+                        <tr>
+                            <td><code>regenerateTableOTP</code></td>
+                            <td>table</td>
+                            <td><code>restaurantId, tableId</code></td>
+                            <td>New OTP code</td>
+                            <td>Invalidates old OTP, updates table</td>
+                        </tr>
+                        <tr>
+                            <td><code>createOrGetTableSession</code></td>
+                            <td>session</td>
+                            <td><code>restaurantId, tableId, primaryUserId</code></td>
+                            <td>Session object</td>
+                            <td>Creates session, links to table</td>
+                        </tr>
+                        <tr>
+                            <td><code>addUserToTableSession</code></td>
+                            <td>session</td>
+                            <td><code>sessionId, userId</code></td>
+                            <td>Updated session</td>
+                            <td>Adds user to session.users[]</td>
+                        </tr>
+                        <tr>
+                            <td><code>validateSession</code></td>
+                            <td>session</td>
+                            <td><code>sessionId</code></td>
+                            <td>Boolean + session data</td>
+                            <td>None (read-only)</td>
+                        </tr>
+                        <tr>
+                            <td><code>endSession</code></td>
+                            <td>session</td>
+                            <td><code>restaurantId, tableId, sessionId</code></td>
+                            <td>Success confirmation</td>
+                            <td>Updates session, table, customers</td>
+                        </tr>
+                        <tr>
+                            <td><code>createOrUpdateCustomerProfile</code></td>
+                            <td>customer</td>
+                            <td><code>phoneNumber, name?</code></td>
+                            <td>Customer profile</td>
+                            <td>Creates/updates customer doc</td>
+                        </tr>
+                        <tr>
+                            <td><code>updateCustomerVisit</code></td>
+                            <td>customer</td>
+                            <td><code>restaurantId, tableId</code></td>
+                            <td>Success confirmation</td>
+                            <td>Updates currentVisit, visits[]</td>
+                        </tr>
+                        <tr>
+                            <td><code>endCustomerVisit</code></td>
+                            <td>customer</td>
+                            <td><code>uid</code></td>
+                            <td>Success confirmation</td>
+                            <td>Clears currentVisit, updates visits[], table</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                fontSize: '10px',
+                primaryColor: '#6366f1',
+                primaryTextColor: '#e2e8f0',
+                primaryBorderColor: '#2d2d5a',
+                lineColor: '#64748b',
+                secondaryColor: '#12122a',
+                tertiaryColor: '#1a1a3a',
+                background: '#0a0a1a',
+                mainBkg: '#1a1a3a',
+                nodeBorder: '#2d2d5a',
+                clusterBkg: '#12122a',
+                clusterBorder: '#2d2d5a'
+            },
+            flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis', nodeSpacing: 25, rankSpacing: 35 }
+        });
+    </script>
+</body>
+
+</html>

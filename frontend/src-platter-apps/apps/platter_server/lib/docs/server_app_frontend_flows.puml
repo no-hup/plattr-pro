@@ -1,0 +1,361 @@
+@startuml Server_App_Orders_Tab_Flow
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam maxmessagesize 300
+skinparam noteFontSize 11
+skinparam participantPadding 18
+
+title **Plattr Server App - Orders Tab Flow**\n(Frontend sequence)
+
+' ============================================================
+'  PARTICIPANTS
+' ============================================================
+actor "Server Staff" as Staff #LightBlue
+participant "OrdersHomeScreen" as OrdersUI #LightGreen
+participant "OrdersProvider" as OrdersProvider #LightYellow
+participant "OrderApiService" as OrdersAPI #Orange
+participant "DioClient" as Dio #Wheat
+participant "Cloud Functions API" as Backend #LightGray
+database "Firestore" as DB #LightGray
+participant "OrderDetailScreen" as OrderDetail #PeachPuff
+
+' ============================================================
+'  PHASE 1: LOAD ORDERS TAB
+' ============================================================
+== **Phase 1: Load Orders Tab** ==
+
+Staff -> OrdersUI: Open Orders tab
+OrdersUI -> OrdersProvider: initState()\nfetchActiveOrders(restaurantId, sessionId)
+OrdersProvider -> OrdersAPI: getActiveOrdersForRestaurant(restaurantId, sessionId, serverId?)
+OrdersAPI -> Dio: POST /order-getActiveOrdersForRestaurant\n{ data: { restaurantId, sessionId, serverId? } }
+Dio -> Backend: request
+Backend -> DB: Query active orders
+DB --> Backend: orders[]
+Backend --> Dio: response { success, data: orders }
+Dio --> OrdersAPI: response
+OrdersAPI --> OrdersProvider: ApiResponse<OrderListResponse>
+
+note right of OrdersProvider #LightCyan
+  **Client-side filtering**
+  - Drop cart items with status "completed" or "cancelled"
+  - Remove carts with zero remaining items
+  - Remove orders with no active carts
+end note
+
+alt Success + orders available
+  OrdersProvider -> OrdersUI: state=loaded, notifyListeners()
+  OrdersUI -> Staff: Render order list with item pills
+else Success + no orders
+  OrdersProvider -> OrdersUI: state=loaded (empty list)
+  OrdersUI -> Staff: Show empty state
+else Error
+  OrdersProvider -> OrdersUI: state=error
+  OrdersUI -> Staff: Show error state or banner
+end
+
+' ============================================================
+'  PHASE 2: REFRESH ORDERS
+' ============================================================
+== **Phase 2: Refresh Orders** ==
+
+Staff -> OrdersUI: Pull-to-refresh / tap refresh icon
+OrdersUI -> OrdersProvider: refreshOrders(restaurantId, sessionId)
+OrdersProvider -> OrdersAPI: getActiveOrdersForRestaurant(...)
+OrdersProvider -> OrdersUI: isRefreshing=true (RefreshIndicator)
+
+' ============================================================
+'  PHASE 3: OPEN ORDER DETAILS
+' ============================================================
+== **Phase 3: Open Order Details** ==
+
+Staff -> OrdersUI: Tap order card
+OrdersUI -> OrderDetail: Navigate(orderId)
+OrderDetail -> OrdersAPI: getOrder(restaurantId, orderId)
+OrdersAPI -> Dio: POST /order-getOrder
+Dio -> Backend: request
+Backend -> DB: Fetch order document
+DB --> Backend: order detail
+Backend --> Dio: response { success, data: order }
+Dio --> OrdersAPI: response
+OrdersAPI --> OrderDetail: ApiResponse<OrderDetailResponse>
+OrderDetail -> Staff: Render carts, items, status
+
+' ============================================================
+'  PHASE 4: UPDATE ORDER/CART STATUS
+' ============================================================
+== **Phase 4: Update Order or Cart Status** ==
+
+Staff -> OrderDetail: Tap "Mark Ready" or "Cancel Order"
+alt Mark Ready (multi-cart)
+  note right of OrderDetail #Wheat
+    **READY uses cart-level updates**
+    - Iterate all carts in order
+    - Skip if status in {served, ready, cancelled}
+    - Otherwise call cart-updateCartStatus(READY)
+  end note
+  loop For each active cart
+    OrderDetail -> OrdersAPI: updateCartStatus(cartIndex, READY, sessionId)
+    OrdersAPI -> Dio: POST /cart-updateCartStatus
+    Dio -> Backend: request
+    Backend -> DB: Update cart status
+    DB --> Backend: success
+    Backend --> Dio: success
+    Dio --> OrdersAPI: response
+    OrdersAPI --> OrderDetail: ApiResponse<bool>
+  end
+  OrderDetail -> OrderDetail: Refresh order detail
+else Cancel Order
+  OrderDetail -> OrdersAPI: updateOrderStatus(orderStatus=CANCELLED, sessionId)
+  OrdersAPI -> Dio: POST /order-updateOrderStatus
+  Dio -> Backend: request
+  Backend -> DB: Update order status
+  DB --> Backend: success
+  Backend --> Dio: success
+  Dio --> OrdersAPI: response
+  OrdersAPI --> OrderDetail: ApiResponse<bool>
+  OrderDetail -> OrderDetail: Refresh order detail
+end
+
+@enduml
+@startuml Server_App_Tables_Tab_Flow
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam maxmessagesize 300
+skinparam noteFontSize 11
+skinparam participantPadding 18
+
+title **Plattr Server App - Tables Tab Flow**\n(Frontend sequence)
+
+' ============================================================
+'  PARTICIPANTS
+' ============================================================
+actor "Server Staff" as Staff #LightBlue
+participant "TablesHomeScreen" as TablesUI #LightGreen
+participant "TablesProvider" as TablesProvider #LightYellow
+participant "TableApiService" as TablesAPI #Orange
+participant "DioClient" as Dio #Wheat
+participant "Cloud Functions API" as Backend #LightGray
+database "Firestore" as DB #LightGray
+participant "TableDetailDialog" as TableDialog #PeachPuff
+participant "OrderApiService" as OrdersAPI #LightCoral
+participant "OrderDetailScreen" as OrderDetail #MistyRose
+
+' ============================================================
+'  PHASE 1: LOAD TABLES TAB
+' ============================================================
+== **Phase 1: Load Tables Tab** ==
+
+Staff -> TablesUI: Open Tables tab
+TablesUI -> TablesProvider: initState()\nfetchTables(restaurantId)
+TablesProvider -> TablesAPI: getRestaurantTables(restaurantId)
+TablesAPI -> Dio: POST /table-getTablesForRestaurant\n{ data: { restaurantId } }
+Dio -> Backend: request
+Backend -> DB: Query tables for restaurant
+DB --> Backend: tables[]
+Backend --> Dio: response { success, data: tables }
+Dio --> TablesAPI: response
+TablesAPI --> TablesProvider: ApiResponse<List<TableModel>>
+
+note right of TablesUI #LightCyan
+  **UI output per table**
+  - Table ID, capacity, status
+  - Background color by status
+  - currentOrderId (if present)
+end note
+
+alt Success + tables available
+  TablesProvider -> TablesUI: state=loaded, notifyListeners()
+  TablesUI -> Staff: Render grid of table cards
+else Success + no tables
+  TablesProvider -> TablesUI: state=loaded (empty list)
+  TablesUI -> Staff: Show empty state
+else Error
+  TablesProvider -> TablesUI: state=error
+  TablesUI -> Staff: Show error state or banner
+end
+
+' ============================================================
+'  PHASE 2: REFRESH TABLES
+' ============================================================
+== **Phase 2: Refresh Tables** ==
+
+Staff -> TablesUI: Pull-to-refresh / tap refresh icon
+TablesUI -> TablesProvider: refreshTables(restaurantId)
+TablesProvider -> TablesAPI: getRestaurantTables(restaurantId)
+TablesProvider -> TablesUI: isRefreshing=true (RefreshIndicator)
+
+' ============================================================
+'  PHASE 3: OPEN TABLE DETAILS
+' ============================================================
+== **Phase 3: Open Table Details** ==
+
+Staff -> TablesUI: Tap table card
+TablesUI -> TablesProvider: setSelectedTable(table)
+TablesUI -> TableDialog: showDialog()
+TableDialog -> TablesProvider: getTableDetails(restaurantId, tableId)
+TablesProvider -> TablesAPI: getTableDetails(restaurantId, tableId)
+TablesAPI -> Dio: POST /table-getTableDetails\n{ data: { restaurantId, tableId } }
+Dio -> Backend: request
+Backend -> DB: Fetch table document
+DB --> Backend: table detail
+Backend --> Dio: response { success, data: table }
+Dio --> TablesAPI: response
+TablesAPI --> TablesProvider: ApiResponse<TableModel>
+TablesProvider -> TableDialog: update selectedTable + list
+TableDialog -> Staff: Render status, OTP, active order, actions
+
+note right of TableDialog #Wheat
+  **OTP rules (backend)**
+  - OTP can be generated only for "vacant" tables
+  - OTP valid for 5 minutes
+end note
+
+' ============================================================
+'  PHASE 4: TABLE ACTIONS
+' ============================================================
+== **Phase 4: Table Actions** ==
+
+alt Update table status
+  Staff -> TableDialog: Tap status button (Vacant/Active/Reserved/Disabled)
+  TableDialog -> TablesProvider: updateTableStatus(restaurantId, tableId, status)
+  TablesProvider -> TablesAPI: updateTableStatus(restaurantId, tableId, status)
+  TablesAPI -> Dio: POST /table-updateTableStatus
+  Dio -> Backend: request
+  Backend -> DB: Update table status
+  DB --> Backend: success
+  Backend --> Dio: success
+  Dio --> TablesAPI: response
+  TablesAPI --> TablesProvider: ApiResponse<UpdateTableStatusResponse>
+  note right of TablesProvider #LightCyan
+    **Post-update behavior**
+    - Update local table in list
+    - Refresh full table list for sync
+  end note
+  TablesProvider -> TablesUI: notifyListeners()
+  TableDialog -> Staff: Close dialog on success
+else Refresh table OTP
+  Staff -> TableDialog: Tap refresh OTP
+  TableDialog -> TablesProvider: refreshTableOtp(restaurantId, tableId)
+  TablesProvider -> TablesAPI: generateTableOTP(restaurantId, tableId)
+  TablesAPI -> Dio: POST /table-generateTableOTP
+  Dio -> Backend: request
+  Backend -> DB: Generate OTP + update table
+  DB --> Backend: success + otp
+  Backend --> Dio: response
+  Dio --> TablesAPI: response
+  TablesAPI --> TablesProvider: ApiResponse<TableOtpResponse>
+  TablesProvider -> TableDialog: Update selectedTable.tableOtp
+  TableDialog -> Staff: Show updated OTP
+else View active order
+  Staff -> TableDialog: Tap "View" on active order
+  TableDialog -> OrderDetail: Navigate(orderId)
+  OrderDetail -> OrdersAPI: getOrder(restaurantId, orderId)
+  OrdersAPI -> Dio: POST /order-getOrder
+  Dio -> Backend: request
+  Backend -> DB: Fetch order document
+  DB --> Backend: order detail
+  Backend --> Dio: response
+  Dio --> OrdersAPI: response
+  OrdersAPI --> OrderDetail: ApiResponse<OrderDetailResponse>
+  OrderDetail -> Staff: Render order detail page
+end
+
+@enduml
+@startuml Server_App_Menu_Tab_Flow
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam maxmessagesize 300
+skinparam noteFontSize 11
+skinparam participantPadding 18
+
+title **Plattr Server App - Menu Tab Flow**\n(Frontend sequence)
+
+' ============================================================
+'  PARTICIPANTS
+' ============================================================
+actor "Server Staff" as Staff #LightBlue
+participant "MenuHomeScreen" as MenuUI #LightGreen
+participant "MenuProvider" as MenuProvider #LightYellow
+participant "MenuApiService" as MenuAPI #Orange
+participant "DioClient" as Dio #Wheat
+participant "Cloud Functions API" as Backend #LightGray
+database "Firestore" as DB #LightGray
+
+' ============================================================
+'  PHASE 1: LOAD MENU TAB
+' ============================================================
+== **Phase 1: Load Menu Tab** ==
+
+Staff -> MenuUI: Open Menu tab
+MenuUI -> MenuProvider: initState()\nfetchRestaurantMenu(restaurantId, sessionId)
+MenuProvider -> MenuAPI: getRestaurantMenu(restaurantId, sessionId)
+MenuAPI -> Dio: POST /menu-getRestaurantMenu\n{ data: { restaurantId, sessionId } }
+Dio -> Backend: request
+Backend -> DB: Fetch categories + menu items
+DB --> Backend: menu data
+Backend --> Dio: response { success, data }
+Dio --> MenuAPI: response
+MenuAPI --> MenuProvider: ApiResponse<FullRestaurantMenuResponse>
+
+note right of MenuAPI #LightCyan
+  **Response parsing**
+  - Expects top-level "result" and "data"
+  - Builds categories list + menuItems map
+  - Items grouped by categoryId
+end note
+
+alt Success + menu available
+  MenuProvider -> MenuUI: state=loaded, notifyListeners()
+  MenuUI -> Staff: Render categories + items list
+else Success + no items
+  MenuProvider -> MenuUI: state=loaded (empty list)
+  MenuUI -> Staff: Show empty state
+else Error
+  MenuProvider -> MenuUI: state=error
+  MenuUI -> Staff: Show error state or banner
+end
+
+' ============================================================
+'  PHASE 2: REFRESH MENU
+' ============================================================
+== **Phase 2: Refresh Menu** ==
+
+Staff -> MenuUI: Pull-to-refresh / tap refresh icon
+MenuUI -> MenuProvider: refreshMenu(restaurantId, sessionId)
+MenuProvider -> MenuAPI: getRestaurantMenu(restaurantId, sessionId)
+MenuProvider -> MenuUI: isRefreshing=true (RefreshIndicator)
+
+' ============================================================
+'  PHASE 3: TOGGLE ITEM AVAILABILITY
+' ============================================================
+== **Phase 3: Toggle Item Availability** ==
+
+Staff -> MenuUI: Toggle item availability switch
+MenuUI -> MenuUI: Confirm dialog (Confirm / Cancel)
+alt Confirmed
+  MenuUI -> MenuProvider: updateMenuItemAvailability(menuItemId, isAvailable)
+  MenuProvider -> MenuAPI: updateMenuItemAvailability(restaurantId, sessionId, menuItemId, isAvailable)
+  MenuAPI -> Dio: POST /menu-updateMenuItemAvailability\n{ restaurantId, sessionId, menuItemId, isAvailable }
+  note right of MenuAPI #Wheat
+    **Payload is flat**
+    - No "data" envelope
+  end note
+  Dio -> Backend: request
+  Backend -> DB: Update menu item stock flag
+  DB --> Backend: success
+  Backend --> Dio: response
+  Dio --> MenuAPI: response
+  MenuAPI --> MenuProvider: ApiResponse<UpdateMenuItemAvailabilityResponse>
+  MenuProvider -> MenuUI: Update local item (isAvailable)
+  MenuUI -> Staff: Reflect updated availability
+else Cancelled
+  MenuUI -> Staff: No change
+end
+
+@enduml

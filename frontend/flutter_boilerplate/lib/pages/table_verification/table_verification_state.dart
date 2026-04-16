@@ -3,11 +3,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutterboilerplate/pages/app_routes.dart';
 import 'package:flutterboilerplate/pages/debug_baner.dart';
+import 'package:flutterboilerplate/pages/otp/otp_input_dialog.dart';
 import 'package:flutterboilerplate/session/session_provider.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:flutterboilerplate/pages/otp/otp_input_dialog.dart';
 
 import 'models/models.dart';
 import 'table_repository.dart';
@@ -27,7 +28,7 @@ class TableVerificationPageState extends State<TableVerificationPage> {
   final _phoneController = TextEditingController();
   final _tableRepository = TableRepository();
   bool _isLoading = false;
-  
+
   // Replace the boolean flags with a single state enum
   TableVerificationState _state = TableVerificationState.loading;
   String? _error;
@@ -51,56 +52,77 @@ class TableVerificationPageState extends State<TableVerificationPage> {
       _error = null;
       _state = TableVerificationState.loading;
     });
-    
+
     try {
       final sessionId = context.read<SessionProvider>().sessionId;
       if (sessionId != null) {
         AppLogger.log('🔑 VERIFY: Found existing sessionId: $sessionId');
-        AppLogger.log('🔑 VERIFY: Using persisted session for table validation');
+        AppLogger.log(
+          '🔑 VERIFY: Using persisted session for table validation',
+        );
       } else {
-        AppLogger.log('🔑 VERIFY: No existing sessionId found - will require fresh OTP validation');
+        AppLogger.log(
+          '🔑 VERIFY: No existing sessionId found - will require fresh OTP validation',
+        );
       }
-      
-      AppLogger.log('🔑 VERIFY: Restaurant: ${widget.restaurantId}, Table: ${widget.tableId}');
-      
+
+      AppLogger.log(
+        '🔑 VERIFY: Restaurant: ${widget.restaurantId}, Table: ${widget.tableId}',
+      );
+
       final response = await _tableRepository.validateTableAndLocation(
         restaurantId: widget.restaurantId!,
         tableId: widget.tableId!,
-        userLocation: const UserLocation(latitude: 0.0, longitude: 0.0),
+        userLocation: const UserLocation(latitude: 0, longitude: 0),
         sessionId: sessionId,
       );
 
       if (!response.success) {
         final rawDetails = response.errorDetails;
-        AppLogger.log('🔑 VERIFY: Error Response - Code: ${response.errorCode}, Details: $rawDetails');
-        
+        AppLogger.log(
+          '🔑 VERIFY: Error Response - Code: ${response.errorCode}, Details: $rawDetails',
+        );
+
         // Handle OTP required case (401 Unauthorized)
-        if ((response.errorCode?.toLowerCase() == 'unauthenticated' || 
-             response.errorCode == 'TABLE_UNAUTHORIZED') && 
+        if ((response.errorCode?.toLowerCase() == 'unauthenticated' ||
+                response.errorCode == 'TABLE_UNAUTHORIZED') &&
             rawDetails != null) {
-          AppLogger.log('🔑 Received 401/unauthenticated response with OTP required');
+          AppLogger.log(
+            '🔑 Received 401/unauthenticated response with OTP required',
+          );
           AppLogger.log('🔑 Raw Details: $rawDetails');
-          
-          // Extract required fields from raw details with defaults
-          final authMsg = rawDetails['authMessage'] as String? ?? 
-                         rawDetails['error'] as String? ?? 
-                         'OTP Required';
-          final requireName = rawDetails['isUsernameMandatory'] as bool? ?? false;
-          final requirePhone = rawDetails['isPhoneNumberMandatory'] as bool? ?? false;
-          final isMultiUser = rawDetails['isMultiUserSupported'] as bool? ?? false;
-          final tableStatus = rawDetails['tableStatus'] as String?;
-          
+
+          // Backend wraps the actual fields inside a 'data' sub-key:
+          //   error.details = { status, message, data: { isPhoneNumberMandatory, ... } }
+          // Unwrap that layer; fall back to rawDetails itself for flat formats.
+          final details =
+              rawDetails['data'] as Map<String, dynamic>? ?? rawDetails;
+
+          // Extract required fields from details with defaults
+          final authMsg = details['authMessage'] as String? ??
+              details['error'] as String? ??
+              'OTP Required';
+          final requireName =
+              details['isUsernameMandatory'] as bool? ?? false;
+          final requirePhone =
+              details['isPhoneNumberMandatory'] as bool? ?? false;
+          final isMultiUser =
+              details['isMultiUserSupported'] as bool? ?? false;
+          final tableStatus = details['tableStatus'] as String?;
+
           // Extract server and primary customer info for enhanced message
-          final serverName = rawDetails['assignedServer']?['name'] as String?;
-          final primaryCustomerName = rawDetails['primaryCustomer']?['name'] as String?;
-          
+          final serverName = details['assignedServer']?['name'] as String?;
+          final primaryCustomerName =
+              details['primaryCustomer']?['name'] as String?;
+
           // Create enhanced auth message if server or primary customer info is available
-          String enhancedAuthMsg = authMsg;
+          var enhancedAuthMsg = authMsg;
           if (primaryCustomerName != null || serverName != null) {
-            enhancedAuthMsg = 'Please ask ${primaryCustomerName ?? 'the primary customer'} '
-                            'or ${serverName ?? 'your server'} for the OTP code.';
+            enhancedAuthMsg =
+                'Please ask ${primaryCustomerName ?? 'the primary customer'} '
+                'or ${serverName ?? 'your server'} for the OTP code.';
           }
-          
+
           _handleOtpRequiredWithRawDetails(
             authMessage: enhancedAuthMsg,
             requireName: requireName,
@@ -111,26 +133,30 @@ class TableVerificationPageState extends State<TableVerificationPage> {
           );
           return;
         }
-        
+
         // Handle location verification failed (412 Precondition Failed)
         if (response.errorCode == 'TABLE_LOCATION_MISMATCH') {
-          _handleValidationError('${response.message}. Please make sure you are physically at the restaurant.');
+          _handleValidationError(
+            '${response.message}. Please make sure you are physically at the restaurant.',
+          );
           return;
         }
-        
+
         // Handle table disabled error (403 Forbidden)
         if (response.errorCode == 'TABLE_DISABLED') {
-          _handleValidationError('This table is currently unavailable. Please contact restaurant staff.');
+          _handleValidationError(
+            'This table is currently unavailable. Please contact restaurant staff.',
+          );
           return;
         }
-        
+
         // For any other error, use the general error handler
         _handleValidationError(response.message);
         return;
       }
 
       final tableStatus = response.data;
-      
+
       if (tableStatus == null) {
         _handleValidationError('Invalid table status received');
         return;
@@ -156,7 +182,9 @@ class TableVerificationPageState extends State<TableVerificationPage> {
       if (tableStatus.status == 'success') {
         _handleValidationSuccess(tableStatus);
       } else {
-        _handleValidationError('Unexpected table status: ${tableStatus.status}');
+        _handleValidationError(
+          'Unexpected table status: ${tableStatus.status}',
+        );
       }
     } catch (e) {
       _handleValidationError(e.toString());
@@ -178,18 +206,22 @@ class TableVerificationPageState extends State<TableVerificationPage> {
     required bool requireName,
     required bool requirePhone,
     required bool isMultiUserSupported,
-    String? tableStatus,
     required Map<String, dynamic> rawDetails,
+    String? tableStatus,
   }) {
     AppLogger.log('🔑 VERIFY: OTP Required - $authMessage');
-    AppLogger.log('🔑 OTP Settings - Username Required: $requireName, Phone Required: $requirePhone');
-    AppLogger.log('🔑 Table Status: $tableStatus, Multi-User Support: $isMultiUserSupported');
-    
+    AppLogger.log(
+      '🔑 OTP Settings - Username Required: $requireName, Phone Required: $requirePhone',
+    );
+    AppLogger.log(
+      '🔑 Table Status: $tableStatus, Multi-User Support: $isMultiUserSupported',
+    );
+
     setState(() {
       _error = authMessage;
       _state = TableVerificationState.otpRequired;
     });
-    
+
     if (mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         showDialog<void>(
@@ -201,34 +233,38 @@ class TableVerificationPageState extends State<TableVerificationPage> {
               message: authMessage,
               requireName: requireName,
               requirePhoneNumber: requirePhone,
-              restaurantId: widget.restaurantId!,
-              tableId: widget.tableId!,
+              restaurantId: widget.restaurantId,
+              tableId: widget.tableId,
               onOtpSuccess: (responseData) {
                 AppLogger.log('✅ OTP Validated: ${responseData.status}');
-                
-                if (responseData.sessionId != null) {
-                  context.read<SessionProvider>().updateFromTableValidation(
-                    TableValidationResponse(
-                      status: responseData.status,
-                      message: '',
-                      data: {'session': {'sessionId': responseData.sessionId}},
-                    )
-                  );
-                }
-                
+
+                context.read<SessionProvider>().updateFromTableValidation(
+                      TableValidationResponse(
+                        status: responseData.status,
+                        message: '',
+                        data: {
+                          'session': {'sessionId': responseData.sessionId},
+                        },
+                      ),
+                    );
+
                 if (mounted) {
                   _navigateAfterSuccess();
                 }
               },
               onOtpFailed: (error, errorCode) {
                 AppLogger.log('❌ OTP Failed: $error (Code: $errorCode)');
-                
+
                 // Handle ask_primary_customer case
-                if (errorCode == 'TABLE_UNAUTHORIZED' && rawDetails['status'] == 'ask_primary_customer') {
-                  final primaryCustomerName = rawDetails['primaryCustomer']?['name'] as String?;
-                  final primaryCustomerPhone = rawDetails['primaryCustomer']?['phoneNumber'] as String?;
-                  
-                  final message = 'Please ask the primary customer ($primaryCustomerName) to verify this table.';
+                if (errorCode == 'TABLE_UNAUTHORIZED' &&
+                    rawDetails['status'] == 'ask_primary_customer') {
+                  final primaryCustomerName =
+                      rawDetails['primaryCustomer']?['name'] as String?;
+                  final primaryCustomerPhone =
+                      rawDetails['primaryCustomer']?['phoneNumber'] as String?;
+
+                  final message =
+                      'Please ask the primary customer ($primaryCustomerName) to verify this table.';
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(message),
@@ -237,7 +273,7 @@ class TableVerificationPageState extends State<TableVerificationPage> {
                   );
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(error.toString())),
+                    SnackBar(content: Text(error)),
                   );
                 }
               },
@@ -254,13 +290,13 @@ class TableVerificationPageState extends State<TableVerificationPage> {
 
   void _handleValidationSuccess(TableValidationResponse tableStatus) {
     AppLogger.log('✅ VERIFY: Success - sessionId: ${tableStatus.sessionId}');
-    
+
     // Update session in the provider if sessionId is available
     if (tableStatus.sessionId != null) {
       context.read<SessionProvider>().updateFromTableValidation(tableStatus);
-      
+
       setState(() => _state = TableVerificationState.success);
-      
+
       // Navigate if needed
       if (mounted) {
         _navigateAfterSuccess();
@@ -277,7 +313,7 @@ class TableVerificationPageState extends State<TableVerificationPage> {
       _state = TableVerificationState.error;
     });
   }
-  
+
   /// Navigates to the appropriate screen after successful validation,
   /// replacing the current route in the stack.
   void _navigateAfterSuccess() {
@@ -290,7 +326,9 @@ class TableVerificationPageState extends State<TableVerificationPage> {
       // Use context.go to navigate to the menu screen.
       // context.go replaces the current navigation stack with the new route,
       // effectively removing the TableVerificationPage from the back stack.
-      AppLogger.log('NAV: Navigating to Menu screen using context.go, replacing current route.');
+      AppLogger.log(
+        'NAV: Navigating to Menu screen using context.go, replacing current route.',
+      );
       context.go(AppRoutes.menu(widget.restaurantId!, widget.tableId!));
     }
   }
@@ -298,15 +336,15 @@ class TableVerificationPageState extends State<TableVerificationPage> {
   void _handleSubmit() async {
     if (_formKey.currentState?.validate() ?? false) {
       setState(() => _isLoading = true);
-      
+
       try {
         final success = await context.read<SessionProvider>().authenticate(
-          name: _nameController.text,
-          phone: _phoneController.text,
-          tableId: widget.tableId!,
-          restaurantId: widget.restaurantId!,
-        );
-        
+              name: _nameController.text,
+              phone: _phoneController.text,
+              tableId: widget.tableId!,
+              restaurantId: widget.restaurantId!,
+            );
+
         if (success && mounted) {
           if (widget.onLoginSuccess != null) {
             widget.onLoginSuccess!();
@@ -316,7 +354,7 @@ class TableVerificationPageState extends State<TableVerificationPage> {
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Verification failed: ${e.toString()}')),
+          SnackBar(content: Text('Verification failed: $e')),
         );
       } finally {
         if (mounted) setState(() => _isLoading = false);
@@ -327,7 +365,9 @@ class TableVerificationPageState extends State<TableVerificationPage> {
   @override
   Widget build(BuildContext context) {
     AppLogger.log('🔐 VERIFY: Rendering table verification page');
-    AppLogger.log('📝 PARAMS: restaurantId=${widget.restaurantId}, tableId=${widget.tableId}');
+    AppLogger.log(
+      '📝 PARAMS: restaurantId=${widget.restaurantId}, tableId=${widget.tableId}',
+    );
 
     // Use the state enum to determine what to render
     switch (_state) {
@@ -354,7 +394,7 @@ class TableVerificationPageState extends State<TableVerificationPage> {
     return Scaffold(
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: AppSpacing.pagePadding,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -362,9 +402,9 @@ class TableVerificationPageState extends State<TableVerificationPage> {
                 'Error',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
-              const SizedBox(height: 8),
+              AppSpacing.verticalSM,
               Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
+              AppSpacing.verticalLG,
               ElevatedButton(
                 onPressed: _retryValidation,
                 child: const Text('Retry'),
@@ -381,7 +421,7 @@ class TableVerificationPageState extends State<TableVerificationPage> {
     return Scaffold(
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: AppSpacing.pagePadding,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -389,9 +429,9 @@ class TableVerificationPageState extends State<TableVerificationPage> {
                 'OTP Required',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
-              const SizedBox(height: 8),
+              AppSpacing.verticalSM,
               Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
+              AppSpacing.verticalLG,
               ElevatedButton(
                 onPressed: _retryValidation,
                 child: const Text('Retry'),
@@ -415,7 +455,7 @@ class TableVerificationPageState extends State<TableVerificationPage> {
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: AppSpacing.pagePadding,
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -425,11 +465,11 @@ class TableVerificationPageState extends State<TableVerificationPage> {
                       'Please verify your table',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
-                    const SizedBox(height: 24),
+                    AppSpacing.verticalXL,
                     _buildNameField(),
-                    const SizedBox(height: 16),
+                    AppSpacing.verticalLG,
                     _buildPhoneField(),
-                    const SizedBox(height: 24),
+                    AppSpacing.verticalXL,
                     _buildSubmitButton(),
                   ],
                 ),
@@ -492,4 +532,4 @@ class TableVerificationPageState extends State<TableVerificationPage> {
           : const Text('Continue'),
     );
   }
-} 
+}

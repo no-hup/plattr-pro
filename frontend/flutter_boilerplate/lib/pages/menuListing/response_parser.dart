@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutterboilerplate/models/api_response.dart';
+import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_item.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_operation_response.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_price_info.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_response_data.dart';
-import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
 
 class ResponseParser {
@@ -18,13 +18,13 @@ class ResponseParser {
     
     // Handle non-200 status codes
     if (response.statusCode != 200) {
-      String errorMessage = 'Server error: ${response.statusCode}';
-      String errorCode = 'HTTP_${response.statusCode}';
+      var errorMessage = 'Server error: ${response.statusCode}';
+      final errorCode = 'HTTP_${response.statusCode}';
       Map<String, dynamic>? errorDetails;
       
       // Try to extract error details from the response if available
       if (response.data is Map<String, dynamic>) {
-        final Map<String, dynamic> data = response.data as Map<String, dynamic>;
+        final data = response.data as Map<String, dynamic>;
         
         // Extract error message if available
         if (data.containsKey('message')) {
@@ -129,13 +129,13 @@ class ResponseParser {
     
     // Handle non-200 status codes
     if (response.statusCode != 200) {
-      String errorMessage = 'Server error: ${response.statusCode}';
-      String errorCode = 'HTTP_${response.statusCode}';
+      var errorMessage = 'Server error: ${response.statusCode}';
+      final errorCode = 'HTTP_${response.statusCode}';
       Map<String, dynamic>? errorDetails;
       
       // Try to extract error details from the response if available
       if (response.data is Map<String, dynamic>) {
-        final Map<String, dynamic> data = response.data as Map<String, dynamic>;
+        final data = response.data as Map<String, dynamic>;
         
         // Extract error message if available
         if (data.containsKey('message')) {
@@ -260,7 +260,7 @@ class ResponseParser {
       }
       
       // Check for empty cart and log a warning
-      if (cartResponse.data?.cart.items.isEmpty == true) {
+      if (cartResponse.data?.cart.items.isEmpty ?? false) {
         AppLogger.log('⚠️ Cart has 0 items after parsing. This might indicate a parsing issue.');
       }
       
@@ -302,8 +302,8 @@ class ResponseParser {
   /// Helper to create cart items from a list
   static List<CartItem> _createCartItemsFromList(List itemsList) {
     return itemsList
-        .where((item) => item is Map<String, dynamic>)
-        .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+        .whereType<Map<String, dynamic>>()
+        .map(CartItem.fromJson)
         .toList();
   }
   
@@ -314,16 +314,9 @@ class ResponseParser {
       status: 'success',
       data: CartResponseData(
         cart: Cart(
-          restaurantId: '',
-          tableId: '',
           items: [],
           priceInfo: CartPriceInfo(
-            basePrice: 0,
-            finalPrice: 0,
-            totalDiscount: 0,
-            totalDiscountAmount: 0,
-            totalAddonBasePrice: 0,
-            totalVariantBasePrice: 0,
+            
           ),
         ),
       ),
@@ -337,16 +330,9 @@ class ResponseParser {
       status: 'success',
       data: CartResponseData(
         cart: Cart(
-          restaurantId: '',
-          tableId: '',
           items: items,
           priceInfo: CartPriceInfo(
-            basePrice: 0,
-            finalPrice: 0,
-            totalDiscount: 0,
-            totalDiscountAmount: 0,
-            totalAddonBasePrice: 0,
-            totalVariantBasePrice: 0,
+            
           ),
         ),
       ),

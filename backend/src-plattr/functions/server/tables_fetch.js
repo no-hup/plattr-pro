@@ -3,6 +3,7 @@ const { admin, db, FieldValue } = require('../admin/admin');
 const ServerInputValidation = require('./serverInputValidation');
 const timestamp = require('../utils/timestamp');
 const errorHandler = require('../singleton/ErrorHandler');
+const ResponseBuilder = require('../utils/ResponseBuilder');
 
 /**
  * Retrieves all tables for a restaurant with their status
@@ -12,9 +13,10 @@ const errorHandler = require('../singleton/ErrorHandler');
  */
 exports.getTables = functions.https.onCall(async (data, context) => {
     try {
-        // Input validation
-        ServerInputValidation.validateGetTables(data);
-        const { restaurantId } = data;
+        // Input validation — unwrap nested data (onCall may double-wrap)
+        const requestData = data.data || data;
+        ServerInputValidation.validateGetTables(requestData);
+        const { restaurantId } = requestData;
 
         // Verify restaurant exists
         const restaurantRef = db.collection('restaurants').doc(restaurantId);
@@ -31,13 +33,14 @@ exports.getTables = functions.https.onCall(async (data, context) => {
         const tablesSnapshot = await restaurantRef.collection('tables').get();
         
         if (tablesSnapshot.empty) {
-            return {
-                status: "success",
-                message: "No tables found for this restaurant",
-                data: {
-                    tables: []
-                }
-            };
+            return ResponseBuilder.success(
+                {
+                    tables: [],
+                    restaurantId,
+                    count: 0
+                },
+                "No tables found for this restaurant"
+            );
         }
 
         // Define valid table statuses
@@ -73,15 +76,14 @@ exports.getTables = functions.https.onCall(async (data, context) => {
             return numA - numB;
         });
 
-        return {
-            status: "success",
-            message: "Tables retrieved successfully",
-            data: {
+        return ResponseBuilder.success(
+            {
                 restaurantId,
                 tables,
                 count: tables.length
-            }
-        };
+            },
+            "Tables retrieved successfully"
+        );
     } catch (error) {
         console.error('Error getting tables:', error);
         if (error.httpErrorCode) {

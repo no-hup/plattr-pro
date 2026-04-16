@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plattr Pro - Table & Session API Reference</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* API Accordion Styles */
+        .api-accordion {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .api-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .api-header:hover {
+            background: var(--bg-hover);
+        }
+
+        .api-header.open {
+            background: rgba(99, 102, 241, 0.08);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .api-toggle {
+            font-size: 10px;
+            color: var(--text-muted);
+            transition: transform 0.2s ease;
+        }
+
+        .api-header.open .api-toggle {
+            transform: rotate(90deg);
+        }
+
+        .api-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .api-type {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .api-type-public {
+            background: rgba(16, 185, 129, 0.15);
+            color: #059669;
+        }
+
+        .api-type-internal {
+            background: rgba(99, 102, 241, 0.15);
+            color: #6366f1;
+        }
+
+        .api-type-scheduled {
+            background: rgba(245, 158, 11, 0.15);
+            color: #d97706;
+        }
+
+        .api-type-server {
+            background: rgba(236, 72, 153, 0.15);
+            color: #db2777;
+        }
+
+        .api-desc {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-left: auto;
+        }
+
+        .api-content {
+            display: none;
+            padding: 16px;
+            background: var(--bg);
+        }
+
+        .api-content.open {
+            display: block;
+        }
+
+        .api-section-title {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .api-params,
+        .api-response {
+            margin-bottom: 16px;
+        }
+
+        .json-block {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px 14px;
+            white-space: pre;
+            overflow-x: auto;
+            line-height: 1.6;
+        }
+
+        /* JSON Field Color Coding */
+        .field-mandatory {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .field-optional {
+            color: #0891b2;
+            font-style: italic;
+        }
+
+        .field-key {
+            color: var(--accent);
+        }
+
+        .field-value-string {
+            color: #ea580c;
+        }
+
+        .field-value-number {
+            color: #8b5cf6;
+        }
+
+        .field-value-bool {
+            color: #db2777;
+        }
+
+        .field-comment {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Legend for API types */
+        .legend-api {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+
+        .legend-api-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-api-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        /* Important notes styling */
+        .note {
+            background: rgba(99, 102, 241, 0.08);
+            border-left: 3px solid var(--accent);
+            padding: 10px 14px;
+            border-radius: 0 6px 6px 0;
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .note.warn {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: #f59e0b;
+        }
+
+        .imp {
+            background: linear-gradient(90deg, rgba(234, 88, 12, 0.15) 0%, transparent 100%);
+            border-left: 4px solid #ea580c;
+            padding: 10px 14px;
+            border-radius: 0 6px 6px 0;
+            margin: 8px 0;
+            font-weight: 500;
+        }
+
+        .imp::before {
+            content: "⚡ IMP: ";
+            color: #ea580c;
+            font-weight: 700;
+        }
+
+        /* Back link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <span>🎯 Table & Session API Reference</span>
+        <a href="table_session_flow_detailed_spec.html">← Back to Spec</a>
+        <div class="nav-links">
+            <a href="order_flow_detailed_spec.html">📦 Order Flow</a>
+            <a href="CONSUMER_APP_FLOW.html">🍽️ Consumer Flow</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>Table & Session API Reference</h1>
+            <p>Complete API documentation for table authentication, OTP validation, session management, and customer profiles</p>
+            <div class="tags">
+                <span class="tag">🆔 Table APIs</span>
+                <span class="tag">🔑 OTP APIs</span>
+                <span class="tag">⏱️ Session APIs</span>
+                <span class="tag">👤 Customer APIs</span>
+            </div>
+        </header>
+
+        <a href="table_session_flow_detailed_spec.html" class="back-link">← Back to Table & Session Flow Spec</a>
+
+        <!-- LEGEND -->
+        <div class="legend-api">
+            <div class="legend-api-item">
+                <span class="legend-api-color" style="background: rgba(5, 150, 105, 0.3);"></span>
+                <span><strong class="field-mandatory">Green</strong> = Mandatory field</span>
+            </div>
+            <div class="legend-api-item">
+                <span class="legend-api-color" style="background: rgba(8, 145, 178, 0.3);"></span>
+                <span><strong class="field-optional">Cyan/Italic</strong> = Optional/Nullable field</span>
+            </div>
+            <div class="legend-api-item">
+                <span class="api-type api-type-public">PUBLIC</span> = Firebase Callable
+            </div>
+            <div class="legend-api-item">
+                <span class="api-type api-type-internal">INTERNAL</span> = Internal function
+            </div>
+            <div class="legend-api-item">
+                <span class="api-type api-type-scheduled">SCHEDULED</span> = Scheduled function
+            </div>
+            <div class="legend-api-item">
+                <span class="api-type api-type-server">SERVER-APP</span> = Server/Admin app
+            </div>
+        </div>
+
+        <!-- TABLE & OTP APIs SECTION -->
+        <section class="section" id="table-otp-apis">
+            <div class="section-title"><span class="section-icon">🆔</span> Table & OTP APIs</div>
+
+            <div class="card">
+                <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 12px;">Consumer-facing APIs for table authentication, OTP validation, and session creation.</p>
+
+            <!-- validateTableAndLocation API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">validateTableAndLocation</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Validate table access via QR scan and location</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"string"</span>,     <span class="field-comment">// Required - from QR code</span>
+  <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"string"</span>,          <span class="field-comment">// Required - from QR code</span>
+  <span class="field-mandatory">"userLocation"</span>: {               <span class="field-comment">// Required - user GPS coordinates</span>
+    <span class="field-mandatory">"latitude"</span>: <span class="field-value-number">37.7749</span>,
+    <span class="field-mandatory">"longitude"</span>: <span class="field-value-number">-122.4194</span>
+  },
+  <span class="field-optional">"sessionId"</span>: <span class="field-value-string">"string"</span>          <span class="field-comment">// Optional - for existing session validation</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Success Response (with valid session)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Access granted"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+    <span class="field-mandatory">"tableStatus"</span>: <span class="field-value-string">"active"</span>,       <span class="field-comment">// 'active' | 'vacant' | 'pending'</span>
+    <span class="field-mandatory">"restaurant"</span>: {
+      <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Baseline Bistro"</span>,
+      <span class="field-mandatory">"id"</span>: <span class="field-value-string">"rest_basic_001"</span>
+    },
+    <span class="field-mandatory">"table"</span>: {
+      <span class="field-mandatory">"number"</span>: <span class="field-value-string">"B1"</span>,
+      <span class="field-mandatory">"id"</span>: <span class="field-value-string">"table1"</span>,
+      <span class="field-optional">"capacity"</span>: <span class="field-value-number">4</span>,            <span class="field-comment">// Nullable</span>
+      <span class="field-optional">"assignedServerId"</span>: <span class="field-value-string">"server_bob"</span>  <span class="field-comment">// Only if assigned</span>
+    },
+    <span class="field-mandatory">"session"</span>: {
+      <span class="field-mandatory">"sessionId"</span>: <span class="field-value-string">"sess_b1_001"</span>,
+      <span class="field-mandatory">"expiresAt"</span>: <span class="field-value-string">"2024-01-15T14:30:00.000Z"</span>
+    },
+    <span class="field-optional">"primaryCustomer"</span>: {          <span class="field-comment">// Only for active tables</span>
+      <span class="field-mandatory">"phoneNumber"</span>: <span class="field-value-string">"1234567890"</span>,
+      <span class="field-mandatory">"name"</span>: <span class="field-value-string">"John Customer"</span>
+    },
+    <span class="field-optional">"occupiedBy"</span>: [<span class="field-value-string">"1234567890"</span>]    <span class="field-comment">// Array of phone numbers</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">OTP Required Response (HTTP 401 - when isOtpManadatoryAtScan = true)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"tableStatus"</span>: <span class="field-value-string">"pending"</span>,       <span class="field-comment">// 'pending' for VACANT tables after OTP gen</span>
+  <span class="field-mandatory">"restaurant"</span>: {
+    <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Baseline Bistro"</span>,
+    <span class="field-mandatory">"id"</span>: <span class="field-value-string">"rest_basic_001"</span>
+  },
+  <span class="field-mandatory">"table"</span>: {
+    <span class="field-mandatory">"number"</span>: <span class="field-value-string">"B2"</span>,
+    <span class="field-mandatory">"id"</span>: <span class="field-value-string">"table2"</span>
+  },
+  <span class="field-optional">"primaryCustomer"</span>: <span class="field-value-bool">null</span>,           <span class="field-comment">// null for vacant tables</span>
+  <span class="field-optional">"assignedServer"</span>: {              <span class="field-comment">// If server is assigned</span>
+    <span class="field-mandatory">"id"</span>: <span class="field-value-string">"server_anna"</span>,
+    <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Anna Waiter"</span>
+  },
+  <span class="field-mandatory">"authMessage"</span>: <span class="field-value-string">"Please ask the server for the table OTP"</span>,
+  <span class="field-mandatory">"isUsernameMandatory"</span>: <span class="field-value-bool">true</span>,     <span class="field-comment">// Based on isUsernameEnabled flag</span>
+  <span class="field-mandatory">"isPhoneNumberMandatory"</span>: <span class="field-value-bool">true</span>,  <span class="field-comment">// Always true for VACANT/OTP_PENDING</span>
+  <span class="field-mandatory">"isMultiUserSupported"</span>: <span class="field-value-bool">true</span>,    <span class="field-comment">// Based on isMultiUserSupportEnabled flag</span>
+  <span class="field-mandatory">"otpRequired"</span>: <span class="field-value-bool">true</span>,
+  <span class="field-mandatory">"error"</span>: <span class="field-value-string">"OTP authentication required"</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Success Response (when isOtpManadatoryAtScan = false)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Access granted"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"tableStatus"</span>: <span class="field-value-string">"vacant"</span>,
+    <span class="field-mandatory">"restaurant"</span>: { ... },
+    <span class="field-mandatory">"table"</span>: { ... },
+    <span class="field-optional">"otpRequiredForOrder"</span>: <span class="field-value-bool">true</span>   <span class="field-comment">// For ACTIVE tables only</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (403 - Table Disabled)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"permission-denied"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"This table is currently unavailable"</span>,
+  <span class="field-optional">"details"</span>: {
+    <span class="field-mandatory">"tableStatus"</span>: <span class="field-value-string">"disabled"</span>,
+    <span class="field-mandatory">"error"</span>: <span class="field-value-string">"Table is disabled"</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (412 - Location Check Failed)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"failed-precondition"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"User not in restaurant premises"</span>,
+  <span class="field-optional">"details"</span>: {
+    <span class="field-mandatory">"error"</span>: <span class="field-value-string">"User location validation failed"</span>
+  }
+}</div>
+                    </div>
+                    <div class="note warn">⚠️ HTTP 403 if table is DISABLED. HTTP 412 if location check fails (currently stubbed to always pass).</div>
+                </div>
+            </div>
+
+            <!-- validateOTP API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">validateOTP</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Validate OTP and create/join session</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"string"</span>,    <span class="field-comment">// Required</span>
+  <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"string"</span>,         <span class="field-comment">// Required</span>
+  <span class="field-mandatory">"otp"</span>: <span class="field-value-string">"string"</span>,             <span class="field-comment">// Required - 6-digit OTP from server</span>
+  <span class="field-mandatory">"phoneNumber"</span>: <span class="field-value-string">"string"</span>,     <span class="field-comment">// Required for primary OR when multi-user disabled</span>
+  <span class="field-optional">"name"</span>: <span class="field-value-string">"string"</span>              <span class="field-comment">// Conditional - required when isUsernameEnabled AND primary</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Success Response (Primary Customer)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"OTP validated successfully"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"token"</span>: <span class="field-value-string">"eyJhbGciOiJSUzI1NiIsInR5cCI6..."</span>,  <span class="field-comment">// Firebase custom token</span>
+    <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"table1"</span>,
+    <span class="field-mandatory">"tableNumber"</span>: <span class="field-value-string">"B1"</span>,
+    <span class="field-mandatory">"tableStatus"</span>: <span class="field-value-string">"active"</span>,
+    <span class="field-mandatory">"session"</span>: {
+      <span class="field-mandatory">"id"</span>: <span class="field-value-string">"sess_b1_001"</span>,
+      <span class="field-mandatory">"primaryUserId"</span>: <span class="field-value-string">"1234567890"</span>,
+      <span class="field-mandatory">"users"</span>: [<span class="field-value-string">"1234567890"</span>],
+      <span class="field-mandatory">"status"</span>: <span class="field-value-string">"active"</span>,
+      <span class="field-mandatory">"expiresAt"</span>: <span class="field-value-string">"2024-01-15T14:30:00.000Z"</span>
+    },
+    <span class="field-mandatory">"customer"</span>: {
+      <span class="field-mandatory">"phoneNumber"</span>: <span class="field-value-string">"1234567890"</span>,
+      <span class="field-mandatory">"name"</span>: <span class="field-value-string">"John Customer"</span>,
+      <span class="field-mandatory">"isPrimary"</span>: <span class="field-value-bool">true</span>
+    },
+    <span class="field-mandatory">"restaurant"</span>: {
+      <span class="field-mandatory">"id"</span>: <span class="field-value-string">"rest_basic_001"</span>,
+      <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Baseline Bistro"</span>
+    }
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Success Response (Secondary Customer - joining existing session)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"OTP validated successfully"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"token"</span>: <span class="field-value-string">"eyJhbGciOiJSUzI1NiIsInR5cCI6..."</span>,
+    <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"table1"</span>,
+    <span class="field-mandatory">"tableNumber"</span>: <span class="field-value-string">"B1"</span>,
+    <span class="field-mandatory">"tableStatus"</span>: <span class="field-value-string">"active"</span>,
+    <span class="field-mandatory">"session"</span>: {
+      <span class="field-mandatory">"id"</span>: <span class="field-value-string">"sess_b1_001"</span>,
+      <span class="field-mandatory">"primaryUserId"</span>: <span class="field-value-string">"1234567890"</span>,       <span class="field-comment">// Original primary</span>
+      <span class="field-mandatory">"users"</span>: [<span class="field-value-string">"1234567890"</span>, <span class="field-value-string">"9876543210"</span>],  <span class="field-comment">// Now includes secondary</span>
+      <span class="field-mandatory">"status"</span>: <span class="field-value-string">"active"</span>,
+      <span class="field-mandatory">"expiresAt"</span>: <span class="field-value-string">"2024-01-15T14:30:00.000Z"</span>
+    },
+    <span class="field-mandatory">"customer"</span>: {
+      <span class="field-mandatory">"phoneNumber"</span>: <span class="field-value-string">"9876543210"</span>,
+      <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Jane Diner"</span>,
+      <span class="field-mandatory">"isPrimary"</span>: <span class="field-value-bool">false</span>            <span class="field-comment">// Secondary customer</span>
+    },
+    <span class="field-mandatory">"restaurant"</span>: { ... }
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (401 - Invalid OTP)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"unauthenticated"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Invalid OTP"</span>,
+  <span class="field-optional">"details"</span>: {
+    <span class="field-mandatory">"details"</span>: <span class="field-value-string">"The provided OTP is incorrect"</span>,
+    <span class="field-mandatory">"tableStatus"</span>: <span class="field-value-string">"pending"</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (401 - Wrong OTP for Active Table)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"unauthenticated"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Invalid OTP"</span>,
+  <span class="field-optional">"details"</span>: {
+    <span class="field-mandatory">"status"</span>: <span class="field-value-string">"ask_primary_customer"</span>,
+    <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Please ask the primary customer or the server/waiter for the correct OTP."</span>,
+    <span class="field-mandatory">"tableStatus"</span>: <span class="field-value-string">"active"</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (400 - Missing Phone Number)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"invalid-argument"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Phone number is required for this operation"</span>,
+  <span class="field-optional">"details"</span>: {
+    <span class="field-mandatory">"details"</span>: <span class="field-value-string">"Phone number is required for primary customers or when multi-user support is disabled"</span>
+  }
+}</div>
+                    </div>
+                    <div class="note">Primary customer: First to validate on VACANT/OTP_PENDING table. Secondary: Joins ACTIVE table with existing session.</div>
+                    <div class="note warn">⚠️ HTTP 401 if OTP is invalid or expired. Name required when <code>isUsernameEnabled</code> flag is ON and user is primary.</div>
+                </div>
+            </div>
+
+            <!-- checkTableStatus API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">checkTableStatus</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Get table status and details for consumer app</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"string"</span>,    <span class="field-comment">// Required</span>
+  <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"string"</span>          <span class="field-comment">// Required</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Success Response</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"table1"</span>,
+    <span class="field-mandatory">"tableNumber"</span>: <span class="field-value-string">"B1"</span>,
+    <span class="field-mandatory">"tableStatus"</span>: <span class="field-value-string">"active"</span>,
+    <span class="field-optional">"capacity"</span>: <span class="field-value-number">4</span>,
+    <span class="field-mandatory">"isOccupied"</span>: <span class="field-value-bool">true</span>,
+    <span class="field-optional">"primaryCustomer"</span>: {
+      <span class="field-mandatory">"phoneNumber"</span>: <span class="field-value-string">"1234567890"</span>,
+      <span class="field-mandatory">"name"</span>: <span class="field-value-string">"John Customer"</span>
+    },
+    <span class="field-optional">"session"</span>: {
+      <span class="field-mandatory">"id"</span>: <span class="field-value-string">"sess_b1_001"</span>,
+      <span class="field-mandatory">"expiresAt"</span>: <span class="field-value-string">"2024-01-15T14:30:00.000Z"</span>
+    },
+    <span class="field-mandatory">"restaurant"</span>: {
+      <span class="field-mandatory">"id"</span>: <span class="field-value-string">"rest_basic_001"</span>,
+      <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Baseline Bistro"</span>
+    }
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (404 - Not Found)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"not-found"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Table not found"</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (400 - Invalid Parameters)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"invalid-argument"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Invalid or missing parameters"</span>
+}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- cleanupInactiveSessions API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">cleanupInactiveSessions</span>
+                    <span class="api-type api-type-scheduled">SCHEDULED</span>
+                    <span class="api-desc">Clean up stale sessions and reset inactive tables</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Trigger</div>
+                        <div class="json-block"><span class="field-comment">// Scheduled function - runs automatically</span>
+<span class="field-comment">// Can also be triggered manually via HTTP for testing</span>
+<span class="field-key">Schedule</span>: Every 30 minutes (configurable)</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Behavior</div>
+                        <ul class="bullet-list">
+                            <li class="info">Finds tables with <code>lastActivity</code> > 1 hour ago</li>
+                            <li class="info">Ends associated sessions (sets status to <code>ended</code>)</li>
+                            <li class="info">Resets table status to <code>vacant</code></li>
+                            <li class="info">Clears <code>primaryCustomer</code>, <code>occupiedBy</code>, <code>activeOrderId</code></li>
+                        </ul>
+                    </div>
+                    <div class="note warn">⚠️ TODO: Should check for cart/order activity in last 2 hours, not just general activity.</div>
+                </div>
+            </div>
+
+            </div><!-- End Table & OTP APIs Card -->
+        </section>
+
+        <!-- SERVER APP APIs SECTION -->
+        <section class="section" id="server-app-apis">
+            <div class="section-title"><span class="section-icon">🖥️</span> Server App APIs</div>
+
+            <div class="card">
+                <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 12px;">APIs for waiters/staff to manage tables, view details, and generate OTPs.</p>
+
+            <!-- generateTableOTP API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">generateTableOTP</span>
+                    <span class="api-type api-type-server">SERVER-APP</span>
+                    <span class="api-desc">Generate new OTP for a table</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"string"</span>,    <span class="field-comment">// Required</span>
+  <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"string"</span>          <span class="field-comment">// Required</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Success Response</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Table OTP generated successfully"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"table1"</span>,
+    <span class="field-mandatory">"tableNumber"</span>: <span class="field-value-string">"B1"</span>,
+    <span class="field-mandatory">"otp"</span>: <span class="field-value-string">"123456"</span>,              <span class="field-comment">// 6-digit code</span>
+    <span class="field-mandatory">"otpGeneratedAt"</span>: <span class="field-value-string">"2024-01-15T10:30:00.000Z"</span>,
+    <span class="field-mandatory">"otpExpiresAt"</span>: <span class="field-value-string">"2024-01-15T10:35:00.000Z"</span>   <span class="field-comment">// 5 min from generation</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (404 - Not Found)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"not-found"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Table not found"</span>,
+  <span class="field-optional">"details"</span>: {
+    <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"rest_basic_001"</span>,
+    <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"invalid_table"</span>
+  }
+}</div>
+                    </div>
+                    <div class="note">OTP is valid for 5 minutes. Can be regenerated at any time by server staff.</div>
+                </div>
+            </div>
+
+            <!-- updateTableStatus API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">updateTableStatus</span>
+                    <span class="api-type api-type-server">SERVER-APP</span>
+                    <span class="api-desc">Update table status (clear table, disable, etc.)</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"string"</span>,    <span class="field-comment">// Required</span>
+  <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"string"</span>,         <span class="field-comment">// Required</span>
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"string"</span>           <span class="field-comment">// Required - 'active' | 'vacant' | 'disabled' | 'pending'</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Success Response</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Table status updated successfully"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"table1"</span>,
+    <span class="field-mandatory">"tableNumber"</span>: <span class="field-value-string">"B1"</span>,
+    <span class="field-mandatory">"previousStatus"</span>: <span class="field-value-string">"active"</span>,
+    <span class="field-mandatory">"currentStatus"</span>: <span class="field-value-string">"vacant"</span>,
+    <span class="field-mandatory">"changed"</span>: <span class="field-value-bool">true</span>            <span class="field-comment">// false if already in requested status</span>
+  }
+}</div>
+                    </div>
+                    <div class="imp">When changing ACTIVE → VACANT, system automatically clears <code>primaryCustomer</code>, <code>occupiedBy</code>, and <code>activeOrderId</code>.</div>
+                </div>
+            </div>
+
+            <!-- getTablesForRestaurant API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">getTablesForRestaurant</span>
+                    <span class="api-type api-type-server">SERVER-APP</span>
+                    <span class="api-desc">Get all tables for server app list view</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"string"</span>,    <span class="field-comment">// Required</span>
+  <span class="field-optional">"serverId"</span>: <span class="field-value-string">"string"</span>          <span class="field-comment">// Optional - filter by assigned server</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Success Response</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Tables retrieved successfully"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"rest_basic_001"</span>,
+    <span class="field-mandatory">"tables"</span>: [
+      {
+        <span class="field-mandatory">"id"</span>: <span class="field-value-string">"table1"</span>,
+        <span class="field-mandatory">"number"</span>: <span class="field-value-string">"B1"</span>,
+        <span class="field-mandatory">"status"</span>: <span class="field-value-string">"active"</span>,
+        <span class="field-optional">"capacity"</span>: <span class="field-value-number">4</span>,
+        <span class="field-optional">"assignedServerId"</span>: <span class="field-value-string">"server_bob"</span>,
+        <span class="field-mandatory">"isOccupied"</span>: <span class="field-value-bool">true</span>,
+        <span class="field-optional">"primaryCustomer"</span>: {
+          <span class="field-mandatory">"phoneNumber"</span>: <span class="field-value-string">"1234567890"</span>,
+          <span class="field-mandatory">"name"</span>: <span class="field-value-string">"John Customer"</span>
+        },
+        <span class="field-optional">"lastActivity"</span>: <span class="field-value-string">"2024-01-15T10:30:00.000Z"</span>,
+        <span class="field-optional">"activeOrderId"</span>: <span class="field-value-string">"order_b1_001"</span>,
+        <span class="field-optional">"tableOtp"</span>: <span class="field-value-string">"123456"</span>
+      },
+      {
+        <span class="field-mandatory">"id"</span>: <span class="field-value-string">"table2"</span>,
+        <span class="field-mandatory">"number"</span>: <span class="field-value-string">"B2"</span>,
+        <span class="field-mandatory">"status"</span>: <span class="field-value-string">"vacant"</span>,
+        <span class="field-optional">"capacity"</span>: <span class="field-value-number">2</span>,
+        <span class="field-mandatory">"isOccupied"</span>: <span class="field-value-bool">false</span>
+      }
+    ],
+    <span class="field-mandatory">"count"</span>: <span class="field-value-number">2</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (404 - Restaurant Not Found)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"not-found"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Restaurant not found"</span>,
+  <span class="field-optional">"details"</span>: {
+    <span class="field-mandatory">"details"</span>: <span class="field-value-string">"Restaurant with ID rest_invalid was not found"</span>,
+    <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"rest_invalid"</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (400 - Missing Parameters)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"invalid-argument"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Missing required parameter: restaurantId"</span>,
+  <span class="field-optional">"details"</span>: {
+    <span class="field-mandatory">"details"</span>: <span class="field-value-string">"restaurantId is required"</span>
+  }
+}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- getTableDetails API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">getTableDetails</span>
+                    <span class="api-type api-type-server">SERVER-APP</span>
+                    <span class="api-desc">Get detailed table info including recent orders</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"string"</span>,    <span class="field-comment">// Required</span>
+  <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"string"</span>          <span class="field-comment">// Required</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Success Response</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Table details retrieved successfully"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"id"</span>: <span class="field-value-string">"table1"</span>,
+    <span class="field-mandatory">"number"</span>: <span class="field-value-string">"B1"</span>,
+    <span class="field-mandatory">"status"</span>: <span class="field-value-string">"active"</span>,
+    <span class="field-optional">"capacity"</span>: <span class="field-value-number">4</span>,
+    <span class="field-optional">"section"</span>: <span class="field-value-string">"Main Hall"</span>,
+    <span class="field-optional">"floor"</span>: <span class="field-value-number">1</span>,
+    <span class="field-mandatory">"isOccupied"</span>: <span class="field-value-bool">true</span>,
+    <span class="field-mandatory">"hasActiveOTP"</span>: <span class="field-value-bool">true</span>,
+    <span class="field-optional">"assignedServer"</span>: {
+      <span class="field-mandatory">"id"</span>: <span class="field-value-string">"server_bob"</span>,
+      <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Bob Waiter"</span>,
+      <span class="field-mandatory">"status"</span>: <span class="field-value-string">"active"</span>,
+      <span class="field-optional">"profileImage"</span>: <span class="field-value-bool">null</span>
+    },
+    <span class="field-optional">"primaryCustomer"</span>: {
+      <span class="field-mandatory">"phoneNumber"</span>: <span class="field-value-string">"1234567890"</span>,
+      <span class="field-mandatory">"name"</span>: <span class="field-value-string">"John Customer"</span>
+    },
+    <span class="field-optional">"occupiedBy"</span>: [<span class="field-value-string">"1234567890"</span>],
+    <span class="field-optional">"otp"</span>: <span class="field-value-string">"123456"</span>,
+    <span class="field-optional">"otpGeneratedAt"</span>: <span class="field-value-string">"2024-01-15T10:30:00.000Z"</span>,
+    <span class="field-mandatory">"restaurant"</span>: {
+      <span class="field-mandatory">"id"</span>: <span class="field-value-string">"rest_basic_001"</span>,
+      <span class="field-mandatory">"name"</span>: <span class="field-value-string">"Baseline Bistro"</span>
+    },
+    <span class="field-mandatory">"recentOrders"</span>: [                     <span class="field-comment">// Last 3 orders</span>
+      {
+        <span class="field-mandatory">"id"</span>: <span class="field-value-string">"order_b1_001"</span>,
+        <span class="field-mandatory">"status"</span>: <span class="field-value-string">"PENDING"</span>,
+        <span class="field-mandatory">"createdAt"</span>: <span class="field-value-string">"2024-01-15T10:30:00.000Z"</span>,
+        <span class="field-mandatory">"totalAmount"</span>: <span class="field-value-number">126</span>,
+        <span class="field-mandatory">"itemCount"</span>: <span class="field-value-number">1</span>
+      }
+    ]
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (404 - Table Not Found)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"not-found"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Table not found"</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (400 - Missing Parameters)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"invalid-argument"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Missing required parameters"</span>,
+  <span class="field-optional">"details"</span>: {
+    <span class="field-mandatory">"details"</span>: <span class="field-value-string">"Both restaurantId and tableId are required"</span>
+  }
+}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- assignTableToServer API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">assignTableToServer</span>
+                    <span class="api-type api-type-server">SERVER-APP</span>
+                    <span class="api-desc">Assign table to a server/waiter</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"string"</span>,    <span class="field-comment">// Required</span>
+  <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"string"</span>,         <span class="field-comment">// Required</span>
+  <span class="field-mandatory">"serverId"</span>: <span class="field-value-string">"string"</span>         <span class="field-comment">// Required</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Success Response</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Table assigned to server successfully"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"table1"</span>,
+    <span class="field-mandatory">"serverId"</span>: <span class="field-value-string">"server_bob"</span>,
+    <span class="field-mandatory">"serverName"</span>: <span class="field-value-string">"Bob Waiter"</span>,
+    <span class="field-mandatory">"tableNumber"</span>: <span class="field-value-string">"B1"</span>
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (404 - Server Not Found)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"not-found"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Server not found"</span>,
+  <span class="field-optional">"details"</span>: {
+    <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"rest_basic_001"</span>,
+    <span class="field-mandatory">"serverId"</span>: <span class="field-value-string">"invalid_server"</span>
+  }
+}</div>
+                    </div>
+                    <div class="note">Returns success even if table is already assigned to this server.</div>
+                </div>
+            </div>
+
+            <!-- unassignTableFromServer API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">unassignTableFromServer</span>
+                    <span class="api-type api-type-server">SERVER-APP</span>
+                    <span class="api-desc">Remove server assignment from table</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"string"</span>,    <span class="field-comment">// Required</span>
+  <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"string"</span>          <span class="field-comment">// Required</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Success Response</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"success"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Table unassigned from server successfully"</span>,
+  <span class="field-mandatory">"data"</span>: {
+    <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"table1"</span>,
+    <span class="field-mandatory">"tableNumber"</span>: <span class="field-value-string">"B1"</span>,
+    <span class="field-mandatory">"previousServerId"</span>: <span class="field-value-string">"server_bob"</span>,
+    <span class="field-optional">"previousServerName"</span>: <span class="field-value-string">"Bob Waiter"</span>
+  }
+}</div>
+                    </div>
+                </div>
+            </div>
+
+            </div><!-- End Server App APIs Card -->
+        </section>
+
+        <!-- SESSION APIS SECTION -->
+        <section class="section" id="session-apis">
+            <div class="section-title"><span class="section-icon">⏱️</span> Session APIs (Internal)</div>
+
+            <div class="card">
+                <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 12px;">Internal service functions for session management. Not directly callable via HTTP.</p>
+
+            <!-- createOrGetTableSession API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">createOrGetTableSession</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">Create new or retrieve existing session for a table</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">createOrGetTableSession</span>(
+  <span class="field-mandatory">restaurantId</span>: string,
+  <span class="field-mandatory">tableId</span>: string,
+  <span class="field-mandatory">primaryUserId</span>: string  <span class="field-comment">// Phone number of primary customer</span>
+) => Promise&lt;Session&gt;</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Return Value</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"id"</span>: <span class="field-value-string">"sess_b1_001"</span>,
+  <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"table1"</span>,
+  <span class="field-mandatory">"primaryUserId"</span>: <span class="field-value-string">"1234567890"</span>,
+  <span class="field-mandatory">"users"</span>: [<span class="field-value-string">"1234567890"</span>],
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"active"</span>,
+  <span class="field-mandatory">"createdAt"</span>: Timestamp,
+  <span class="field-mandatory">"updatedAt"</span>: Timestamp,
+  <span class="field-mandatory">"expiresAt"</span>: Date     <span class="field-comment">// 4 hours from creation</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (404 - Restaurant Not Found)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"not-found"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Restaurant not found"</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (500 - Failed to Create Session)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"internal"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Failed to create table session: [error details]"</span>
+}</div>
+                    </div>
+                    <div class="note">If active session exists for table, adds user to it instead of creating new one.</div>
+                </div>
+            </div>
+
+            <!-- addUserToTableSession API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">addUserToTableSession</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">Add user to existing session</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">addUserToTableSession</span>(
+  <span class="field-mandatory">restaurantId</span>: string,
+  <span class="field-mandatory">sessionId</span>: string,
+  <span class="field-mandatory">userId</span>: string        <span class="field-comment">// Phone number of user to add</span>
+) => Promise&lt;Session&gt;</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Return Value</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"id"</span>: <span class="field-value-string">"sess_b1_001"</span>,
+  <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"table1"</span>,
+  <span class="field-mandatory">"primaryUserId"</span>: <span class="field-value-string">"1234567890"</span>,
+  <span class="field-mandatory">"users"</span>: [<span class="field-value-string">"1234567890"</span>, <span class="field-value-string">"9876543210"</span>],
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"active"</span>,
+  ...
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (404 - Session Not Found)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"not-found"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Session not found"</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (412 - Session Expired)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"failed-precondition"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Session has expired"</span>
+}</div>
+                    </div>
+                    <div class="note warn">⚠️ Throws <code>failed-precondition</code> if session is expired. Auto-marks session as EXPIRED.</div>
+                </div>
+            </div>
+
+            <!-- validateTableSession API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">validateTableSession</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">Validate session for a table</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">validateTableSession</span>(
+  <span class="field-mandatory">restaurantId</span>: string,
+  <span class="field-mandatory">tableId</span>: string,
+  <span class="field-optional">options</span>: {
+    <span class="field-optional">context</span>: FirebaseContext,  <span class="field-comment">// For user management</span>
+    <span class="field-optional">throwError</span>: boolean        <span class="field-comment">// Default: false</span>
+  }
+) => Promise&lt;Session | null&gt;</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Return Value</div>
+                        <div class="json-block"><span class="field-comment">// Returns session object if valid, null if not (when throwError=false)</span>
+{
+  <span class="field-mandatory">"id"</span>: <span class="field-value-string">"sess_b1_001"</span>,
+  <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"table1"</span>,
+  <span class="field-mandatory">"primaryUserId"</span>: <span class="field-value-string">"1234567890"</span>,
+  <span class="field-mandatory">"users"</span>: [<span class="field-value-string">"1234567890"</span>],
+  <span class="field-mandatory">"status"</span>: <span class="field-value-string">"active"</span>,
+  <span class="field-mandatory">"expiresAt"</span>: Timestamp
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (401 - Unauthenticated)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"unauthenticated"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"User must be authenticated"</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (412 - No Active Session)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"failed-precondition"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"No active session found"</span>
+}</div>
+                    </div>
+                    <div class="note">Auto-expires session if past expiresAt. Can optionally add authenticated user to session.</div>
+                </div>
+            </div>
+
+            <!-- endTableSessions API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">endTableSessions</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">End active session for a table</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">endTableSessions</span>(
+  <span class="field-mandatory">restaurantId</span>: string,
+  <span class="field-mandatory">tableId</span>: string
+) => Promise&lt;void&gt;</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Behavior</div>
+                        <ul class="bullet-list">
+                            <li class="info">Finds active session for the table</li>
+                            <li class="info">Sets session status to <code>ended</code></li>
+                            <li class="info">Updates <code>updatedAt</code> timestamp</li>
+                            <li class="info">Silently returns if no active session found</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            </div><!-- End Session APIs Card -->
+        </section>
+
+        <!-- CUSTOMER APIS SECTION -->
+        <section class="section" id="customer-apis">
+            <div class="section-title"><span class="section-icon">👤</span> Customer APIs</div>
+
+            <div class="card">
+                <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 12px;">APIs for customer profile management and visit tracking.</p>
+
+            <!-- createOrUpdateCustomerProfile API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">createOrUpdateCustomerProfile</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Create or update customer profile</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"phoneNumber"</span>: <span class="field-value-string">"string"</span>,    <span class="field-comment">// Required - used as document ID</span>
+  <span class="field-optional">"name"</span>: <span class="field-value-string">"string"</span>              <span class="field-comment">// Optional - only updates if provided</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Success Response</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"id"</span>: <span class="field-value-string">"1234567890"</span>,
+  <span class="field-mandatory">"phoneNumber"</span>: <span class="field-value-string">"1234567890"</span>,
+  <span class="field-mandatory">"name"</span>: <span class="field-value-string">"John Customer"</span>,
+  <span class="field-mandatory">"createdAt"</span>: Timestamp,
+  <span class="field-mandatory">"updatedAt"</span>: Timestamp,
+  <span class="field-mandatory">"visits"</span>: []
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (400 - Missing Phone Number)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"invalid-argument"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Phone number is required"</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (500 - Internal Error)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"internal"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Failed to create/update customer profile: [error details]"</span>
+}</div>
+                    </div>
+                    <div class="note">Phone number serves as document ID. Called internally by <code>validateOTP</code> via <code>createOrUpdateCustomerProfileDirect</code>.</div>
+                </div>
+            </div>
+
+            <!-- getOrCreateCustomerProfile API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">getOrCreateCustomerProfile</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Get customer profile (requires authentication)</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block"><span class="field-comment">// No explicit parameters - uses context.auth.uid (phone number)</span>
+{}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Success Response</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"phoneNumber"</span>: <span class="field-value-string">"1234567890"</span>,
+  <span class="field-mandatory">"name"</span>: <span class="field-value-string">"John Customer"</span>,
+  <span class="field-optional">"email"</span>: <span class="field-value-string">"john@example.com"</span>,
+  <span class="field-mandatory">"createdAt"</span>: Timestamp,
+  <span class="field-mandatory">"updatedAt"</span>: Timestamp,
+  <span class="field-optional">"currentVisit"</span>: {
+    <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"rest_basic_001"</span>,
+    <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"table1"</span>,
+    <span class="field-mandatory">"startTime"</span>: Timestamp
+  },
+  <span class="field-mandatory">"visits"</span>: [
+    {
+      <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"rest_basic_001"</span>,
+      <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"table1"</span>,
+      <span class="field-mandatory">"startTime"</span>: Timestamp,
+      <span class="field-optional">"endTime"</span>: Timestamp   <span class="field-comment">// null if visit ongoing</span>
+    }
+  ],
+  <span class="field-optional">"preferences"</span>: {
+    <span class="field-optional">"favoriteItems"</span>: [],
+    <span class="field-optional">"dietaryRestrictions"</span>: []
+  }
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (401 - Unauthenticated)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"unauthenticated"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"User must be logged in"</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (404 - Profile Not Found)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"not-found"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Customer profile not found"</span>
+}</div>
+                    </div>
+                    <div class="note warn">⚠️ Requires Firebase authentication. Returns <code>not-found</code> if profile doesn't exist.</div>
+                </div>
+            </div>
+
+            <!-- updateCustomerVisit API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">updateCustomerVisit</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">Record new visit for authenticated customer</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"restaurantId"</span>: <span class="field-value-string">"string"</span>,    <span class="field-comment">// Required</span>
+  <span class="field-mandatory">"tableId"</span>: <span class="field-value-string">"string"</span>          <span class="field-comment">// Required</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Success Response</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Customer visit updated successfully"</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (401 - Unauthenticated)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"unauthenticated"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"User must be logged in"</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (404 - Profile Not Found)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"not-found"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Customer profile not found"</span>
+}</div>
+                    </div>
+                    <div class="note">Adds visit to <code>visits[]</code> array and sets <code>currentVisit</code>. Requires authentication.</div>
+                </div>
+            </div>
+
+            <!-- endCustomerVisit API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">endCustomerVisit</span>
+                    <span class="api-type api-type-public">PUBLIC</span>
+                    <span class="api-desc">End current visit and update table status</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Request Parameters</div>
+                        <div class="json-block"><span class="field-comment">// No explicit parameters - uses context.auth.uid</span>
+{}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Success Response</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"Customer visit ended successfully"</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Behavior</div>
+                        <ul class="bullet-list">
+                            <li class="info">Adds <code>endTime</code> to the current visit</li>
+                            <li class="info">Clears <code>currentVisit</code> field</li>
+                            <li class="info">Updates table status to <code>vacant</code></li>
+                            <li class="info">Clears table <code>occupiedBy</code></li>
+                        </ul>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (401 - Unauthenticated)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"unauthenticated"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"User must be logged in"</span>
+}</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Error Response (412 - No Active Visit)</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"code"</span>: <span class="field-value-string">"failed-precondition"</span>,
+  <span class="field-mandatory">"message"</span>: <span class="field-value-string">"No active visit found"</span>
+}</div>
+                    </div>
+                    <div class="note warn">⚠️ Returns <code>failed-precondition</code> if no active visit found.</div>
+                </div>
+            </div>
+
+            <!-- createOrUpdateCustomerProfileDirect API -->
+            <div class="api-accordion">
+                <div class="api-header" onclick="toggleApi(this)">
+                    <span class="api-toggle">▶</span>
+                    <span class="api-name">createOrUpdateCustomerProfileDirect</span>
+                    <span class="api-type api-type-internal">INTERNAL</span>
+                    <span class="api-desc">Direct customer profile update (used by validateOTP)</span>
+                </div>
+                <div class="api-content">
+                    <div class="api-params">
+                        <div class="api-section-title">Function Signature</div>
+                        <div class="json-block"><span class="field-key">createOrUpdateCustomerProfileDirect</span>(
+  <span class="field-mandatory">phoneNumber</span>: string,
+  <span class="field-optional">name</span>: string
+) => Promise&lt;CustomerProfile&gt;</div>
+                    </div>
+                    <div class="api-response">
+                        <div class="api-section-title">Return Value</div>
+                        <div class="json-block">{
+  <span class="field-mandatory">"id"</span>: <span class="field-value-string">"1234567890"</span>,
+  <span class="field-mandatory">"phoneNumber"</span>: <span class="field-value-string">"1234567890"</span>,
+  <span class="field-mandatory">"name"</span>: <span class="field-value-string">"John Customer"</span>,
+  <span class="field-mandatory">"createdAt"</span>: Timestamp,
+  <span class="field-mandatory">"updatedAt"</span>: Timestamp,
+  <span class="field-mandatory">"visits"</span>: []
+}</div>
+                    </div>
+                    <div class="note">Same as <code>createOrUpdateCustomerProfile</code> but callable directly (not via HTTP). Used internally by <code>validateOTP</code>.</div>
+                </div>
+            </div>
+
+            </div><!-- End Customer APIs Card -->
+        </section>
+
+        <!-- ERROR HANDLING -->
+        <section class="section" id="errors">
+            <div class="section-title"><span class="section-icon">🚫</span> Error Handling</div>
+
+            <div class="card">
+                <div class="card-title">HTTP Status Codes</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Code</th>
+                            <th>Scenario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="status s-error">400</span></td>
+                            <td>Bad Request</td>
+                            <td>Missing parameters, invalid request format</td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-pending">401</span></td>
+                            <td>Unauthorized</td>
+                            <td>OTP required, invalid OTP provided</td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-error">403</span></td>
+                            <td>Forbidden</td>
+                            <td>Table is disabled</td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-cyan">404</span></td>
+                            <td>Not Found</td>
+                            <td>Restaurant/table/session not found</td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-pink">412</span></td>
+                            <td>Precondition Failed</td>
+                            <td>User not in restaurant premises, session expired</td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-error">500</span></td>
+                            <td>Internal Error</td>
+                            <td>Server errors, database failures</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // Toggle API accordion
+        function toggleApi(header) {
+            header.classList.toggle('open');
+            const content = header.nextElementSibling;
+            content.classList.toggle('open');
+        }
+    </script>
+</body>
+
+</html>
+

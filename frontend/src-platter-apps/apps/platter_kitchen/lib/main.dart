@@ -1,116 +1,105 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:platter_core/platter_core.dart';
 import 'firebase_options.dart';
 import 'theme/app_theme.dart';
+import 'pages/auth/login_screen.dart';
+import 'pages/auth/login_provider.dart';
+import 'main_navigation.dart';
+
+/// Global navigator key for showing dialogs from anywhere (e.g., interceptors)
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize configuration
+  AppConfig.initialize(Environment.dev);
+
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+
+  // Set up global interrupt flow handler (for forced update, blocked user, etc.)
+  InterruptFlowInterceptor.navigatorKey = navigatorKey;
+  InterruptFlowInterceptor.registerHandler(DefaultInterruptFlowHandler.handle);
+
+  runApp(const KitchenApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class KitchenApp extends StatelessWidget {
+  const KitchenApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey, // Global navigator key for dialogs
       title: 'Kitchen Plattr',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
-      home: const MyHomePage(title: 'Kitchen Demo Home Page'),
+      debugShowCheckedModeBanner: false,
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const _AuthWrapper(),
+        '/login': (context) => const LoginScreen(),
+      },
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+/// Wrapper that checks for existing session and auto-logs in if valid
+class _AuthWrapper extends StatefulWidget {
+  const _AuthWrapper();
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<_AuthWrapper> createState() => _AuthWrapperState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _AuthWrapperState extends State<_AuthWrapper> {
+  bool _isChecking = true;
+  bool _hasSession = false;
+  LoginResponseData? _sessionData;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _checkSession();
+  }
+
+  Future<void> _checkSession() async {
+    final provider = LoginProvider();
+    final restored = await provider.tryRestoreSession();
+
+    if (mounted) {
+      setState(() {
+        _isChecking = false;
+        _hasSession = restored;
+        _sessionData = provider.loginData;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+    if (_isChecking) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
+      );
+    }
+
+    if (_hasSession && _sessionData != null) {
+      return MainNavigation(
+        restaurantId: _sessionData!.restaurantId,
+        sessionId: _sessionData!.sessionId,
+        restaurantName: _sessionData!.restaurantName,
+        kitchenName: _sessionData!.name, // Staff/Kitchen name
+      );
+    }
+
+    return const LoginScreen();
   }
 }

@@ -30,18 +30,18 @@ _$OtpValidationResponseImpl _$$OtpValidationResponseImplFromJson(
         Map<String, dynamic> json) =>
     _$OtpValidationResponseImpl(
       status: json['status'] as String,
+      sessionId: json['sessionId'] as String,
       customToken: json['customToken'] as String?,
       isPrimaryCustomer: json['isPrimaryCustomer'] as bool? ?? false,
-      sessionId: json['sessionId'] as String,
     );
 
 Map<String, dynamic> _$$OtpValidationResponseImplToJson(
         _$OtpValidationResponseImpl instance) =>
     <String, dynamic>{
       'status': instance.status,
+      'sessionId': instance.sessionId,
       'customToken': instance.customToken,
       'isPrimaryCustomer': instance.isPrimaryCustomer,
-      'sessionId': instance.sessionId,
     };
 
 _$OtpAskPrimaryCustomerResponseImpl

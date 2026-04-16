@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plattr Pro - Order Lifecycle System</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #12122a;
+            --bg-card: #1a1a3a;
+            --accent: #6366f1;
+            --accent2: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --info: #3b82f6;
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --border: #2d2d5a;
+            --cyan: #06b6d4;
+            --pink: #ec4899;
+            --orange: #f97316;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 26, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .nav-logo {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--accent);
+        }
+
+        .nav a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .nav a:hover {
+            background: var(--bg-card);
+            color: var(--text);
+        }
+
+        .nav a.external {
+            color: var(--cyan);
+            border: 1px solid var(--cyan);
+        }
+
+        .nav a.external:hover {
+            background: rgba(6, 182, 212, 0.2);
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 50px 16px 24px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 16px 0 24px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--orange), var(--pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--text-dim);
+            font-size: 12px;
+        }
+
+        .badges {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            font-size: 10px;
+            padding: 3px 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-dim);
+        }
+
+        .section {
+            margin-bottom: 20px;
+            scroll-margin-top: 60px;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-icon {
+            font-size: 16px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .card-title {
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card p {
+            color: var(--text-dim);
+            font-size: 10px;
+            margin-bottom: 6px;
+        }
+
+        /* SPECS Section */
+        .specs-container {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            border: 2px solid var(--accent);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .spec-group {
+            margin-bottom: 16px;
+        }
+
+        .spec-group-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .spec-item {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 4px;
+            font-size: 10px;
+        }
+
+        .spec-id {
+            color: var(--accent);
+            font-weight: 600;
+            min-width: 65px;
+            font-family: monospace;
+        }
+
+        .spec-text {
+            color: var(--text);
+        }
+
+        /* Grid layouts */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        @media (min-width: 900px) {
+            .grid-2 {
+                grid-template-columns: 1fr 1fr;
+            }
+            .grid-3 {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
+
+        .cols {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+
+        /* Diagram styling */
+        .diagram {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            overflow-x: auto;
+            margin: 8px 0;
+        }
+
+        .diagram .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .diagram-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        /* Status badges */
+        .status-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin: 6px 0;
+        }
+
+        .status {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .s-pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .s-active { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .s-done { background: rgba(99, 102, 241, 0.2); color: var(--accent); }
+        .s-error { background: rgba(239, 68, 68, 0.2); color: var(--error); }
+        .s-info { background: rgba(59, 130, 246, 0.2); color: var(--info); }
+        .s-cyan { background: rgba(6, 182, 212, 0.2); color: var(--cyan); }
+        .s-pink { background: rgba(236, 72, 153, 0.2); color: var(--pink); }
+
+        /* Feature flags */
+        .flag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin: 2px;
+        }
+
+        .flag-on {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .flag-off {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .flag-info {
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--accent);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+        }
+
+        th, td {
+            padding: 5px 6px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            font-size: 9px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
+        code {
+            background: var(--bg-primary);
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-family: 'SF Mono', monospace;
+            font-size: 9px;
+            color: var(--accent);
+        }
+
+        /* Bullet lists */
+        .bullet-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .bullet-list li {
+            padding: 3px 0;
+            padding-left: 16px;
+            position: relative;
+            font-size: 10px;
+        }
+
+        .bullet-list li::before {
+            position: absolute;
+            left: 0;
+            font-size: 10px;
+        }
+
+        .bullet-list li.success::before { content: '✓'; color: var(--success); }
+        .bullet-list li.info::before { content: '→'; color: var(--info); }
+        .bullet-list li.warning::before { content: '⚠'; color: var(--warning); }
+        .bullet-list li.error::before { content: '✗'; color: var(--error); }
+
+        /* Notes */
+        .note {
+            font-size: 10px;
+            padding: 6px 10px;
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid var(--info);
+            border-radius: 0 4px 4px 0;
+            margin: 8px 0;
+            color: var(--text-dim);
+        }
+
+        .note.warn {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: var(--warning);
+        }
+
+        .note.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-left-color: var(--error);
+        }
+
+        .note.success {
+            background: rgba(16, 185, 129, 0.1);
+            border-left-color: var(--success);
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 6px;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 9px;
+            color: var(--text-dim);
+        }
+
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+
+        /* Entity cards */
+        .entity-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px;
+        }
+
+        .entity-icon {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .entity-name {
+            font-weight: 600;
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+
+        .entity-path {
+            font-family: monospace;
+            font-size: 9px;
+            color: var(--cyan);
+            margin-bottom: 6px;
+        }
+
+        .entity-fields {
+            font-size: 9px;
+            color: var(--text-dim);
+        }
+
+        /* Cross-entity matrix */
+        .matrix-table {
+            overflow-x: auto;
+        }
+
+        .matrix-table table {
+            min-width: 800px;
+        }
+
+        .matrix-table td {
+            font-size: 9px;
+            vertical-align: top;
+        }
+
+        .matrix-table td.event-col {
+            font-weight: 500;
+            min-width: 120px;
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .matrix-cell {
+            font-size: 8px;
+            padding: 2px 4px;
+            border-radius: 2px;
+            margin: 1px 0;
+            display: block;
+        }
+
+        .matrix-create { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .matrix-update { background: rgba(59, 130, 246, 0.2); color: var(--info); }
+        .matrix-read { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .matrix-delete { background: rgba(239, 68, 68, 0.2); color: var(--error); }
+    </style>
+</head>
+
+<body>
+    <nav class="nav">
+        <span class="nav-logo">📦 Order Lifecycle</span>
+        <a href="#specs">Specs</a>
+        <a href="#entities">Entities</a>
+        <a href="#flags">Flags</a>
+        <a href="#main-flow">Main Flow</a>
+        <a href="#nuances">Nuances</a>
+        <a href="#cross-entity">Cross-Entity</a>
+        <a href="#states">States</a>
+        <a href="#api">API</a>
+        <a href="#errors">Errors</a>
+        <a href="CONSUMER_APP_FLOW.html" class="external">↗ Consumer Flow</a>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>Order Lifecycle System Documentation</h1>
+            <p>Complete order tracking flow from checkout to completion with status management</p>
+            <div class="badges">
+                <span class="badge">📦 Order Management</span>
+                <span class="badge">🍳 Kitchen Integration</span>
+                <span class="badge">👨‍🍳 Server Tracking</span>
+                <span class="badge">🔄 Real-time Updates</span>
+                <span class="badge">💳 Payment Status</span>
+            </div>
+        </div>
+
+        <!-- SPECS SECTION -->
+        <section class="section" id="specs">
+            <div class="section-title"><span class="section-icon">📋</span> SPECS: Order Lifecycle System</div>
+            <div class="specs-container">
+                <!-- Core Flow -->
+                <div class="spec-group">
+                    <div class="spec-group-title">Core Flow</div>
+                    <div class="spec-item"><span class="spec-id">SPEC-001</span><span class="spec-text">Orders are stored at <code>restaurants/{rid}/orders/{orderId}</code></span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-002</span><span class="spec-text">Order is created via <code>checkoutCart</code> which validates session, stock, and prices</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-003</span><span class="spec-text">If active order exists for table (PENDING/IN_PROGRESS), new cart is appended to existing order</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-004</span><span class="spec-text">If no active order exists, new order is created with unique orderNumber (ORD-00001 format)</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-005</span><span class="spec-text">Cart is cleared after successful checkout (order creation)</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-006</span><span class="spec-text">Order number is auto-incremented using <code>restaurants/{rid}/counters/orders</code> document</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-007</span><span class="spec-text">All order operations use Firestore transactions for data consistency</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-008</span><span class="spec-text">SessionId is mandatory for checkout and linked to the order</span></div>
+                </div>
+
+                <!-- Order Status Lifecycle -->
+                <div class="spec-group">
+                    <div class="spec-group-title">Order Status Lifecycle</div>
+                    <div class="spec-item"><span class="spec-id">SPEC-010</span><span class="spec-text">Order statuses: PENDING → IN_PROGRESS → COMPLETED | CANCELLED</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-011</span><span class="spec-text">New orders are created with status IN_PROGRESS (not PENDING)</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-012</span><span class="spec-text">COMPLETED status requires bill revalidation (recalculate prices from all carts)</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-013</span><span class="spec-text">When order is COMPLETED, paymentStatus is set to PAID</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-014</span><span class="spec-text">CANCELLED orders remain in database for audit trail</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-015</span><span class="spec-text">Status normalization maps legacy values: PLACED→PENDING, ACTIVE/PREPARING→IN_PROGRESS, COMPLETE→COMPLETED</span></div>
+                </div>
+
+                <!-- Cart Status Lifecycle -->
+                <div class="spec-group">
+                    <div class="spec-group-title">Cart Status Lifecycle (within Order)</div>
+                    <div class="spec-item"><span class="spec-id">SPEC-020</span><span class="spec-text">Cart statuses: PENDING → ACCEPTED → PREPARING → READY → SERVED</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-021</span><span class="spec-text">Special statuses: CANCELLED (from any state except SERVED), RETURNED (only from SERVED)</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-022</span><span class="spec-text">Cart status transitions are validated via VALID_TRANSITIONS map</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-023</span><span class="spec-text">Each cart maintains statusHistory array with timestamp and userId for each change</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-024</span><span class="spec-text">When cart is ACCEPTED, assignedTo field is set to the accepting user</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-025</span><span class="spec-text">CANCELLED and RETURNED are terminal states with no valid transitions</span></div>
+                </div>
+
+                <!-- Data Structures -->
+                <div class="spec-group">
+                    <div class="spec-group-title">Data Structures</div>
+                    <div class="spec-item"><span class="spec-id">SPEC-030</span><span class="spec-text">Order contains: restaurantId, tableId, orderNumber, orderStatus, paymentStatus, carts[], items[], priceInfo</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-031</span><span class="spec-text">Order.carts[] stores full cart snapshots with cartId, status, statusHistory, items, priceInfo</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-032</span><span class="spec-text">Order.items[] is a flattened list of all items across carts for direct access</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-033</span><span class="spec-text">Each cart has unique cartId format: {restaurantId}_{tableId}_{uuid8}</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-034</span><span class="spec-text">priceInfo uses OrderPriceInfo model: basePrice, finalPrice, totalDiscount, totalDiscountAmount</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-035</span><span class="spec-text">estimatedPrepTime calculated as: 10 + (itemCount × 2) minutes</span></div>
+                </div>
+
+                <!-- Payment Status -->
+                <div class="spec-group">
+                    <div class="spec-group-title">Payment Status</div>
+                    <div class="spec-item"><span class="spec-id">SPEC-040</span><span class="spec-text">Payment statuses: unpaid → partially_paid → paid</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-041</span><span class="spec-text">New orders start with paymentStatus: UNPAID</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-042</span><span class="spec-text">When orderStatus is set to COMPLETED, paymentStatus is automatically set to PAID</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-043</span><span class="spec-text">Bill revalidation compares recalculated prices with stored prices before completing</span></div>
+                </div>
+
+                <!-- Validation Rules -->
+                <div class="spec-group">
+                    <div class="spec-group-title">Validation Rules</div>
+                    <div class="spec-item"><span class="spec-id">SPEC-050</span><span class="spec-text">Checkout validates: non-empty cart, valid session, items in stock, price consistency</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-051</span><span class="spec-text">getOrder requires either orderId OR tableId (with restaurantId)</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-052</span><span class="spec-text">updateCartStatus validates: orderId exists, cartIndex valid, status transition allowed</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-053</span><span class="spec-text">updateOrderStatus validates: orderId, orderStatus enum, sessionId (required)</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-054</span><span class="spec-text">Cart price recalculation triggered on item cancellation</span></div>
+                </div>
+
+                <!-- Error Cases -->
+                <div class="spec-group">
+                    <div class="spec-group-title">Error Cases</div>
+                    <div class="spec-item"><span class="spec-id">SPEC-060</span><span class="spec-text">NOT_FOUND (404): Order/Cart not found at specified index</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-061</span><span class="spec-text">FAILED_PRECONDITION (412): Empty cart, invalid session, items out of stock</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-062</span><span class="spec-text">INVALID_ARGUMENT (400): Missing required fields, invalid status value</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-063</span><span class="spec-text">FAILED_PRECONDITION (412): Invalid status transition attempted</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-064</span><span class="spec-text">FAILED_PRECONDITION (412): Bill mismatch during order completion</span></div>
+                </div>
+
+                <!-- Cross-Entity Effects -->
+                <div class="spec-group">
+                    <div class="spec-group-title">Cross-Entity Effects</div>
+                    <div class="spec-item"><span class="spec-id">SPEC-070</span><span class="spec-text">Checkout clears cart document after order creation</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-071</span><span class="spec-text">Order completion triggers FCM notification to assigned server (if flag enabled)</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-072</span><span class="spec-text">Order links to session via sessionId for tracking</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-073</span><span class="spec-text">Order reads table.assignedServerId for server notification routing</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-074</span><span class="spec-text">Counter document incremented atomically for order number generation</span></div>
+                </div>
+
+                <!-- Edge Cases -->
+                <div class="spec-group">
+                    <div class="spec-group-title">Edge Cases</div>
+                    <div class="spec-item"><span class="spec-id">SPEC-080</span><span class="spec-text">If cart clearing fails after order creation, order is still considered successful</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-081</span><span class="spec-text">Cart price recalculation on checkout if validation fails</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-082</span><span class="spec-text">Notes from multiple carts are concatenated with newlines</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-083</span><span class="spec-text">Existing order without orderNumber gets one generated on cart append</span></div>
+                    <div class="spec-item"><span class="spec-id">SPEC-084</span><span class="spec-text">All carts SERVED triggers log but doesn't auto-complete order (manual completion required)</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ENTITIES INVOLVED -->
+        <section class="section" id="entities">
+            <div class="section-title"><span class="section-icon">🗄️</span> Entities Involved</div>
+            <div class="cols">
+                <div class="entity-card">
+                    <div class="entity-icon">📦</div>
+                    <div class="entity-name">Order</div>
+                    <div class="entity-path">restaurants/{rid}/orders/{oid}</div>
+                    <div class="entity-fields">
+                        <strong>Write:</strong> create, update status, append carts, update priceInfo<br>
+                        <strong>Read:</strong> getOrder, getActiveOrders<br>
+                        <strong>Fields:</strong> orderNumber, orderStatus, paymentStatus, carts[], items[], priceInfo, tableId, sessionId
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-icon">🛒</div>
+                    <div class="entity-name">Cart</div>
+                    <div class="entity-path">restaurants/{rid}/carts/{tableId}</div>
+                    <div class="entity-fields">
+                        <strong>Read:</strong> checkout validation<br>
+                        <strong>Delete:</strong> cleared after checkout<br>
+                        <strong>Fields:</strong> items[], priceInfo, tableId
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-icon">🔗</div>
+                    <div class="entity-name">Session</div>
+                    <div class="entity-path">restaurants/{rid}/sessions/{sid}</div>
+                    <div class="entity-fields">
+                        <strong>Read:</strong> validate session active<br>
+                        <strong>Fields:</strong> status, tableId, users[]
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-icon">🪑</div>
+                    <div class="entity-name">Table</div>
+                    <div class="entity-path">restaurants/{rid}/tables/{tid}</div>
+                    <div class="entity-fields">
+                        <strong>Read:</strong> get assignedServerId for notifications<br>
+                        <strong>Fields:</strong> assignedServerId, status
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-icon">👨‍🍳</div>
+                    <div class="entity-name">Server</div>
+                    <div class="entity-path">restaurants/{rid}/servers/{sid}</div>
+                    <div class="entity-fields">
+                        <strong>Read:</strong> get fcmToken for notifications<br>
+                        <strong>Fields:</strong> fcmToken, name, assignedTables[]
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-icon">🔢</div>
+                    <div class="entity-name">Counter</div>
+                    <div class="entity-path">restaurants/{rid}/counters/orders</div>
+                    <div class="entity-fields">
+                        <strong>Read/Write:</strong> increment for order number<br>
+                        <strong>Fields:</strong> currentCount
+                    </div>
+                </div>
+                <div class="entity-card">
+                    <div class="entity-icon">📋</div>
+                    <div class="entity-name">MenuItem</div>
+                    <div class="entity-path">restaurants/{rid}/menuItems/{mid}</div>
+                    <div class="entity-fields">
+                        <strong>Read:</strong> validate stock at checkout<br>
+                        <strong>Fields:</strong> isInStock, meta.name
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURE FLAGS -->
+        <section class="section" id="flags">
+            <div class="section-title"><span class="section-icon">🚩</span> Feature Flags</div>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">🔔 sendServerNotifications</div>
+                    <p><strong>Default:</strong> <span class="flag flag-off">OFF</span></p>
+                    <table>
+                        <tr>
+                            <th>State</th>
+                            <th>Behavior</th>
+                        </tr>
+                        <tr>
+                            <td><span class="flag flag-on">ON</span></td>
+                            <td>FCM notification sent to server when order is COMPLETED</td>
+                        </tr>
+                        <tr>
+                            <td><span class="flag flag-off">OFF</span></td>
+                            <td>No notifications sent on order completion</td>
+                        </tr>
+                    </table>
+                    <div class="note">Notification includes orderId, restaurantId, and type: 'ORDER_COMPLETED'</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">📊 shouldUpdateFoodStatusAtItemLevelORAtOrderLevel</div>
+                    <p><strong>Default:</strong> <span class="flag flag-off">OFF</span></p>
+                    <table>
+                        <tr>
+                            <th>State</th>
+                            <th>Behavior</th>
+                        </tr>
+                        <tr>
+                            <td><span class="flag flag-on">ON</span></td>
+                            <td>Track status at individual item level within carts</td>
+                        </tr>
+                        <tr>
+                            <td><span class="flag flag-off">OFF</span></td>
+                            <td>Track status at cart level (batch of items together)</td>
+                        </tr>
+                    </table>
+                    <div class="note warn">⚠️ Item-level tracking logic not fully implemented yet</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN FLOW DIAGRAM -->
+        <section class="section" id="main-flow">
+            <div class="section-title"><span class="section-icon">🗺️</span> Complete Order Lifecycle Flow</div>
+            <div class="legend">
+                <div class="legend-item"><span class="legend-color" style="background:#fef3c7"></span> Checkout</div>
+                <div class="legend-item"><span class="legend-color" style="background:#dcfce7"></span> Order Creation</div>
+                <div class="legend-item"><span class="legend-color" style="background:#e0f2fe"></span> Kitchen Flow</div>
+                <div class="legend-item"><span class="legend-color" style="background:#f3e8ff"></span> Server Flow</div>
+                <div class="legend-item"><span class="legend-color" style="background:#fee2e2"></span> Errors</div>
+                <div class="legend-item"><span class="legend-color" style="background:#f59e0b"></span> Decision</div>
+            </div>
+            <div class="diagram">
+                <div class="mermaid">
+                    flowchart TB
+                    subgraph CHECKOUT["💳 CHECKOUT PROCESS"]
+                        START["checkoutCart API Call"]
+                        VALIDATE_SESSION["Validate Session"]
+                        VALIDATE_CART["Validate Cart Not Empty"]
+                        VALIDATE_PRICES["Validate Price Consistency"]
+                        VALIDATE_STOCK["Validate All Items In Stock"]
+                        RECALC_PRICES["Recalculate Prices if Invalid"]
+                    end
+
+                    subgraph ORDER_CHECK["📋 ORDER DETERMINATION"]
+                        CHECK_EXISTING{"Active Order Exists?<br>(PENDING/IN_PROGRESS)"}
+                        FIND_ORDER["Query orders by tableId"]
+                    end
+
+                    subgraph NEW_ORDER["🆕 CREATE NEW ORDER"]
+                        GEN_ORDER_NUM["Generate Order Number<br>ORD-{count}"]
+                        CREATE_CART_SNAPSHOT["Create Cart Snapshot"]
+                        NORMALIZE_ITEMS["Normalize Cart Items"]
+                        CALC_EST_TIME["Calculate Est. Prep Time"]
+                        SET_ORDER_STATUS["Set orderStatus: IN_PROGRESS"]
+                        SET_PAYMENT["Set paymentStatus: UNPAID"]
+                        WRITE_ORDER["Write Order Document"]
+                    end
+
+                    subgraph APPEND_ORDER["📝 APPEND TO ORDER"]
+                        GET_EXISTING["Get Existing Order Data"]
+                        APPEND_CART["Append Cart to carts[]"]
+                        MERGE_ITEMS["Merge Items to items[]"]
+                        RECALC_TOTAL["Recalculate Total Price"]
+                        UPDATE_ORDER["Update Order Document"]
+                    end
+
+                    subgraph POST_CHECKOUT["✅ POST-CHECKOUT"]
+                        CLEAR_CART["Clear Cart Document"]
+                        RETURN_ORDER["Return Order Details"]
+                    end
+
+                    subgraph KITCHEN_FLOW["🍳 KITCHEN PROCESSING"]
+                        ACCEPT_ORDER["Accept Cart → ACCEPTED"]
+                        START_PREP["Start Preparing → PREPARING"]
+                        MARK_READY["Mark Ready → READY"]
+                    end
+
+                    subgraph SERVER_FLOW["👨‍🍳 SERVER FLOW"]
+                        SERVE_FOOD["Serve Food → SERVED"]
+                        CHECK_ALL_SERVED{"All Carts Served?"}
+                        MARK_COMPLETE["Update Order → COMPLETED"]
+                        REVALIDATE_BILL["Revalidate Bill Prices"]
+                        SET_PAID["Set paymentStatus: PAID"]
+                        FLAG_NOTIFY{"🚩 sendServerNotifications?"}
+                        SEND_FCM["Send FCM to Server"]
+                    end
+
+                    subgraph ERRORS["❌ ERROR STATES"]
+                        ERR_SESSION["412: Invalid/Inactive Session"]
+                        ERR_EMPTY["412: Empty Cart"]
+                        ERR_STOCK["412: Items Out of Stock"]
+                        ERR_BILL["412: Bill Mismatch"]
+                        ERR_TRANSITION["400: Invalid Status Transition"]
+                    end
+
+                    subgraph SPECIAL["⚠️ SPECIAL CASES"]
+                        CANCEL_CART["Cancel Cart → CANCELLED"]
+                        RETURN_ITEM["Return Served → RETURNED"]
+                        RECALC_ON_CANCEL["Recalculate Prices"]
+                    end
+
+                    %% Checkout Flow
+                    START --> VALIDATE_SESSION
+                    VALIDATE_SESSION -->|Invalid| ERR_SESSION
+                    VALIDATE_SESSION -->|Valid| VALIDATE_CART
+                    VALIDATE_CART -->|Empty| ERR_EMPTY
+                    VALIDATE_CART -->|Has Items| VALIDATE_PRICES
+                    VALIDATE_PRICES -->|Invalid| RECALC_PRICES
+                    VALIDATE_PRICES -->|Valid| VALIDATE_STOCK
+                    RECALC_PRICES --> VALIDATE_STOCK
+                    VALIDATE_STOCK -->|Out of Stock| ERR_STOCK
+                    VALIDATE_STOCK -->|In Stock| FIND_ORDER
+
+                    %% Order Determination
+                    FIND_ORDER --> CHECK_EXISTING
+                    CHECK_EXISTING -->|No| GEN_ORDER_NUM
+                    CHECK_EXISTING -->|Yes| GET_EXISTING
+
+                    %% New Order Flow
+                    GEN_ORDER_NUM --> CREATE_CART_SNAPSHOT
+                    CREATE_CART_SNAPSHOT --> NORMALIZE_ITEMS
+                    NORMALIZE_ITEMS --> CALC_EST_TIME
+                    CALC_EST_TIME --> SET_ORDER_STATUS
+                    SET_ORDER_STATUS --> SET_PAYMENT
+                    SET_PAYMENT --> WRITE_ORDER
+                    WRITE_ORDER --> CLEAR_CART
+
+                    %% Append Order Flow
+                    GET_EXISTING --> APPEND_CART
+                    APPEND_CART --> MERGE_ITEMS
+                    MERGE_ITEMS --> RECALC_TOTAL
+                    RECALC_TOTAL --> UPDATE_ORDER
+                    UPDATE_ORDER --> CLEAR_CART
+
+                    %% Post Checkout
+                    CLEAR_CART --> RETURN_ORDER
+
+                    %% Kitchen Flow
+                    RETURN_ORDER -.-> ACCEPT_ORDER
+                    ACCEPT_ORDER --> START_PREP
+                    START_PREP --> MARK_READY
+
+                    %% Server Flow
+                    MARK_READY --> SERVE_FOOD
+                    SERVE_FOOD --> CHECK_ALL_SERVED
+                    CHECK_ALL_SERVED -->|No| ACCEPT_ORDER
+                    CHECK_ALL_SERVED -->|Yes| MARK_COMPLETE
+                    MARK_COMPLETE --> REVALIDATE_BILL
+                    REVALIDATE_BILL -->|Mismatch| ERR_BILL
+                    REVALIDATE_BILL -->|Match| SET_PAID
+                    SET_PAID --> FLAG_NOTIFY
+                    FLAG_NOTIFY -->|ON| SEND_FCM
+                    FLAG_NOTIFY -->|OFF| END((Complete))
+                    SEND_FCM --> END
+
+                    %% Special Cases
+                    ACCEPT_ORDER -.-> CANCEL_CART
+                    START_PREP -.-> CANCEL_CART
+                    MARK_READY -.-> CANCEL_CART
+                    CANCEL_CART --> RECALC_ON_CANCEL
+                    SERVE_FOOD -.-> RETURN_ITEM
+
+                    %% Styling
+                    style CHECKOUT fill:#fef3c7,color:#000
+                    style ORDER_CHECK fill:#e5e7eb,color:#000
+                    style NEW_ORDER fill:#dcfce7,color:#000
+                    style APPEND_ORDER fill:#dcfce7,color:#000
+                    style POST_CHECKOUT fill:#d1fae5,color:#000
+                    style KITCHEN_FLOW fill:#e0f2fe,color:#000
+                    style SERVER_FLOW fill:#f3e8ff,color:#000
+                    style ERRORS fill:#fee2e2,color:#000
+                    style SPECIAL fill:#fef9c3,color:#000
+                </div>
+            </div>
+        </section>
+
+        <!-- NUANCES & EDGE CASES -->
+        <section class="section" id="nuances">
+            <div class="section-title"><span class="section-icon">💡</span> Nuances & Edge Cases</div>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">✅ Validation Nuances</div>
+                    <ul class="bullet-list">
+                        <li class="success">Session validation happens BEFORE checkout processing</li>
+                        <li class="success">Stock is validated at checkout time (double-validation from addItem)</li>
+                        <li class="info">Cart price recalculation if validation fails (auto-fix)</li>
+                        <li class="warning">Price mismatch at completion blocks order completion</li>
+                        <li class="info">Status values are normalized (PLACED→PENDING, etc.)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-title">🔄 State Management Nuances</div>
+                    <ul class="bullet-list">
+                        <li class="success">All status changes maintain statusHistory with timestamps</li>
+                        <li class="info">Cart status transitions follow strict VALID_TRANSITIONS map</li>
+                        <li class="warning">CANCELLED and RETURNED are terminal states</li>
+                        <li class="info">ACCEPTED status sets assignedTo field for tracking</li>
+                        <li class="warning">All carts served doesn't auto-complete (requires manual action)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-title">🔒 Transaction Safety</div>
+                    <ul class="bullet-list">
+                        <li class="success">Order creation uses Firestore transaction</li>
+                        <li class="success">Order number generation is atomic (counter increment)</li>
+                        <li class="success">Cart status updates use transaction for consistency</li>
+                        <li class="warning">Cart clearing after order is separate operation (may fail)</li>
+                        <li class="info">If cart clearing fails, order is still considered successful</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-title">⚡ Performance & Recovery</div>
+                    <ul class="bullet-list">
+                        <li class="info">Estimated prep time: 10 + (itemCount × 2) minutes</li>
+                        <li class="info">Orders queryable by tableId or orderId</li>
+                        <li class="warning">getActiveOrders excludes COMPLETED orders</li>
+                        <li class="success">Orders sorted by updatedAt (most recent first)</li>
+                        <li class="info">Server-assigned orders appear first in server view</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-title">💰 Price Handling</div>
+                    <ul class="bullet-list">
+                        <li class="success">Order priceInfo aggregates all cart prices</li>
+                        <li class="info">Discount averaging across carts for order totalDiscount</li>
+                        <li class="warning">Cancellation triggers price recalculation</li>
+                        <li class="info">OrderPriceInfo: basePrice, finalPrice, totalDiscount, totalDiscountAmount</li>
+                        <li class="error">Bill mismatch at completion = failed-precondition error</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-title">🔔 Notification Handling</div>
+                    <ul class="bullet-list">
+                        <li class="info">Notifications gated by sendServerNotifications flag</li>
+                        <li class="info">FCM token fetched from server document</li>
+                        <li class="warning">No notification if server has no fcmToken</li>
+                        <li class="info">Notification includes: title, body, data payload</li>
+                        <li class="error">FCM failures logged but don't fail the operation</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- CROSS-ENTITY EFFECTS -->
+        <section class="section" id="cross-entity">
+            <div class="section-title"><span class="section-icon">🔀</span> Cross-Entity Effects Matrix</div>
+            <div class="matrix-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Event / Action</th>
+                            <th>Order</th>
+                            <th>Cart</th>
+                            <th>Session</th>
+                            <th>Table</th>
+                            <th>Server</th>
+                            <th>Counter</th>
+                            <th>MenuItem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="event-col">checkoutCart</td>
+                            <td><span class="matrix-cell matrix-create">CREATE/UPDATE order</span><span class="matrix-cell matrix-update">append cart[]</span></td>
+                            <td><span class="matrix-cell matrix-read">READ items</span><span class="matrix-cell matrix-delete">DELETE doc</span></td>
+                            <td><span class="matrix-cell matrix-read">READ status</span></td>
+                            <td>—</td>
+                            <td>—</td>
+                            <td><span class="matrix-cell matrix-update">INCREMENT count</span></td>
+                            <td><span class="matrix-cell matrix-read">READ isInStock</span></td>
+                        </tr>
+                        <tr>
+                            <td class="event-col">updateCartStatus</td>
+                            <td><span class="matrix-cell matrix-update">UPDATE cart[].status</span><span class="matrix-cell matrix-update">ADD statusHistory</span></td>
+                            <td>—</td>
+                            <td><span class="matrix-cell matrix-read">READ if provided</span></td>
+                            <td>—</td>
+                            <td>—</td>
+                            <td>—</td>
+                            <td>—</td>
+                        </tr>
+                        <tr>
+                            <td class="event-col">updateOrderStatus (COMPLETED)</td>
+                            <td><span class="matrix-cell matrix-update">UPDATE orderStatus</span><span class="matrix-cell matrix-update">SET paymentStatus=PAID</span></td>
+                            <td>—</td>
+                            <td><span class="matrix-cell matrix-read">VALIDATE session</span></td>
+                            <td><span class="matrix-cell matrix-read">READ assignedServerId</span></td>
+                            <td><span class="matrix-cell matrix-read">READ fcmToken</span></td>
+                            <td>—</td>
+                            <td>—</td>
+                        </tr>
+                        <tr>
+                            <td class="event-col">updateMenuItemStatus (CANCELLED)</td>
+                            <td><span class="matrix-cell matrix-update">UPDATE item status</span><span class="matrix-cell matrix-update">RECALC priceInfo</span></td>
+                            <td>—</td>
+                            <td>—</td>
+                            <td>—</td>
+                            <td>—</td>
+                            <td>—</td>
+                            <td>—</td>
+                        </tr>
+                        <tr>
+                            <td class="event-col">getOrder</td>
+                            <td><span class="matrix-cell matrix-read">READ order</span></td>
+                            <td>—</td>
+                            <td><span class="matrix-cell matrix-read">VALIDATE if provided</span></td>
+                            <td>—</td>
+                            <td>—</td>
+                            <td>—</td>
+                            <td>—</td>
+                        </tr>
+                        <tr>
+                            <td class="event-col">getActiveOrdersForRestaurant</td>
+                            <td><span class="matrix-cell matrix-read">READ all non-completed</span></td>
+                            <td>—</td>
+                            <td><span class="matrix-cell matrix-read">VALIDATE session</span></td>
+                            <td>—</td>
+                            <td>—</td>
+                            <td>—</td>
+                            <td>—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- STATE MACHINES -->
+        <section class="section" id="states">
+            <div class="section-title"><span class="section-icon">🔄</span> State Machines</div>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-title">📦 Order Status State Machine</div>
+                    <div class="status-row">
+                        <span class="status s-pending">PENDING</span>
+                        <span class="status s-info">IN_PROGRESS</span>
+                        <span class="status s-done">COMPLETED</span>
+                        <span class="status s-error">CANCELLED</span>
+                    </div>
+                    <div class="diagram">
+                        <div class="mermaid">
+                            stateDiagram-v2
+                                [*] --> IN_PROGRESS: checkout
+                                PENDING --> IN_PROGRESS: start processing
+                                PENDING --> CANCELLED: cancel
+                                IN_PROGRESS --> COMPLETED: complete + validate bill
+                                IN_PROGRESS --> CANCELLED: cancel
+                                COMPLETED --> [*]
+                                CANCELLED --> [*]
+                                
+                                note right of IN_PROGRESS
+                                    New orders start here
+                                    (not PENDING)
+                                end note
+                                
+                                note right of COMPLETED
+                                    Requires bill revalidation
+                                    Sets paymentStatus=PAID
+                                end note
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">🛒 Cart Status State Machine (within Order)</div>
+                    <div class="status-row">
+                        <span class="status s-pending">PENDING</span>
+                        <span class="status s-cyan">ACCEPTED</span>
+                        <span class="status s-info">PREPARING</span>
+                        <span class="status s-active">READY</span>
+                        <span class="status s-done">SERVED</span>
+                        <span class="status s-pink">RETURNED</span>
+                        <span class="status s-error">CANCELLED</span>
+                    </div>
+                    <div class="diagram">
+                        <div class="mermaid">
+                            stateDiagram-v2
+                                [*] --> PENDING: checkout
+                                PENDING --> ACCEPTED: kitchen accepts
+                                PENDING --> CANCELLED: cancel
+                                ACCEPTED --> PREPARING: start cooking
+                                ACCEPTED --> CANCELLED: cancel
+                                PREPARING --> READY: cooking done
+                                PREPARING --> CANCELLED: cancel
+                                READY --> SERVED: server delivers
+                                READY --> CANCELLED: cancel
+                                SERVED --> RETURNED: customer returns
+                                SERVED --> [*]
+                                RETURNED --> [*]
+                                CANCELLED --> [*]
+                                
+                                note right of ACCEPTED
+                                    Sets assignedTo=userId
+                                end note
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">💳 Payment Status Flow</div>
+                <div class="status-row">
+                    <span class="status s-error">UNPAID</span>
+                    <span class="status s-warning">PARTIALLY_PAID</span>
+                    <span class="status s-success">PAID</span>
+                </div>
+                <div class="diagram">
+                    <div class="mermaid">
+                        stateDiagram-v2
+                            [*] --> UNPAID: order created
+                            UNPAID --> PARTIALLY_PAID: partial payment
+                            UNPAID --> PAID: order COMPLETED
+                            PARTIALLY_PAID --> PAID: full payment / order COMPLETED
+                            PAID --> [*]
+                            
+                            note right of PAID
+                                Auto-set when orderStatus=COMPLETED
+                            end note
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- API REFERENCE -->
+        <section class="section" id="api">
+            <div class="section-title"><span class="section-icon">🎯</span> API Reference</div>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Function</th>
+                            <th>Module</th>
+                            <th>Parameters</th>
+                            <th>Returns</th>
+                            <th>Side Effects</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>checkoutCart</code></td>
+                            <td>cart</td>
+                            <td>restaurantId, tableId, sessionId, notes?</td>
+                            <td>{orderId, orderNumber, orderStatus, timestamp}</td>
+                            <td>Creates/updates order, clears cart</td>
+                        </tr>
+                        <tr>
+                            <td><code>createOrUpdateOrder</code></td>
+                            <td>orders</td>
+                            <td>restaurantId, tableId, cart, userId?, notes?, sessionId?</td>
+                            <td>Order document with id</td>
+                            <td>Creates new order or appends cart to existing</td>
+                        </tr>
+                        <tr>
+                            <td><code>getOrder</code></td>
+                            <td>orders</td>
+                            <td>restaurantId, tableId|orderId, getAllOrders?, activeOnly?, sessionId?</td>
+                            <td>Order(s) sanitized data</td>
+                            <td>None (read only)</td>
+                        </tr>
+                        <tr>
+                            <td><code>getActiveOrdersForRestaurant</code></td>
+                            <td>orders</td>
+                            <td>restaurantId, sessionId, serverId?</td>
+                            <td>Array of active orders</td>
+                            <td>None (read only)</td>
+                        </tr>
+                        <tr>
+                            <td><code>updateCartStatus</code></td>
+                            <td>cart</td>
+                            <td>restaurantId, orderId, cartIndex, newStatus, notes?, sessionId?</td>
+                            <td>{success, message, data}</td>
+                            <td>Updates cart status in order, adds statusHistory</td>
+                        </tr>
+                        <tr>
+                            <td><code>updateOrderStatus</code></td>
+                            <td>orders</td>
+                            <td>restaurantId, orderId, orderStatus, sessionId</td>
+                            <td>{orderId, orderStatus}</td>
+                            <td>Updates order status, may send FCM notification</td>
+                        </tr>
+                        <tr>
+                            <td><code>updateMenuItemStatus</code></td>
+                            <td>orders</td>
+                            <td>restaurantId, orderId, menuItemId, cartItemId?, newStatus</td>
+                            <td>{status, message, data}</td>
+                            <td>Updates item status, recalculates price on cancel</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="note">All APIs use Firebase HTTPS Callable format. Request data accessed via <code>data.data || data</code> pattern.</div>
+        </section>
+
+        <!-- ERROR HANDLING -->
+        <section class="section" id="errors">
+            <div class="section-title"><span class="section-icon">❌</span> Error Handling</div>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Scenario</th>
+                            <th>Code</th>
+                            <th>HTTP</th>
+                            <th>Message</th>
+                            <th>Recovery</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Order not found</td>
+                            <td><code>not-found</code></td>
+                            <td>404</td>
+                            <td>Order not found</td>
+                            <td>Verify orderId exists</td>
+                        </tr>
+                        <tr>
+                            <td>Cart index invalid</td>
+                            <td><code>internal</code></td>
+                            <td>500</td>
+                            <td>Cart at index {n} not found</td>
+                            <td>Use valid cart index from order.carts</td>
+                        </tr>
+                        <tr>
+                            <td>Empty cart checkout</td>
+                            <td><code>failed-precondition</code></td>
+                            <td>412</td>
+                            <td>Cannot checkout an empty cart</td>
+                            <td>Add items to cart first</td>
+                        </tr>
+                        <tr>
+                            <td>Invalid/inactive session</td>
+                            <td><code>failed-precondition</code></td>
+                            <td>412</td>
+                            <td>Invalid or inactive session</td>
+                            <td>Re-authenticate with valid session</td>
+                        </tr>
+                        <tr>
+                            <td>Items out of stock</td>
+                            <td><code>failed-precondition</code></td>
+                            <td>412</td>
+                            <td>Items out of stock: {names}</td>
+                            <td>Remove out-of-stock items from cart</td>
+                        </tr>
+                        <tr>
+                            <td>Invalid status transition</td>
+                            <td><code>internal</code></td>
+                            <td>500</td>
+                            <td>Invalid status transition from X to Y</td>
+                            <td>Follow valid transition path</td>
+                        </tr>
+                        <tr>
+                            <td>Bill mismatch on complete</td>
+                            <td><code>failed-precondition</code></td>
+                            <td>412</td>
+                            <td>Recomputed bill does not match stored bill</td>
+                            <td>Investigate price discrepancy</td>
+                        </tr>
+                        <tr>
+                            <td>Missing required fields</td>
+                            <td><code>invalid-argument</code></td>
+                            <td>400</td>
+                            <td>{field} is required</td>
+                            <td>Provide all required parameters</td>
+                        </tr>
+                        <tr>
+                            <td>Invalid status value</td>
+                            <td><code>invalid-argument</code></td>
+                            <td>400</td>
+                            <td>status must be one of: ...</td>
+                            <td>Use valid status enum value</td>
+                        </tr>
+                        <tr>
+                            <td>Non-active order update</td>
+                            <td><code>failed-precondition</code></td>
+                            <td>412</td>
+                            <td>Cannot update items in non-active order</td>
+                            <td>Order must be IN_PROGRESS</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="note warn">⚠️ All errors follow standardized ResponseBuilder format: {status: 'error', message, data: {code, httpCode, ...details}}</div>
+        </section>
+
+        <!-- Valid Status Transitions -->
+        <section class="section" id="transitions">
+            <div class="section-title"><span class="section-icon">↔️</span> Valid Cart Status Transitions</div>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>From Status</th>
+                            <th>Valid Transitions To</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="status s-pending">PENDING</span></td>
+                            <td><span class="status s-cyan">ACCEPTED</span> <span class="status s-error">CANCELLED</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-cyan">ACCEPTED</span></td>
+                            <td><span class="status s-info">PREPARING</span> <span class="status s-error">CANCELLED</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-info">PREPARING</span></td>
+                            <td><span class="status s-active">READY</span> <span class="status s-error">CANCELLED</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-active">READY</span></td>
+                            <td><span class="status s-done">SERVED</span> <span class="status s-error">CANCELLED</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-done">SERVED</span></td>
+                            <td><span class="status s-pink">RETURNED</span></td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-pink">RETURNED</span></td>
+                            <td><em>None (terminal state)</em></td>
+                        </tr>
+                        <tr>
+                            <td><span class="status s-error">CANCELLED</span></td>
+                            <td><em>None (terminal state)</em></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Code Structure -->
+        <section class="section" id="files">
+            <div class="section-title"><span class="section-icon">📁</span> Code Structure</div>
+            <div class="cols">
+                <div class="card">
+                    <div class="card-title">📂 /functions/orders/</div>
+                    <ul class="bullet-list">
+                        <li class="info"><code>indexOrders.js</code> - Export all order functions</li>
+                        <li class="info"><code>orderConstants.js</code> - Status enums</li>
+                        <li class="info"><code>orderInputValidation.js</code> - Input validators</li>
+                        <li class="info"><code>createOrUpdateOrder.js</code> - Order creation logic</li>
+                        <li class="info"><code>getOrder.js</code> - Order retrieval</li>
+                        <li class="info"><code>updateOrderStatus.js</code> - Order status updates</li>
+                        <li class="info"><code>orderRelatedOperations.js</code> - Item status updates</li>
+                        <li class="info"><code>getActiveOrdersForRestaurant.js</code> - Kitchen/server view</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-title">📂 /functions/cart/</div>
+                    <ul class="bullet-list">
+                        <li class="info"><code>checkoutCart.js</code> - Checkout flow</li>
+                        <li class="info"><code>updateCartStatus.js</code> - Cart status changes</li>
+                        <li class="info"><code>clearCart.js</code> - Cart deletion</li>
+                        <li class="info"><code>calculateCartValue.js</code> - Price calculations</li>
+                        <li class="info"><code>validateCart.js</code> - Cart validation</li>
+                        <li class="info"><code>cartInputValidation.js</code> - Input validators</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-title">📂 /functions/utils/</div>
+                    <ul class="bullet-list">
+                        <li class="info"><code>statusUtils.js</code> - Status normalization</li>
+                        <li class="info"><code>timestamp.js</code> - Timestamp utilities</li>
+                        <li class="info"><code>ResponseBuilder.js</code> - Standard responses</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-title">📂 /functions/genericModels/</div>
+                    <ul class="bullet-list">
+                        <li class="info"><code>priceinfo.js</code> - Price models</li>
+                        <li class="success">BasicPriceInfo</li>
+                        <li class="success">CartItemPriceInfo</li>
+                        <li class="success">CartTotalPriceInfo</li>
+                        <li class="success">OrderPriceInfo</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                fontSize: '10px',
+                primaryColor: '#6366f1',
+                primaryTextColor: '#e2e8f0',
+                primaryBorderColor: '#2d2d5a',
+                lineColor: '#64748b',
+                secondaryColor: '#12122a',
+                tertiaryColor: '#1a1a3a',
+                background: '#0a0a1a',
+                mainBkg: '#1a1a3a',
+                nodeBorder: '#2d2d5a',
+                clusterBkg: '#12122a',
+                clusterBorder: '#2d2d5a'
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis',
+                nodeSpacing: 25,
+                rankSpacing: 35
+            },
+            stateDiagram: {
+                useMaxWidth: true
+            }
+        });
+    </script>
+</body>
+
+</html>
+
+

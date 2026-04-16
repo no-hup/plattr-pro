@@ -2,36 +2,46 @@ import 'package:flutter/foundation.dart';
 import 'package:flutterboilerplate/models/SessionState.dart';
 import 'package:flutterboilerplate/pages/table_verification/models/models.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+
 import 'services/session_storage_service.dart';
 
 /// Manages the session state of the application
 /// Uses SessionStorageService for persistence through page refreshes
 class SessionProvider extends ChangeNotifier {
-  SessionState _state = const SessionState();
-  final SessionStorageService _storageService = SessionStorageService();
-  
   /// Constructor loads session data if available
   SessionProvider() {
-    AppLogger.log('🔐 SessionProvider: Initializing with SessionStorageService');
+    AppLogger.log(
+      '🔐 SessionProvider: Initializing with SessionStorageService',
+    );
     _loadSessionIfAvailable();
   }
-  
+  SessionState _state = const SessionState();
+  final SessionStorageService _storageService = SessionStorageService();
+
   /// Loads persisted session data if available
   void _loadSessionIfAvailable() {
-    AppLogger.log('🔐 SessionProvider: Attempting to load session from storage');
+    AppLogger.log(
+      '🔐 SessionProvider: Attempting to load session from storage',
+    );
     final savedState = _storageService.loadSession();
     if (savedState != null) {
       _state = savedState;
-      AppLogger.log('🔐 SessionProvider: ✅ Successfully loaded session from storage');
+      AppLogger.log(
+        '🔐 SessionProvider: ✅ Successfully loaded session from storage',
+      );
       AppLogger.log('🔐 SessionProvider: SessionId: ${_state.sessionId}');
-      AppLogger.log('🔐 SessionProvider: Is authenticated: ${_state.isAuthenticated}');
-      AppLogger.log('🔐 SessionProvider: RestaurantId: ${_state.restaurantId}, TableId: ${_state.tableId}');
+      AppLogger.log(
+        '🔐 SessionProvider: Is authenticated: ${_state.isAuthenticated}',
+      );
+      AppLogger.log(
+        '🔐 SessionProvider: RestaurantId: ${_state.restaurantId}, TableId: ${_state.tableId}',
+      );
       notifyListeners();
     } else {
       AppLogger.log('🔐 SessionProvider: No valid session found in storage');
     }
   }
-  
+
   /// Returns the current session state
   SessionState get state => _state;
 
@@ -39,11 +49,15 @@ class SessionProvider extends ChangeNotifier {
   void updateFromTableValidation(TableValidationResponse response) {
     AppLogger.log('🔐 SessionProvider: Processing table validation response');
     AppLogger.log('🔐 SessionProvider: Response status: ${response.status}');
-    AppLogger.log('🔐 SessionProvider: Response sessionId: ${response.sessionId}');
-    
+    AppLogger.log(
+      '🔐 SessionProvider: Response sessionId: ${response.sessionId}',
+    );
+
     if (response.status == 'success' && response.sessionId != null) {
-      AppLogger.log('🔐 SessionProvider: Updating session state with validation data');
-      
+      AppLogger.log(
+        '🔐 SessionProvider: Updating session state with validation data',
+      );
+
       _state = _state.copyWith(
         sessionId: response.sessionId,
         sessionExpiresAt: response.sessionExpiresAt,
@@ -51,16 +65,25 @@ class SessionProvider extends ChangeNotifier {
         isAuthenticated: true,
         userName: response.primaryCustomerName,
         phoneNumber: response.primaryCustomerPhone,
+        isUsernameMandatory: response.isUsernameMandatory,
+        isPhoneNumberMandatory: response.isPhoneNumberMandatory,
+        isMultiUserSupported: response.isMultiUserSupported,
       );
-      
+
       // Save session to storage
       final saveSuccess = _storageService.saveSession(_state);
-      AppLogger.log('🔐 SessionProvider: Session save result: ${saveSuccess ? "Success ✅" : "Failed ❌"}');
-      
-      AppLogger.log('🔐 SessionProvider: Updated session with ID: ${response.sessionId}');
+      AppLogger.log(
+        '🔐 SessionProvider: Session save result: ${saveSuccess ? "Success ✅" : "Failed ❌"}',
+      );
+
+      AppLogger.log(
+        '🔐 SessionProvider: Updated session with ID: ${response.sessionId}',
+      );
       notifyListeners();
     } else {
-      AppLogger.log('🔐 SessionProvider: ⚠️ Invalid table validation response, session not updated');
+      AppLogger.log(
+        '🔐 SessionProvider: ⚠️ Invalid table validation response, session not updated',
+      );
     }
   }
 
@@ -73,7 +96,7 @@ class SessionProvider extends ChangeNotifier {
   }) async {
     try {
       AppLogger.log('🔐 SessionProvider: Beginning authentication process');
-      _state = _state.copyWith(isLoading: true, error: null);
+      _state = _state.copyWith(isLoading: true);
       notifyListeners();
 
       // TODO: Add API call here
@@ -90,14 +113,16 @@ class SessionProvider extends ChangeNotifier {
         isPrimaryCustomer: true, // Default to primary customer for now
         isLoading: false,
       );
-      
+
       // Save session to storage
       final saveSuccess = _storageService.saveSession(_state);
-      AppLogger.log('🔐 SessionProvider: Session save result: ${saveSuccess ? "Success ✅" : "Failed ❌"}');
-      
+      AppLogger.log(
+        '🔐 SessionProvider: Session save result: ${saveSuccess ? "Success ✅" : "Failed ❌"}',
+      );
+
       AppLogger.log('🔐 SessionProvider: User authenticated successfully');
       notifyListeners();
-      
+
       return true;
     } catch (e) {
       AppLogger.log('🔐 SessionProvider: ❌ Authentication error: $e');
@@ -109,14 +134,14 @@ class SessionProvider extends ChangeNotifier {
       return false;
     }
   }
-  
+
   /// Returns the existing sessionId if available
   String? get sessionId {
     final id = _state.sessionId;
     AppLogger.log('🔐 SessionProvider: Providing sessionId: ${id ?? "null"}');
     return id;
   }
-  
+
   /// Clears session data on logout
   void logout() {
     AppLogger.log('🔐 SessionProvider: Logging out and clearing session');
@@ -125,4 +150,26 @@ class SessionProvider extends ChangeNotifier {
     AppLogger.log('🔐 SessionProvider: ✅ Logged out and cleared session');
     notifyListeners();
   }
-} 
+
+  /// Set session details after OTP validation
+  void setSessionFromOtp({
+    required String sessionId,
+    required String restaurantId,
+    required String tableId,
+    String? name,
+    String? phone,
+  }) {
+    _state = _state.copyWith(
+      sessionId: sessionId,
+      restaurantId: restaurantId,
+      tableId: tableId,
+      isAuthenticated: true,
+      userName: name ?? _state.userName,
+      phoneNumber: phone ?? _state.phoneNumber,
+    );
+    _storageService.saveSession(_state);
+    AppLogger.log(
+        '🔐 SessionProvider: Session set from OTP (sessionId=$sessionId)',);
+    notifyListeners();
+  }
+}

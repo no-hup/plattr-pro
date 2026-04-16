@@ -39,4 +39,4 @@ local.properties
 **/ios/Runner.xcodeproj/project.xcworkspace
 **/ios/Runner.xcodeproj/xcshareddata/
 **/ios/Flutter/ephemeral
-**/ios/ServiceDefinitions.json
+**/ios/ServiceDefinitions.json.context-layer/

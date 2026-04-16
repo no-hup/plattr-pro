@@ -1,0 +1,94 @@
+@startuml Server_App_Menu_Tab_Flow
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam maxmessagesize 300
+skinparam noteFontSize 11
+skinparam participantPadding 18
+
+title **Plattr Server App - Menu Tab Flow**\n(Frontend sequence)
+
+' ============================================================
+'  PARTICIPANTS
+' ============================================================
+actor "Server Staff" as Staff #LightBlue
+participant "MenuHomeScreen" as MenuUI #LightGreen
+participant "MenuProvider" as MenuProvider #LightYellow
+participant "MenuApiService" as MenuAPI #Orange
+participant "DioClient" as Dio #Wheat
+participant "Cloud Functions API" as Backend #LightGray
+database "Firestore" as DB #LightGray
+
+' ============================================================
+'  PHASE 1: LOAD MENU TAB
+' ============================================================
+== **Phase 1: Load Menu Tab** ==
+
+Staff -> MenuUI: Open Menu tab
+MenuUI -> MenuProvider: initState()\nfetchRestaurantMenu(restaurantId, sessionId)
+MenuProvider -> MenuAPI: getRestaurantMenu(restaurantId, sessionId)
+MenuAPI -> Dio: POST /menu-getRestaurantMenu\n{ data: { restaurantId, sessionId } }
+Dio -> Backend: request
+Backend -> DB: Fetch categories + menu items
+DB --> Backend: menu data
+Backend --> Dio: response { success, data }
+Dio --> MenuAPI: response
+MenuAPI --> MenuProvider: ApiResponse<FullRestaurantMenuResponse>
+
+note right of MenuAPI #LightCyan
+  **Response parsing**
+  - Expects top-level "result" and "data"
+  - Builds categories list + menuItems map
+  - Items grouped by categoryId
+end note
+
+alt Success + menu available
+  MenuProvider -> MenuUI: state=loaded, notifyListeners()
+  MenuUI -> Staff: Render categories + items list
+else Success + no items
+  MenuProvider -> MenuUI: state=loaded (empty list)
+  MenuUI -> Staff: Show empty state
+else Error
+  MenuProvider -> MenuUI: state=error
+  MenuUI -> Staff: Show error state or banner
+end
+
+' ============================================================
+'  PHASE 2: REFRESH MENU
+' ============================================================
+== **Phase 2: Refresh Menu** ==
+
+Staff -> MenuUI: Pull-to-refresh / tap refresh icon
+MenuUI -> MenuProvider: refreshMenu(restaurantId, sessionId)
+MenuProvider -> MenuAPI: getRestaurantMenu(restaurantId, sessionId)
+MenuProvider -> MenuUI: isRefreshing=true (RefreshIndicator)
+
+' ============================================================
+'  PHASE 3: TOGGLE ITEM AVAILABILITY
+' ============================================================
+== **Phase 3: Toggle Item Availability** ==
+
+Staff -> MenuUI: Toggle item availability switch
+MenuUI -> MenuUI: Confirm dialog (Confirm / Cancel)
+alt Confirmed
+  MenuUI -> MenuProvider: updateMenuItemAvailability(menuItemId, isAvailable)
+  MenuProvider -> MenuAPI: updateMenuItemAvailability(restaurantId, sessionId, menuItemId, isAvailable)
+  MenuAPI -> Dio: POST /menu-updateMenuItemAvailability\n{ restaurantId, sessionId, menuItemId, isAvailable }
+  note right of MenuAPI #Wheat
+    **Payload is flat**
+    - No "data" envelope
+  end note
+  Dio -> Backend: request
+  Backend -> DB: Update menu item stock flag
+  DB --> Backend: success
+  Backend --> Dio: response
+  Dio --> MenuAPI: response
+  MenuAPI --> MenuProvider: ApiResponse<UpdateMenuItemAvailabilityResponse>
+  MenuProvider -> MenuUI: Update local item (isAvailable)
+  MenuUI -> Staff: Reflect updated availability
+else Cancelled
+  MenuUI -> Staff: No change
+end
+
+@enduml

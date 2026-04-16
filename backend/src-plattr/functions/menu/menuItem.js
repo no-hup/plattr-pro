@@ -3,10 +3,13 @@
  * {
  *   menuItemId: string,
  *   categoryId: string,
+ *   primarySubcategoryId: string | null,      // 🆕 NEW - the "home" subcategory
+ *   subcategoryIds: string[],                 // 🆕 NEW - all subcategories (supports cross-listing)
  *   meta: {
  *     name: string,
  *     description: string,
  *     categoryName: string,
+ *     primarySubcategoryName: string | null,  // 🆕 NEW - denormalized subcategory name
  *     image: string
  *   },
  *   priceInfo: {
@@ -76,7 +79,7 @@ const timestamp = require('../utils/timestamp');
 async function getAllMenuItems(restaurantId) {
   try {
     MenuValidation.validateRestaurantId(restaurantId);
-    
+
     const menuItemsSnapshot = await db.collection('restaurants').doc(restaurantId)
       .collection('menuItems').get();
     return menuItemsSnapshot.docs.map(doc => ({
@@ -97,7 +100,7 @@ async function getMenuItemById(restaurantId, menuItemId) {
   try {
     MenuValidation.validateRestaurantId(restaurantId);
     MenuValidation.validateItemId(menuItemId);
-    
+
     const menuItemDoc = await db.collection('restaurants').doc(restaurantId)
       .collection('menuItems').doc(menuItemId).get();
     if (!menuItemDoc.exists) {
@@ -117,28 +120,48 @@ async function getMenuItemById(restaurantId, menuItemId) {
  * Input: { 
  *   restaurantId (required), 
  *   menuItemData: { 
- *     meta: { name (required), description, categoryName, image },
+ *     meta: { name (required), description, categoryName, primarySubcategoryName (optional), image },
  *     categoryId (required),
+ *     primarySubcategoryId (optional) - the "home" subcategory,
+ *     subcategoryIds (optional) - array of all subcategory IDs item belongs to,
  *     priceInfo: { basePrice (required), discount, finalPrice },
  *     variants, addons, nutritionalInfo, allergenTags, isInStock
  *   } 
  * }
- * Creates a new menu item
+ * Creates a new menu item with optional subcategory support
  */
 async function createMenuItem(restaurantId, menuItemData) {
   try {
     MenuValidation.validateRestaurantId(restaurantId);
     MenuValidation.validateCreateMenuItemInput(menuItemData);
+
+    const isCustomizable = (menuItemData.variants && menuItemData.variants.length > 0) ||
+      (menuItemData.addons && menuItemData.addons.length > 0);
     
-    const isCustomizable = (menuItemData.variants && menuItemData.variants.length > 0) || 
-                           (menuItemData.addons && menuItemData.addons.length > 0);
+    // Build the menu item data with subcategory fields (if provided)
+    const menuItemToSave = {
+      ...menuItemData,
+      // Ensure subcategory fields are set (nullable for backward compatibility)
+      primarySubcategoryId: menuItemData.primarySubcategoryId || null,
+      subcategoryIds: menuItemData.subcategoryIds || [],
+      isInStock: menuItemData.isInStock ?? true,
+      isCustomizable: isCustomizable,
+      lastUpdated: timestamp.serverTimestamp()
+    };
+
+    // Ensure primarySubcategoryName is in meta if primarySubcategoryId is provided
+    if (menuItemData.primarySubcategoryId && menuItemToSave.meta) {
+      menuItemToSave.meta.primarySubcategoryName = menuItemData.meta?.primarySubcategoryName || null;
+    }
+
+    // Data integrity: ensure primarySubcategoryId is included in subcategoryIds
+    if (menuItemToSave.primarySubcategoryId && 
+        !menuItemToSave.subcategoryIds.includes(menuItemToSave.primarySubcategoryId)) {
+      menuItemToSave.subcategoryIds.push(menuItemToSave.primarySubcategoryId);
+    }
+
     const newMenuItemRef = await db.collection('restaurants').doc(restaurantId)
-      .collection('menuItems').add({
-        ...menuItemData,
-        isInStock: menuItemData.isInStock ?? true,
-        isCustomizable: isCustomizable,
-        lastUpdated: timestamp.serverTimestamp()
-      });
+      .collection('menuItems').add(menuItemToSave);
     return newMenuItemRef.id;
   } catch (error) {
     console.error('Error creating menu item:', error);
@@ -151,26 +174,59 @@ async function createMenuItem(restaurantId, menuItemData) {
  *   restaurantId (required), 
  *   menuItemId (required),
  *   updateData: { 
- *     meta, categoryId, priceInfo, variants, addons, 
- *     nutritionalInfo, allergenTags, isInStock
+ *     meta, categoryId, primarySubcategoryId (optional), subcategoryIds (optional),
+ *     priceInfo, variants, addons, nutritionalInfo, allergenTags, isInStock
  *   } 
  * }
- * Updates an existing menu item
+ * Updates an existing menu item with optional subcategory support
  */
 async function updateMenuItem(restaurantId, menuItemId, updateData) {
   try {
     MenuValidation.validateRestaurantId(restaurantId);
     MenuValidation.validateItemId(menuItemId);
     MenuValidation.validateUpdateMenuItemInput(updateData);
+
+    const menuItemRef = db.collection('restaurants').doc(restaurantId)
+      .collection('menuItems').doc(menuItemId);
+
+    const isCustomizable = (updateData.variants && updateData.variants.length > 0) ||
+      (updateData.addons && updateData.addons.length > 0);
     
-    const isCustomizable = (updateData.variants && updateData.variants.length > 0) || 
-                           (updateData.addons && updateData.addons.length > 0);
-    await db.collection('restaurants').doc(restaurantId)
-      .collection('menuItems').doc(menuItemId).update({
-        ...updateData,
-        isCustomizable: isCustomizable,
-        lastUpdated: timestamp.serverTimestamp()
-      });
+    // Build update data with subcategory fields if provided
+    const updateToSave = {
+      ...updateData,
+      isCustomizable: isCustomizable,
+      lastUpdated: timestamp.serverTimestamp()
+    };
+
+    // Handle subcategory updates if provided
+    if (updateData.primarySubcategoryId !== undefined) {
+      updateToSave.primarySubcategoryId = updateData.primarySubcategoryId || null;
+    }
+    
+    if (updateData.subcategoryIds !== undefined) {
+      updateToSave.subcategoryIds = updateData.subcategoryIds || [];
+      
+      // Data integrity: ensure primarySubcategoryId is included in subcategoryIds
+      if (updateToSave.primarySubcategoryId && 
+          !updateToSave.subcategoryIds.includes(updateToSave.primarySubcategoryId)) {
+        updateToSave.subcategoryIds.push(updateToSave.primarySubcategoryId);
+      }
+    } else if (updateData.primarySubcategoryId !== undefined && updateData.primarySubcategoryId !== null) {
+      // FIX: When only primarySubcategoryId is updated, fetch existing subcategoryIds to validate/update
+      const existingDoc = await menuItemRef.get();
+      if (existingDoc.exists) {
+        const existingData = existingDoc.data();
+        const existingSubcategoryIds = existingData.subcategoryIds || [];
+        
+        // If primarySubcategoryId is not in existing subcategoryIds, add it
+        if (!existingSubcategoryIds.includes(updateData.primarySubcategoryId)) {
+          updateToSave.subcategoryIds = [...existingSubcategoryIds, updateData.primarySubcategoryId];
+        }
+      }
+    }
+
+    await menuItemRef.update(updateToSave);
     return true;
   } catch (error) {
     console.error('Error updating menu item:', error);
@@ -186,7 +242,7 @@ async function deleteMenuItem(restaurantId, menuItemId) {
   try {
     MenuValidation.validateRestaurantId(restaurantId);
     MenuValidation.validateItemId(menuItemId);
-    
+
     await db.collection('restaurants').doc(restaurantId)
       .collection('menuItems').doc(menuItemId).delete();
     return true;
@@ -204,7 +260,7 @@ async function getMenuItemsByCategory(restaurantId, categoryId) {
   try {
     MenuValidation.validateRestaurantId(restaurantId);
     MenuValidation.validateCategoryId(categoryId);
-    
+
     const menuItemsSnapshot = await db.collection('restaurants').doc(restaurantId)
       .collection('menuItems')
       .where('categoryId', '==', categoryId)
@@ -227,11 +283,11 @@ async function updateMenuItemStock(restaurantId, menuItemId, isInStock) {
   try {
     MenuValidation.validateRestaurantId(restaurantId);
     MenuValidation.validateItemId(menuItemId);
-    
+
     if (typeof isInStock !== 'boolean') {
       throw new Error('isInStock must be a boolean');
     }
-    
+
     await db.collection('restaurants').doc(restaurantId)
       .collection('menuItems').doc(menuItemId).update({
         isInStock: isInStock,
@@ -251,7 +307,7 @@ async function updateMenuItemStock(restaurantId, menuItemId, isInStock) {
 async function getAllMenuItemsInStock(restaurantId) {
   try {
     MenuValidation.validateRestaurantId(restaurantId);
-    
+
     const menuItemsSnapshot = await db.collection('restaurants').doc(restaurantId)
       .collection('menuItems')
       .where('isInStock', '==', true)

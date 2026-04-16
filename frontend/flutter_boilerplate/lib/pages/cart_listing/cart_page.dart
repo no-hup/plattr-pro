@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutterboilerplate/pages/cart_listing/cart_listing_state.dart';
-import 'package:flutterboilerplate/pages/menuListing/models/cart.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_item.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_price_info.dart';
-import 'package:flutterboilerplate/pages/menuListing/models/addon_selection.dart';
-import 'package:flutterboilerplate/pages/menuListing/models/variant_selection.dart';
-import 'package:flutterboilerplate/pages/menuListing/menu_response.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
+import 'package:flutterboilerplate/theme/theme.dart';
+import 'package:flutterboilerplate/widgets/consumer_app_bar.dart';
+import 'package:flutterboilerplate/widgets/price_display.dart';
+import 'package:flutterboilerplate/widgets/primary_action_button.dart';
+import 'package:flutterboilerplate/widgets/quantity_selector.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({
-    super.key,
     required this.restaurantId,
     required this.tableId,
+    super.key,
   });
 
   final String restaurantId;
@@ -24,15 +25,19 @@ class CartPage extends StatefulWidget {
   State<CartPage> createState() => _CartPageState();
 }
 
-class _CartPageState extends State<CartPage> {
+class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
     // Direct debug print for log testing
     print('🔍🔍🔍 TESTING LOGS - CART PAGE INIT STATE 🔍🔍🔍');
     
+    // Register lifecycle observer for offers refresh on resume
+    WidgetsBinding.instance.addObserver(this);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      AppLogger.log('🛒 CART: Initializing cart page for table ${widget.tableId}');
+      AppLogger.log(
+          '🛒 CART: Initializing cart page for table ${widget.tableId}',);
       context.read<CartListingState>().fetchCart(
             tableId: widget.tableId,
             restaurantId: widget.restaurantId,
@@ -41,26 +46,44 @@ class _CartPageState extends State<CartPage> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Refresh offers when app comes back to foreground
+    if (state == AppLifecycleState.resumed) {
+      AppLogger.log('🔄 CART: App resumed, refreshing offers');
+      context.read<CartListingState>().fetchOffers(
+        restaurantId: widget.restaurantId,
+        tableId: widget.tableId,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cart'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.receipt_long),
-            onPressed: () {
-              AppLogger.log('🛒 CART: Navigate to orders');
-              context.go('/r/${widget.restaurantId}/t/${widget.tableId}/orders');
-            },
+      appBar: ConsumerAppBar(
+        titleWidget: Text(
+          'Cart',
+          style: AppTypography.uiSerif.copyWith(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: AppColors.primary,
           ),
-          IconButton(
-            icon: const Icon(Icons.menu_book),
-            onPressed: () {
-              AppLogger.log('🛒 CART: Navigate back to menu');
-              context.go('/r/${widget.restaurantId}/t/${widget.tableId}');
-            },
-          ),
-        ],
+        ),
+        onOrdersTap: () {
+          AppLogger.log('🛒 CART: Navigate to orders');
+          context.go('/r/${widget.restaurantId}/t/${widget.tableId}/orders');
+        },
+        onMenuTap: () {
+          AppLogger.log('🛒 CART: Navigate back to menu');
+          context.go('/r/${widget.restaurantId}/t/${widget.tableId}');
+        },
       ),
       body: Consumer<CartListingState>(
         builder: (context, state, child) {
@@ -107,21 +130,21 @@ class _CartPageState extends State<CartPage> {
             size: 64,
             color: Theme.of(context).colorScheme.error,
           ),
-          const SizedBox(height: 16),
+          AppSpacing.verticalLG,
           Text(
             'Oops! Something went wrong',
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 8),
+          AppSpacing.verticalSM,
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
             child: Text(
               error,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
-          const SizedBox(height: 24),
+          AppSpacing.verticalXL,
           ElevatedButton(
             onPressed: () {
               AppLogger.log('🛒 CART: Retrying cart fetch');
@@ -147,17 +170,17 @@ class _CartPageState extends State<CartPage> {
             size: 64,
             color: Theme.of(context).colorScheme.outline,
           ),
-          const SizedBox(height: 16),
+          AppSpacing.verticalLG,
           Text(
             'Your cart is empty',
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 8),
+          AppSpacing.verticalSM,
           Text(
             'Add items from the menu to get started',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
-          const SizedBox(height: 24),
+          AppSpacing.verticalXL,
           ElevatedButton(
             onPressed: () {
               AppLogger.log('🛒 CART: Navigate to menu from empty cart');
@@ -173,10 +196,10 @@ class _CartPageState extends State<CartPage> {
 
 class CartItemsList extends StatelessWidget {
   const CartItemsList({
-    super.key,
     required this.items,
     required this.tableId,
     required this.restaurantId,
+    super.key,
   });
 
   final List<CartItem> items;
@@ -186,7 +209,7 @@ class CartItemsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.pagePadding,
       itemCount: items.length,
       separatorBuilder: (context, index) => const Divider(),
       itemBuilder: (context, index) {
@@ -203,10 +226,10 @@ class CartItemsList extends StatelessWidget {
 
 class CartItemTile extends StatelessWidget {
   const CartItemTile({
-    super.key,
     required this.item,
     required this.tableId,
     required this.restaurantId,
+    super.key,
   });
 
   final CartItem item;
@@ -215,330 +238,209 @@ class CartItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    // Note: We use Theme.of(context) for some parts but AppTypography/AppColors for major styling
+    // to align with the new design system
     final state = context.watch<CartListingState>();
     final menuItem = state.getMenuItemById(item.menuItemId);
     final hasMenuItem = menuItem != null;
-    
+
     // Enhanced detailed logging for debugging
     AppLogger.log('💲 CART_TILE: Building tile for item ${item.menuItemId}');
-    AppLogger.log('💲 CART_TILE: - name: ${item.name ?? "null"} (from ${item.name == null && hasMenuItem ? "menu" : "cart"})');
-    AppLogger.log('💲 CART_TILE: - menuItem found: ${hasMenuItem ? "yes" : "no"}');
-    AppLogger.log('💲 CART_TILE: - quantity: ${item.quantity}');
-    AppLogger.log('💲 CART_TILE: - priceInfo present: ${item.priceInfo != null ? "yes" : "null"}');
-    
-    final bool isUsingMenuDataForDisplay = 
+
+    final isUsingMenuDataForDisplay =
         (item.name == null || item.name!.isEmpty) && hasMenuItem ||
-        item.priceInfo == null && hasMenuItem;
-        
-    if (isUsingMenuDataForDisplay) {
-      AppLogger.log('💲 CART_TILE: Using menu data to supplement missing cart item data');
-    }
-    
-    if (item.priceInfo != null) {
-      AppLogger.log('💲 CART_TILE: - itemBasePrice: ${item.priceInfo?.itemBasePrice}');
-      AppLogger.log('💲 CART_TILE: - itemFinalPrice: ${item.priceInfo?.itemFinalPrice}');
-      AppLogger.log('💲 CART_TILE: - finalPrice: ${item.priceInfo?.finalPrice}');
-    } else if (hasMenuItem) {
-      AppLogger.log('💲 CART_TILE: - Fallback to menuItem price: ${menuItem.priceInfo.basePrice}');
-    }
-    
-    AppLogger.log('💲 CART_TILE: - selectedVariants count: ${item.selectedVariants.length}');
-    AppLogger.log('💲 CART_TILE: - selectedAddons count: ${item.selectedAddons.length}');
-    
+            item.priceInfo == null && hasMenuItem;
+
     // Get pricing information with robust fallbacks
-    final basePrice = item.priceInfo?.itemBasePrice?.toDouble() ?? 
-                     (menuItem?.priceInfo.basePrice?.toDouble() ?? 
-                      (item.itemPrice ?? 0.0));
-                     
-    final finalPrice = item.priceInfo?.finalPrice?.toDouble() ?? 
-                      (menuItem?.priceInfo.finalPrice?.toDouble() ?? 
-                       (item.totalPrice ?? basePrice));
-                      
-    final discount = item.priceInfo?.discount?.toDouble() ?? 
-                    (menuItem?.priceInfo.discount?.toDouble() ?? 
-                     (basePrice > finalPrice ? basePrice - finalPrice : 0.0));
-    
+    final basePrice = item.priceInfo?.itemBasePrice.toDouble() ??
+        (menuItem?.priceInfo.basePrice.toDouble() ?? (item.itemPrice ?? 0.0));
+
+    final finalPrice = item.priceInfo?.finalPrice.toDouble() ??
+        (menuItem?.priceInfo.finalPrice.toDouble() ??
+            (item.totalPrice ?? basePrice));
+
+    final discount = item.priceInfo?.discount.toDouble() ??
+        (menuItem?.priceInfo.discount.toDouble() ??
+            (basePrice > finalPrice ? basePrice - finalPrice : 0.0));
+
     // Only show strikethrough if base price is different from final price
-    final bool showBasePriceStrikethrough = basePrice > 0 && basePrice != finalPrice;
-    
+    final showBasePriceStrikethrough = basePrice > 0 && basePrice != finalPrice;
+
     // Get item name with fallbacks
-    final String itemName = item.name ?? 
-                           (hasMenuItem ? menuItem.meta.name : 'Item ${item.menuItemId}');
-    
+    final itemName = item.name ??
+        (hasMenuItem ? menuItem.meta.name : 'Item ${item.menuItemId}');
+
     // Get description with fallbacks
-    final String? itemDescription = item.description ?? 
-                                 (hasMenuItem ? menuItem.meta.description : null);
-    
-    return Card(
-      elevation: 2,
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Item Name and Price Row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    itemName,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+    final itemDescription =
+        item.description ?? (hasMenuItem ? menuItem.meta.description : null);
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.paper,
+        border: Border(bottom: BorderSide(color: AppColors.divider)),
+      ),
+      padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.md, horizontal: AppSpacing.sm,),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Item Name and Price Row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  itemName,
+                  style: AppTypography.body.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(width: 8),
-                
-                // Price display
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+              ),
+              const SizedBox(width: 8),
+
+              // Price display - using centralized PriceDisplay widget
+              PriceDisplay(
+                finalPrice: finalPrice,
+                basePrice: showBasePriceStrikethrough ? basePrice : null,
+                discountAmount: discount > 0 ? discount : null,
+              ),
+            ],
+          ),
+
+          // Item Description (if available)
+          if (itemDescription != null && itemDescription.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              itemDescription,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.inkLight,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+
+          // Add a note if we're using menu data as fallback
+          if (isUsingMenuDataForDisplay) ...[
+            const SizedBox(height: 8),
+            Text(
+              '* Using menu data to display this item',
+              style: AppTypography.labelSmall.copyWith(
+                fontStyle: FontStyle.italic,
+                color: AppColors.primary,
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 12),
+
+          // Variants Section
+          if (item.selectedVariants.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                'Selected Variants',
+                style: AppTypography.labelSmall.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+            ...item.selectedVariants.map((variant) {
+              final variantPrice = variant.selectedOption.price;
+              final showVariantPrice = variantPrice > 0;
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4, left: 8),
+                child: Row(
                   children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (showBasePriceStrikethrough)
-                          Text(
-                            '₹${basePrice.toStringAsFixed(2)}',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              decoration: TextDecoration.lineThrough,
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        if (showBasePriceStrikethrough)
-                          const SizedBox(width: 4),
-                        Text(
-                          '₹${finalPrice.toStringAsFixed(2)}',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                    const Icon(
+                      Icons.check_circle_outline,
+                      size: 16,
+                      color: AppColors.primary,
                     ),
-                    // Show discount if applicable
-                    if (discount > 0) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        '(-₹${discount.toStringAsFixed(2)})',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.error,
-                        ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${variant.name}: ${variant.selectedOption.name}',
+                        style: AppTypography.bodySmall,
                       ),
-                    ],
+                    ),
+                    if (showVariantPrice)
+                      Text(
+                        '₹${variantPrice.toStringAsFixed(2)}',
+                        style: AppTypography.bodySmall,
+                      ),
                   ],
                 ),
-              ],
+              );
+            }),
+          ],
+
+          // Addons Section
+          if (item.selectedAddons.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            if (item.selectedVariants.isEmpty) const Divider(height: 1),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                'Selected Add-ons',
+                style: AppTypography.labelSmall.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
             ),
-            
-            // Item Description (if available)
-            if (itemDescription != null && itemDescription.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(
-                itemDescription,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-            
-            // Add a note if we're using menu data as fallback
-            if (isUsingMenuDataForDisplay) ...[
-              const SizedBox(height: 8),
-              Text(
-                '* Using menu data to display this item',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontStyle: FontStyle.italic,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ],
-            
-            const SizedBox(height: 12),
-            
-            // Variants Section
-            if (item.selectedVariants.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  'Selected Variants',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ),
-              ...item.selectedVariants.map((variant) {
-                // Display variant information
-                final variantPrice = variant.selectedOption.price;
-                final showVariantPrice = variantPrice > 0;
-                
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 4, left: 8),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check_circle_outline,
-                        size: 16,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '${variant.name}: ${variant.selectedOption.name}',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ),
-                      if (showVariantPrice)
-                        Text(
-                          '₹${variantPrice.toStringAsFixed(2)}',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ],
-            
-            // Addons Section
-            if (item.selectedAddons.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              if (item.selectedVariants.isEmpty) const Divider(height: 1),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  'Selected Add-ons',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.secondary,
-                  ),
-                ),
-              ),
-              ...item.selectedAddons.map((addon) {
-                // Display addon information
-                final addonPrice = addon.price;
-                final showAddonPrice = addonPrice > 0;
-                
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 4, left: 8),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.add_circle,
-                        size: 16,
-                        color: theme.colorScheme.secondary,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          addon.name,
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ),
-                      if (showAddonPrice)
-                        Text(
-                          '₹${addonPrice.toStringAsFixed(2)}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ],
-            
-            // Fallback to legacy variant display if needed - using Map<String, String> from extension
-            if (item.selectedVariants.isEmpty && item.selectedVariantsMap != null && item.selectedVariantsMap!.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  'Selected Variants',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: item.selectedVariantsMap!.entries.map((entry) {
-                        return _buildChip(context, '${entry.key}: ${entry.value}', 
-                          color: theme.colorScheme.primary.withOpacity(0.1),
-                          textColor: theme.colorScheme.primary
-                        );
-                      }).toList(),
+            ...item.selectedAddons.map((addon) {
+              final addonPrice = addon.price;
+              final showAddonPrice = addonPrice > 0;
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4, left: 8),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.add_circle,
+                      size: 16,
+                      color: AppColors.primary,
                     ),
-                  ),
-                ],
-              ),
-            ],
-            
-            // Fallback to legacy addon display if needed - using List<String> from extension
-            if (item.selectedAddons.isEmpty && item.selectedAddonsList != null && item.selectedAddonsList!.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              if (item.selectedVariants.isEmpty && 
-                  (item.selectedVariantsMap == null || item.selectedVariantsMap!.isEmpty)) 
-                const Divider(height: 1),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  'Selected Add-ons',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.secondary,
-                  ),
-                ),
-              ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: item.selectedAddonsList!.map((addon) {
-                        return _buildChip(context, addon, 
-                          color: theme.colorScheme.secondary.withOpacity(0.1),
-                          textColor: theme.colorScheme.secondary
-                        );
-                      }).toList(),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        addon.name,
+                        style: AppTypography.bodySmall,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-            
-            const SizedBox(height: 12),
-            
-            // Quantity Control
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Add remove button
-                TextButton.icon(
-                  onPressed: context.watch<CartListingState>().isUpdatingCart
+                    if (showAddonPrice)
+                      Text(
+                        '₹${addonPrice.toStringAsFixed(2)}',
+                        style: AppTypography.bodySmall.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }),
+          ],
+
+          const SizedBox(height: 12),
+
+          // Quantity Control
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Add remove button
+              TextButton.icon(
+                onPressed: context.watch<CartListingState>().isUpdatingCart
                     ? null
                     : () {
-                        AppLogger.log('🛒 CART: Removing item ${item.menuItemId} from cart');
+                        AppLogger.log(
+                            '🛒 CART: Removing item ${item.menuItemId} from cart',);
                         if (item.quantity <= 1) {
                           _showRemoveConfirmation(context);
                         } else {
@@ -547,50 +449,88 @@ class CartItemTile extends StatelessWidget {
                                 false,
                                 tableId: tableId,
                                 restaurantId: restaurantId,
+                                context: context,
                               );
                         }
                       },
-                  icon: const Icon(Icons.delete_outline, size: 20),
-                  label: const Text('Remove'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: theme.colorScheme.error,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                  ),
+                icon: const Icon(Icons.delete_outline, size: 20),
+                label: const Text('Remove'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.danger,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                 ),
-                _buildQuantityControls(context),
-              ],
-            ),
-          ],
-        ),
+              ),
+              // Quantity Control - using centralized QuantitySelector
+              QuantitySelector(
+                quantity: item.quantity,
+                onDecrement: context.watch<CartListingState>().isUpdatingCart ||
+                        item.quantity <= 1
+                    ? null
+                    : () {
+                        AppLogger.log(
+                            '🛒 CART: Decreasing quantity for ${item.menuItemId}',);
+                        context.read<CartListingState>().updateCartItem(
+                              item,
+                              false,
+                              tableId: tableId,
+                              restaurantId: restaurantId,
+                              context: context,
+                            );
+                      },
+                onIncrement: context.watch<CartListingState>().isUpdatingCart
+                    ? null
+                    : () {
+                        AppLogger.log(
+                            '🛒 CART: Increasing quantity for ${item.menuItemId}',);
+                        context.read<CartListingState>().updateCartItem(
+                              item,
+                              true,
+                              tableId: tableId,
+                              restaurantId: restaurantId,
+                              context: context,
+                            );
+                      },
+                isEnabled: !context.watch<CartListingState>().isUpdatingCart,
+                minQuantity: 1,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   // Add a confirmation dialog for removing items
-  void _showRemoveConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+  void _showRemoveConfirmation(BuildContext pageContext) {
+    // Capture the page context so the error toast has a still-mounted context
+    // to land on after the dialog is dismissed. The dialogContext's Element is
+    // disposed the moment Navigator.pop() fires, which would silently swallow
+    // any error toast shown via CartListingState._showErrorToast.
+    showDialog<void>(
+      context: pageContext,
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Remove Item'),
-        content: const Text('Are you sure you want to remove this item from your cart?'),
+        content: const Text(
+            'Are you sure you want to remove this item from your cart?',),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('CANCEL'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
               // Set quantity to 0 to remove the item
-              context.read<CartListingState>().updateCartItem(
+              pageContext.read<CartListingState>().updateCartItem(
                     item,
                     false,
                     tableId: tableId,
                     restaurantId: restaurantId,
+                    context: pageContext,
                   );
             },
             style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: AppColors.danger,
             ),
             child: const Text('REMOVE'),
           ),
@@ -598,101 +538,14 @@ class CartItemTile extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildQuantityControls(BuildContext context) {
-    final theme = Theme.of(context);
-    final state = context.watch<CartListingState>();
-    
-    return Row(
-      children: [
-        // Decrement button
-        IconButton(
-          icon: const Icon(Icons.remove),
-          onPressed: state.isUpdatingCart || item.quantity <= 1
-              ? null
-              : () {
-                  AppLogger.log('🛒 CART: Decreasing quantity for ${item.menuItemId}');
-                  context.read<CartListingState>().updateCartItem(
-                        item,
-                        false,
-                        tableId: tableId,
-                        restaurantId: restaurantId,
-                      );
-                },
-          style: IconButton.styleFrom(
-            backgroundColor: theme.colorScheme.surfaceVariant,
-            foregroundColor: theme.colorScheme.primary,
-            disabledBackgroundColor: theme.colorScheme.surfaceVariant.withOpacity(0.5),
-            disabledForegroundColor: theme.colorScheme.onSurface.withOpacity(0.38),
-          ),
-        ),
-        
-        // Quantity display
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text(
-            '${item.quantity}',
-            style: theme.textTheme.titleMedium,
-          ),
-        ),
-        
-        // Increment button
-        IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: state.isUpdatingCart
-              ? null
-              : () {
-                  AppLogger.log('🛒 CART: Increasing quantity for ${item.menuItemId}');
-                  context.read<CartListingState>().updateCartItem(
-                        item,
-                        true,
-                        tableId: tableId,
-                        restaurantId: restaurantId,
-                      );
-                },
-          style: IconButton.styleFrom(
-            backgroundColor: theme.colorScheme.primary,
-            foregroundColor: theme.colorScheme.onPrimary,
-            disabledBackgroundColor: theme.colorScheme.surfaceVariant.withOpacity(0.5),
-            disabledForegroundColor: theme.colorScheme.onSurface.withOpacity(0.38),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildChip(BuildContext context, String label, {
-    bool isFromMenu = false,
-    Color? color,
-    Color? textColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color ?? (isFromMenu 
-          ? Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5) 
-          : Theme.of(context).colorScheme.surfaceVariant),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          color: textColor ?? (isFromMenu
-            ? Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7)
-            : Theme.of(context).colorScheme.onSurfaceVariant),
-        ),
-      ),
-    );
-  }
 }
 
 class CartPriceSummary extends StatelessWidget {
   const CartPriceSummary({
-    super.key,
     required this.priceInfo,
     required this.tableId,
     required this.restaurantId,
+    super.key,
   });
 
   final CartPriceInfo? priceInfo;
@@ -703,48 +556,47 @@ class CartPriceSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final state = context.watch<CartListingState>();
-    
+
     // If priceInfo is null, use default values
     if (priceInfo == null) {
-      AppLogger.log('💰 CART_SUMMARY: No priceInfo available, showing empty state');
+      AppLogger.log(
+          '💰 CART_SUMMARY: No priceInfo available, showing empty state',);
       return const SizedBox.shrink();
     }
-    
+
     // Log the cart price information
     AppLogger.log('💰 CART_SUMMARY: priceInfo data');
     AppLogger.log('💰 CART_SUMMARY: - basePrice: ${priceInfo!.basePrice}');
     AppLogger.log('💰 CART_SUMMARY: - finalPrice: ${priceInfo!.finalPrice}');
-    AppLogger.log('💰 CART_SUMMARY: - totalDiscountAmount: ${priceInfo!.totalDiscountAmount}');
-    
+    AppLogger.log(
+        '💰 CART_SUMMARY: - totalDiscountAmount: ${priceInfo!.totalDiscountAmount}',);
+
     // Get values directly from priceInfo with safe fallbacks
     final basePrice = priceInfo!.basePrice?.toDouble() ?? 0.0;
     final finalPrice = priceInfo!.finalPrice?.toDouble() ?? 0.0;
     final discountAmount = priceInfo!.totalDiscountAmount?.toDouble() ?? 0.0;
-    
+
     // Detect if the cart is empty (has no items or all have zero prices)
-    final bool hasNoItems = state.cart?.items.isEmpty ?? true;
-    
+    final hasNoItems = state.cart?.items.isEmpty ?? true;
+
     // Only show strikethrough if base price is different from final price
-    final bool showBasePriceStrikethrough = basePrice > finalPrice && basePrice > 0 && finalPrice > 0;
-    final bool hasDiscount = discountAmount > 0;
-    
+    final showBasePriceStrikethrough =
+        basePrice > finalPrice && basePrice > 0 && finalPrice > 0;
+    final hasDiscount = discountAmount > 0;
+
     // Hide the summary if both prices are zero or cart has no items
     if (finalPrice <= 0 || hasNoItems) {
-      AppLogger.log('💰 CART_SUMMARY: Hiding summary because prices are zero or cart is empty');
+      AppLogger.log(
+          '💰 CART_SUMMARY: Hiding summary because prices are zero or cart is empty',);
       return const SizedBox.shrink();
     }
-    
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
+      padding: AppSpacing.pagePadding,
+      decoration: const BoxDecoration(
+        color: AppColors.paper,
+        border: Border(top: BorderSide(color: AppColors.divider)),
+        boxShadow: AppDimensions.shadowPaper,
       ),
       child: SafeArea(
         child: Column(
@@ -753,49 +605,49 @@ class CartPriceSummary extends StatelessWidget {
             // Only show subtotal if base price is different from final price
             if (showBasePriceStrikethrough)
               _buildPriceRow(
-                context, 
-                'Subtotal:', 
+                context,
+                'Subtotal:',
                 '₹${basePrice.toStringAsFixed(2)}',
                 valueStyle: theme.textTheme.bodyLarge?.copyWith(
                   decoration: TextDecoration.lineThrough,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-            
+
             // Only show discount if there is a non-zero discount
             if (hasDiscount)
               _buildPriceRow(
-                context, 
-                'Discount:', 
+                context,
+                'Discount:',
                 '-₹${discountAmount.toStringAsFixed(2)}',
                 valueColor: theme.colorScheme.error,
               ),
-              
+
             const Divider(height: 24),
-            
+
             // Always show final price
             _buildPriceRow(
-              context, 
-              'To Pay:', 
+              context,
+              'To Pay:',
               '₹${finalPrice.toStringAsFixed(2)}',
-              labelStyle: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-              valueStyle: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+              labelStyle: AppTypography.h3,
+              valueStyle: AppTypography.h3.copyWith(
+                color: AppColors.primary,
               ),
             ),
-            
-            const SizedBox(height: 16),
-            
+
+            AppSpacing.verticalLG,
+
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: PrimaryActionButton(
+                label: 'PROCEED TO CHECKOUT',
+                isLoading: state.isUpdatingCart,
                 onPressed: state.isUpdatingCart || hasNoItems
-                    ? null 
+                    ? null
                     : () async {
                         AppLogger.log('🛒 CART: Proceeding to checkout');
-                        
+
                         // Show loading indicator
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -803,13 +655,14 @@ class CartPriceSummary extends StatelessWidget {
                             duration: Duration(seconds: 2),
                           ),
                         );
-                        
+
                         // Call checkout method on the state provider
-                        final success = await context.read<CartListingState>().checkoutCart(
-                          restaurantId: restaurantId,
-                          tableId: tableId,
-                        );
-                        
+                        final success =
+                            await context.read<CartListingState>().checkoutCart(
+                                  restaurantId: restaurantId,
+                                  tableId: tableId,
+                                );
+
                         if (success) {
                           // Show success message
                           if (context.mounted) {
@@ -819,15 +672,18 @@ class CartPriceSummary extends StatelessWidget {
                                 backgroundColor: Colors.green,
                               ),
                             );
-                            
-                            // Navigate to order confirmation/status page
-                            // TODO: Implement order status page
-                            // context.go('/r/$restaurantId/t/$tableId/order-status');
+
+                            // Navigate to orders page to show order history
+                            AppLogger.log(
+                                '🛒 CART: Checkout successful, navigating to orders page',);
+                            context.go('/r/$restaurantId/t/$tableId/orders');
                           }
                         } else {
                           // Show error message
                           if (context.mounted) {
-                            final errorMsg = context.read<CartListingState>().error ?? 'Failed to place order';
+                            final errorMsg =
+                                context.read<CartListingState>().error ??
+                                    'Failed to place order';
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(errorMsg),
@@ -837,18 +693,6 @@ class CartPriceSummary extends StatelessWidget {
                           }
                         }
                       },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: theme.colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: state.isUpdatingCart
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(color: Colors.white),
-                      )
-                    : const Text('PROCEED TO CHECKOUT'),
               ),
             ),
           ],
@@ -858,15 +702,15 @@ class CartPriceSummary extends StatelessWidget {
   }
 
   Widget _buildPriceRow(
-    BuildContext context, 
-    String label, 
+    BuildContext context,
+    String label,
     String value, {
     TextStyle? labelStyle,
     TextStyle? valueStyle,
     Color? valueColor,
   }) {
     final theme = Theme.of(context);
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -878,7 +722,7 @@ class CartPriceSummary extends StatelessWidget {
           ),
           Text(
             value,
-            style: valueStyle ?? 
+            style: valueStyle ??
                 theme.textTheme.bodyLarge?.copyWith(
                   color: valueColor,
                 ),

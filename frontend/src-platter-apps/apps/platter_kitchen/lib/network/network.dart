@@ -1,9 +1,13 @@
 import 'package:dio/dio.dart';
 
-class NetworkService {
-  final Dio dio;
+export 'api_constants.dart';
+export 'kitchen_order_api_service.dart';
 
+/// Thin Dio holder retained for any legacy references. New code should
+/// construct `KitchenOrderApiService` directly (it picks up the singleton
+/// `DioClient` from `platter_core` by default).
+class NetworkService {
   NetworkService(this.dio);
 
-  // Add network methods here
+  final Dio dio;
 }

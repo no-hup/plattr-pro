@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>table-validateTableAndLocation · Session OK</title>
+  <style>
+    body { font-family: 'SFMono-Regular', Consolas, monospace; margin: 24px; line-height: 1.4; }
+    pre { background: #1f2933; color: #f1f5f9; padding: 16px; border-radius: 8px; overflow-x: auto; }
+    code { font-family: inherit; }
+    h1 { margin-bottom: 0; }
+    h2 { margin-top: 32px; }
+  </style>
+</head>
+<body>
+  <h1>table-validateTableAndLocation</h1>
+  <p><strong>Scenario:</strong> Session OK – existing sessionId unlocks the menu immediately.</p>
+
+  <h2>Request</h2>
+  <pre><code>{
+  "data": {
+    "restaurantId": "rest001",
+    "tableId": "table001",
+    "userLocation": { "latitude": 12.9716, "longitude": 77.5946 },
+    "sessionId": "sess_active_a1"
+  }
+}</code></pre>
+
+  <h2>Response</h2>
+  <pre><code>{
+  "status": "success",
+  "message": "Session validated",
+  "data": {
+    "sessionId": "sess_active_a1",
+    "expiresAt": "2025-11-14T10:13:00Z",
+    "tableState": "ACTIVE",
+    "requiresOtp": false
+  }
+}</code></pre>
+
+  <h2>Notes</h2>
+  <ul>
+    <li>Bypasses OTP when the sessionId is still valid and table is ACTIVE.</li>
+    <li>Downstream nodes: <code>menu-fetchMenu</code> (loads immediately).</li>
+  </ul>
+</body>
+</html>
