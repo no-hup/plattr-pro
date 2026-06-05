@@ -36,7 +36,9 @@ class MenuPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final menuState = context.read<MenuState>();
 
-    return FutureBuilder<void>(
+    return PopScope(
+      canPop: false,
+      child: FutureBuilder<void>(
       future: menuState.fetchMenu(restaurantId, tableId: tableId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -62,6 +64,7 @@ class MenuPage extends StatelessWidget {
           tableId: tableId,
         );
       },
+      ),
     );
   }
 }

@@ -208,8 +208,14 @@ class CartHistoryItem with _$CartHistoryItem {
               'Unknown Item',
           'quantity':
               (item['quantity'] is num) ? (item['quantity'] as num).toInt() : 1,
-          'price':
-              (item['price'] is num) ? (item['price'] as num).toDouble() : 0.0,
+          'price': (item['price'] is num)
+              ? (item['price'] as num).toDouble()
+              : (item['priceInfo'] is Map<String, dynamic>)
+                  ? ((item['priceInfo'] as Map<String, dynamic>)['finalPrice']
+                              as num?)
+                          ?.toDouble() ??
+                      0.0
+                  : 0.0,
           'variants': _sanitizeVariants(
             item['selectedVariantsDetails'] as List<dynamic>? ?? [],
           ),

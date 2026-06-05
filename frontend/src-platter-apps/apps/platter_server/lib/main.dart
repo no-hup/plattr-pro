@@ -1,12 +1,17 @@
-import 'dart:async'; // For runZonedGuarded
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'theme/app_theme.dart';
-import 'package:platter_server/pages/auth/login_screen.dart'; // Import LoginScreen
-// import 'main_navigation.dart'; // No longer directly used here
 import 'package:flutter/foundation.dart' show kReleaseMode;
-import './config/app_config.dart'; // Import AppConfig
+import 'package:platter_core/platter_core.dart' hide AppConfig, Environment;
+import 'theme/app_theme.dart';
+import 'pages/auth/login_screen.dart';
+import 'pages/auth/login_provider.dart';
+import 'main_navigation.dart';
+import 'config/app_config.dart';
 
-void main() async {
+/// Global navigator key for showing dialogs from anywhere (e.g., interceptors)
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+Future<void> main() async {
   // Global error handler for errors caught by the Flutter framework
   FlutterError.onError = (FlutterErrorDetails details) {
     print(
@@ -31,7 +36,6 @@ void main() async {
 
   // Global error handler for other Dart errors (sync/async)
   runZonedGuarded<Future<void>>(() async {
-    // Ensure Flutter bindings are initialized inside the zone
     WidgetsFlutterBinding.ensureInitialized();
 
     // Initialize AppConfig based on build mode
@@ -40,6 +44,10 @@ void main() async {
     } else {
       AppConfig.initialize(Environment.dev);
     }
+
+    // Set up global interrupt flow handler
+    InterruptFlowInterceptor.navigatorKey = navigatorKey;
+    InterruptFlowInterceptor.registerHandler(DefaultInterruptFlowHandler.handle);
 
     runApp(const MyApp());
   }, (error, stackTrace) {
@@ -69,11 +77,72 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Server Platter',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
-      home: const LoginScreen(),
+      debugShowCheckedModeBanner: false,
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const _AuthWrapper(),
+        '/login': (context) => const LoginScreen(),
+      },
     );
+  }
+}
+
+/// Wrapper that checks for existing session and auto-logs in if valid
+class _AuthWrapper extends StatefulWidget {
+  const _AuthWrapper();
+
+  @override
+  State<_AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<_AuthWrapper> {
+  bool _isChecking = true;
+  bool _hasSession = false;
+  LoginResponseData? _sessionData;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSession();
+  }
+
+  Future<void> _checkSession() async {
+    final provider = LoginProvider();
+    final restored = await provider.tryRestoreSession();
+
+    if (mounted) {
+      setState(() {
+        _isChecking = false;
+        _hasSession = restored;
+        _sessionData = provider.loginData;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isChecking) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_hasSession && _sessionData != null) {
+      return MainNavigation(
+        restaurantId: _sessionData!.restaurantId,
+        sessionId: _sessionData!.sessionId,
+        restaurantName: _sessionData!.restaurantName,
+        serverName: _sessionData!.name,
+      );
+    }
+
+    return const LoginScreen();
   }
 }

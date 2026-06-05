@@ -100,7 +100,7 @@ class KitchenLiveProvider extends ChangeNotifier {
         sessionId: sessionId,
       );
 
-      _activeCarts = response.carts;
+      _activeCarts = List.of(response.carts);
       _currentViewType = response.widgetType;
       _sortCarts();
 

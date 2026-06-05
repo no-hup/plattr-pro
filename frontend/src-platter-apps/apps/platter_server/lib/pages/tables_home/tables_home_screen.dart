@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
@@ -13,12 +15,14 @@ import '../../widgets/state_views.dart';
 class TablesHomeScreen extends StatefulWidget {
   final String restaurantId;
   final String sessionId;
+  final bool isActiveTab;
   final ValueChanged<ServerAppBarConfiguration>? onAppBarConfigChanged;
 
   const TablesHomeScreen({
     super.key,
     required this.restaurantId,
     required this.sessionId,
+    this.isActiveTab = false,
     this.onAppBarConfigChanged,
   });
 
@@ -29,6 +33,11 @@ class TablesHomeScreen extends StatefulWidget {
 class _TablesHomeScreenState extends State<TablesHomeScreen> {
   late final ScrollController _scrollController;
   late final TablesProvider _tablesProvider;
+  Timer? _autoRefreshTimer;
+
+  static const _autoRefreshInterval = kDebugMode
+      ? Duration(seconds: 10)
+      : Duration(seconds: 60);
 
   @override
   void initState() {
@@ -44,14 +53,56 @@ class _TablesHomeScreenState extends State<TablesHomeScreen> {
       _fetchTables();
       _updateAppBarConfig();
     });
+
+    if (widget.isActiveTab) _startPolling();
+  }
+
+  @override
+  void didUpdateWidget(covariant TablesHomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActiveTab != oldWidget.isActiveTab) {
+      if (widget.isActiveTab) {
+        _startPolling();
+        _fetchTables();
+      } else {
+        _stopPolling();
+      }
+    }
   }
 
   @override
   void dispose() {
+    _autoRefreshTimer?.cancel();
     _tablesProvider.removeListener(_handleProviderUpdate);
     _tablesProvider.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _startPolling() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(_autoRefreshInterval, (_) {
+      _pollTables();
+    });
+  }
+
+  void _stopPolling() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = null;
+  }
+
+  Future<void> _pollTables() async {
+    await _fetchTables();
+    if (_tablesProvider.state == DataState.error && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _tablesProvider.errorMessage ?? 'Failed to refresh tables',
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   void _handleProviderUpdate() {

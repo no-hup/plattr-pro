@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:platter_core/platter_core.dart';
 
@@ -10,12 +12,14 @@ import '../../widgets/state_views.dart';
 class MenuHomeScreen extends StatefulWidget {
   final String restaurantId;
   final String sessionId;
+  final bool isActiveTab;
   final ValueChanged<ServerAppBarConfiguration>? onAppBarConfigChanged;
 
   const MenuHomeScreen({
     super.key,
     required this.restaurantId,
     required this.sessionId,
+    this.isActiveTab = false,
     this.onAppBarConfigChanged,
   });
 
@@ -26,6 +30,11 @@ class MenuHomeScreen extends StatefulWidget {
 class _MenuHomeScreenState extends State<MenuHomeScreen> {
   late final ScrollController _scrollController;
   late final MenuProvider _menuProvider;
+  Timer? _autoRefreshTimer;
+
+  static const _autoRefreshInterval = kDebugMode
+      ? Duration(seconds: 10)
+      : Duration(seconds: 60);
 
   @override
   void initState() {
@@ -41,13 +50,55 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
       _fetchMenu();
       _updateAppBarConfig();
     });
+
+    if (widget.isActiveTab) _startPolling();
+  }
+
+  @override
+  void didUpdateWidget(covariant MenuHomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActiveTab != oldWidget.isActiveTab) {
+      if (widget.isActiveTab) {
+        _startPolling();
+        _fetchMenu();
+      } else {
+        _stopPolling();
+      }
+    }
   }
 
   @override
   void dispose() {
+    _autoRefreshTimer?.cancel();
     _menuProvider.removeListener(_handleProviderUpdate);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _startPolling() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(_autoRefreshInterval, (_) {
+      _pollMenu();
+    });
+  }
+
+  void _stopPolling() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = null;
+  }
+
+  Future<void> _pollMenu() async {
+    await _fetchMenu();
+    if (_menuProvider.state == DataState.error && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _menuProvider.errorMessage ?? 'Failed to refresh menu',
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   void _handleProviderUpdate() {

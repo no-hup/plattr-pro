@@ -40,6 +40,7 @@ void main() {
           final orderResponse = await apiService.getOrder(
             restaurantId: ContractTestConfig.restaurantId,
             orderId: ContractTestConfig.orderId,
+            sessionId: ContractTestConfig.sessionId,
           );
           expect(
             orderResponse.success,

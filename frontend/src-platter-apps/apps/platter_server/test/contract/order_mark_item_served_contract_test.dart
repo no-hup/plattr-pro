@@ -28,6 +28,7 @@ void main() {
             restaurantId: ContractTestConfig.restaurantId,
             orderId: ContractTestConfig.orderId,
             menuItemId: ContractTestConfig.servedMenuItemId,
+            sessionId: ContractTestConfig.sessionId,
             cartItemId: ContractTestConfig.servedCartItemId,
           );
 
@@ -41,6 +42,7 @@ void main() {
           final orderResponse = await apiService.getOrder(
             restaurantId: ContractTestConfig.restaurantId,
             orderId: ContractTestConfig.orderId,
+            sessionId: ContractTestConfig.sessionId,
           );
           expect(
             orderResponse.success,
@@ -85,6 +87,7 @@ void main() {
             restaurantId: ContractTestConfig.restaurantId,
             orderId: ContractTestConfig.orderId,
             menuItemId: ContractTestConfig.preparingMenuItemId,
+            sessionId: ContractTestConfig.sessionId,
             cartItemId: ContractTestConfig.preparingCartItemId,
           );
 
@@ -113,6 +116,7 @@ void main() {
             restaurantId: ContractTestConfig.restaurantId,
             orderId: ContractTestConfig.orderId,
             menuItemId: ContractTestConfig.invalidMenuItemId,
+            sessionId: ContractTestConfig.sessionId,
           );
 
           expect(response.success, isFalse);
