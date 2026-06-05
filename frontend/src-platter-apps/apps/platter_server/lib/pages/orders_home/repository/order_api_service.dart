@@ -61,6 +61,7 @@ class OrderApiService {
   Future<ApiResponse<OrderDetailResponse>> getOrder({
     required String restaurantId,
     required String orderId,
+    required String sessionId,
   }) async {
     try {
       final response = await _dio.post(
@@ -69,6 +70,7 @@ class OrderApiService {
           'data': {
             'restaurantId': restaurantId,
             'orderId': orderId,
+            'sessionId': sessionId,
           }
         },
       );
@@ -101,6 +103,7 @@ class OrderApiService {
     required String restaurantId,
     required String orderId,
     required String menuItemId,
+    required String sessionId,
     int? cartItemId,
   }) async {
     try {
@@ -111,6 +114,7 @@ class OrderApiService {
             'restaurantId': restaurantId,
             'orderId': orderId,
             'menuItemId': menuItemId,
+            'sessionId': sessionId,
             if (cartItemId != null) 'cartItemId': cartItemId,
           }
         },

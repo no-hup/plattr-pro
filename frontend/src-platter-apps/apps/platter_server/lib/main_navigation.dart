@@ -105,16 +105,19 @@ class _MainNavigationState extends State<MainNavigation> {
                 OrdersHomeScreen(
                   restaurantId: widget.restaurantId,
                   sessionId: widget.sessionId,
+                  isActiveTab: _selectedIndex == 0,
                   onAppBarConfigChanged: updateAppBarConfiguration,
                 ),
                 TablesHomeScreen(
                   restaurantId: widget.restaurantId,
                   sessionId: widget.sessionId,
+                  isActiveTab: _selectedIndex == 1,
                   onAppBarConfigChanged: updateAppBarConfiguration,
                 ),
                 MenuHomeScreen(
                   restaurantId: widget.restaurantId,
                   sessionId: widget.sessionId,
+                  isActiveTab: _selectedIndex == 2,
                   onAppBarConfigChanged: updateAppBarConfiguration,
                 ),
               ],

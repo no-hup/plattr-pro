@@ -20,6 +20,7 @@ TableModel _$TableModelFromJson(Map<String, dynamic> json) {
     isDisabled: json['isDisabled'] as bool? ?? false,
     currentOrderId: json['activeOrderId'] as String? ?? '',
     tableOtp: json['otp'] as String? ?? '',
+    primaryCustomer: json['primaryCustomer'] as Map<String, dynamic>?,
   );
 }
 
@@ -32,6 +33,7 @@ Map<String, dynamic> _$TableModelToJson(TableModel instance) =>
       'isDisabled': instance.isDisabled,
       'activeOrderId': instance.currentOrderId,
       'otp': instance.tableOtp,
+      'primaryCustomer': instance.primaryCustomer,
     };
 
 TableListResponse _$TableListResponseFromJson(Map<String, dynamic> json) =>

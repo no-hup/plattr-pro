@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
@@ -15,12 +17,14 @@ import '../../shared/status_utils.dart';
 class OrdersHomeScreen extends StatefulWidget {
   final String restaurantId;
   final String sessionId;
+  final bool isActiveTab;
   final ValueChanged<ServerAppBarConfiguration>? onAppBarConfigChanged;
 
   const OrdersHomeScreen({
     super.key,
     required this.restaurantId,
     required this.sessionId,
+    this.isActiveTab = true,
     this.onAppBarConfigChanged,
   });
 
@@ -33,6 +37,12 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
   late final ScrollController _scrollController;
   late final OrdersProvider _ordersProvider;
   late TabController _tabController;
+  Timer? _autoRefreshTimer;
+
+  /// Polling interval: 10s in debug, 60s in production.
+  static const _autoRefreshInterval = kDebugMode
+      ? Duration(seconds: 10)
+      : Duration(seconds: 60);
 
   // Tab order: My Orders, Ready, Pending, Served, All Orders
   final List<OrderTab> _tabs = [
@@ -58,10 +68,39 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
       _fetchOrders();
       _updateAppBarConfig();
     });
+
+    // Start polling if this is the active tab
+    if (widget.isActiveTab) _startPolling();
+  }
+
+  void _startPolling() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(_autoRefreshInterval, (_) {
+      _pollOrders();
+    });
+  }
+
+  void _stopPolling() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = null;
+  }
+
+  @override
+  void didUpdateWidget(covariant OrdersHomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActiveTab != oldWidget.isActiveTab) {
+      if (widget.isActiveTab) {
+        _startPolling();
+        _fetchOrders(); // Refresh immediately when tab becomes active
+      } else {
+        _stopPolling();
+      }
+    }
   }
 
   @override
   void dispose() {
+    _autoRefreshTimer?.cancel();
     _ordersProvider.removeListener(_handleProviderUpdate);
     _ordersProvider.dispose();
     _scrollController.dispose();
@@ -99,6 +138,21 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
         sessionId: widget.sessionId,
       ),
     ]);
+  }
+
+  /// Silent poll — fetches orders and shows a toast only on failure.
+  Future<void> _pollOrders() async {
+    await _fetchOrders();
+    if (_ordersProvider.state == DataState.error && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _ordersProvider.errorMessage ?? 'Failed to refresh orders',
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   Future<void> _refreshOrders() async {

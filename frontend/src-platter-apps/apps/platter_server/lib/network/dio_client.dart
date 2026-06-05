@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:platter_core/platter_core.dart';
+import 'package:platter_core/platter_core.dart' hide AppConfig;
 import 'api_constants.dart';
 import '../config/app_config.dart';
 import 'interceptors/user_agent_interceptor.dart';

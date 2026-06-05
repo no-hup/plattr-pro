@@ -135,6 +135,8 @@ class _TableDetailDialogState extends State<TableDetailDialog> {
             ),
           _buildInfoRow('Status', selectedTable.status),
           _buildInfoRow('Capacity', selectedTable.capacity.toString()),
+          if (selectedTable.customerName != null)
+            _buildInfoRow('Customer', selectedTable.customerName!),
           const Divider(),
           _buildOtpSection(selectedTable),
           if (selectedTable.currentOrderId.isNotEmpty) ...[

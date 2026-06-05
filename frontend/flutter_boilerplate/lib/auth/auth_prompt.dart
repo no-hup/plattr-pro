@@ -17,22 +17,30 @@ class AuthPrompt {
   static Future<void> showIfNeeded({
     String? restaurantId,
     String? tableId,
+    bool force = false,
   }) async {
     if (_isShowing) return;
-    AppLogger.log('🔐 AUTH_PROMPT: showIfNeeded called');
+    AppLogger.log('🔐 AUTH_PROMPT: showIfNeeded called (force=$force)');
     final ctx = AppNavigator.navigatorKey.currentContext;
     if (ctx == null) {
       // Try on next frame if context not yet available
       try {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _isShowing = false;
-          showIfNeeded(restaurantId: restaurantId, tableId: tableId);
+          showIfNeeded(restaurantId: restaurantId, tableId: tableId, force: force);
         });
       } catch (_) {}
       return;
     }
 
     final session = Provider.of<SessionProvider>(ctx, listen: false);
+    // If forced (e.g. backend returned 401), clear the stale session so the
+    // dialog actually appears. Without this, the non-empty but invalid
+    // sessionId causes an early return below.
+    if (force) {
+      AppLogger.log('🔐 AUTH_PROMPT: Clearing stale session (force=true)');
+      session.logout();
+    }
     if ((session.sessionId ?? '').isNotEmpty) {
       AppLogger.log('🔐 AUTH_PROMPT: Session already present, not showing');
       return;
