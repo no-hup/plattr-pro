@@ -1,0 +1,223 @@
+{
+  "status": "success",
+  "message": "Order retrieved successfully",
+  "data": {
+    "id": "ogDu4VdVZTOno0oUcQ6l",
+    "orderNumber": "ORD-00003",
+    "orderStatus": "IN_PROGRESS",
+    "createdAt": {
+      "_seconds": 1788792822,
+      "_nanoseconds": 0
+    },
+    "updatedAt": {
+      "_seconds": 1788792822,
+      "_nanoseconds": 0
+    },
+    "tableId": "tbl_meg_12",
+    "restaurantId": "res_meghana",
+    "sessionId": "xuu8CeebBwTlQUUjl8hT",
+    "total": 384,
+    "priceInfo": {
+      "basePrice": 520,
+      "finalPrice": 384,
+      "totalDiscount": 6.92,
+      "totalDiscountAmount": 136,
+      "offerDiscount": 100,
+      "charges": [
+        {
+          "type": "SERVICE_CHARGE",
+          "percentage": 5,
+          "amount": 19.2
+        }
+      ],
+      "chargesTotal": 19.2
+    },
+    "offerDiscount": 100,
+    "appliedOffer": {
+      "id": "off_meg_flat100",
+      "title": "₹100 Off (min ₹499)",
+      "type": "FLAT",
+      "scope": "ORDER",
+      "discountAmount": 100,
+      "appliedItems": []
+    },
+    "items": [
+      {
+        "menuItemId": "mi_paneer65",
+        "name": "Paneer 65",
+        "quantity": 1,
+        "price": 204,
+        "variants": [],
+        "addons": []
+      },
+      {
+        "menuItemId": "mi_chicken65",
+        "name": "Chicken 65",
+        "quantity": 1,
+        "price": 280,
+        "variants": [],
+        "addons": []
+      }
+    ],
+    "notes": "",
+    "carts": [
+      {
+        "tableId": "tbl_meg_12",
+        "sessionId": "xuu8CeebBwTlQUUjl8hT",
+        "restaurantId": "res_meghana",
+        "priceInfo": {
+          "totalAddonBasePrice": 0,
+          "totalDiscountAmount": 36,
+          "totalVariantBasePrice": 0,
+          "finalPrice": 484,
+          "totalDiscount": 6.92,
+          "basePrice": 520
+        },
+        "items": [
+          {
+            "menuItemId": "mi_paneer65",
+            "categoryId": "mc_starters",
+            "subcategoryIds": [
+              "ms_st_veg"
+            ],
+            "menuItem": {
+              "nutritionalInfo": {
+                "carbs": 40,
+                "protein": 17,
+                "fat": 15,
+                "calories": 336
+              },
+              "addons": [],
+              "allergenTags": [],
+              "variants": [],
+              "restaurantId": "res_meghana",
+              "menuItemId": "mi_paneer65",
+              "lastUpdated": {
+                "_seconds": 1788792218,
+                "_nanoseconds": 0
+              },
+              "priceInfo": {
+                "discount": 15,
+                "finalPrice": 204,
+                "basePrice": 240
+              },
+              "primarySubcategoryId": "ms_st_veg",
+              "isCustomizable": false,
+              "meta": {
+                "primarySubcategoryName": "Veg Starters",
+                "image": "",
+                "name": "Paneer 65",
+                "description": "",
+                "spiceLevel": 3,
+                "categoryName": "",
+                "dietaryType": "VEG",
+                "isVegan": false
+              },
+              "subcategoryIds": [
+                "ms_st_veg"
+              ],
+              "isInStock": true,
+              "categoryId": "mc_starters",
+              "order": 3
+            },
+            "selectedVariantsDetails": [],
+            "selectedAddonsDetails": [],
+            "quantity": 1,
+            "priceInfo": {
+              "itemBasePrice": 240,
+              "itemFinalPrice": 204,
+              "totalVariantBasePrice": 0,
+              "totalVariantFinalPrice": 0,
+              "totalAddonBasePrice": 0,
+              "totalAddonFinalPrice": 0,
+              "totalBasePrice": 240,
+              "finalPrice": 204,
+              "discount": 15,
+              "discountAmount": 36
+            },
+            "cartItemId": 1,
+            "status": "PENDING"
+          },
+          {
+            "menuItemId": "mi_chicken65",
+            "categoryId": "mc_starters",
+            "subcategoryIds": [
+              "ms_st_nonveg"
+            ],
+            "menuItem": {
+              "nutritionalInfo": {
+                "carbs": 30,
+                "protein": 30,
+                "fat": 19,
+                "calories": 372
+              },
+              "addons": [],
+              "allergenTags": [],
+              "variants": [],
+              "restaurantId": "res_meghana",
+              "menuItemId": "mi_chicken65",
+              "lastUpdated": {
+                "_seconds": 1788792218,
+                "_nanoseconds": 0
+              },
+              "priceInfo": {
+                "discount": 0,
+                "finalPrice": 280,
+                "basePrice": 280
+              },
+              "primarySubcategoryId": "ms_st_nonveg",
+              "isCustomizable": false,
+              "meta": {
+                "primarySubcategoryName": "Non-Veg Starters",
+                "image": "",
+                "name": "Chicken 65",
+                "description": "",
+                "spiceLevel": 4,
+                "categoryName": "",
+                "dietaryType": "NON_VEG",
+                "isVegan": false
+              },
+              "subcategoryIds": [
+                "ms_st_nonveg"
+              ],
+              "isInStock": true,
+              "categoryId": "mc_starters",
+              "order": 4
+            },
+            "selectedVariantsDetails": [],
+            "selectedAddonsDetails": [],
+            "quantity": 1,
+            "priceInfo": {
+              "itemBasePrice": 280,
+              "itemFinalPrice": 280,
+              "totalVariantBasePrice": 0,
+              "totalVariantFinalPrice": 0,
+              "totalAddonBasePrice": 0,
+              "totalAddonFinalPrice": 0,
+              "totalBasePrice": 280,
+              "finalPrice": 280,
+              "discount": 0,
+              "discountAmount": 0
+            },
+            "cartItemId": 2,
+            "status": "PENDING"
+          }
+        ],
+        "lastUpdated": "2026-09-07T14:53:42.055Z",
+        "cartId": "res_meghana_tbl_meg_12_6e203915",
+        "status": "PENDING",
+        "statusHistory": [
+          {
+            "status": "PENDING",
+            "timestamp": "2026-09-07T14:53:42.000Z",
+            "userId": "system"
+          }
+        ],
+        "checkoutTime": "2026-09-07T14:53:42.000Z",
+        "notes": "",
+        "estimatedPrepTime": 14,
+        "assignedTo": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,282 @@
+{
+  "status": "success",
+  "message": "Order retrieved successfully",
+  "data": {
+    "id": "KrdOiNplhWuWtuaYKBHW",
+    "orderNumber": "ORD-00001",
+    "orderStatus": "IN_PROGRESS",
+    "createdAt": {
+      "_seconds": 1788792819,
+      "_nanoseconds": 0
+    },
+    "updatedAt": {
+      "_seconds": 1788792819,
+      "_nanoseconds": 0
+    },
+    "tableId": "tbl_meg_10",
+    "restaurantId": "res_meghana",
+    "sessionId": "Gwe4zYTSg9eevYwFugDT",
+    "total": 724,
+    "priceInfo": {
+      "basePrice": 860,
+      "finalPrice": 724,
+      "totalDiscount": 4.19,
+      "totalDiscountAmount": 136,
+      "offerDiscount": 100,
+      "charges": [
+        {
+          "type": "SERVICE_CHARGE",
+          "percentage": 5,
+          "amount": 36.2
+        }
+      ],
+      "chargesTotal": 36.2
+    },
+    "offerDiscount": 100,
+    "appliedOffer": {
+      "id": "off_meg_flat100",
+      "title": "₹100 Off (min ₹499)",
+      "type": "FLAT",
+      "scope": "ORDER",
+      "discountAmount": 100,
+      "appliedItems": []
+    },
+    "items": [
+      {
+        "menuItemId": "mi_chicken_bir",
+        "name": "Chicken Dum Biryani",
+        "quantity": 1,
+        "price": 320,
+        "variants": [
+          {
+            "id": "mv_bir_portion",
+            "name": "Portion",
+            "isMandatory": true,
+            "respectParentDiscount": true,
+            "selected_variant_id": "family",
+            "selected_variant_name": "Family (serves 3)",
+            "priceInfo": {
+              "basePrice": 260,
+              "finalPrice": 260,
+              "discount": 0
+            }
+          }
+        ],
+        "addons": [
+          {
+            "id": "ma_extra_raita",
+            "name": "Extra Raita",
+            "priceInfo": {
+              "discount": 0,
+              "finalPrice": 40,
+              "basePrice": 40
+            },
+            "respectParentDiscount": false
+          }
+        ]
+      },
+      {
+        "menuItemId": "mi_paneer65",
+        "name": "Paneer 65",
+        "quantity": 1,
+        "price": 204,
+        "variants": [],
+        "addons": []
+      }
+    ],
+    "notes": "",
+    "carts": [
+      {
+        "tableId": "tbl_meg_10",
+        "sessionId": "Gwe4zYTSg9eevYwFugDT",
+        "restaurantId": "res_meghana",
+        "priceInfo": {
+          "basePrice": 860,
+          "finalPrice": 824,
+          "totalVariantBasePrice": 260,
+          "totalAddonBasePrice": 40,
+          "totalDiscount": 4.19,
+          "totalDiscountAmount": 36
+        },
+        "items": [
+          {
+            "menuItemId": "mi_chicken_bir",
+            "categoryId": "mc_biryani",
+            "subcategoryIds": [
+              "ms_bir_chicken"
+            ],
+            "menuItem": {
+              "nutritionalInfo": {
+                "carbs": 33,
+                "protein": 33,
+                "fat": 20,
+                "calories": 408
+              },
+              "addons": [
+                "ma_extra_raita",
+                "ma_extra_egg",
+                "ma_extra_gravy"
+              ],
+              "allergenTags": [],
+              "variants": [
+                {
+                  "id": "mv_bir_portion",
+                  "name": "Portion"
+                }
+              ],
+              "restaurantId": "res_meghana",
+              "menuItemId": "mi_chicken_bir",
+              "lastUpdated": {
+                "_seconds": 1788792218,
+                "_nanoseconds": 0
+              },
+              "priceInfo": {
+                "discount": 0,
+                "finalPrice": 320,
+                "basePrice": 320
+              },
+              "primarySubcategoryId": "ms_bir_chicken",
+              "isCustomizable": true,
+              "meta": {
+                "primarySubcategoryName": "Chicken Biryani",
+                "image": "",
+                "name": "Chicken Dum Biryani",
+                "description": "Signature dum biryani",
+                "spiceLevel": 3,
+                "categoryName": "",
+                "dietaryType": "NON_VEG",
+                "isVegan": false
+              },
+              "subcategoryIds": [
+                "ms_bir_chicken"
+              ],
+              "isInStock": true,
+              "categoryId": "mc_biryani",
+              "order": 0
+            },
+            "selectedVariantsDetails": [
+              {
+                "id": "mv_bir_portion",
+                "name": "Portion",
+                "isMandatory": true,
+                "respectParentDiscount": true,
+                "selected_variant_id": "family",
+                "selected_variant_name": "Family (serves 3)",
+                "priceInfo": {
+                  "basePrice": 260,
+                  "finalPrice": 260,
+                  "discount": 0
+                }
+              }
+            ],
+            "selectedAddonsDetails": [
+              {
+                "id": "ma_extra_raita",
+                "name": "Extra Raita",
+                "priceInfo": {
+                  "discount": 0,
+                  "finalPrice": 40,
+                  "basePrice": 40
+                },
+                "respectParentDiscount": false
+              }
+            ],
+            "quantity": 1,
+            "priceInfo": {
+              "itemBasePrice": 320,
+              "itemFinalPrice": 320,
+              "totalVariantBasePrice": 260,
+              "totalVariantFinalPrice": 260,
+              "totalAddonBasePrice": 40,
+              "totalAddonFinalPrice": 40,
+              "totalBasePrice": 620,
+              "finalPrice": 620,
+              "discount": 0,
+              "discountAmount": 0
+            },
+            "cartItemId": 1,
+            "status": "PENDING"
+          },
+          {
+            "menuItemId": "mi_paneer65",
+            "categoryId": "mc_starters",
+            "subcategoryIds": [
+              "ms_st_veg"
+            ],
+            "menuItem": {
+              "nutritionalInfo": {
+                "carbs": 40,
+                "protein": 17,
+                "fat": 15,
+                "calories": 336
+              },
+              "addons": [],
+              "allergenTags": [],
+              "variants": [],
+              "restaurantId": "res_meghana",
+              "menuItemId": "mi_paneer65",
+              "lastUpdated": {
+                "_seconds": 1788792218,
+                "_nanoseconds": 0
+              },
+              "priceInfo": {
+                "discount": 15,
+                "finalPrice": 204,
+                "basePrice": 240
+              },
+              "primarySubcategoryId": "ms_st_veg",
+              "isCustomizable": false,
+              "meta": {
+                "primarySubcategoryName": "Veg Starters",
+                "image": "",
+                "name": "Paneer 65",
+                "description": "",
+                "spiceLevel": 3,
+                "categoryName": "",
+                "dietaryType": "VEG",
+                "isVegan": false
+              },
+              "subcategoryIds": [
+                "ms_st_veg"
+              ],
+              "isInStock": true,
+              "categoryId": "mc_starters",
+              "order": 3
+            },
+            "selectedVariantsDetails": [],
+            "selectedAddonsDetails": [],
+            "quantity": 1,
+            "priceInfo": {
+              "itemBasePrice": 240,
+              "itemFinalPrice": 204,
+              "totalVariantBasePrice": 0,
+              "totalVariantFinalPrice": 0,
+              "totalAddonBasePrice": 0,
+              "totalAddonFinalPrice": 0,
+              "totalBasePrice": 240,
+              "finalPrice": 204,
+              "discount": 15,
+              "discountAmount": 36
+            },
+            "cartItemId": 2,
+            "status": "PENDING"
+          }
+        ],
+        "lastUpdated": "2026-09-07T14:53:39.362Z",
+        "cartId": "res_meghana_tbl_meg_10_6482fdf3",
+        "status": "PENDING",
+        "statusHistory": [
+          {
+            "status": "PENDING",
+            "timestamp": "2026-09-07T14:53:39.000Z",
+            "userId": "system"
+          }
+        ],
+        "checkoutTime": "2026-09-07T14:53:39.000Z",
+        "notes": "",
+        "estimatedPrepTime": 14,
+        "assignedTo": null
+      }
+    ]
+  }
+}

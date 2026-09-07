@@ -1,0 +1,21 @@
+{
+  "status": "success",
+  "message": "Cart retrieved successfully.",
+  "data": {
+    "cart": {
+      "restaurantId": "res_meghana",
+      "tableId": "tbl_meg_7",
+      "sessionId": null,
+      "items": [],
+      "priceInfo": {
+        "basePrice": 0,
+        "finalPrice": 0,
+        "totalVariantBasePrice": 0,
+        "totalAddonBasePrice": 0,
+        "totalDiscount": 0,
+        "totalDiscountAmount": 0
+      },
+      "lastUpdated": 1788792822637
+    }
+  }
+}

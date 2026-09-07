@@ -1,0 +1,39 @@
+{
+  "status": "success",
+  "message": "Served carts fetched successfully",
+  "data": {
+    "currentServerId": "srv_meg_1",
+    "servedCarts": [
+      {
+        "orderId": "ord_meg_completed",
+        "tableId": "tbl_meg_1",
+        "orderNumber": "MEG-0001",
+        "cartId": "cart_meg_done",
+        "cartIndex": 0,
+        "status": "SERVED",
+        "statusColorHex": "#4CAF50",
+        "servedAt": 1788792218000,
+        "priceInfo": {
+          "finalPrice": 1186
+        },
+        "items": [
+          {
+            "menuItemId": "mi_mutton_bir",
+            "name": "Mutton Biryani",
+            "quantity": 1,
+            "status": "SERVED",
+            "statusColorHex": "#4CAF50"
+          },
+          {
+            "menuItemId": "mi_crab_roast",
+            "name": "Coastal Crab Roast",
+            "quantity": 1,
+            "status": "SERVED",
+            "statusColorHex": "#4CAF50"
+          }
+        ]
+      }
+    ],
+    "lookbackHours": 6
+  }
+}

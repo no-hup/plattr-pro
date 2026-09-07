@@ -1,0 +1,14 @@
+{
+  "success": true,
+  "message": "Server login successful with new session",
+  "data": {
+    "sessionId": "G3Slz51hoD5neUbtoFUr",
+    "serverId": "srv_meg_kit",
+    "name": "Kitchen",
+    "entity": "server",
+    "role": "KITCHEN",
+    "restaurantId": "res_meghana",
+    "restaurantName": "Meghana Foods",
+    "profileImageUrl": ""
+  }
+}

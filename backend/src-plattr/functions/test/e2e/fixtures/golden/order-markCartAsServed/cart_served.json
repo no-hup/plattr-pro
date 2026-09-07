@@ -1,0 +1,7 @@
+{
+  "status": "success",
+  "message": "Cart marked as served successfully",
+  "data": {
+    "cartStatus": "SERVED"
+  }
+}

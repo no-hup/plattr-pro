@@ -150,3 +150,26 @@ This shows a business-logic-focused story: what items were added, with what conf
 ```
 3. Add expected prices to `lib/config.js` `EXPECTED_PRICES`
 4. Add narrator calls for the narrative log
+
+## Lifecycle matrix + findings log (start here for pre-launch work)
+
+The suites documented above each drive one actor down one path. For the
+multi-actor, concurrency and pricing-under-state-change questions, use the
+matrix instead:
+
+```bash
+bash test/run-all.sh          # all 6 layers, one issue log
+bash test/run-all.sh --quick  # one restaurant, no flag sweep
+```
+
+Then **read `results/FINDINGS.md`** rather than the console output. Every layer
+(jest pricing matrix, verifyGolden, goalline, lifecycle matrix, contract checker,
+Flutter parse tests) appends to that one deduped, severity-sorted file.
+
+See `matrix/README.md` for how to add a scenario and what each `status` means.
+
+> Note on the historic 12 Chowman goal-line failures: they were fixture rot, not
+> a product bug. The seed baked absolute ISO dates into offer validity, so a
+> "starts in the future" negative-case offer became current with the passage of
+> time and legitimately won. `run-all.sh` rebuilds the seed before every run,
+> which is why goalline is now 79/79.

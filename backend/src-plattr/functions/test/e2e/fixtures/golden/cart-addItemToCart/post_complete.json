@@ -1,0 +1,85 @@
+{
+  "message": "Item added to cart successfully.",
+  "status": "success",
+  "data": {
+    "cart": {
+      "restaurantId": "res_meghana",
+      "tableId": "tbl_meg_12",
+      "sessionId": "W7lGSazVegaWAudinfk4",
+      "items": [
+        {
+          "menuItemId": "mi_chicken65",
+          "categoryId": "mc_starters",
+          "subcategoryIds": [
+            "ms_st_nonveg"
+          ],
+          "menuItem": {
+            "nutritionalInfo": {
+              "carbs": 30,
+              "protein": 30,
+              "fat": 19,
+              "calories": 372
+            },
+            "addons": [],
+            "allergenTags": [],
+            "variants": [],
+            "restaurantId": "res_meghana",
+            "menuItemId": "mi_chicken65",
+            "lastUpdated": {
+              "_seconds": 1788792223,
+              "_nanoseconds": 0
+            },
+            "priceInfo": {
+              "discount": 0,
+              "finalPrice": 280,
+              "basePrice": 280
+            },
+            "primarySubcategoryId": "ms_st_nonveg",
+            "isCustomizable": false,
+            "meta": {
+              "primarySubcategoryName": "Non-Veg Starters",
+              "image": "",
+              "name": "Chicken 65",
+              "description": "",
+              "spiceLevel": 4,
+              "categoryName": "",
+              "dietaryType": "NON_VEG",
+              "isVegan": false
+            },
+            "subcategoryIds": [
+              "ms_st_nonveg"
+            ],
+            "isInStock": true,
+            "categoryId": "mc_starters",
+            "order": 4
+          },
+          "selectedVariantsDetails": [],
+          "selectedAddonsDetails": [],
+          "quantity": 1,
+          "priceInfo": {
+            "itemBasePrice": 280,
+            "itemFinalPrice": 280,
+            "totalVariantBasePrice": 0,
+            "totalVariantFinalPrice": 0,
+            "totalAddonBasePrice": 0,
+            "totalAddonFinalPrice": 0,
+            "totalBasePrice": 280,
+            "finalPrice": 280,
+            "discount": 0,
+            "discountAmount": 0
+          },
+          "cartItemId": 1,
+          "status": "PENDING"
+        }
+      ],
+      "priceInfo": {
+        "basePrice": 280,
+        "finalPrice": 280,
+        "totalVariantBasePrice": 0,
+        "totalAddonBasePrice": 0,
+        "totalDiscount": 0,
+        "totalDiscountAmount": 0
+      }
+    }
+  }
+}

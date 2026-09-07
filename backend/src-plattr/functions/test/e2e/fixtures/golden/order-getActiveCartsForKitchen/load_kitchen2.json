@@ -1,0 +1,12 @@
+{
+  "status": "success",
+  "message": "Active kitchen carts fetched successfully",
+  "data": {
+    "uiFlags": {
+      "showAllOrdersTab": true,
+      "maxItemsInOrderCard": 3,
+      "confirmServeCartAction": true
+    },
+    "orders": []
+  }
+}
