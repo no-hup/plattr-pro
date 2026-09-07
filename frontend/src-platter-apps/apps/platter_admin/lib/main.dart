@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:platter_core/platter_core.dart';
@@ -11,7 +12,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize configuration
-  AppConfig.initialize(Environment.dev);
+  AppConfig.initialize(kReleaseMode ? Environment.prod : Environment.dev);
 
   // Initialize Firebase
   await Firebase.initializeApp(

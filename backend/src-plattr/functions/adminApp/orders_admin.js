@@ -59,7 +59,8 @@ exports.getHistoricalOrders = functions.https.onCall(async (request, context) =>
         let hasMore = false;
         let nextCursor = null;
 
-        ordersSnapshot.forEach((doc, index) => {
+        // QuerySnapshot.forEach passes no index — use the docs array
+        ordersSnapshot.docs.forEach((doc, index) => {
             if (index < pageSize) {
                 const orderData = doc.data();
 
@@ -69,9 +70,10 @@ exports.getHistoricalOrders = functions.https.onCall(async (request, context) =>
                 let totalAmount = 0;
                 let itemCount = 0;
 
-                if (orderData.totalAmount !== undefined && orderData.totalAmount !== null) {
-                    // Use the existing totalAmount directly - it's already the full total
-                    totalAmount = orderData.totalAmount;
+                // Orders store their full total at priceInfo.finalPrice (legacy docs: totalAmount)
+                const storedTotal = orderData.priceInfo?.finalPrice ?? orderData.totalAmount;
+                if (storedTotal !== undefined && storedTotal !== null) {
+                    totalAmount = storedTotal;
                     // Still calculate itemCount from carts
                     if (orderData.carts && Array.isArray(orderData.carts)) {
                         orderData.carts.forEach(cart => {
@@ -96,7 +98,7 @@ exports.getHistoricalOrders = functions.https.onCall(async (request, context) =>
                     id: doc.id,
                     tableId: orderData.tableId || null,
                     tableNumber: orderData.tableNumber || null,
-                    status: orderData.status || 'unknown',
+                    status: orderData.orderStatus || orderData.status || 'unknown',
                     paymentStatus: orderData.paymentStatus || 'pending',
                     totalAmount,
                     itemCount,
@@ -175,7 +177,7 @@ exports.getOrderDetails = functions.https.onCall(async (request, context) => {
             id: orderDoc.id,
             tableId: orderData.tableId || null,
             tableNumber: orderData.tableNumber || null,
-            status: orderData.status || 'unknown',
+            status: orderData.orderStatus || orderData.status || 'unknown',
             paymentStatus: orderData.paymentStatus || 'pending',
             customerName: orderData.customerName || orderData.primaryCustomer?.name || null,
             customerPhone: orderData.customerPhone || orderData.primaryCustomer?.phoneNumber || null,

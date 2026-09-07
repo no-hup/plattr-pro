@@ -20,8 +20,8 @@ class MenuApiService {
         ApiConstants.getRestaurantMenu,
         data: {
           'data': {
-            'restaurantId': AppState.instance.restaurantId,
-            'sessionId': AppState.instance.sessionId,
+            'restaurantId': restaurantId,
+            'sessionId': sessionId,
           }
         },
       );
