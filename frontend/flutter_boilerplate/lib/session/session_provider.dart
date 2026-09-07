@@ -99,10 +99,20 @@ class SessionProvider extends ChangeNotifier {
       _state = _state.copyWith(isLoading: true);
       notifyListeners();
 
-      // TODO: Add API call here
-      // Simulate API call for now
-      await Future.delayed(const Duration(seconds: 1));
-      AppLogger.log('🔐 SessionProvider: Authentication API call completed');
+      // There is no name/phone auth endpoint — the real session comes from
+      // table validation / OTP. Only record details against an existing
+      // session; never fake an authenticated state without one.
+      if (_state.sessionId == null || _state.sessionId!.isEmpty) {
+        AppLogger.log(
+          '🔐 SessionProvider: ❌ No session established — cannot authenticate',
+        );
+        _state = _state.copyWith(
+          isLoading: false,
+          error: 'Session not established. Please re-scan the table QR code.',
+        );
+        notifyListeners();
+        return false;
+      }
 
       _state = _state.copyWith(
         isAuthenticated: true,

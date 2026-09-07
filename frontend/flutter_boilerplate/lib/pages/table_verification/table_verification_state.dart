@@ -351,6 +351,14 @@ class TableVerificationPageState extends State<TableVerificationPage> {
           } else {
             context.go(AppRoutes.menu(widget.restaurantId!, widget.tableId!));
           }
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Session not established. Please re-scan the table QR code.',
+              ),
+            ),
+          );
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
