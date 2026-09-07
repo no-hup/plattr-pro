@@ -2,7 +2,7 @@
   "success": true,
   "message": "Cart status updated to READY",
   "data": {
-    "id": "hvkklv4ZSH6mtMsdweuj",
+    "id": "OGBczFBcteMGq8R8l1R6",
     "restaurantId": "res_meghana",
     "tableId": "tbl_meg_9",
     "orderNumber": "ORD-00007",
@@ -10,7 +10,7 @@
     "paymentStatus": "unpaid",
     "carts": [
       {
-        "lastUpdated": 1788792822789,
+        "lastUpdated": 1788794922672,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -20,7 +20,7 @@
           "basePrice": 240
         },
         "tableId": "tbl_meg_9",
-        "sessionId": "bCKEKQLde36nV4EYBn6t",
+        "sessionId": "f5UfzTFU1ZOj0YybQHRQ",
         "restaurantId": "res_meghana",
         "items": [
           {
@@ -42,7 +42,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_paneer65",
               "lastUpdated": {
-                "_seconds": 1788792218,
+                "_seconds": 1788794313,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -88,26 +88,26 @@
             "status": "PENDING"
           }
         ],
-        "cartId": "res_meghana_tbl_meg_9_9f303fa4",
+        "cartId": "res_meghana_tbl_meg_9_da89162a",
         "status": "READY",
         "statusHistory": [
           {
             "status": "PENDING",
             "timestamp": {
-              "_seconds": 1788792822,
+              "_seconds": 1788794923,
               "_nanoseconds": 0
             },
             "userId": "system"
           },
           {
             "status": "READY",
-            "timestamp": 1788792822829,
+            "timestamp": 1788794924157,
             "userId": "system",
             "notes": ""
           }
         ],
         "checkoutTime": {
-          "_seconds": 1788792822,
+          "_seconds": 1788794923,
           "_nanoseconds": 0
         },
         "notes": "",
@@ -132,7 +132,7 @@
         "selectedAddonsDetails": [],
         "cartItemId": 1,
         "checkoutTime": {
-          "_seconds": 1788792822,
+          "_seconds": 1788794923,
           "_nanoseconds": 0
         },
         "status": "PENDING"
@@ -154,14 +154,14 @@
       "chargesTotal": 10.2
     },
     "createdAt": {
-      "_seconds": 1788792822,
+      "_seconds": 1788794923,
       "_nanoseconds": 0
     },
-    "updatedAt": 1788792822829,
+    "updatedAt": 1788794924157,
     "isActive": true,
     "assignedServer": null,
     "notes": "",
-    "sessionId": "bCKEKQLde36nV4EYBn6t",
+    "sessionId": "f5UfzTFU1ZOj0YybQHRQ",
     "appliedOffer": null
   }
 }

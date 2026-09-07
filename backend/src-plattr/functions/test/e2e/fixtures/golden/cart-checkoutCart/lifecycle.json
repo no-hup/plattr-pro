@@ -2,9 +2,9 @@
   "status": "success",
   "message": "Checkout completed successfully.",
   "data": {
-    "orderId": "KrdOiNplhWuWtuaYKBHW",
+    "orderId": "HMrvMWG07p7xAvpUJUwP",
     "orderNumber": "ORD-00001",
     "orderStatus": "IN_PROGRESS",
-    "timestamp": "2026-09-07T14:53:39.393Z"
+    "timestamp": "2026-09-07T15:28:33.706Z"
   }
 }

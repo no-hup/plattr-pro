@@ -2,20 +2,20 @@
   "status": "success",
   "message": "Order retrieved successfully",
   "data": {
-    "id": "fWNWoitFi24FflXNCAs4",
+    "id": "UnZQZTXeLneNKrwc9aDf",
     "orderNumber": "ORD-00005",
     "orderStatus": "IN_PROGRESS",
     "createdAt": {
-      "_seconds": 1788792839,
+      "_seconds": 1788794951,
       "_nanoseconds": 0
     },
     "updatedAt": {
-      "_seconds": 1788792839,
+      "_seconds": 1788794951,
       "_nanoseconds": 0
     },
     "tableId": "tbl_meg_7",
     "restaurantId": "res_meghana",
-    "sessionId": "2XkHy5YOHz1kgO8ZaVRS",
+    "sessionId": "FmejUWuIU3g404DJSrjk",
     "total": 724,
     "priceInfo": {
       "basePrice": 860,
@@ -88,9 +88,9 @@
     "carts": [
       {
         "tableId": "tbl_meg_7",
-        "sessionId": "2XkHy5YOHz1kgO8ZaVRS",
+        "sessionId": "FmejUWuIU3g404DJSrjk",
         "restaurantId": "res_meghana",
-        "lastUpdated": 1788792838746,
+        "lastUpdated": 1788794951907,
         "priceInfo": {
           "basePrice": 860,
           "finalPrice": 824,
@@ -128,7 +128,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_chicken_bir",
               "lastUpdated": {
-                "_seconds": 1788792228,
+                "_seconds": 1788794338,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -217,7 +217,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_paneer65",
               "lastUpdated": {
-                "_seconds": 1788792228,
+                "_seconds": 1788794338,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -263,16 +263,16 @@
             "status": "PENDING"
           }
         ],
-        "cartId": "res_meghana_tbl_meg_7_e38aaa51",
+        "cartId": "res_meghana_tbl_meg_7_31804987",
         "status": "PENDING",
         "statusHistory": [
           {
             "status": "PENDING",
-            "timestamp": "2026-09-07T14:53:59.000Z",
+            "timestamp": "2026-09-07T15:29:11.000Z",
             "userId": "system"
           }
         ],
-        "checkoutTime": "2026-09-07T14:53:59.000Z",
+        "checkoutTime": "2026-09-07T15:29:11.000Z",
         "notes": "",
         "estimatedPrepTime": 14,
         "assignedTo": null

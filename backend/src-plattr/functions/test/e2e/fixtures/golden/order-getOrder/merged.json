@@ -2,20 +2,20 @@
   "status": "success",
   "message": "Order retrieved successfully",
   "data": {
-    "id": "wSAYyf8McoMILSpXuEOc",
+    "id": "c3iPYV2SAFcEvkp24xlw",
     "orderNumber": "ORD-00006",
     "orderStatus": "IN_PROGRESS",
     "createdAt": {
-      "_seconds": 1788792828,
+      "_seconds": 1788794938,
       "_nanoseconds": 0
     },
     "updatedAt": {
-      "_seconds": 1788792828,
+      "_seconds": 1788794938,
       "_nanoseconds": 0
     },
     "tableId": "tbl_meg_7",
     "restaurantId": "res_meghana",
-    "sessionId": "DCYFZub28CWcJ7yzPc8W",
+    "sessionId": "k6suZPlJuOlLFxpxkSYA",
     "total": 724,
     "priceInfo": {
       "basePrice": 860,
@@ -87,7 +87,7 @@
     "notes": "",
     "carts": [
       {
-        "lastUpdated": 1788792828268,
+        "lastUpdated": 1788794938250,
         "priceInfo": {
           "basePrice": 620,
           "finalPrice": 620,
@@ -97,7 +97,7 @@
           "totalDiscountAmount": 0
         },
         "tableId": "tbl_meg_7",
-        "sessionId": "DCYFZub28CWcJ7yzPc8W",
+        "sessionId": "k6suZPlJuOlLFxpxkSYA",
         "restaurantId": "res_meghana",
         "items": [
           {
@@ -128,7 +128,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_chicken_bir",
               "lastUpdated": {
-                "_seconds": 1788792223,
+                "_seconds": 1788794325,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -199,22 +199,22 @@
             "status": "PENDING"
           }
         ],
-        "cartId": "res_meghana_tbl_meg_7_e9970057",
+        "cartId": "res_meghana_tbl_meg_7_357a82af",
         "status": "PENDING",
         "statusHistory": [
           {
             "status": "PENDING",
-            "timestamp": "2026-09-07T14:53:48.000Z",
+            "timestamp": "2026-09-07T15:28:58.000Z",
             "userId": "system"
           }
         ],
-        "checkoutTime": "2026-09-07T14:53:48.000Z",
+        "checkoutTime": "2026-09-07T15:28:58.000Z",
         "notes": "",
         "estimatedPrepTime": 12,
         "assignedTo": null
       },
       {
-        "lastUpdated": 1788792828360,
+        "lastUpdated": 1788794938403,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -224,7 +224,7 @@
           "basePrice": 240
         },
         "tableId": "tbl_meg_7",
-        "sessionId": "DCYFZub28CWcJ7yzPc8W",
+        "sessionId": "k6suZPlJuOlLFxpxkSYA",
         "restaurantId": "res_meghana",
         "items": [
           {
@@ -246,7 +246,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_paneer65",
               "lastUpdated": {
-                "_seconds": 1788792223,
+                "_seconds": 1788794325,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -292,16 +292,16 @@
             "status": "PENDING"
           }
         ],
-        "cartId": "res_meghana_tbl_meg_7_59cec883",
+        "cartId": "res_meghana_tbl_meg_7_df623e7f",
         "status": "PENDING",
         "statusHistory": [
           {
             "status": "PENDING",
-            "timestamp": "2026-09-07T14:53:48.000Z",
+            "timestamp": "2026-09-07T15:28:58.000Z",
             "userId": "system"
           }
         ],
-        "checkoutTime": "2026-09-07T14:53:48.000Z",
+        "checkoutTime": "2026-09-07T15:28:58.000Z",
         "notes": "",
         "estimatedPrepTime": 12,
         "assignedTo": null

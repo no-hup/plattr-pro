@@ -2,7 +2,7 @@
   "success": true,
   "message": "Cart status updated to PREPARING",
   "data": {
-    "id": "KrdOiNplhWuWtuaYKBHW",
+    "id": "HMrvMWG07p7xAvpUJUwP",
     "restaurantId": "res_meghana",
     "tableId": "tbl_meg_10",
     "orderNumber": "ORD-00001",
@@ -11,7 +11,7 @@
     "carts": [
       {
         "tableId": "tbl_meg_10",
-        "sessionId": "Gwe4zYTSg9eevYwFugDT",
+        "sessionId": "4LugzxTg1rWEgpFUbVpG",
         "restaurantId": "res_meghana",
         "priceInfo": {
           "basePrice": 860,
@@ -50,7 +50,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_chicken_bir",
               "lastUpdated": {
-                "_seconds": 1788792218,
+                "_seconds": 1788794313,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -139,7 +139,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_paneer65",
               "lastUpdated": {
-                "_seconds": 1788792218,
+                "_seconds": 1788794313,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -185,27 +185,27 @@
             "status": "PENDING"
           }
         ],
-        "lastUpdated": "2026-09-07T14:53:39.362Z",
-        "cartId": "res_meghana_tbl_meg_10_6482fdf3",
+        "lastUpdated": "2026-09-07T15:28:33.675Z",
+        "cartId": "res_meghana_tbl_meg_10_ad7d34ae",
         "status": "PREPARING",
         "statusHistory": [
           {
             "status": "PENDING",
             "timestamp": {
-              "_seconds": 1788792819,
+              "_seconds": 1788794913,
               "_nanoseconds": 0
             },
             "userId": "system"
           },
           {
             "status": "PREPARING",
-            "timestamp": 1788792820188,
+            "timestamp": 1788794914561,
             "userId": "system",
             "notes": ""
           }
         ],
         "checkoutTime": {
-          "_seconds": 1788792819,
+          "_seconds": 1788794913,
           "_nanoseconds": 0
         },
         "notes": "",
@@ -255,7 +255,7 @@
         ],
         "cartItemId": 1,
         "checkoutTime": {
-          "_seconds": 1788792819,
+          "_seconds": 1788794913,
           "_nanoseconds": 0
         },
         "status": "PENDING"
@@ -276,7 +276,7 @@
         "selectedAddonsDetails": [],
         "cartItemId": 2,
         "checkoutTime": {
-          "_seconds": 1788792819,
+          "_seconds": 1788794913,
           "_nanoseconds": 0
         },
         "status": "PENDING"
@@ -298,14 +298,14 @@
       "chargesTotal": 36.2
     },
     "createdAt": {
-      "_seconds": 1788792819,
+      "_seconds": 1788794913,
       "_nanoseconds": 0
     },
-    "updatedAt": 1788792820188,
+    "updatedAt": 1788794914561,
     "isActive": true,
     "assignedServer": null,
     "notes": "",
-    "sessionId": "Gwe4zYTSg9eevYwFugDT",
+    "sessionId": "4LugzxTg1rWEgpFUbVpG",
     "appliedOffer": {
       "id": "off_meg_flat100",
       "title": "₹100 Off (min ₹499)",

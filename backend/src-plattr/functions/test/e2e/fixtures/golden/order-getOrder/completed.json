@@ -2,20 +2,20 @@
   "status": "success",
   "message": "Order retrieved successfully",
   "data": {
-    "id": "KrdOiNplhWuWtuaYKBHW",
+    "id": "HMrvMWG07p7xAvpUJUwP",
     "orderNumber": "ORD-00001",
     "orderStatus": "COMPLETED",
     "createdAt": {
-      "_seconds": 1788792819,
+      "_seconds": 1788794913,
       "_nanoseconds": 0
     },
     "updatedAt": {
-      "_seconds": 1788792821,
+      "_seconds": 1788794916,
       "_nanoseconds": 0
     },
     "tableId": "tbl_meg_10",
     "restaurantId": "res_meghana",
-    "sessionId": "Gwe4zYTSg9eevYwFugDT",
+    "sessionId": "4LugzxTg1rWEgpFUbVpG",
     "total": 724,
     "priceInfo": {
       "basePrice": 860,
@@ -80,7 +80,7 @@
     "carts": [
       {
         "tableId": "tbl_meg_10",
-        "sessionId": "Gwe4zYTSg9eevYwFugDT",
+        "sessionId": "4LugzxTg1rWEgpFUbVpG",
         "restaurantId": "res_meghana",
         "priceInfo": {
           "basePrice": 860,
@@ -119,7 +119,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_chicken_bir",
               "lastUpdated": {
-                "_seconds": 1788792218,
+                "_seconds": 1788794313,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -208,7 +208,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_paneer65",
               "lastUpdated": {
-                "_seconds": 1788792218,
+                "_seconds": 1788794313,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -254,34 +254,34 @@
             "status": "SERVED"
           }
         ],
-        "lastUpdated": "2026-09-07T14:53:39.362Z",
-        "cartId": "res_meghana_tbl_meg_10_6482fdf3",
+        "lastUpdated": "2026-09-07T15:28:33.675Z",
+        "cartId": "res_meghana_tbl_meg_10_ad7d34ae",
         "status": "SERVED",
         "statusHistory": [
           {
             "status": "PENDING",
-            "timestamp": "2026-09-07T14:53:39.000Z",
+            "timestamp": "2026-09-07T15:28:33.000Z",
             "userId": "system"
           },
           {
             "status": "PREPARING",
-            "timestamp": "2026-09-07T14:53:40.188Z",
+            "timestamp": "2026-09-07T15:28:34.561Z",
             "userId": "system",
             "notes": ""
           },
           {
             "status": "READY",
-            "timestamp": "2026-09-07T14:53:40.211Z",
+            "timestamp": "2026-09-07T15:28:34.585Z",
             "userId": "system",
             "notes": ""
           },
           {
             "status": "SERVED",
-            "timestamp": "2026-09-07T14:53:40.000Z",
+            "timestamp": "2026-09-07T15:28:35.000Z",
             "userId": "srv_meg_1"
           }
         ],
-        "checkoutTime": "2026-09-07T14:53:39.000Z",
+        "checkoutTime": "2026-09-07T15:28:33.000Z",
         "notes": "",
         "estimatedPrepTime": 14,
         "assignedTo": "srv_meg_1"

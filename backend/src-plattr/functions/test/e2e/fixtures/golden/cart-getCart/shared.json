@@ -4,9 +4,9 @@
   "data": {
     "cart": {
       "tableId": "tbl_meg_12",
-      "sessionId": "xuu8CeebBwTlQUUjl8hT",
+      "sessionId": "GN8tonBcZEWir7w8GWRx",
       "restaurantId": "res_meghana",
-      "lastUpdated": 1788792822048,
+      "lastUpdated": 1788794916507,
       "priceInfo": {
         "basePrice": 520,
         "finalPrice": 484,
@@ -35,7 +35,7 @@
             "restaurantId": "res_meghana",
             "menuItemId": "mi_paneer65",
             "lastUpdated": {
-              "_seconds": 1788792218,
+              "_seconds": 1788794313,
               "_nanoseconds": 0
             },
             "priceInfo": {
@@ -99,7 +99,7 @@
             "restaurantId": "res_meghana",
             "menuItemId": "mi_chicken65",
             "lastUpdated": {
-              "_seconds": 1788792218,
+              "_seconds": 1788794313,
               "_nanoseconds": 0
             },
             "priceInfo": {
