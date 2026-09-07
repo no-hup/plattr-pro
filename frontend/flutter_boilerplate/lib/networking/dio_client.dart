@@ -63,34 +63,12 @@ class DioClient {
           AppLogger.log(
             '📡 API Response [${response.statusCode}]: ${response.requestOptions.path}',
           );
-          // Intercept success bodies that actually contain standardized error
-          try {
-            final data = response.data;
-            if (data is Map<String, dynamic>) {
-              // Backend standardized error envelope { status: 'error', message, data: { code, httpCode, ... } }
-              if (data['status'] == 'error' &&
-                  data['data'] is Map<String, dynamic>) {
-                final code =
-                    (data['data'] as Map<String, dynamic>)['code']?.toString();
-                if (code == 'unauthenticated') {
-                  // Convert to DioError so callers can handle generically
-                  return handler.reject(
-                    DioException(
-                      requestOptions: response.requestOptions,
-                      response: Response(
-                        requestOptions: response.requestOptions,
-                        statusCode: 401,
-                        data: data,
-                      ),
-                      type: DioExceptionType.badResponse,
-                      error: 'Authentication required',
-                    ),
-                    true,
-                  );
-                }
-              }
-            }
-          } catch (_) {}
+          // validateStatus accepts every status, so a 401 lands here (never in
+          // onError). Prompt for OTP and let the repository handle the non-200
+          // body as usual.
+          if (response.statusCode == 401) {
+            AuthPrompt.showIfNeeded(force: true);
+          }
           return handler.next(response);
         },
         onError: (error, handler) {

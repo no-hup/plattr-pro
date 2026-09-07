@@ -4,6 +4,7 @@ const { validateRemoveItemFields, requireActiveTableSession } = require('./cartI
 const timestamp = require('../utils/timestamp');
 const { calculateCartValue } = require('./calculateCartValue');
 const { CartTotalPriceInfo } = require('../genericModels/priceinfo');
+const errorHandler = require('../singleton/ErrorHandler');
 const {
   getMenuItemRef,
   buildCartItemPriceInfoForQuantity,
@@ -116,9 +117,9 @@ const removeItemFromCart = functions.https.onCall(async (data, context) => {
     };
 
   } catch (error) {
-    console.error("Error removing item from cart:", error);
-    console.error("Error stack:", error.stack);
-    throw new functions.https.HttpsError("internal", "Error removing item from cart.", { originalError: error.message });
+    // Preserves HttpsError codes (e.g. unauthenticated → 401) instead of
+    // collapsing everything to internal/500.
+    errorHandler.handleError(error, 'removeItemFromCart');
   }
 });
 
