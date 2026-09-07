@@ -11,159 +11,6 @@
     "orders": [
       {
         "restaurantId": "res_meghana",
-        "tableId": "tbl_meg_6",
-        "orderNumber": "ORD-00004",
-        "orderStatus": "IN_PROGRESS",
-        "paymentStatus": "unpaid",
-        "carts": [
-          {
-            "lastUpdated": 1788801919358,
-            "priceInfo": {
-              "totalAddonBasePrice": 0,
-              "totalDiscountAmount": 36,
-              "finalPrice": 204,
-              "totalDiscount": 15,
-              "totalVariantBasePrice": 0,
-              "basePrice": 240
-            },
-            "tableId": "tbl_meg_6",
-            "sessionId": "SESSIONID_1",
-            "restaurantId": "res_meghana",
-            "items": [
-              {
-                "menuItemId": "mi_paneer65",
-                "categoryId": "mc_starters",
-                "subcategoryIds": [
-                  "ms_st_veg"
-                ],
-                "menuItem": {
-                  "nutritionalInfo": {
-                    "carbs": 40,
-                    "protein": 17,
-                    "fat": 15,
-                    "calories": 336
-                  },
-                  "addons": [],
-                  "allergenTags": [],
-                  "variants": [],
-                  "restaurantId": "res_meghana",
-                  "menuItemId": "mi_paneer65",
-                  "lastUpdated": {
-                    "_seconds": 1780000000,
-                    "_nanoseconds": 0
-                  },
-                  "priceInfo": {
-                    "discount": 15,
-                    "finalPrice": 204,
-                    "basePrice": 240
-                  },
-                  "primarySubcategoryId": "ms_st_veg",
-                  "isCustomizable": false,
-                  "meta": {
-                    "primarySubcategoryName": "Veg Starters",
-                    "image": "",
-                    "name": "Paneer 65",
-                    "description": "",
-                    "spiceLevel": 3,
-                    "categoryName": "",
-                    "dietaryType": "VEG",
-                    "isVegan": false
-                  },
-                  "subcategoryIds": [
-                    "ms_st_veg"
-                  ],
-                  "isInStock": true,
-                  "categoryId": "mc_starters",
-                  "order": 3
-                },
-                "selectedVariantsDetails": [],
-                "selectedAddonsDetails": [],
-                "quantity": 1,
-                "priceInfo": {
-                  "itemBasePrice": 240,
-                  "itemFinalPrice": 204,
-                  "totalVariantBasePrice": 0,
-                  "totalVariantFinalPrice": 0,
-                  "totalAddonBasePrice": 0,
-                  "totalAddonFinalPrice": 0,
-                  "totalBasePrice": 240,
-                  "finalPrice": 204,
-                  "discount": 15,
-                  "discountAmount": 36
-                },
-                "cartItemId": 1,
-                "status": "PENDING",
-                "statusColorHex": "#FFC107"
-              }
-            ],
-            "cartId": "res_meghana_tbl_meg_6_CART",
-            "status": "PENDING",
-            "statusHistory": [
-              {
-                "status": "PENDING",
-                "timestamp": {
-                  "_seconds": 1780000000,
-                  "_nanoseconds": 0
-                },
-                "userId": "system"
-              }
-            ],
-            "checkoutTime": {
-              "_seconds": 1780000000,
-              "_nanoseconds": 0
-            },
-            "notes": "",
-            "estimatedPrepTime": 12,
-            "assignedTo": null,
-            "cartIndex": 0,
-            "statusColorHex": "#FFC107"
-          }
-        ],
-        "items": [
-          {
-            "menuItemId": "mi_paneer65",
-            "name": "Paneer 65",
-            "description": "",
-            "quantity": 1,
-            "priceInfo": {
-              "basePrice": 240,
-              "discount": 15,
-              "finalPrice": 204
-            },
-            "selectedVariants": {},
-            "selectedVariantsDetails": [],
-            "selectedAddons": [],
-            "selectedAddonsDetails": [],
-            "cartItemId": 1,
-            "checkoutTime": {
-              "_seconds": 1780000000,
-              "_nanoseconds": 0
-            },
-            "status": "PENDING"
-          }
-        ],
-        "priceInfo": {
-          "finalPrice": 204,
-          "basePrice": 240,
-          "totalDiscount": 15,
-          "totalDiscountAmount": 36
-        },
-        "createdAt": {
-          "_seconds": 1780000000,
-          "_nanoseconds": 0
-        },
-        "updatedAt": 1788801924000,
-        "isActive": true,
-        "assignedServer": "",
-        "notes": "",
-        "sessionId": "SESSIONID_1",
-        "appliedOffer": null,
-        "orderId": "ORDERID_2",
-        "status": "IN_PROGRESS",
-        "statusColorHex": "#9E9E9E"
-      },
-      {
-        "restaurantId": "res_meghana",
         "tableId": "tbl_meg_7",
         "orderNumber": "ORD-00005",
         "orderStatus": "IN_PROGRESS",
@@ -171,9 +18,9 @@
         "carts": [
           {
             "tableId": "tbl_meg_7",
-            "sessionId": "SESSIONID_3",
+            "sessionId": "SESSIONID_1",
             "restaurantId": "res_meghana",
-            "lastUpdated": 1788801924258,
+            "lastUpdated": 1788802992678,
             "priceInfo": {
               "basePrice": 860,
               "finalPrice": 824,
@@ -450,11 +297,11 @@
           "_seconds": 1780000000,
           "_nanoseconds": 0
         },
-        "updatedAt": 1788801924000,
+        "updatedAt": 1788802992000,
         "isActive": true,
         "assignedServer": "",
         "notes": "",
-        "sessionId": "SESSIONID_3",
+        "sessionId": "SESSIONID_1",
         "appliedOffer": {
           "id": "off_meg_flat100",
           "title": "₹100 Off (min ₹499)",
@@ -463,19 +310,19 @@
           "discountAmount": 100,
           "appliedItems": []
         },
-        "orderId": "ORDERID_4",
+        "orderId": "ORDERID_2",
         "status": "IN_PROGRESS",
         "statusColorHex": "#9E9E9E"
       },
       {
         "restaurantId": "res_meghana",
-        "tableId": "tbl_meg_12",
-        "orderNumber": "ORD-00003",
+        "tableId": "tbl_meg_6",
+        "orderNumber": "ORD-00004",
         "orderStatus": "IN_PROGRESS",
         "paymentStatus": "unpaid",
         "carts": [
           {
-            "lastUpdated": 1788801919358,
+            "lastUpdated": 1788802988243,
             "priceInfo": {
               "totalAddonBasePrice": 0,
               "totalDiscountAmount": 36,
@@ -484,8 +331,8 @@
               "totalVariantBasePrice": 0,
               "basePrice": 240
             },
-            "tableId": "tbl_meg_12",
-            "sessionId": "SESSIONID_5",
+            "tableId": "tbl_meg_6",
+            "sessionId": "SESSIONID_3",
             "restaurantId": "res_meghana",
             "items": [
               {
@@ -554,7 +401,7 @@
                 "statusColorHex": "#FFC107"
               }
             ],
-            "cartId": "res_meghana_tbl_meg_12_CART",
+            "cartId": "res_meghana_tbl_meg_6_CART",
             "status": "PENDING",
             "statusHistory": [
               {
@@ -610,25 +457,25 @@
           "_seconds": 1780000000,
           "_nanoseconds": 0
         },
-        "updatedAt": 1788801921000,
+        "updatedAt": 1788802992000,
         "isActive": true,
         "assignedServer": "",
         "notes": "",
-        "sessionId": "SESSIONID_5",
+        "sessionId": "SESSIONID_3",
         "appliedOffer": null,
-        "orderId": "ORDERID_6",
+        "orderId": "ORDERID_4",
         "status": "IN_PROGRESS",
         "statusColorHex": "#9E9E9E"
       },
       {
         "restaurantId": "res_meghana",
         "tableId": "tbl_meg_11",
-        "orderNumber": "ORD-00002",
+        "orderNumber": "ORD-00003",
         "orderStatus": "IN_PROGRESS",
         "paymentStatus": "unpaid",
         "carts": [
           {
-            "lastUpdated": 1788801919199,
+            "lastUpdated": 1788802988243,
             "priceInfo": {
               "totalAddonBasePrice": 0,
               "totalDiscountAmount": 36,
@@ -638,7 +485,7 @@
               "basePrice": 240
             },
             "tableId": "tbl_meg_11",
-            "sessionId": "SESSIONID_7",
+            "sessionId": "SESSIONID_5",
             "restaurantId": "res_meghana",
             "items": [
               {
@@ -763,7 +610,160 @@
           "_seconds": 1780000000,
           "_nanoseconds": 0
         },
-        "updatedAt": 1788801920000,
+        "updatedAt": 1788802989000,
+        "isActive": true,
+        "assignedServer": "",
+        "notes": "",
+        "sessionId": "SESSIONID_5",
+        "appliedOffer": null,
+        "orderId": "ORDERID_6",
+        "status": "IN_PROGRESS",
+        "statusColorHex": "#9E9E9E"
+      },
+      {
+        "restaurantId": "res_meghana",
+        "tableId": "tbl_meg_12",
+        "orderNumber": "ORD-00002",
+        "orderStatus": "IN_PROGRESS",
+        "paymentStatus": "unpaid",
+        "carts": [
+          {
+            "lastUpdated": 1788802988152,
+            "priceInfo": {
+              "totalAddonBasePrice": 0,
+              "totalDiscountAmount": 36,
+              "finalPrice": 204,
+              "totalDiscount": 15,
+              "totalVariantBasePrice": 0,
+              "basePrice": 240
+            },
+            "tableId": "tbl_meg_12",
+            "sessionId": "SESSIONID_7",
+            "restaurantId": "res_meghana",
+            "items": [
+              {
+                "menuItemId": "mi_paneer65",
+                "categoryId": "mc_starters",
+                "subcategoryIds": [
+                  "ms_st_veg"
+                ],
+                "menuItem": {
+                  "nutritionalInfo": {
+                    "carbs": 40,
+                    "protein": 17,
+                    "fat": 15,
+                    "calories": 336
+                  },
+                  "addons": [],
+                  "allergenTags": [],
+                  "variants": [],
+                  "restaurantId": "res_meghana",
+                  "menuItemId": "mi_paneer65",
+                  "lastUpdated": {
+                    "_seconds": 1780000000,
+                    "_nanoseconds": 0
+                  },
+                  "priceInfo": {
+                    "discount": 15,
+                    "finalPrice": 204,
+                    "basePrice": 240
+                  },
+                  "primarySubcategoryId": "ms_st_veg",
+                  "isCustomizable": false,
+                  "meta": {
+                    "primarySubcategoryName": "Veg Starters",
+                    "image": "",
+                    "name": "Paneer 65",
+                    "description": "",
+                    "spiceLevel": 3,
+                    "categoryName": "",
+                    "dietaryType": "VEG",
+                    "isVegan": false
+                  },
+                  "subcategoryIds": [
+                    "ms_st_veg"
+                  ],
+                  "isInStock": true,
+                  "categoryId": "mc_starters",
+                  "order": 3
+                },
+                "selectedVariantsDetails": [],
+                "selectedAddonsDetails": [],
+                "quantity": 1,
+                "priceInfo": {
+                  "itemBasePrice": 240,
+                  "itemFinalPrice": 204,
+                  "totalVariantBasePrice": 0,
+                  "totalVariantFinalPrice": 0,
+                  "totalAddonBasePrice": 0,
+                  "totalAddonFinalPrice": 0,
+                  "totalBasePrice": 240,
+                  "finalPrice": 204,
+                  "discount": 15,
+                  "discountAmount": 36
+                },
+                "cartItemId": 1,
+                "status": "PENDING",
+                "statusColorHex": "#FFC107"
+              }
+            ],
+            "cartId": "res_meghana_tbl_meg_12_CART",
+            "status": "PENDING",
+            "statusHistory": [
+              {
+                "status": "PENDING",
+                "timestamp": {
+                  "_seconds": 1780000000,
+                  "_nanoseconds": 0
+                },
+                "userId": "system"
+              }
+            ],
+            "checkoutTime": {
+              "_seconds": 1780000000,
+              "_nanoseconds": 0
+            },
+            "notes": "",
+            "estimatedPrepTime": 12,
+            "assignedTo": null,
+            "cartIndex": 0,
+            "statusColorHex": "#FFC107"
+          }
+        ],
+        "items": [
+          {
+            "menuItemId": "mi_paneer65",
+            "name": "Paneer 65",
+            "description": "",
+            "quantity": 1,
+            "priceInfo": {
+              "basePrice": 240,
+              "discount": 15,
+              "finalPrice": 204
+            },
+            "selectedVariants": {},
+            "selectedVariantsDetails": [],
+            "selectedAddons": [],
+            "selectedAddonsDetails": [],
+            "cartItemId": 1,
+            "checkoutTime": {
+              "_seconds": 1780000000,
+              "_nanoseconds": 0
+            },
+            "status": "PENDING"
+          }
+        ],
+        "priceInfo": {
+          "finalPrice": 204,
+          "basePrice": 240,
+          "totalDiscount": 15,
+          "totalDiscountAmount": 36
+        },
+        "createdAt": {
+          "_seconds": 1780000000,
+          "_nanoseconds": 0
+        },
+        "updatedAt": 1788802989000,
         "isActive": true,
         "assignedServer": "",
         "notes": "",
@@ -781,7 +781,7 @@
         "paymentStatus": "unpaid",
         "carts": [
           {
-            "lastUpdated": 1788801918590,
+            "lastUpdated": 1788802987647,
             "priceInfo": {
               "totalAddonBasePrice": 0,
               "totalDiscountAmount": 36,
@@ -916,7 +916,7 @@
           "_seconds": 1780000000,
           "_nanoseconds": 0
         },
-        "updatedAt": 1788801919000,
+        "updatedAt": 1788802988000,
         "isActive": true,
         "assignedServer": "",
         "notes": "",

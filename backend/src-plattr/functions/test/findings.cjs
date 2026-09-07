@@ -132,19 +132,23 @@ function render() {
   const list = dedupe(readAll());
   fs.writeFileSync(path.join(RESULTS_DIR, 'findings.json'), JSON.stringify(list, null, 2));
 
-  const counts = list.reduce((m, f) => { m[f.severity] = (m[f.severity] || 0) + 1; return m; }, {});
+  // Fixed findings stay in the file for history but must not inflate the
+  // severity table: a follow-up agent reads that table to decide what is left.
+  const open = list.filter(f => f.status !== 'fixed');
+  const counts = open.reduce((m, f) => { m[f.severity] = (m[f.severity] || 0) + 1; return m; }, {});
   const order = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'];
 
   const lines = [];
   lines.push('# Findings — Plattr Pro pre-launch test run');
   lines.push('');
-  lines.push(`Generated ${new Date().toISOString()} · ${list.length} distinct findings`);
+  lines.push(`Generated ${new Date().toISOString()} · ${open.length} open findings · ${list.length - open.length} fixed since first reported`);
   lines.push('');
   lines.push('| Severity | Count |');
   lines.push('|---|---:|');
   for (const s of order) if (counts[s]) lines.push(`| ${s} | ${counts[s]} |`);
+  if (list.length - open.length) lines.push(`| _fixed_ | ${list.length - open.length} |`);
   lines.push('');
-  lines.push('`status: confirmed` = reproduced by a live test. `unconfirmed` = found by reading the code, not yet exercised. `known` = already documented in BUGS.md.');
+  lines.push('`status: confirmed` = reproduced by a live test. `unconfirmed` = found by reading the code, not yet exercised. `known` = already documented in BUGS.md. `fixed` = verified fixed in a later commit; kept for history, not open work.');
   lines.push('');
 
   for (const s of order) {
@@ -153,7 +157,7 @@ function render() {
     lines.push(`## ${s}`);
     lines.push('');
     for (const f of group) {
-      lines.push(`### ${f.title}`);
+      lines.push(`### ${f.status === 'fixed' ? '✓ FIXED — ' : ''}${f.title}`);
       lines.push('');
       lines.push(`- **area** ${f.area}${f.endpoint ? ` · **endpoint** \`${f.endpoint}\`` : ''}`);
       if (f.file) lines.push(`- **source** \`${f.file}\``);

@@ -3,7 +3,7 @@
   "message": "Cart retrieved successfully.",
   "data": {
     "cart": {
-      "lastUpdated": 1788801900190,
+      "lastUpdated": 1788802973535,
       "priceInfo": {
         "basePrice": 240,
         "finalPrice": 204,

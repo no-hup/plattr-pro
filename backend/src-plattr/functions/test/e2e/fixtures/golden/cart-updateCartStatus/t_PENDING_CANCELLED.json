@@ -32,7 +32,7 @@
         }
       ]
     },
-    "updatedAt": 1788801914113,
+    "updatedAt": 1788802982324,
     "priceInfo": {
       "basePrice": 960,
       "finalPrice": 612,
@@ -50,7 +50,7 @@
     },
     "carts": [
       {
-        "lastUpdated": 1788801913789,
+        "lastUpdated": 1788802980608,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -141,7 +141,7 @@
           },
           {
             "status": "PREPARING",
-            "timestamp": 1788801913852,
+            "timestamp": 1788802981979,
             "userId": "system",
             "notes": ""
           }
@@ -155,7 +155,7 @@
         "assignedTo": "system"
       },
       {
-        "lastUpdated": 1788801913869,
+        "lastUpdated": 1788802982014,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -246,7 +246,7 @@
           },
           {
             "status": "READY",
-            "timestamp": 1788801913921,
+            "timestamp": 1788802982064,
             "userId": "system",
             "notes": ""
           }
@@ -260,7 +260,7 @@
         "assignedTo": "system"
       },
       {
-        "lastUpdated": 1788801913942,
+        "lastUpdated": 1788802982084,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -359,7 +359,7 @@
         "assignedTo": null
       },
       {
-        "lastUpdated": 1788801914000,
+        "lastUpdated": 1788802982169,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -458,7 +458,7 @@
         "assignedTo": null
       },
       {
-        "lastUpdated": 1788801914067,
+        "lastUpdated": 1788802982241,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -549,7 +549,7 @@
           },
           {
             "status": "CANCELLED",
-            "timestamp": 1788801914113,
+            "timestamp": 1788802982324,
             "userId": "system",
             "notes": ""
           }

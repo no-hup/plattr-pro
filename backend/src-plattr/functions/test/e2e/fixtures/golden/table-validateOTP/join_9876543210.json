@@ -3,7 +3,7 @@
   "message": "Primary customer authenticated",
   "data": {
     "status": "success",
-    "customToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwczovL2lkZW50aXR5dG9vbGtpdC5nb29nbGVhcGlzLmNvbS9nb29nbGUuaWRlbnRpdHkuaWRlbnRpdHl0b29sa2l0LnYxLklkZW50aXR5VG9vbGtpdCIsImlhdCI6MTc4ODgwMTg5MiwiZXhwIjoxNzg4ODA1NDkyLCJpc3MiOiJmaXJlYmFzZS1hZG1pbnNkay1md2Y2dkBybXMtYXBwLWRkODc1LmlhbS5nc2VydmljZWFjY291bnQuY29tIiwic3ViIjoiZmlyZWJhc2UtYWRtaW5zZGstZndmNnZAcm1zLWFwcC1kZDg3NS5pYW0uZ3NlcnZpY2VhY2NvdW50LmNvbSIsInVpZCI6Ijk4NzY1NDMyMTAifQ.d8UfmsDeXzFXGEu0GipFjJIvjxn4fttJ8tyMYD3m_M3ZdAvIS36YdFzjONbQVP2QQ7Tn57cEUbFZm0vm6BPfxb1YEUyjqLbvg5j_FnXDASzoZsTkGZVLNGwEjSGdhgrtxlZ5djM6hqC4iDaoB2JohI3pIE7FyFXi1_Yxd3Hw3ASU5HIatl-cCbFOM2wsrsAt3mByxFeemfH2nIy8LB44rM_k3mm0qD5Najauk7Rn4NgenO7pdDBAK5n5TUQAWAJJ0UAz5yHoZgp_mHEwX9ck8I9kKrxueGKyjy6donguJpqlXy6_SOCawwpP877aDQYT7CwauQ-c1HOHB3F0K_KvSQ",
+    "customToken": null,
     "isPrimaryCustomer": true,
     "sessionId": "SESSIONID_1"
   }

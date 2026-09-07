@@ -3,7 +3,7 @@
   "message": "Customer successfully joined table",
   "data": {
     "status": "success",
-    "customToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwczovL2lkZW50aXR5dG9vbGtpdC5nb29nbGVhcGlzLmNvbS9nb29nbGUuaWRlbnRpdHkuaWRlbnRpdHl0b29sa2l0LnYxLklkZW50aXR5VG9vbGtpdCIsImlhdCI6MTc4ODgwMTg5OSwiZXhwIjoxNzg4ODA1NDk5LCJpc3MiOiJmaXJlYmFzZS1hZG1pbnNkay1md2Y2dkBybXMtYXBwLWRkODc1LmlhbS5nc2VydmljZWFjY291bnQuY29tIiwic3ViIjoiZmlyZWJhc2UtYWRtaW5zZGstZndmNnZAcm1zLWFwcC1kZDg3NS5pYW0uZ3NlcnZpY2VhY2NvdW50LmNvbSIsInVpZCI6Ijk4NzY1NDMyMTEifQ.lCe37c4YnKpoiEaKgUOBZhooZD_CmSWSoUn1nGfuVK2GSVgWRLYw7ZRFJzQ_Xmre1XWFg6g5mA7PjhpqbeTLXr95C3Eud5xPW7tPo24_GtA1D1Nz4ImovtNOi1D9_HQY9QSAGGl29q9ITc1eNw33HP1bGqq1k8Th1Eblke4noKuu7TUD8scmStmfGarjVlPSKX82J97KyBxK8aAYVhfYjpGjGG-SY3_zz2k3hPGaih6p3QbinkRh3UPGgyPJUcRi7RHVMx0tJ6vYy7X_kIkt7da6rpIrwTnlC9ubOhWC3kyjlb302zK0Oiwt2OfJI9BS_7CIz38Y25qGcL1AUipUNw",
+    "customToken": null,
     "isPrimaryCustomer": false,
     "sessionId": "SESSIONID_1"
   }
