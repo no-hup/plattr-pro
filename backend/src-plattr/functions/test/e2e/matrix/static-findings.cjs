@@ -13,6 +13,12 @@ const STATIC = [
   // ── Lifecycle / concurrency ────────────────────────────────────────────────
   // ── Added after the 2026-06-05-goodbye merge (order.items went per-unit) ───
   {
+    title: 'Lifetime order count is really "orders in this sitting"',
+    severity: 'HIGH', area: 'pricing', endpoint: 'order-updateOrderStatus',
+    file: 'offers/evaluateOrderOffers.js getSessionData (~line 28-45)',
+    detail: 'getSessionData runs ONE query — orders where sessionId == the current session — and returns snap.size as BOTH totalOrderCount and sessionOrderCount. A rule meaning "this customer has ordered here before" therefore evaluates as "this customer has ordered before during this meal". A genuinely returning customer arrives on a new session and reads as zero prior orders, so a loyalty offer keyed on lifetime history can only fire on a second order within one sitting — the opposite of its purpose. Separately, at COMPLETED the order being evaluated is already in the collection and counts itself, which is what makes the winning offer differ between checkout and payment (see the offer-switch finding). Excluding the current order fixes the money bug; it does NOT fix the lifetime-vs-session semantics, which needs a customer-scoped source (phone) rather than a session-scoped one.',
+  },
+  {
     title: 'Variant and addon prices are repeated next to an all-inclusive item price',
     severity: 'MEDIUM', area: 'pricing', endpoint: 'order-getOrder',
     file: 'orders/getOrder.js:211-215, orders/serverGetOrderDetails.js:124-128',
@@ -84,8 +90,9 @@ const STATIC = [
   {
     title: 'Multi-user table has no per-user cart attribution',
     severity: 'HIGH', area: 'lifecycle', endpoint: 'cart-addItemToCart',
-    file: 'cart/addItemToCartBoilerplateHelper.js:35',
-    detail: 'There is one cart doc per table (carts/{tableId}) with no userId or phoneNumber on the cart or its items, and checkoutCart hardcodes userId to "system". cart.sessionId is written once at creation and never refreshed, so a cart started by customer A and checked out by B still carries A\'s session. Split-bill and per-person totals are not representable in the current schema.',
+    file: 'cart/addItemToCartBoilerplateHelper.js:502 createCartItem',
+    detail: 'A SCHEMA gap, not a plumbing one: createCartItem(menuItemId, menuItem, variants, addons, quantity, priceDetails, cartItemId) takes no identity argument and the item it builds has no customer field of any kind, so there is nowhere to put one. The identity is nonetheless already in hand — addItemToCart validates sessionId a few lines earlier — so this is one field plus one threaded argument, not a new mechanism. NO MONEY DEPENDS ON IT: checkoutCart puts the CALLER\'s sessionId on the order (checkoutCart.js:37), not the cart\'s, so offers and totals are evaluated against whoever actually checked out. Note addItemToCart.js:212 REWRITES cart.sessionId on every add, so the cart-level session is last-adder-wins and attributes every item to whoever touched it most recently — misleading, but it never reaches the bill. Blocker only if split-bill or per-person billing is in launch scope; with one bill per table nothing is wrong today, you simply cannot answer "who ordered what".',
+    status: 'confirmed'
   },
   {
     title: 'Secondary customer OTP skips the expiry check',

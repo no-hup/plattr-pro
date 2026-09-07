@@ -114,7 +114,8 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
           restaurantId,
           allCartItems,
           totalBase,
-          order.sessionId
+          order.sessionId,
+          orderId
         );
         const offerDiscount = bestOffer ? Math.min(bestOffer.discountAmount, totalFinal) : 0;
         const appliedOffer = bestOffer ? buildAppliedOfferObject(bestOffer) : null;

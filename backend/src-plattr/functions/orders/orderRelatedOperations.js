@@ -112,7 +112,8 @@ const updateMenuItemStatus = functions.https.onCall(async (data, context) => {
                 restaurantId,
                 allCartItems,
                 recalculatedBasePrice.basePrice || 0,
-                updatedOrder.sessionId
+                updatedOrder.sessionId,
+                orderId
               );
               const baseFinalPrice = recalculatedBasePrice.finalPrice || 0;
               const offerDiscount = bestOffer

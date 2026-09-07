@@ -180,7 +180,7 @@ async function _updateCartStatus(
       // waiter and consumer screens show what the customer will actually pay.
       if (billChanges) {
         const { priceInfo, appliedOffer } = await buildOrderPriceInfo(
-          restaurantId, updatedCarts, orderData.sessionId, chargesConfig
+          restaurantId, updatedCarts, orderData.sessionId, chargesConfig, orderId
         );
         updates.priceInfo = priceInfo;
         updates.appliedOffer = appliedOffer;

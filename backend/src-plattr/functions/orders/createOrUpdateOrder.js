@@ -341,7 +341,8 @@ async function updateExistingOrder(transaction, restaurantId, orderId, existingO
     restaurantId,
     updatedCarts,
     sessionId || existingOrder.sessionId,
-    chargesConfig
+    chargesConfig,
+    orderId
   );
 
   if (appliedOffer) {
@@ -436,9 +437,10 @@ function writeOrderCounter(transaction, counterRef, counterDoc) {
  * CANCELLED/RETURNED carts), best order-level offer, then Charges V1. Used by
  * checkout (append cart) and by cart cancellation so every read path sees the
  * same number the customer will pay.
+ * @param {string} [orderId] - The existing order's ID, so it is not counted as its own prior order
  * @returns {Promise<{priceInfo: Object, appliedOffer: Object|null, offerDiscount: number}>}
  */
-async function buildOrderPriceInfo(restaurantId, carts, sessionId, chargesConfig = []) {
+async function buildOrderPriceInfo(restaurantId, carts, sessionId, chargesConfig = [], orderId = null) {
   const basePriceInfo = calculateTotalPriceInfo(carts);
 
   // Offers V2: evaluate against raw items of live carts only (normalized items strip categoryId).
@@ -448,7 +450,8 @@ async function buildOrderPriceInfo(restaurantId, carts, sessionId, chargesConfig
     restaurantId,
     allCartItems,
     basePriceInfo.basePrice || 0,
-    sessionId
+    sessionId,
+    orderId
   );
 
   const baseFinalPrice = basePriceInfo.finalPrice || 0;

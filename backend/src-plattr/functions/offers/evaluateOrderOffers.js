@@ -25,7 +25,7 @@ const { isOffersEnabled } = require('./offerFeatureGuard');
  * Mirrors the helper in getApplicableOffers.js — kept local to avoid a cross-
  * file require cycle when evaluateOrderOffers is called from order code paths.
  */
-async function getSessionData(restaurantId, sessionId) {
+async function getSessionData(restaurantId, sessionId, excludeOrderId) {
     if (!sessionId) {
         return { totalOrderCount: 0, sessionOrderCount: 0 };
     }
@@ -35,9 +35,14 @@ async function getSessionData(restaurantId, sessionId) {
             .collection('orders')
             .where('sessionId', '==', sessionId)
             .get();
+        // "Prior" means OTHER orders: the order being (re-)evaluated must not
+        // count itself, or it would unlock a history offer it didn't have at checkout.
+        const priorCount = snap.docs.filter(d => d.id !== excludeOrderId).length;
+        // totalOrderCount is session-scoped today (same query); a lifetime count
+        // needs customer-level history — product decision pending.
         return {
-            totalOrderCount: snap.size,
-            sessionOrderCount: snap.size,
+            totalOrderCount: priorCount,
+            sessionOrderCount: priorCount,
         };
     } catch (err) {
         console.error('evaluateOrderOffers: session data fetch failed:', err);
@@ -52,9 +57,11 @@ async function getSessionData(restaurantId, sessionId) {
  * @param {Array}  allItems     - Raw cart items (NOT normalized) across all carts in the order
  * @param {number} basePrice    - Pre-discount order total (for minOrderValue conditions + virtual cart)
  * @param {string} [sessionId]  - Session ID for user-history-based offers
+ * @param {string} [excludeOrderId] - ID of the order being evaluated (null at first checkout);
+ *                                    excluded from the prior-order count so an order never qualifies itself
  * @returns {Promise<Object|null>} { offer, discountAmount, appliedItems } | null
  */
-async function evaluateAndPickBestOffer(restaurantId, allItems, basePrice, sessionId) {
+async function evaluateAndPickBestOffer(restaurantId, allItems, basePrice, sessionId, excludeOrderId = null) {
     try {
         // 1. Restaurant-level killswitch
         const enabled = await isOffersEnabled(restaurantId);
@@ -80,7 +87,7 @@ async function evaluateAndPickBestOffer(restaurantId, allItems, basePrice, sessi
         };
 
         // 4. Session history (user-history-based offers)
-        const sessionData = await getSessionData(restaurantId, sessionId);
+        const sessionData = await getSessionData(restaurantId, sessionId, excludeOrderId);
 
         // 5. Evaluate each offer; collect applicable ones
         const candidates = [];
