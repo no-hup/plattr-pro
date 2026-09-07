@@ -50,7 +50,9 @@ class _MenuItemCardState extends State<MenuItemCard> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimensions.radiusLG)),
       ),
-      builder: (context) => MenuCustomizationSheet(
+      // Keep the card's context: the sheet pops itself on ADD, and an
+      // unmounted context means the failure toast is silently skipped.
+      builder: (_) => MenuCustomizationSheet(
         item: widget.item,
         onConfirm: (selectedVariants, selectedAddons, quantity) {
           AppLogger.log(
