@@ -188,6 +188,7 @@ class OffersRepository {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
+      case DioExceptionType.transformTimeout:
         errorMessage = 'Request timed out';
         errorCode = 'TIMEOUT_ERROR';
       case DioExceptionType.connectionError:
