@@ -76,8 +76,12 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
   }
 
   void _handleTabChange() {
+    // Index into the FILTERED tab list — the controller's length can differ
+    // from _tabs when uiFlags hide tabs.
+    final visibleTabs = _getVisibleTabs();
     if (!_tabController.indexIsChanging &&
-        _tabs[_tabController.index] == OrderTab.served) {
+        _tabController.index < visibleTabs.length &&
+        visibleTabs[_tabController.index] == OrderTab.served) {
       _ordersProvider.fetchServedCarts(
         restaurantId: widget.restaurantId,
         sessionId: widget.sessionId,
@@ -88,10 +92,11 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Don't poll while backgrounded; refresh immediately on return.
+    // Only `paused` counts as backgrounded — `inactive` fires on transient
+    // focus loss (iOS/web) and would churn the timer.
     if (state == AppLifecycleState.resumed) {
       if (mounted) _startPolling();
-    } else if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive) {
+    } else if (state == AppLifecycleState.paused) {
       _ordersProvider.stopPolling();
     }
   }
@@ -164,11 +169,13 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
       builder: (context, child) {
         final visibleTabs = _getVisibleTabs();
 
-        // Adjust tab controller if needed
+        // Adjust tab controller if needed (re-attach the served-tab listener —
+        // it dies with the disposed controller)
         if (_tabController.length != visibleTabs.length) {
           _tabController.dispose();
           _tabController =
-              TabController(length: visibleTabs.length, vsync: this);
+              TabController(length: visibleTabs.length, vsync: this)
+                ..addListener(_handleTabChange);
         }
 
         return Column(

@@ -237,9 +237,10 @@ export default async function orderLifecycleSuite() {
 
       // ── 12. Cancel order: PENDING → CANCELLED ───────────────────
       {
+        // Cancellation is a staff action (updateOrderStatus is staff-gated)
         const resp = await call('order-updateOrderStatus', {
           restaurantId: RESTAURANT_ID, orderId: cancelOrderId,
-          orderStatus: 'CANCELLED', sessionId: cancelSessionId,
+          orderStatus: 'CANCELLED', sessionId: serverSessionId,
         });
         record(assertSuccess(resp, '12. Cancel order'));
         narrator.orderStatus(cancelOrderId, 'PENDING', 'CANCELLED');

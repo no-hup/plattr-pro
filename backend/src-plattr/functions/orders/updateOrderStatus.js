@@ -2,7 +2,7 @@ const functions = require('firebase-functions');
 const { admin, db } = require('../admin/admin');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('./orderConstants');
 const OrderInputValidation = require('./orderInputValidation');
-const { validateSessionId } = require('../cart/cartInputValidation');
+const { validateStaffSession } = require('../adminApp/auth');
 const { calculateCartValue } = require('../cart/calculateCartValue');
 const { OrderPriceInfo } = require('../genericModels/priceinfo');
 const timestamp = require('../utils/timestamp');
@@ -34,8 +34,9 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
   // Validate inputs
   OrderInputValidation.validateUpdateOrderStatusFields(requestData);
   const { restaurantId, orderId, orderStatus, sessionId } = requestData;
-  // Validate session
-  await validateSessionId(restaurantId, sessionId);
+  // Staff only: this endpoint closes the bill (COMPLETED sets paymentStatus
+  // PAID). validateSessionId was optional-and-anonymous — unacceptable here.
+  await validateStaffSession(restaurantId, sessionId);
   try {
     const orderRef = db
       .collection(COLLECTIONS.RESTAURANTS).doc(restaurantId)

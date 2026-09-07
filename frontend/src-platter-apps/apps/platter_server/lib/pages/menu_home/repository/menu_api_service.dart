@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:platter_core/platter_core.dart' hide DioClient;
 import '../../../network/api_constants.dart';
 import '../../../network/dio_client.dart';
-import '../../../singleton/app_state.dart';
 
 /// Service for handling menu-related API requests
 class MenuApiService {

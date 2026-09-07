@@ -46,11 +46,8 @@ class OrderListingState extends ChangeNotifier {
     String? specificOrderId,
   }) {
     _pollingTimer?.cancel();
-    fetchOrder(
-      tableId: tableId,
-      restaurantId: restaurantId,
-      specificOrderId: specificOrderId,
-    );
+    // Assign the timer BEFORE the first fetch: the no-session branch inside
+    // fetchOrder calls stopPolling() synchronously, which must cancel it.
     _pollingTimer = Timer.periodic(pollingInterval, (_) {
       fetchOrder(
         tableId: tableId,
@@ -59,6 +56,11 @@ class OrderListingState extends ChangeNotifier {
         isBackgroundPoll: true,
       );
     });
+    fetchOrder(
+      tableId: tableId,
+      restaurantId: restaurantId,
+      specificOrderId: specificOrderId,
+    );
   }
 
   void stopPolling() {
@@ -131,12 +133,15 @@ class OrderListingState extends ChangeNotifier {
         success: (data, message) {
           _order = data.data;
           
-          // Handle case where order is null but API call succeeded
+          // Handle case where order is null but API call succeeded.
+          // Always recompute _error on success so a stale error from an
+          // earlier failed poll can't latch the error screen forever.
           if (_order == null) {
             AppLogger.log('⚠️ ORDER: API returned success but order is null');
             _error = 'No order data found';
             _orders = [];
           } else {
+            _error = null;
             // If a specific order was requested, add it to the orders list as well
             AppLogger.log('✅ ORDER: Successfully received order with ${_order?.items.length ?? 0} items');
             if (orderIdToUse != null) {

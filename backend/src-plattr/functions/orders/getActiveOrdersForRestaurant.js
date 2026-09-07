@@ -66,11 +66,13 @@ async function getActiveOrdersForRestaurant(data, context) {
 
     setStage('fetch-orders');
     const ordersRef = db.collection('restaurants').doc(restaurantId).collection('orders');
-    // Bound the polled read: exclude COMPLETED server-side (same semantics as the
-    // in-Node filter below, which stays for legacy/lowercase status values).
-    // Note: '!=' also excludes docs missing orderStatus entirely.
+    // Bound the polled read to live orders, newest first. An 'in' equality set
+    // (not '!=') so the recency orderBy is legal — with '!=' Firestore orders by
+    // orderStatus and limit(300) would keep stale CANCELLED docs over live ones.
+    // Composite index: orderStatus ASC + createdAt DESC (firestore.indexes.json).
     const allOrdersQuery = await ordersRef
-      .where('orderStatus', '!=', ORDER_STATUS.COMPLETED)
+      .where('orderStatus', 'in', [ORDER_STATUS.PENDING, ORDER_STATUS.IN_PROGRESS])
+      .orderBy('createdAt', 'desc')
       .limit(300)
       .get();
 
@@ -79,8 +81,9 @@ async function getActiveOrdersForRestaurant(data, context) {
     for (const doc of allOrdersQuery.docs) {
       const orderData = doc.data();
       const normalizedStatus = mapOrderStatus(orderData.orderStatus || orderData.status);
-      // Only include orders that are NOT completed
-      if (normalizedStatus === ORDER_STATUS.COMPLETED) continue;
+      // Only include live orders (belt-and-braces with the query above)
+      if (normalizedStatus === ORDER_STATUS.COMPLETED ||
+          normalizedStatus === ORDER_STATUS.CANCELLED) continue;
 
       // Filter: include only orders where:
       // 1. assignedServer == currentServerId, OR
