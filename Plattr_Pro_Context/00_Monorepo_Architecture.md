@@ -34,8 +34,8 @@ plattr-pro/
 │   │       └── AnalyticsLogger/       # Analytics abstraction (not yet imported)
 │   └── flutter_boilerplate/           # Consumer app (separate workspace)
 ├── backend/
-│   ├── src-plattr/                    # Firebase Cloud Functions (Node.js)
-│   └── claude-api-testing-workflow/   # E2E API test suite
+│   └── src-plattr/                    # Firebase Cloud Functions (Node.js)
+│       └── functions/test/            # All backend tests: unit/ (Jest) + e2e/ (API suite)
 └── plantuml-ext/                      # VS Code PlantUML extension (submodule)
 ```
 
