@@ -7,6 +7,10 @@ const { mapCartStatus, isValidCartTransition } = require('../utils/statusUtils')
 const OrderInputValidation = require('../orders/orderInputValidation');
 const timestamp = require('../utils/timestamp');
 const { validateStaffSession } = require('../adminApp/auth');
+const { buildOrderPriceInfo } = require('../orders/createOrUpdateOrder');
+const { loadChargesConfig } = require('../orders/calculateCharges');
+
+const UNBILLED = [FULFILLMENT_STATUS.CANCELLED, FULFILLMENT_STATUS.RETURNED];
 
 /**
  * Updates the status of a specific cart in an order
@@ -98,6 +102,10 @@ async function _updateCartStatus(
     .collection("orders")
     .doc(orderId);
 
+  // Charges config is read out-of-band (same as checkout); only needed when the bill changes.
+  const billChanges = UNBILLED.includes(mapCartStatus(newStatus));
+  const chargesConfig = billChanges ? await loadChargesConfig(restaurantId) : [];
+
   try {
     return await db.runTransaction(async (transaction) => {
       const orderDoc = await transaction.get(orderRef);
@@ -167,6 +175,16 @@ async function _updateCartStatus(
         carts: updatedCarts,
         updatedAt: timestamp.now()
       };
+
+      // A cancelled/returned cart leaves the bill now, not at COMPLETED, so
+      // waiter and consumer screens show what the customer will actually pay.
+      if (billChanges) {
+        const { priceInfo, appliedOffer } = await buildOrderPriceInfo(
+          restaurantId, updatedCarts, orderData.sessionId, chargesConfig
+        );
+        updates.priceInfo = priceInfo;
+        updates.appliedOffer = appliedOffer;
+      }
 
       // Check if all active items are now served
       if (normalizedNewStatus === FULFILLMENT_STATUS.SERVED) {

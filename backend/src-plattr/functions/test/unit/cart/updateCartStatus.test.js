@@ -35,6 +35,14 @@ describe('updateCartStatus item cascade', () => {
       validateStaffSession: jest.fn().mockResolvedValue(undefined),
     }));
     jest.doMock('../../../utils/timestamp', () => ({ now: () => 'NOW' }));
+    // Bill recompute on CANCELLED/RETURNED is covered by the order-level code;
+    // keep this test about the cascade only.
+    jest.doMock('../../../orders/createOrUpdateOrder', () => ({
+      buildOrderPriceInfo: jest.fn().mockResolvedValue({ priceInfo: {}, appliedOffer: null, offerDiscount: 0 }),
+    }));
+    jest.doMock('../../../orders/calculateCharges', () => ({
+      loadChargesConfig: jest.fn().mockResolvedValue([]),
+    }));
 
     updateCartStatus = require('../../../cart/updateCartStatus');
   });

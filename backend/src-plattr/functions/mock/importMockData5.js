@@ -174,7 +174,7 @@ async function importData() {
         if (mockData._system) {
             console.log('Importing _system (v5)...');
             for (const [docId, docData] of Object.entries(mockData._system)) {
-                await db.collection('_system').doc(docId).set(transformData(docData), { merge: true });
+                await db.collection('_system').doc(docId).set(transformData(docData)); // no merge: stale override keys must not survive
             }
         }
 

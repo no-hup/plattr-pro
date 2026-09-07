@@ -198,7 +198,8 @@ function sanitizeOrderData(id, orderData) {
   if (Array.isArray(orderData.carts)) {
     carts = orderData.carts
       .map((cart, index) => ({ ...cart, cartIndex: index }))
-      .filter(cart => mapCartStatus(cart.status) !== FULFILLMENT_STATUS.SERVED);
+      .filter(cart => ![FULFILLMENT_STATUS.SERVED, FULFILLMENT_STATUS.CANCELLED, FULFILLMENT_STATUS.RETURNED]
+        .includes(mapCartStatus(cart.status)));
   } else {
     carts = orderData.carts;
   }
