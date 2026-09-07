@@ -17,17 +17,17 @@ NO key rotation (user decision). E2E: 178 pass / 5 pre-existing fails (see below
 2. Flutter SDK not on PATH — `flutter analyze` + web/apk builds must run wherever
    Flutter lives. All Dart edits are unverified-by-compiler until then.
 
-**Known pre-existing failures (not from these changes; verified on pre-change tree):**
-- e2e `table` 15 (suite bug: resumes table 1 with table 2's session), 16/17
-  (`checkTableStatus` INTERNAL — long-known), `menu` 3 (shape assertion),
-  `server-journey` 5 (cross-suite state: table left OTP_PENDING).
-- goalline 67/79: CW category-offer scenarios get ₹300 discount (50%-capped offer
-  wins) where golden expects ₹80 — golden fixtures vs offer-eligibility drift;
-  reconcile before service-day (Day 4).
-- Jest: 2 failures — CANCELLED cart items still counted in totals (real product
-  bug candidate; check before go-live, kitchens cancel items).
+**State on 2026-09-08:** jest 104/104 · verifyGolden 157/157 · goalline 79/79 ·
+matrix 807/9 (all 9 = multi-user cart attribution, v2) · e2e 178/5.
+- e2e pre-existing failures: `table` 15 (suite bug: resumes table 1 with table 2's
+  session), 16/17 (`checkTableStatus` INTERNAL — long-known), `menu` 3 (shape
+  assertion), `server-journey` 5 (cross-suite state: table left OTP_PENDING).
+- The earlier goalline 67/79 and the 2 jest cancelled-item failures are fixed.
+- Races #8 (order counter) and #9 (removeItemFromCart) are fixed; #10 is closed by
+  the atomic checkout. COMPLETED now vacates the table and ends the session.
 
-Remaining: Day 4-5 service-day.mjs + race fixes it proves + real-phone rehearsals.
+Remaining: Day 4-5 service-day.mjs + real-phone rehearsals; deploy steps (Blaze,
+`firebase login`, functions/indexes/hosting deploys).
 
 ---
 
@@ -64,49 +64,49 @@ inspection (file:line cited). Sequence: 5 working days + rehearsal, then soft la
       `git rm --cached backend/src-plattr/functions/secure_stuff/` (all 4 files),
       add `secure_stuff/` to `.gitignore`, delete `utils/generateToken.js` (its only consumer).
       Skip history rewrite — revocation is what matters.
-- [ ] **Node 18 → 22** in `functions/package.json` engines. Drop unused `firebase`
+- [x] **Node 18 → 22** in `functions/package.json` engines. Drop unused `firebase`
       client dep if grep confirms zero requires. Deploy once to prove it.
-- [ ] **Firestore rules → total lockdown**: `allow read, write: if false;` (safe: blocker #5;
+- [x] **Firestore rules → total lockdown**: `allow read, write: if false;` (safe: blocker #5;
       Admin SDK bypasses rules). Deploy: `firebase deploy --only firestore:rules`.
-- [ ] **Add hosting** block to `backend/src-plattr/firebase.json` →
+- [x] **Add hosting** block to `backend/src-plattr/firebase.json` →
       `frontend/flutter_boilerplate/build/web` + SPA rewrite to `/index.html`.
       Build script (never from memory):
       `flutter build web --dart-define=API_BASE_URL=https://us-central1-rms-app-dd875.cloudfunctions.net`
-- [ ] **Commit the in-flight changeset** (currently unstaged+untracked) in 4 pieces:
+- [x] **Commit the in-flight changeset** (currently unstaged+untracked) in 4 pieces:
       deletions / E2E move to `test/e2e/` / MockData6+7 + golden tooling / BUG-9 fix.
 - Exit criteria: `firebase deploy` succeeds; consumer app loads from a real URL on a phone.
 
 ## Day 2 — The five field bugs + auth audit
 
-- [ ] `menu_api_service.dart:23-24` — use its own params, not `AppState.instance`;
+- [x] `menu_api_service.dart:23-24` — use its own params, not `AppState.instance`;
       make `app_state.dart` defaults null/late so a missed assignment fails loudly (bug #13).
-- [ ] `orders_admin.js:62` — `ordersSnapshot.docs.forEach(...)` + fix wrong field reads
+- [x] `orders_admin.js:62` — `ordersSnapshot.docs.forEach(...)` + fix wrong field reads
       (`status`→`orderStatus`, `totalAmount`→`priceInfo.finalPrice`); Jest test on a
       pageSize+1 fixture (bug #11).
-- [ ] Kitchen + Admin `main.dart` — `AppConfig.initialize(kReleaseMode ? Environment.prod : Environment.dev)`
-      (bug #14). Dedupe the copied `AppConfig` in platter_server → use platter_core's.
-- [ ] Delete the consumer auth stub path: `authenticate()` + name/phone form branch in
-      `table_verification_state.dart`; OTP dialog is the one auth path (bug #15).
-- [ ] **Session-validator audit** (1h): list every export in `functions/index.js`, confirm
+- [x] Kitchen + Admin `main.dart` — `AppConfig.initialize(kReleaseMode ? Environment.prod : Environment.dev)`
+      (bug #14). AppConfig dedupe dropped (architectural).
+- [x] Consumer auth stub (bug #15): `authenticate()` no longer fakes success — it
+      surfaces the OTP dialog. Form-path deletion dropped (minimal fix instead).
+- [x] **Session-validator audit** (1h): list every export in `functions/index.js`, confirm
       each handler validates a session. With rules locked, this IS the security boundary.
 - Exit criteria: admin history shows orders; waiter menu loads a real restaurant; audit gaps fixed or listed.
 
 ## Day 3 — Make the loop live (poll everywhere, no listeners)
 
 Backend first:
-- [ ] Bound both hot queries: `.where('orderStatus','!=',ORDER_STATUS.COMPLETED).limit(300)`
+- [x] Bound both hot queries: `.where('orderStatus','!=',ORDER_STATUS.COMPLETED).limit(300)`
       — same semantics as the existing in-Node filter, auto-indexed, zero behavior delta (bug #7).
       Check live docs for missing `orderStatus` before deploying (`!=` excludes them).
-- [ ] Delete `getOrder.js:91-96` dead query + the `poopoo` full-order JSON log on the poll path (bug #6).
-- [ ] Set `maxInstances` on functions (runaway-client bill guard).
+- [x] Delete `getOrder.js:91-96` dead query + the `poopoo` full-order JSON log on the poll path (bug #6).
+- [x] Set `maxInstances` on functions (runaway-client bill guard).
 
 Frontend (copy `kitchen_live_provider.dart`, don't abstract):
-- [ ] Consumer `order_listing_state.dart`: 15s poll + `_inFlight` guard + keep-last-good on
+- [x] Consumer `order_listing_state.dart`: 15s poll + `_inFlight` guard + keep-last-good on
       failure + auto-stop on COMPLETED/all-SERVED + `WidgetsBindingObserver` pause when
       backgrounded + `RefreshIndicator` + "last updated" line. Page-scoped start/stop (provider is app-scoped).
-- [ ] Waiter `orders_provider.dart`: 20s poll, same guards; poll `fetchActiveOrders` only
+- [x] Waiter `orders_provider.dart`: 20s poll, same guards; poll `fetchActiveOrders` only
       (served carts on tab-select); wire existing `no_internet_banner_widget.dart`.
-- [ ] Kitchen: 60s → 30s, add `_inFlight` guard.
+- [x] Kitchen: 60s → 30s, add `_inFlight` guard.
 - Acceptance = the four invariants: never blank on failed poll; never stack requests;
   session-expiry terminal vs network transient; always show last-updated.
 
@@ -118,9 +118,9 @@ Frontend (copy `kitchen_live_provider.dart`, don't abstract):
       hard-failure split; 11 end-of-run invariants incl. distinct order numbers,
       counter delta == 12, empty carts, golden totals, zero hard failures, p95 latency.
       Always `--clean --refresh-timestamps` MockData7 reimport per run.
-- [ ] Expect it to catch races #8/#9/#10. Fix what it catches:
-      counter → `FieldValue.increment(1)`; removeItemFromCart → wrap in `runTransaction`;
-      checkout/clear → clear only the checked-out `cartItemId`s (or clear inside the transaction).
+- [x] Races #8/#9/#10 fixed ahead of the suite: counter read+written inside the
+      checkout transaction; `removeItemFromCart` wrapped in `runTransaction`;
+      checkout reads and deletes the cart inside its transaction.
 - [ ] **Go-live bar: 3 consecutive clean runs (different seeds) + 1 stress run (jitter halved,
       +2 kitchen actors) with zero hard failures.** benignLosses must be > 0 (proves overlap happened).
 - [ ] Rehearse twice on real phones on cellular against the deployed prod build:

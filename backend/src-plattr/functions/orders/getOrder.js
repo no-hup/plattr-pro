@@ -46,35 +46,47 @@ const getOrder = functions.https.onCall(async (data, context) => {
     } = requestData;
 
     // Validate session if provided
+    let sessionActive = true;
     if (sessionId) {
       const sessionRef = db
         .collection('restaurants')
         .doc(restaurantId)
         .collection('sessions')
         .doc(sessionId);
-      
+
       const sessionDoc = await sessionRef.get();
-      if (!sessionDoc.exists || sessionDoc.data().status !== 'active') {
+      if (!sessionDoc.exists) {
         errorHandler.preconditionFailed('Invalid or inactive session', {
           restaurantId,
           sessionId
         });
       }
+      sessionActive = sessionDoc.data().status === 'active';
     }
-    
+
     // CASE 1: Get a specific order by ID
     if (orderId) {
       console.log(`poopoo Fetching order by orderId: ${orderId}`);
       const orderRef = db.collection("restaurants").doc(restaurantId)
         .collection("orders").doc(orderId);
-      
+
       const orderDoc = await orderRef.get();
-      
+
       if (!orderDoc.exists) {
         errorHandler.notFound('Order not found', { restaurantId, orderId });
       }
-      
+
       const orderData = orderDoc.data();
+
+      // COMPLETED vacates the table and ends the session, but the customer
+      // still polls this order to see the final bill — an ended session may
+      // read its own order, nothing else.
+      if (!sessionActive && orderData.sessionId !== sessionId) {
+        errorHandler.preconditionFailed('Invalid or inactive session', {
+          restaurantId,
+          sessionId
+        });
+      }
       const sanitizedOrder = sanitizeOrderData(orderDoc.id, orderData);
       
       console.log(`poopoo Retrieved order ${orderDoc.id} successfully`);
@@ -86,6 +98,12 @@ const getOrder = functions.https.onCall(async (data, context) => {
     } 
     // CASE 2 & 3: Get orders by table
     else if (tableId) {
+      if (!sessionActive) {
+        errorHandler.preconditionFailed('Invalid or inactive session', {
+          restaurantId,
+          sessionId
+        });
+      }
       // If getAllOrders is true, return all orders for the table
       if (getAllOrders) {
         let ordersQuery = db.collection("restaurants").doc(restaurantId)

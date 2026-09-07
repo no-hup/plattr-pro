@@ -12,6 +12,7 @@ const environment = require('../singleton/Environment');
 const { validateStaffSession } = require('../adminApp/auth');
 const { safeArrayUnion, applyArrayOperation } = require('../utils/arrayOperations');
 const { buildAuthDetails } = require('./tableHelperFunctions');
+const { vacateTable } = require('./vacateTable');
 const customerService = require('../customer/customerService');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 
@@ -1436,27 +1437,14 @@ exports.updateTableStatus = functions.https.onCall(async (request, context) => {
             lastUpdated: timestamp.serverTimestamp()
         };
 
-        // When changing to vacant from any status, clean up all table state
-        if (status === 'vacant' && previousStatus !== 'vacant') {
-            console.log(`poopoo updateTableStatus - Changing table to vacant from ${previousStatus}, clearing all state`);
-            updateData.primaryCustomer = null;
-            updateData.occupiedBy = [];
-            updateData.activeOrderId = null;
-            updateData.currentOTP = null;
-
-            // End any active sessions for this table
-            try {
-                await sessionService.endTableSessions(restaurantId, tableId);
-                console.log(`poopoo updateTableStatus - Sessions ended for table ${tableId}`);
-            } catch (sessionError) {
-                console.error(`poopoo updateTableStatus - Error ending sessions: ${sessionError.message}`);
-                // Continue — table status update should still proceed
-            }
-        }
-
-        // 6. Update table status
+        // 6. Update table status. Vacant clears the party's state and ends its
+        // sessions (same helper order-updateOrderStatus uses at COMPLETED).
         console.log(`poopoo updateTableStatus - Updating table ${tableId} status from ${previousStatus} to ${status}`);
-        await tableRef.update(updateData);
+        if (status === 'vacant') {
+            await vacateTable(restaurantId, tableId);
+        } else {
+            await tableRef.update(updateData);
+        }
 
         console.log(`poopoo updateTableStatus - Table ${tableId} status updated successfully`);
 

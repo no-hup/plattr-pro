@@ -12,6 +12,7 @@ const ResponseBuilder = require('../utils/ResponseBuilder');
 const errorHandler = require('../singleton/ErrorHandler');
 const { evaluateAndPickBestOffer, buildAppliedOfferObject } = require('../offers/evaluateOrderOffers');
 const { calculateCharges, loadChargesConfig } = require('./calculateCharges');
+const { vacateTable } = require('../table/vacateTable');
 
 const COLLECTIONS = {
   RESTAURANTS: 'restaurants',
@@ -62,12 +63,14 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
       .collection(COLLECTIONS.RESTAURANTS).doc(restaurantId)
       .collection(COLLECTIONS.ORDERS).doc(orderId);
 
+    let tableId;
     const response = await db.runTransaction(async (tx) => {
       const orderDoc = await tx.get(orderRef);
       if (!orderDoc.exists) {
         errorHandler.notFound('Order not found', { restaurantId, orderId });
       }
       const order = orderDoc.data();
+      tableId = order.tableId;
 
       // State machine guard: only allow valid transitions
       const ALLOWED_TRANSITIONS = {
@@ -159,6 +162,17 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
         'Order status updated successfully'
       );
     });
+
+    // Paid means the party is done: free the table and end its session, after
+    // the commit so a failure here never rolls back the PAID write (the waiter
+    // can still tap Vacant manually).
+    if (orderStatus === ORDER_STATUS.COMPLETED && tableId) {
+      try {
+        await vacateTable(restaurantId, tableId);
+      } catch (vacateError) {
+        console.error(`updateOrderStatus: could not vacate table ${tableId} for order ${orderId}: ${vacateError.message}`);
+      }
+    }
 
     // Notify server after the commit: a transaction retry must not double-push
     // and an FCM failure must not roll back the PAID write.

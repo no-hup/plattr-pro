@@ -45,8 +45,8 @@ The FCM-token-in-emulator item below is a testing limitation note, not a feature
 
 ## Backend
 
-- [ ] **Dead flag: `shouldUpdateFoodStatusAtItemLevelORAtOrderLevel`** — tracked in `TODO_Item_Level_Food_Status_Plan.md`. Will also be deleted in Phase 1 of `TODO_Multi_Config_Cart_Feature.md` whichever task ships first.
-- [ ] **Multi-config cart feature + flag cleanup** — builds a new `CartVariantPickerSheet` UX for shared-table ordering of items with variants/addons, and deletes `isMultipleVariantOrAddonForMenuItemsSupported` + `fallbackToSameCustomConfigurationForAddItem` outright. Tracked in `TODO_Multi_Config_Cart_Feature.md`.
+- [x] **Dead flag: `shouldUpdateFoodStatusAtItemLevelORAtOrderLevel`** — DONE (deleted in multi-config Phase 1). — tracked in `TODO_Item_Level_Food_Status_Plan.md`. Will also be deleted in Phase 1 of `TODO_Multi_Config_Cart_Feature.md` whichever task ships first.
+- [x] **Multi-config cart feature + flag cleanup** — DONE (Phases 1-5 shipped; Phase 6 E2E matrix covered by jest + lifecycle matrix). — builds a new `CartVariantPickerSheet` UX for shared-table ordering of items with variants/addons, and deletes `isMultipleVariantOrAddonForMenuItemsSupported` + `fallbackToSameCustomConfigurationForAddItem` outright. Tracked in `TODO_Multi_Config_Cart_Feature.md`.
 - [ ] **Cart state unification (follow-up)** — merge `MenuState._cart` and `CartListingState._cart` into one provider after the multi-config feature ships. Tracked in `TODO_Unify_Cart_State.md`.
 
 ## Notifications

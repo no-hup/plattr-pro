@@ -1,6 +1,8 @@
 # Cancelled Item Totals Bug
 
-**Status:** Pre-existing bug surfaced during Phase 1 of `TODO_Multi_Config_Cart_Feature.md`. Not caused by that work.
+**Status:** ✅ FIXED 2026-09-07 — `calculateCartValue.js` excludes cancelled items via `mapCartStatus` (case-insensitive); the two jest tests below are green. Kept for the trace only.
+
+Original status: Pre-existing bug surfaced during Phase 1 of `TODO_Multi_Config_Cart_Feature.md`. Not caused by that work.
 
 ## The bug
 
