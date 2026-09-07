@@ -106,12 +106,10 @@ Documented in `CLAUDE.md` + suite source. These are **known gaps**, not dead cod
 
 ## Part 3 — Prioritized action list
 
-**Do now (safe, mechanical):**
-1. Delete 5× `test_output*.txt` + 2 empty log files → add to `.gitignore`
-2. Delete T1 `testFetchMenu.js`, T2 `testFirestore.js`, T3 `debug_api_responses.dart`
-
-**Do now — confirmed:**
-4. Delete entire `consumer/` dir (T4) — live app confirmed as `frontend/flutter_boilerplate`; `consumer/` is an orphan test dir, no app, no refs
+**Done (2026-09-08):**
+1. ✅ Deleted 5× `test_output*.txt` + 2 empty log files; `.gitignore` updated
+2. ✅ Deleted T1 `testFetchMenu.js`, T2 `testFirestore.js`, T3 `debug_api_responses.dart`
+4. ✅ Deleted entire `consumer/` dir (T4); `claude-api-testing-workflow/` moved to `functions/test/e2e/`
 
 **Do next (needs one decision each):**
 5. Archive legacy harness dirs T5 + T6 (extract any unique flow notes first)

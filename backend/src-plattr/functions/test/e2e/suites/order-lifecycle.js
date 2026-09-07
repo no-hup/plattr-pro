@@ -16,6 +16,16 @@ import config from '../lib/config.js';
 
 const { RESTAURANT_ID, TABLE_CLEAN_1, TABLE_CLEAN_6, TABLE_OTP, ITEMS, VARIANTS } = config;
 
+// COMPLETED vacates the table and ends its session, so the next party has to
+// scan (which mints a fresh OTP) and join again.
+async function rejoin(tableId, phone, name) {
+  await call('table-validateTableAndLocation', {
+    restaurantId: RESTAURANT_ID, tableId,
+    userLocation: { latitude: 12.9716, longitude: 77.5946 },
+  });
+  return customerLogin(RESTAURANT_ID, tableId, TABLE_OTP, phone, name);
+}
+
 export default async function orderLifecycleSuite() {
   const results = { name: 'order-lifecycle', pass: 0, fail: 0, tests: [] };
 
@@ -169,6 +179,28 @@ export default async function orderLifecycleSuite() {
       sessionId: serverSessionId,
     });
     record(assertSuccess(resp, '9. Mark order COMPLETED'));
+  }
+
+  // ── 9b. COMPLETED vacates the table and ends the session ───────
+  // The paid party is done: the old session must not be able to order again,
+  // but it may still read its own bill. A new party scans and gets a new OTP.
+  {
+    const addResp = await call('cart-addItemToCart', {
+      restaurantId: RESTAURANT_ID, tableId: TABLE_CLEAN_1,
+      menuItemId: ITEMS.TIRAMISU.id, quantity: 1, sessionId,
+    });
+    const rejected = addResp.status === 'error' || addResp._httpStatus >= 400;
+    record({ pass: rejected, message: `9b. Old session cannot add to cart after COMPLETED → ${rejected ? 'rejected' : 'unexpectedly allowed'}`, actual: rejected ? undefined : addResp });
+
+    const billResp = await call('order-getOrder', { restaurantId: RESTAURANT_ID, orderId, sessionId });
+    record(assertSuccess(billResp, '9b. Old session can still read its own COMPLETED bill'));
+
+    try {
+      sessionId = await rejoin(TABLE_CLEAN_1, '5551120002', 'Next Party');
+      record({ pass: true, message: '9b. Table vacated: next party scans and gets a fresh session' });
+    } catch (e) {
+      record({ pass: false, message: `9b. Next party could not join after COMPLETED: ${e.message}` });
+    }
   }
 
   // ── 10. Invalid transition: PENDING → SERVED (should fail) ────
@@ -371,7 +403,14 @@ export default async function orderLifecycleSuite() {
 
   // ── 18. Multi-cart independence ────────────────────────────────
   // Already covered in the main flow above (test 10 creates a second order)
-  // Verify by checking that completing one cart doesn't affect another
+  // Verify by checking that completing one cart doesn't affect another.
+  // Step 17 COMPLETED the table's order, so join as a new party first.
+  try {
+    sessionId = await rejoin(TABLE_CLEAN_1, '5551120003', 'Multi Cart Party');
+  } catch (e) {
+    sessionId = null;
+    record({ pass: false, message: `18. Could not rejoin table after COMPLETED: ${e.message}` });
+  }
   if (sessionId) {
     await call('cart-addItemToCart', {
       restaurantId: RESTAURANT_ID, tableId: TABLE_CLEAN_1,

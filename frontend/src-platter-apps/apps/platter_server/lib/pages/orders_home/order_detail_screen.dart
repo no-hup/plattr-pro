@@ -133,7 +133,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           const Divider(),
           const SizedBox(height: 16),
 
-          // Order actions (Cancel only)
+          // Order actions (Cancel / Mark Paid)
           _buildOrderActions(),
         ],
       ),
@@ -200,6 +200,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _buildOrderActions() {
+    // COMPLETED and CANCELLED are terminal on the backend; hide the buttons
+    // instead of showing a rejection.
+    final status = (_orderDetail?.orderStatus ?? '').toUpperCase();
+    if (status == 'COMPLETED' || status == 'CANCELLED') {
+      return const SizedBox.shrink();
+    }
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -209,7 +215,39 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           color: Colors.red,
           onPressed: () => _showCancelConfirmation(),
         ),
+        const SizedBox(width: 8),
+        _buildActionButton(
+          icon: Icons.check_circle,
+          label: 'Mark Paid',
+          color: Colors.green,
+          onPressed: () => _showPaidConfirmation(),
+        ),
       ],
+    );
+  }
+
+  void _showPaidConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Mark as Paid?'),
+        content: const Text(
+            'This closes the bill and frees the table. The guests will need to scan again to order more.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _updateOrderStatus('completed');
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.green),
+            child: const Text('Yes, Mark Paid'),
+          ),
+        ],
+      ),
     );
   }
 
