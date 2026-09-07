@@ -36,6 +36,7 @@
     "singleProjectMode": true
   },
   "hosting": {
+    "site": "plattrpro",
     "public": "../../frontend/flutter_boilerplate/build/web",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
