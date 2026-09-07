@@ -1,6 +1,7 @@
 const functions = require("firebase-functions");
 const { admin, db } = require('../admin/admin');
 const { validateCheckoutFields, requireActiveTableSession } = require('./cartInputValidation');
+const errorHandler = require('../singleton/ErrorHandler');
 
 /**
  * Internal function to clear a cart
@@ -43,8 +44,9 @@ const clearCart = functions.https.onCall(async (data, context) => {
     await clearCartInternal(restaurantId, tableId);
     return { message: "Cart cleared successfully." };
   } catch (error) {
-    console.error("Error clearing cart:", error);
-    throw new functions.https.HttpsError("internal", "Error clearing cart.");
+    // Preserves HttpsError codes (e.g. unauthenticated → 401) instead of
+    // collapsing everything to internal/500.
+    errorHandler.handleError(error, 'clearCart');
   }
 });
 

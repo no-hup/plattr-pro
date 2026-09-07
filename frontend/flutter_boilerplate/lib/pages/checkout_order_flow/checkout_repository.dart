@@ -117,7 +117,11 @@ class CheckoutRepository {
 
         // Extract error message if possible
         var errorMessage = 'An error occurred during checkout.';
-        var errorCode = 'http_error_${response.statusCode}';
+        // Callable 401 bodies nest the code at error.details.data.code, so
+        // key off the status code instead.
+        var errorCode = response.statusCode == HttpStatus.unauthorized
+            ? 'unauthenticated'
+            : 'http_error_${response.statusCode}';
         Map<String, dynamic>? errorDetails;
 
         // Attempt to parse specific error structures if body was decoded

@@ -34,14 +34,9 @@ class AuthPrompt {
     }
 
     final session = Provider.of<SessionProvider>(ctx, listen: false);
-    // If forced (e.g. backend returned 401), clear the stale session so the
-    // dialog actually appears. Without this, the non-empty but invalid
-    // sessionId causes an early return below.
-    if (force) {
-      AppLogger.log('🔐 AUTH_PROMPT: Clearing stale session (force=true)');
-      session.logout();
-    }
-    if ((session.sessionId ?? '').isNotEmpty) {
+    // force (backend returned 401) means the stored session is stale; skip the
+    // early return and clear it below, once we know the dialog can be shown.
+    if (!force && (session.sessionId ?? '').isNotEmpty) {
       AppLogger.log('🔐 AUTH_PROMPT: Session already present, not showing');
       return;
     }
@@ -85,6 +80,11 @@ class AuthPrompt {
         '🔐 AUTH_PROMPT: Missing restaurantId/tableId, cannot show OTP dialog',
       );
       return;
+    }
+
+    if (force) {
+      AppLogger.log('🔐 AUTH_PROMPT: Clearing stale session (force=true)');
+      session.logout();
     }
 
     bool requireName = true;
