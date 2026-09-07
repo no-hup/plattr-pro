@@ -530,9 +530,15 @@ function createCartItem(menuItemId, menuItem, selectedVariantsDetails, selectedA
     }).toObject();
   }
 
-  // Construct cart item with standardized price info
+  // Construct cart item with standardized price info.
+  // Surface categoryId + subcategoryIds at the TOP LEVEL (not only nested in
+  // menuItem): offers/strategies/BaseOfferStrategy.js#getEligibleItems matches
+  // CATEGORY-scoped offers on item.categoryId / item.subcategoryIds, so without
+  // these a CATEGORY offer silently never applies at checkout.
   return {
     menuItemId,
+    categoryId: menuItem && menuItem.categoryId,
+    subcategoryIds: (menuItem && menuItem.subcategoryIds) || [],
     menuItem,
     selectedVariantsDetails,
     selectedAddonsDetails,
