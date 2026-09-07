@@ -37,6 +37,11 @@ const serverGetOrderDetails = functions.https.onCall(async (data, context) => {
         sessionId
       });
     }
+    // Staff only: consumer table sessions live in the same collection but
+    // have no entity field.
+    if (sessionDoc.data().entity !== 'server') {
+      errorHandler.unauthorized('Staff session required', { restaurantId, sessionId });
+    }
 
     const orderRef = db.collection('restaurants')
       .doc(restaurantId)

@@ -34,7 +34,9 @@ function fakeAuthHeader(uid) {
 // Firestore emulator (no API sets item-level READY — see note below).
 async function setOrderItemsStatus(orderId, status) {
   const docUrl = `http://${config.FIRESTORE_HOST}/v1/projects/${config.PROJECT_ID}/databases/(default)/documents/restaurants/${RESTAURANT_ID}/orders/${orderId}`;
-  const doc = await (await fetch(docUrl)).json();
+  // 'Bearer owner' = emulator admin bypass (rules are locked in prod)
+  const owner = { Authorization: 'Bearer owner' };
+  const doc = await (await fetch(docUrl, { headers: owner })).json();
   for (const cart of doc.fields?.carts?.arrayValue?.values || []) {
     for (const it of cart.mapValue?.fields?.items?.arrayValue?.values || []) {
       it.mapValue.fields.status = { stringValue: status };
@@ -42,7 +44,7 @@ async function setOrderItemsStatus(orderId, status) {
   }
   const resp = await fetch(`${docUrl}?updateMask.fieldPaths=carts`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...owner },
     body: JSON.stringify({ fields: { carts: doc.fields.carts } }),
   });
   if (!resp.ok) throw new Error(`seed READY failed: ${resp.status} ${await resp.text()}`);
@@ -181,8 +183,10 @@ export default async function coverageSuite() {
 
   // ── 5. table-updateTableStatus smoke (also restores the table) ──
   {
+    const staffSessionId = await serverLogin();
     const resp = await call('table-updateTableStatus', {
       restaurantId: RESTAURANT_ID, tableId: TABLE, status: 'vacant',
+      sessionId: staffSessionId,
     });
     const ok = resp?.status === 'success';
     record(ok, 'table-updateTableStatus sets table vacant',

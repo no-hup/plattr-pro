@@ -4,6 +4,7 @@ const ServerInputValidation = require('./serverInputValidation');
 const timestamp = require('../utils/timestamp');
 const errorHandler = require('../singleton/ErrorHandler');
 const otpService = require('../session/otpService');
+const { validateStaffSession } = require('../adminApp/auth');
 
 // Use the same table status enum as in table.js
 const TABLE_STATUS = {
@@ -28,6 +29,9 @@ exports.generateTableOTP = functions.https.onCall(async (data, context) => {
         const requestData = data.data || data;
         ServerInputValidation.validateTableOTPGeneration(requestData);
         const { restaurantId, tableId } = requestData;
+
+        // OTP minting is the root of the consumer auth chain — staff only.
+        await validateStaffSession(restaurantId, requestData.sessionId);
 
         // Get table and restaurant data
         const restaurantRef = db.collection('restaurants').doc(restaurantId);

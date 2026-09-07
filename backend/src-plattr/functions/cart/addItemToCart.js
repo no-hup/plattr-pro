@@ -5,7 +5,7 @@ const { calculateCartValue } = require("./calculateCartValue");
 const featureFlags = require('../singleton/FeatureFlags');
 const { compareArraysIgnoringOrder } = require('../utils/arrayUtils');
 const { sanitizeCart } = require('../utils/dataUtils');
-const { validateAddItemFields, validateSessionId } = require('./cartInputValidation');
+const { validateAddItemFields, validateSessionId, requireActiveTableSession } = require('./cartInputValidation');
 const timestamp = require('../utils/timestamp');
 const errorHandler = require('../singleton/ErrorHandler');
 const { BasicPriceInfo, CartItemPriceInfo, CartTotalPriceInfo } = require('../genericModels/priceinfo');
@@ -50,6 +50,9 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
     if (sessionId) {
       await validateSessionId(restaurantId, sessionId);
     }
+    // Either way the table must have an active session — restaurantId/tableId
+    // alone (public, printed on the QR code) must not be enough to write a cart.
+    await requireActiveTableSession(restaurantId, tableId);
 
     const cartRef = getCartsCollectionRef(db, restaurantId, tableId);
     const menuItemRef = getMenuItemRef(db, restaurantId, menuItemId);

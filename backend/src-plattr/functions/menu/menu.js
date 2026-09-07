@@ -33,6 +33,7 @@ const { admin, db } = require('../admin/admin');
 const MenuValidation = require('./menuValidation');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 const errorHandler = require('../singleton/ErrorHandler');
+const { validateAdminSession, validateStaffSession } = require('../adminApp/auth');
 
 const { getAllCategories, getCategoryById } = require('./creation/cateogory');
 const { getAllMenuItems, getMenuItemsByCategory, createMenuItem, updateMenuItem: updateMenuItemUtil, deleteMenuItem: deleteMenuItemUtil, getMenuItemById, updateMenuItemStock } = require('./menuItem');
@@ -156,7 +157,10 @@ const addMenuItem = functions.https.onCall(async (data, context) => {
     }
     
     const { restaurantId, menuItemData } = request;
-    
+
+    await validateAdminSession(restaurantId, request.sessionId);
+
+
     // Check if required fields exist in menuItemData
     if (!menuItemData.meta || !menuItemData.meta.name || !menuItemData.categoryId || 
         !menuItemData.priceInfo || menuItemData.priceInfo.basePrice === undefined) {
@@ -210,7 +214,10 @@ const updateMenuItem = functions.https.onCall(async (data, context) => {
     }
     
     const { restaurantId, menuItemId, updateData } = request;
-    
+
+    await validateAdminSession(restaurantId, request.sessionId);
+
+
     // Check if the menu item exists
     const menuItemRef = db.collection('restaurants').doc(restaurantId)
       .collection('menuItems').doc(menuItemId);
@@ -264,7 +271,10 @@ const deleteMenuItem = functions.https.onCall(async (data, context) => {
     }
     
     const { restaurantId, menuItemId } = request;
-    
+
+    await validateAdminSession(restaurantId, request.sessionId);
+
+
     // Check if the menu item exists
     const menuItemRef = db.collection('restaurants').doc(restaurantId)
       .collection('menuItems').doc(menuItemId);
@@ -319,11 +329,24 @@ const updateMenuItemAvailability = functions.https.onRequest(async (req, res) =>
         );
     }
     
+    // Staff-only mutation (called by both admin and waiter apps)
+    try {
+      await validateStaffSession(restaurantId, sessionId);
+    } catch (authErr) {
+      return res
+        .status(401)
+        .json(
+          ResponseBuilder.error('unauthorized', 'Valid staff session required', {
+            restaurantId,
+          })
+        );
+    }
+
     // Check if the menu item exists
     const menuItemRef = db.collection('restaurants').doc(restaurantId)
       .collection('menuItems').doc(menuItemId);
     const menuItemDoc = await menuItemRef.get();
-    
+
     if (!menuItemDoc.exists) {
       console.error(`Menu item not found with ID: ${menuItemId}`);
       return res

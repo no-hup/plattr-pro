@@ -60,6 +60,12 @@ describe('addItemToCart Tests (Phase 5 & 6)', () => {
             FULFILLMENT_STATUS
         }));
 
+        // Table always has an active session in unit tests; the guard itself
+        // is exercised by the e2e suite against the emulator.
+        jest.doMock('../../../session/sessionService', () => ({
+            validateTableSession: jest.fn().mockResolvedValue({ id: DEFAULT_SESSION_ID })
+        }));
+
         // Initialize dependencies
         addItemToCart = require('../../../cart/addItemToCart');
 

@@ -104,11 +104,13 @@ class TablesProvider extends ChangeNotifier {
     required String restaurantId,
     required String tableId,
     required String status,
+    required String sessionId,
   }) async {
     final response = await _apiService.updateTableStatus(
       restaurantId: restaurantId,
       tableId: tableId,
       status: status,
+      sessionId: sessionId,
     );
 
     if (response.success && response.data != null && response.data!.changed) {
@@ -145,10 +147,12 @@ class TablesProvider extends ChangeNotifier {
   Future<String?> refreshTableOtp({
     required String restaurantId,
     required String tableId,
+    required String sessionId,
   }) async {
     final response = await _apiService.generateTableOTP(
       restaurantId: restaurantId,
       tableId: tableId,
+      sessionId: sessionId,
     );
 
     if (response.success && response.data != null) {
