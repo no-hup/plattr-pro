@@ -136,8 +136,13 @@ class OrdersProvider extends ChangeNotifier {
     _pollingTimer = null;
   }
 
+  // A poll can still be in flight when the screen disposes this provider;
+  // notifying after dispose trips Flutter's "used after dispose" assert.
+  bool _disposed = false;
+
   @override
   void dispose() {
+    _disposed = true;
     stopPolling();
     super.dispose();
   }
@@ -260,7 +265,7 @@ class OrdersProvider extends ChangeNotifier {
     } finally {
       _inFlight = false;
       _isRefreshing = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 
@@ -277,7 +282,7 @@ class OrdersProvider extends ChangeNotifier {
 
       if (response.success && response.data != null) {
         _servedCarts = response.data!.servedCarts;
-        notifyListeners();
+        if (!_disposed) notifyListeners();
       }
     } catch (e) {
       // Don't fail the whole screen if served carts fail to load

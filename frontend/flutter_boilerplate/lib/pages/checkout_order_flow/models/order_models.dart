@@ -200,21 +200,26 @@ class CartHistoryItem with _$CartHistoryItem {
   static List<Map<String, dynamic>> _sanitizeCartItems(List<dynamic> items) {
     return items.map((item) {
       if (item is Map<String, dynamic>) {
+        final quantity =
+            (item['quantity'] is num) ? (item['quantity'] as num).toInt() : 1;
         // Convert the cart item structure to match OrderItem structure
         return <String, dynamic>{
           'menuItemId': item['menuItemId'] as String? ?? '',
           'name': item['menuItem']?['meta']?['name'] as String? ??
               item['name'] as String? ??
               'Unknown Item',
-          'quantity':
-              (item['quantity'] is num) ? (item['quantity'] as num).toInt() : 1,
+          'quantity': quantity,
+          // OrderItem.price is per-unit (OrderItemTile multiplies by quantity).
+          // Cart-item priceInfo.finalPrice is the line total (×quantity), so
+          // divide it back down when no flat per-unit `price` is present.
           'price': (item['price'] is num)
               ? (item['price'] as num).toDouble()
               : (item['priceInfo'] is Map<String, dynamic>)
-                  ? ((item['priceInfo'] as Map<String, dynamic>)['finalPrice']
-                              as num?)
-                          ?.toDouble() ??
-                      0.0
+                  ? (((item['priceInfo'] as Map<String, dynamic>)['finalPrice']
+                                  as num?)
+                              ?.toDouble() ??
+                          0.0) /
+                      (quantity > 0 ? quantity : 1)
                   : 0.0,
           'variants': _sanitizeVariants(
             item['selectedVariantsDetails'] as List<dynamic>? ?? [],
