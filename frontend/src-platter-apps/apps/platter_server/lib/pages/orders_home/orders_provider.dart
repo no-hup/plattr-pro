@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:platter_core/platter_core.dart';
 import '../../shared/status_utils.dart';
@@ -98,6 +100,45 @@ class OrdersProvider extends ChangeNotifier {
   OrdersProvider({required OrderApiService apiService})
       : _apiService = apiService;
 
+  // Live-poll state (pattern copied from platter_kitchen's KitchenLiveProvider)
+  Timer? _pollingTimer;
+  bool _inFlight = false;
+  static const Duration pollingInterval = Duration(seconds: 20);
+
+  /// Starts polling active orders and does an immediate fetch. Served carts
+  /// are fetched on tab-select, not polled.
+  void startPolling({
+    required String restaurantId,
+    required String sessionId,
+    String? serverId,
+  }) {
+    _pollingTimer?.cancel();
+    fetchActiveOrders(
+      restaurantId: restaurantId,
+      sessionId: sessionId,
+      serverId: serverId,
+    );
+    _pollingTimer = Timer.periodic(pollingInterval, (_) {
+      fetchActiveOrders(
+        restaurantId: restaurantId,
+        sessionId: sessionId,
+        serverId: serverId,
+        isBackgroundPoll: true,
+      );
+    });
+  }
+
+  void stopPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+  }
+
+  @override
+  void dispose() {
+    stopPolling();
+    super.dispose();
+  }
+
   /// Flatten orders into cart cards for grid display
   List<CartCard> get allCartCards {
     final cards = <CartCard>[];
@@ -136,14 +177,20 @@ class OrdersProvider extends ChangeNotifier {
     required String restaurantId,
     required String sessionId,
     String? serverId,
+    bool isBackgroundPoll = false,
   }) async {
+    // Never stack requests: skip this tick if the previous fetch is still out.
+    if (_inFlight) return;
     if (_state == DataState.loading && !_isRefreshing) return;
+    _inFlight = true;
 
-    // Set loading state
-    _state = DataState.loading;
-    if (!_isRefreshing) {
-      _errorMessage = null;
-      notifyListeners();
+    if (!isBackgroundPoll) {
+      // Set loading state (background polls update silently)
+      _state = DataState.loading;
+      if (!_isRefreshing) {
+        _errorMessage = null;
+        notifyListeners();
+      }
     }
 
     try {
@@ -194,13 +241,20 @@ class OrdersProvider extends ChangeNotifier {
         _state = DataState.loaded;
         _errorMessage = null;
       } else {
-        _errorMessage = response.message ?? 'Failed to fetch orders';
-        _state = DataState.error;
+        // On a failed background poll keep the last-good list on screen; the
+        // next tick can recover. Only surface errors on explicit loads.
+        if (!(isBackgroundPoll && _orders.isNotEmpty)) {
+          _errorMessage = response.message ?? 'Failed to fetch orders';
+          _state = DataState.error;
+        }
       }
     } catch (e) {
-      _errorMessage = 'Unexpected error: $e';
-      _state = DataState.error;
+      if (!(isBackgroundPoll && _orders.isNotEmpty)) {
+        _errorMessage = 'Unexpected error: $e';
+        _state = DataState.error;
+      }
     } finally {
+      _inFlight = false;
       _isRefreshing = false;
       notifyListeners();
     }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart' show ChangeNotifier, Color, Colors;
 import 'package:flutterboilerplate/pages/checkout_order_flow/models/order_models.dart';
 import 'package:flutterboilerplate/pages/checkout_order_flow/order_repository.dart';
@@ -26,6 +28,55 @@ class OrderListingState extends ChangeNotifier {
   String? _error;
   String? get error => _error;
 
+  // Live-poll state (pattern copied from platter_kitchen's KitchenLiveProvider)
+  Timer? _pollingTimer;
+  bool _inFlight = false;
+  DateTime? _lastUpdated;
+  DateTime? get lastUpdated => _lastUpdated;
+  bool get isPolling => _pollingTimer != null;
+
+  static const Duration pollingInterval = Duration(seconds: 15);
+
+  /// Starts polling and does an immediate fetch. Page-scoped: the page calls
+  /// this from initState and [stopPolling] from dispose (the provider itself
+  /// is app-scoped).
+  void startPolling({
+    required String tableId,
+    required String restaurantId,
+    String? specificOrderId,
+  }) {
+    _pollingTimer?.cancel();
+    fetchOrder(
+      tableId: tableId,
+      restaurantId: restaurantId,
+      specificOrderId: specificOrderId,
+    );
+    _pollingTimer = Timer.periodic(pollingInterval, (_) {
+      fetchOrder(
+        tableId: tableId,
+        restaurantId: restaurantId,
+        specificOrderId: specificOrderId,
+        isBackgroundPoll: true,
+      );
+    });
+  }
+
+  void stopPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+  }
+
+  @override
+  void dispose() {
+    stopPolling();
+    super.dispose();
+  }
+
+  bool get _isOrderTerminal {
+    final s = _order?.orderStatus.toLowerCase();
+    return s == 'completed' || s == 'cancelled';
+  }
+
   // Optional orderId to fetch specific order
   String? _orderId;
   String? get orderId => _orderId;
@@ -39,18 +90,26 @@ class OrderListingState extends ChangeNotifier {
     required String tableId,
     required String restaurantId,
     String? specificOrderId,
+    bool isBackgroundPoll = false,
   }) async {
+    // Never stack requests: skip this tick if the previous fetch is still out.
+    if (_inFlight) return;
+    _inFlight = true;
     try {
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
+      if (!isBackgroundPoll) {
+        _isLoading = true;
+        _error = null;
+        notifyListeners();
+      }
 
       AppLogger.log('📋 ORDER: Fetching order data');
-      
+
       // Get session ID from session provider
       final sessionId = _sessionProvider.sessionId;
-      
+
       if (sessionId == null || sessionId.isEmpty) {
+        // No session is terminal — polling can't recover it.
+        stopPolling();
         _error = 'No active session found. Please scan the QR code again.';
         _isLoading = false;
         notifyListeners();
@@ -89,21 +148,34 @@ class OrderListingState extends ChangeNotifier {
             }
           }
           
+          _lastUpdated = DateTime.now();
           _isLoading = false;
+          // Nothing left to poll for once the order is terminal.
+          if (_isOrderTerminal) {
+            stopPolling();
+          }
           notifyListeners();
         },
         error: (message, errorCode, errorDetails) {
           AppLogger.log('❌ ORDER: Error fetching order - $message');
-          _error = message;
+          // On a failed background poll keep the last-good order on screen;
+          // the next tick can recover. Only surface errors on explicit loads.
+          if (!(isBackgroundPoll && _order != null)) {
+            _error = message;
+          }
           _isLoading = false;
           notifyListeners();
         },
       );
     } catch (e) {
       AppLogger.log('❌ ORDER: Exception fetching order - $e');
-      _error = e.toString();
+      if (!(isBackgroundPoll && _order != null)) {
+        _error = e.toString();
+      }
       _isLoading = false;
       notifyListeners();
+    } finally {
+      _inFlight = false;
     }
   }
 

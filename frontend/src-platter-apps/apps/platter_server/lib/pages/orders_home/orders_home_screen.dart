@@ -29,7 +29,7 @@ class OrdersHomeScreen extends StatefulWidget {
 }
 
 class _OrdersHomeScreenState extends State<OrdersHomeScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final ScrollController _scrollController;
   late final OrdersProvider _ordersProvider;
   late TabController _tabController;
@@ -52,16 +52,54 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
 
     // Listen for state changes in the provider
     _ordersProvider.addListener(_handleProviderUpdate);
+    WidgetsBinding.instance.addObserver(this);
 
-    // Fetch orders when screen is first loaded
+    // Served carts are not polled — refresh them when the Served tab opens.
+    _tabController.addListener(_handleTabChange);
+
+    // Fetch + start polling when screen is first loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchOrders();
+      _startPolling();
+      _ordersProvider.fetchServedCarts(
+        restaurantId: widget.restaurantId,
+        sessionId: widget.sessionId,
+      );
       _updateAppBarConfig();
     });
   }
 
+  void _startPolling() {
+    _ordersProvider.startPolling(
+      restaurantId: widget.restaurantId,
+      sessionId: widget.sessionId,
+    );
+  }
+
+  void _handleTabChange() {
+    if (!_tabController.indexIsChanging &&
+        _tabs[_tabController.index] == OrderTab.served) {
+      _ordersProvider.fetchServedCarts(
+        restaurantId: widget.restaurantId,
+        sessionId: widget.sessionId,
+      );
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Don't poll while backgrounded; refresh immediately on return.
+    if (state == AppLifecycleState.resumed) {
+      if (mounted) _startPolling();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _ordersProvider.stopPolling();
+    }
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _tabController.removeListener(_handleTabChange);
     _ordersProvider.removeListener(_handleProviderUpdate);
     _ordersProvider.dispose();
     _scrollController.dispose();
@@ -86,19 +124,6 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
         ],
       ),
     );
-  }
-
-  Future<void> _fetchOrders() async {
-    await Future.wait([
-      _ordersProvider.fetchActiveOrders(
-        restaurantId: widget.restaurantId,
-        sessionId: widget.sessionId,
-      ),
-      _ordersProvider.fetchServedCarts(
-        restaurantId: widget.restaurantId,
-        sessionId: widget.sessionId,
-      ),
-    ]);
   }
 
   Future<void> _refreshOrders() async {
