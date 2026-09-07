@@ -134,7 +134,12 @@ class _DishEditorDialogState extends State<DishEditorDialog> {
     }
     final basePrice = num.tryParse(_priceController.text.trim()) ?? 0;
     final discount = num.tryParse(_discountController.text.trim()) ?? 0;
-    final finalPrice = (basePrice - discount).clamp(0, double.infinity);
+    // discount is a PERCENTAGE (0-100) — backend BasicPriceInfo computes
+    // basePrice * (1 - discount/100) and clamps to 0-100. Subtracting it as
+    // rupees here made every discounted dish disagree with the recomputed bill
+    // and mis-scaled variants that inherit the parent's discount.
+    final discountPct = discount.clamp(0, 100);
+    final finalPrice = basePrice * (1 - discountPct / 100);
 
     final calories = num.tryParse(_caloriesController.text.trim()) ?? 0;
     final allergens = _allergenController.text
@@ -312,7 +317,8 @@ class _DishEditorDialogState extends State<DishEditorDialog> {
                   Expanded(
                     child: TextField(
                       controller: _discountController,
-                      decoration: const InputDecoration(labelText: 'Discount'),
+                      decoration:
+                          const InputDecoration(labelText: 'Discount %'),
                       keyboardType: TextInputType.number,
                     ),
                   ),
