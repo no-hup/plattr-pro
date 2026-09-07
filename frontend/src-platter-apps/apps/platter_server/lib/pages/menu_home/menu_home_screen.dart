@@ -71,6 +71,7 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
   void dispose() {
     _autoRefreshTimer?.cancel();
     _menuProvider.removeListener(_handleProviderUpdate);
+    _menuProvider.dispose();
     _scrollController.dispose();
     super.dispose();
   }
