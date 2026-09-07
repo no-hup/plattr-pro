@@ -179,8 +179,9 @@ class OrdersProvider extends ChangeNotifier {
     String? serverId,
     bool isBackgroundPoll = false,
   }) async {
-    // Never stack requests: skip this tick if the previous fetch is still out.
-    if (_inFlight) return;
+    // Never stack background polls; user-initiated fetches must NOT be
+    // swallowed (a dropped refresh leaks _isRefreshing and hides mutations).
+    if (_inFlight && isBackgroundPoll) return;
     if (_state == DataState.loading && !_isRefreshing) return;
     _inFlight = true;
 

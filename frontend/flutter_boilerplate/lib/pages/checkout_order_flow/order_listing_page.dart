@@ -68,11 +68,11 @@ class _OrderListingPageState extends State<OrderListingPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Don't poll while backgrounded; refresh immediately on return.
+    // Don't poll while backgrounded; refresh immediately on return. Only
+    // `paused` counts — `inactive` fires on transient focus loss (iOS/web).
     if (state == AppLifecycleState.resumed) {
       if (mounted) _startPolling();
-    } else if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive) {
+    } else if (state == AppLifecycleState.paused) {
       _listingState?.stopPolling();
     }
   }
@@ -497,9 +497,9 @@ class OrderItemsList extends StatelessWidget {
 
     return ListView.separated(
       padding: AppSpacing.pagePadding,
-      // Use shrinkWrap and physics when used inside another scrollable widget (like in CartHistoryCard)
+      // Always scrollable so the RefreshIndicator pull works on short orders
       shrinkWrap: true,
-      physics: const ClampingScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(),
       itemCount: items.length,
       separatorBuilder: (context, index) => const Divider(),
       itemBuilder: (context, index) {

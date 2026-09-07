@@ -6,6 +6,7 @@ const { FULFILLMENT_STATUS } = require('../orders/orderConstants');
 const { mapCartStatus } = require('../utils/statusUtils');
 const OrderInputValidation = require('../orders/orderInputValidation');
 const timestamp = require('../utils/timestamp');
+const { validateStaffSession } = require('../adminApp/auth');
 
 // Valid status transitions map
 const VALID_TRANSITIONS = {
@@ -48,22 +49,9 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
     const mappedStatus = OrderInputValidation.validateCartStatus(newStatus);
     const userId = context.auth?.uid || 'system';  // Fallback to 'system' if no auth
 
-    // Validate session if provided
-    if (sessionId) {
-      const sessionRef = db
-        .collection('restaurants')
-        .doc(restaurantId)
-        .collection('sessions')
-        .doc(sessionId);
-
-      const sessionDoc = await sessionRef.get();
-      if (!sessionDoc.exists || sessionDoc.data().status !== 'active') {
-        throw new functions.https.HttpsError(
-          'failed-precondition',
-          'Invalid or inactive session'
-        );
-      }
-    }
+    // Staff only: this mutates fulfillment status and (below) can rewrite the
+    // order's sessionId, which feeds offer eligibility at COMPLETED.
+    await validateStaffSession(restaurantId, sessionId);
 
     // Update the cart status using the internal function
     const updatedOrder = await _updateCartStatus(
@@ -167,10 +155,12 @@ async function _updateCartStatus(
       const updatedCarts = [...orderData.carts];
       updatedCarts[cartIndex] = updatedCart;
 
+      // Deliberately NOT writing sessionId here: the caller is staff, but
+      // order.sessionId must stay the customer session from checkout — offer
+      // eligibility at COMPLETED reads that session's order history.
       const updates = {
         carts: updatedCarts,
-        updatedAt: timestamp.now(),
-        ...(sessionId && { sessionId })
+        updatedAt: timestamp.now()
       };
 
       // Check if all active items are now served
