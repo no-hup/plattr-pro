@@ -22,7 +22,7 @@ ActiveKitchenCart _$ActiveKitchenCartFromJson(Map<String, dynamic> json) {
 mixin _$ActiveKitchenCart {
   String get cartId => throw _privateConstructorUsedError;
   String get orderId => throw _privateConstructorUsedError;
-  @JsonKey(fromJson: _parseInt)
+  @JsonKey(fromJson: _parseOrderNumber)
   int get orderNumber => throw _privateConstructorUsedError;
   String get tableNumber => throw _privateConstructorUsedError;
   String? get serverName => throw _privateConstructorUsedError;
@@ -48,7 +48,7 @@ abstract class $ActiveKitchenCartCopyWith<$Res> {
   $Res call(
       {String cartId,
       String orderId,
-      @JsonKey(fromJson: _parseInt) int orderNumber,
+      @JsonKey(fromJson: _parseOrderNumber) int orderNumber,
       String tableNumber,
       String? serverName,
       @JsonKey(fromJson: _parseDateTime) DateTime submittedAt,
@@ -132,7 +132,7 @@ abstract class _$$ActiveKitchenCartImplCopyWith<$Res>
   $Res call(
       {String cartId,
       String orderId,
-      @JsonKey(fromJson: _parseInt) int orderNumber,
+      @JsonKey(fromJson: _parseOrderNumber) int orderNumber,
       String tableNumber,
       String? serverName,
       @JsonKey(fromJson: _parseDateTime) DateTime submittedAt,
@@ -209,7 +209,7 @@ class _$ActiveKitchenCartImpl extends _ActiveKitchenCart {
   const _$ActiveKitchenCartImpl(
       {required this.cartId,
       required this.orderId,
-      @JsonKey(fromJson: _parseInt) required this.orderNumber,
+      @JsonKey(fromJson: _parseOrderNumber) required this.orderNumber,
       required this.tableNumber,
       this.serverName,
       @JsonKey(fromJson: _parseDateTime) required this.submittedAt,
@@ -227,7 +227,7 @@ class _$ActiveKitchenCartImpl extends _ActiveKitchenCart {
   @override
   final String orderId;
   @override
-  @JsonKey(fromJson: _parseInt)
+  @JsonKey(fromJson: _parseOrderNumber)
   final int orderNumber;
   @override
   final String tableNumber;
@@ -309,7 +309,7 @@ abstract class _ActiveKitchenCart extends ActiveKitchenCart {
   const factory _ActiveKitchenCart(
       {required final String cartId,
       required final String orderId,
-      @JsonKey(fromJson: _parseInt) required final int orderNumber,
+      @JsonKey(fromJson: _parseOrderNumber) required final int orderNumber,
       required final String tableNumber,
       final String? serverName,
       @JsonKey(fromJson: _parseDateTime) required final DateTime submittedAt,
@@ -326,7 +326,7 @@ abstract class _ActiveKitchenCart extends ActiveKitchenCart {
   @override
   String get orderId;
   @override
-  @JsonKey(fromJson: _parseInt)
+  @JsonKey(fromJson: _parseOrderNumber)
   int get orderNumber;
   @override
   String get tableNumber;
@@ -354,11 +354,15 @@ ActiveCartItem _$ActiveCartItemFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$ActiveCartItem {
+  @JsonKey(fromJson: _parseString)
   String get itemId => throw _privateConstructorUsedError;
+  @JsonKey(fromJson: _parseString)
   String get name => throw _privateConstructorUsedError;
   @JsonKey(fromJson: _parseInt)
   int get quantity => throw _privateConstructorUsedError;
+  @JsonKey(fromJson: _parseStringList)
   List<String> get modifiers => throw _privateConstructorUsedError;
+  @JsonKey(readValue: _readItemNote)
   String? get itemNote => throw _privateConstructorUsedError;
   bool get isVoided => throw _privateConstructorUsedError;
 
@@ -375,11 +379,11 @@ abstract class $ActiveCartItemCopyWith<$Res> {
       _$ActiveCartItemCopyWithImpl<$Res, ActiveCartItem>;
   @useResult
   $Res call(
-      {String itemId,
-      String name,
+      {@JsonKey(fromJson: _parseString) String itemId,
+      @JsonKey(fromJson: _parseString) String name,
       @JsonKey(fromJson: _parseInt) int quantity,
-      List<String> modifiers,
-      String? itemNote,
+      @JsonKey(fromJson: _parseStringList) List<String> modifiers,
+      @JsonKey(readValue: _readItemNote) String? itemNote,
       bool isVoided});
 }
 
@@ -441,11 +445,11 @@ abstract class _$$ActiveCartItemImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {String itemId,
-      String name,
+      {@JsonKey(fromJson: _parseString) String itemId,
+      @JsonKey(fromJson: _parseString) String name,
       @JsonKey(fromJson: _parseInt) int quantity,
-      List<String> modifiers,
-      String? itemNote,
+      @JsonKey(fromJson: _parseStringList) List<String> modifiers,
+      @JsonKey(readValue: _readItemNote) String? itemNote,
       bool isVoided});
 }
 
@@ -500,11 +504,12 @@ class __$$ActiveCartItemImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$ActiveCartItemImpl implements _ActiveCartItem {
   const _$ActiveCartItemImpl(
-      {this.itemId = '',
-      this.name = 'Unknown Item',
+      {@JsonKey(fromJson: _parseString) this.itemId = '',
+      @JsonKey(fromJson: _parseString) this.name = 'Unknown Item',
       @JsonKey(fromJson: _parseInt) this.quantity = 1,
+      @JsonKey(fromJson: _parseStringList)
       final List<String> modifiers = const [],
-      this.itemNote,
+      @JsonKey(readValue: _readItemNote) this.itemNote,
       this.isVoided = false})
       : _modifiers = modifiers;
 
@@ -512,17 +517,17 @@ class _$ActiveCartItemImpl implements _ActiveCartItem {
       _$$ActiveCartItemImplFromJson(json);
 
   @override
-  @JsonKey()
+  @JsonKey(fromJson: _parseString)
   final String itemId;
   @override
-  @JsonKey()
+  @JsonKey(fromJson: _parseString)
   final String name;
   @override
   @JsonKey(fromJson: _parseInt)
   final int quantity;
   final List<String> _modifiers;
   @override
-  @JsonKey()
+  @JsonKey(fromJson: _parseStringList)
   List<String> get modifiers {
     if (_modifiers is EqualUnmodifiableListView) return _modifiers;
     // ignore: implicit_dynamic_type
@@ -530,6 +535,7 @@ class _$ActiveCartItemImpl implements _ActiveCartItem {
   }
 
   @override
+  @JsonKey(readValue: _readItemNote)
   final String? itemNote;
   @override
   @JsonKey()
@@ -579,26 +585,30 @@ class _$ActiveCartItemImpl implements _ActiveCartItem {
 
 abstract class _ActiveCartItem implements ActiveCartItem {
   const factory _ActiveCartItem(
-      {final String itemId,
-      final String name,
+      {@JsonKey(fromJson: _parseString) final String itemId,
+      @JsonKey(fromJson: _parseString) final String name,
       @JsonKey(fromJson: _parseInt) final int quantity,
-      final List<String> modifiers,
-      final String? itemNote,
+      @JsonKey(fromJson: _parseStringList) final List<String> modifiers,
+      @JsonKey(readValue: _readItemNote) final String? itemNote,
       final bool isVoided}) = _$ActiveCartItemImpl;
 
   factory _ActiveCartItem.fromJson(Map<String, dynamic> json) =
       _$ActiveCartItemImpl.fromJson;
 
   @override
+  @JsonKey(fromJson: _parseString)
   String get itemId;
   @override
+  @JsonKey(fromJson: _parseString)
   String get name;
   @override
   @JsonKey(fromJson: _parseInt)
   int get quantity;
   @override
+  @JsonKey(fromJson: _parseStringList)
   List<String> get modifiers;
   @override
+  @JsonKey(readValue: _readItemNote)
   String? get itemNote;
   @override
   bool get isVoided;
