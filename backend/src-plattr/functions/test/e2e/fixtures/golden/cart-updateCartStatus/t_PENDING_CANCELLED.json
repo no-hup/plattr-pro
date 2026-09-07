@@ -1,0 +1,674 @@
+{
+  "success": true,
+  "message": "Cart status updated to CANCELLED",
+  "data": {
+    "id": "45MjpXNiy63cIsQqQINB",
+    "restaurantId": "res_meghana",
+    "tableId": "tbl_meg_10",
+    "orderNumber": "ORD-00001",
+    "orderStatus": "IN_PROGRESS",
+    "paymentStatus": "unpaid",
+    "createdAt": {
+      "_seconds": 1788792823,
+      "_nanoseconds": 0
+    },
+    "isActive": true,
+    "assignedServer": null,
+    "notes": "",
+    "sessionId": "lm11A1XwbFZdHYQvvm9i",
+    "appliedOffer": {
+      "id": "off_meg_bogo_paneer",
+      "title": "BOGO Paneer 65",
+      "type": "BOGO",
+      "scope": "ITEM",
+      "discountAmount": 204,
+      "appliedItems": [
+        {
+          "menuItemId": "mi_paneer65",
+          "cartItemId": 1,
+          "originalPrice": 204,
+          "discountAmount": 204,
+          "discountedPrice": 0
+        }
+      ]
+    },
+    "updatedAt": 1788792825356,
+    "priceInfo": {
+      "basePrice": 1200,
+      "finalPrice": 816,
+      "totalDiscount": 15,
+      "totalDiscountAmount": 384,
+      "offerDiscount": 204,
+      "charges": [
+        {
+          "type": "SERVICE_CHARGE",
+          "percentage": 5,
+          "amount": 40.8
+        }
+      ],
+      "chargesTotal": 40.8
+    },
+    "carts": [
+      {
+        "lastUpdated": 1788792823789,
+        "priceInfo": {
+          "totalAddonBasePrice": 0,
+          "totalDiscountAmount": 36,
+          "finalPrice": 204,
+          "totalDiscount": 15,
+          "totalVariantBasePrice": 0,
+          "basePrice": 240
+        },
+        "tableId": "tbl_meg_10",
+        "sessionId": "lm11A1XwbFZdHYQvvm9i",
+        "restaurantId": "res_meghana",
+        "items": [
+          {
+            "menuItemId": "mi_paneer65",
+            "categoryId": "mc_starters",
+            "subcategoryIds": [
+              "ms_st_veg"
+            ],
+            "menuItem": {
+              "nutritionalInfo": {
+                "carbs": 40,
+                "protein": 17,
+                "fat": 15,
+                "calories": 336
+              },
+              "addons": [],
+              "allergenTags": [],
+              "variants": [],
+              "restaurantId": "res_meghana",
+              "menuItemId": "mi_paneer65",
+              "lastUpdated": {
+                "_seconds": 1788792223,
+                "_nanoseconds": 0
+              },
+              "priceInfo": {
+                "discount": 15,
+                "finalPrice": 204,
+                "basePrice": 240
+              },
+              "primarySubcategoryId": "ms_st_veg",
+              "isCustomizable": false,
+              "meta": {
+                "primarySubcategoryName": "Veg Starters",
+                "image": "",
+                "name": "Paneer 65",
+                "description": "",
+                "spiceLevel": 3,
+                "categoryName": "",
+                "dietaryType": "VEG",
+                "isVegan": false
+              },
+              "subcategoryIds": [
+                "ms_st_veg"
+              ],
+              "isInStock": true,
+              "categoryId": "mc_starters",
+              "order": 3
+            },
+            "selectedVariantsDetails": [],
+            "selectedAddonsDetails": [],
+            "quantity": 1,
+            "priceInfo": {
+              "itemBasePrice": 240,
+              "itemFinalPrice": 204,
+              "totalVariantBasePrice": 0,
+              "totalVariantFinalPrice": 0,
+              "totalAddonBasePrice": 0,
+              "totalAddonFinalPrice": 0,
+              "totalBasePrice": 240,
+              "finalPrice": 204,
+              "discount": 15,
+              "discountAmount": 36
+            },
+            "cartItemId": 1,
+            "status": "PENDING"
+          }
+        ],
+        "cartId": "res_meghana_tbl_meg_10_947dfb5c",
+        "status": "PREPARING",
+        "statusHistory": [
+          {
+            "status": "PENDING",
+            "timestamp": {
+              "_seconds": 1788792823,
+              "_nanoseconds": 0
+            },
+            "userId": "system"
+          },
+          {
+            "status": "PREPARING",
+            "timestamp": 1788792823843,
+            "userId": "system",
+            "notes": ""
+          }
+        ],
+        "checkoutTime": {
+          "_seconds": 1788792823,
+          "_nanoseconds": 0
+        },
+        "notes": "",
+        "estimatedPrepTime": 12,
+        "assignedTo": "system"
+      },
+      {
+        "lastUpdated": 1788792823932,
+        "priceInfo": {
+          "totalAddonBasePrice": 0,
+          "totalDiscountAmount": 36,
+          "finalPrice": 204,
+          "totalDiscount": 15,
+          "totalVariantBasePrice": 0,
+          "basePrice": 240
+        },
+        "tableId": "tbl_meg_10",
+        "sessionId": "lm11A1XwbFZdHYQvvm9i",
+        "restaurantId": "res_meghana",
+        "items": [
+          {
+            "menuItemId": "mi_paneer65",
+            "categoryId": "mc_starters",
+            "subcategoryIds": [
+              "ms_st_veg"
+            ],
+            "menuItem": {
+              "nutritionalInfo": {
+                "carbs": 40,
+                "protein": 17,
+                "fat": 15,
+                "calories": 336
+              },
+              "addons": [],
+              "allergenTags": [],
+              "variants": [],
+              "restaurantId": "res_meghana",
+              "menuItemId": "mi_paneer65",
+              "lastUpdated": {
+                "_seconds": 1788792223,
+                "_nanoseconds": 0
+              },
+              "priceInfo": {
+                "discount": 15,
+                "finalPrice": 204,
+                "basePrice": 240
+              },
+              "primarySubcategoryId": "ms_st_veg",
+              "isCustomizable": false,
+              "meta": {
+                "primarySubcategoryName": "Veg Starters",
+                "image": "",
+                "name": "Paneer 65",
+                "description": "",
+                "spiceLevel": 3,
+                "categoryName": "",
+                "dietaryType": "VEG",
+                "isVegan": false
+              },
+              "subcategoryIds": [
+                "ms_st_veg"
+              ],
+              "isInStock": true,
+              "categoryId": "mc_starters",
+              "order": 3
+            },
+            "selectedVariantsDetails": [],
+            "selectedAddonsDetails": [],
+            "quantity": 1,
+            "priceInfo": {
+              "itemBasePrice": 240,
+              "itemFinalPrice": 204,
+              "totalVariantBasePrice": 0,
+              "totalVariantFinalPrice": 0,
+              "totalAddonBasePrice": 0,
+              "totalAddonFinalPrice": 0,
+              "totalBasePrice": 240,
+              "finalPrice": 204,
+              "discount": 15,
+              "discountAmount": 36
+            },
+            "cartItemId": 1,
+            "status": "PENDING"
+          }
+        ],
+        "cartId": "res_meghana_tbl_meg_10_466e555b",
+        "status": "READY",
+        "statusHistory": [
+          {
+            "status": "PENDING",
+            "timestamp": {
+              "_seconds": 1788792824,
+              "_nanoseconds": 0
+            },
+            "userId": "system"
+          },
+          {
+            "status": "READY",
+            "timestamp": 1788792824795,
+            "userId": "system",
+            "notes": ""
+          }
+        ],
+        "checkoutTime": {
+          "_seconds": 1788792824,
+          "_nanoseconds": 0
+        },
+        "notes": "",
+        "estimatedPrepTime": 12,
+        "assignedTo": "system"
+      },
+      {
+        "lastUpdated": 1788792825191,
+        "priceInfo": {
+          "totalAddonBasePrice": 0,
+          "totalDiscountAmount": 36,
+          "finalPrice": 204,
+          "totalDiscount": 15,
+          "totalVariantBasePrice": 0,
+          "basePrice": 240
+        },
+        "tableId": "tbl_meg_10",
+        "sessionId": "lm11A1XwbFZdHYQvvm9i",
+        "restaurantId": "res_meghana",
+        "items": [
+          {
+            "menuItemId": "mi_paneer65",
+            "categoryId": "mc_starters",
+            "subcategoryIds": [
+              "ms_st_veg"
+            ],
+            "menuItem": {
+              "nutritionalInfo": {
+                "carbs": 40,
+                "protein": 17,
+                "fat": 15,
+                "calories": 336
+              },
+              "addons": [],
+              "allergenTags": [],
+              "variants": [],
+              "restaurantId": "res_meghana",
+              "menuItemId": "mi_paneer65",
+              "lastUpdated": {
+                "_seconds": 1788792223,
+                "_nanoseconds": 0
+              },
+              "priceInfo": {
+                "discount": 15,
+                "finalPrice": 204,
+                "basePrice": 240
+              },
+              "primarySubcategoryId": "ms_st_veg",
+              "isCustomizable": false,
+              "meta": {
+                "primarySubcategoryName": "Veg Starters",
+                "image": "",
+                "name": "Paneer 65",
+                "description": "",
+                "spiceLevel": 3,
+                "categoryName": "",
+                "dietaryType": "VEG",
+                "isVegan": false
+              },
+              "subcategoryIds": [
+                "ms_st_veg"
+              ],
+              "isInStock": true,
+              "categoryId": "mc_starters",
+              "order": 3
+            },
+            "selectedVariantsDetails": [],
+            "selectedAddonsDetails": [],
+            "quantity": 1,
+            "priceInfo": {
+              "itemBasePrice": 240,
+              "itemFinalPrice": 204,
+              "totalVariantBasePrice": 0,
+              "totalVariantFinalPrice": 0,
+              "totalAddonBasePrice": 0,
+              "totalAddonFinalPrice": 0,
+              "totalBasePrice": 240,
+              "finalPrice": 204,
+              "discount": 15,
+              "discountAmount": 36
+            },
+            "cartItemId": 1,
+            "status": "PENDING"
+          }
+        ],
+        "cartId": "res_meghana_tbl_meg_10_a42289d8",
+        "status": "PENDING",
+        "statusHistory": [
+          {
+            "status": "PENDING",
+            "timestamp": {
+              "_seconds": 1788792825,
+              "_nanoseconds": 0
+            },
+            "userId": "system"
+          }
+        ],
+        "checkoutTime": {
+          "_seconds": 1788792825,
+          "_nanoseconds": 0
+        },
+        "notes": "",
+        "estimatedPrepTime": 12,
+        "assignedTo": null
+      },
+      {
+        "lastUpdated": 1788792825259,
+        "priceInfo": {
+          "totalAddonBasePrice": 0,
+          "totalDiscountAmount": 36,
+          "finalPrice": 204,
+          "totalDiscount": 15,
+          "totalVariantBasePrice": 0,
+          "basePrice": 240
+        },
+        "tableId": "tbl_meg_10",
+        "sessionId": "lm11A1XwbFZdHYQvvm9i",
+        "restaurantId": "res_meghana",
+        "items": [
+          {
+            "menuItemId": "mi_paneer65",
+            "categoryId": "mc_starters",
+            "subcategoryIds": [
+              "ms_st_veg"
+            ],
+            "menuItem": {
+              "nutritionalInfo": {
+                "carbs": 40,
+                "protein": 17,
+                "fat": 15,
+                "calories": 336
+              },
+              "addons": [],
+              "allergenTags": [],
+              "variants": [],
+              "restaurantId": "res_meghana",
+              "menuItemId": "mi_paneer65",
+              "lastUpdated": {
+                "_seconds": 1788792223,
+                "_nanoseconds": 0
+              },
+              "priceInfo": {
+                "discount": 15,
+                "finalPrice": 204,
+                "basePrice": 240
+              },
+              "primarySubcategoryId": "ms_st_veg",
+              "isCustomizable": false,
+              "meta": {
+                "primarySubcategoryName": "Veg Starters",
+                "image": "",
+                "name": "Paneer 65",
+                "description": "",
+                "spiceLevel": 3,
+                "categoryName": "",
+                "dietaryType": "VEG",
+                "isVegan": false
+              },
+              "subcategoryIds": [
+                "ms_st_veg"
+              ],
+              "isInStock": true,
+              "categoryId": "mc_starters",
+              "order": 3
+            },
+            "selectedVariantsDetails": [],
+            "selectedAddonsDetails": [],
+            "quantity": 1,
+            "priceInfo": {
+              "itemBasePrice": 240,
+              "itemFinalPrice": 204,
+              "totalVariantBasePrice": 0,
+              "totalVariantFinalPrice": 0,
+              "totalAddonBasePrice": 0,
+              "totalAddonFinalPrice": 0,
+              "totalBasePrice": 240,
+              "finalPrice": 204,
+              "discount": 15,
+              "discountAmount": 36
+            },
+            "cartItemId": 1,
+            "status": "PENDING"
+          }
+        ],
+        "cartId": "res_meghana_tbl_meg_10_265aee20",
+        "status": "PENDING",
+        "statusHistory": [
+          {
+            "status": "PENDING",
+            "timestamp": {
+              "_seconds": 1788792825,
+              "_nanoseconds": 0
+            },
+            "userId": "system"
+          }
+        ],
+        "checkoutTime": {
+          "_seconds": 1788792825,
+          "_nanoseconds": 0
+        },
+        "notes": "",
+        "estimatedPrepTime": 12,
+        "assignedTo": null
+      },
+      {
+        "lastUpdated": 1788792825317,
+        "priceInfo": {
+          "totalAddonBasePrice": 0,
+          "totalDiscountAmount": 36,
+          "finalPrice": 204,
+          "totalDiscount": 15,
+          "totalVariantBasePrice": 0,
+          "basePrice": 240
+        },
+        "tableId": "tbl_meg_10",
+        "sessionId": "lm11A1XwbFZdHYQvvm9i",
+        "restaurantId": "res_meghana",
+        "items": [
+          {
+            "menuItemId": "mi_paneer65",
+            "categoryId": "mc_starters",
+            "subcategoryIds": [
+              "ms_st_veg"
+            ],
+            "menuItem": {
+              "nutritionalInfo": {
+                "carbs": 40,
+                "protein": 17,
+                "fat": 15,
+                "calories": 336
+              },
+              "addons": [],
+              "allergenTags": [],
+              "variants": [],
+              "restaurantId": "res_meghana",
+              "menuItemId": "mi_paneer65",
+              "lastUpdated": {
+                "_seconds": 1788792223,
+                "_nanoseconds": 0
+              },
+              "priceInfo": {
+                "discount": 15,
+                "finalPrice": 204,
+                "basePrice": 240
+              },
+              "primarySubcategoryId": "ms_st_veg",
+              "isCustomizable": false,
+              "meta": {
+                "primarySubcategoryName": "Veg Starters",
+                "image": "",
+                "name": "Paneer 65",
+                "description": "",
+                "spiceLevel": 3,
+                "categoryName": "",
+                "dietaryType": "VEG",
+                "isVegan": false
+              },
+              "subcategoryIds": [
+                "ms_st_veg"
+              ],
+              "isInStock": true,
+              "categoryId": "mc_starters",
+              "order": 3
+            },
+            "selectedVariantsDetails": [],
+            "selectedAddonsDetails": [],
+            "quantity": 1,
+            "priceInfo": {
+              "itemBasePrice": 240,
+              "itemFinalPrice": 204,
+              "totalVariantBasePrice": 0,
+              "totalVariantFinalPrice": 0,
+              "totalAddonBasePrice": 0,
+              "totalAddonFinalPrice": 0,
+              "totalBasePrice": 240,
+              "finalPrice": 204,
+              "discount": 15,
+              "discountAmount": 36
+            },
+            "cartItemId": 1,
+            "status": "PENDING"
+          }
+        ],
+        "cartId": "res_meghana_tbl_meg_10_32539d01",
+        "status": "CANCELLED",
+        "statusHistory": [
+          {
+            "status": "PENDING",
+            "timestamp": {
+              "_seconds": 1788792825,
+              "_nanoseconds": 0
+            },
+            "userId": "system"
+          },
+          {
+            "status": "CANCELLED",
+            "timestamp": 1788792825356,
+            "userId": "system",
+            "notes": ""
+          }
+        ],
+        "checkoutTime": {
+          "_seconds": 1788792825,
+          "_nanoseconds": 0
+        },
+        "notes": "",
+        "estimatedPrepTime": 12,
+        "assignedTo": null
+      }
+    ],
+    "items": [
+      {
+        "menuItemId": "mi_paneer65",
+        "name": "Paneer 65",
+        "description": "",
+        "quantity": 1,
+        "priceInfo": {
+          "basePrice": 240,
+          "discount": 15,
+          "finalPrice": 204
+        },
+        "selectedVariants": {},
+        "selectedVariantsDetails": [],
+        "selectedAddons": [],
+        "selectedAddonsDetails": [],
+        "cartItemId": 1,
+        "checkoutTime": {
+          "_seconds": 1788792823,
+          "_nanoseconds": 0
+        },
+        "status": "PENDING"
+      },
+      {
+        "menuItemId": "mi_paneer65",
+        "name": "Paneer 65",
+        "description": "",
+        "quantity": 1,
+        "priceInfo": {
+          "basePrice": 240,
+          "discount": 15,
+          "finalPrice": 204
+        },
+        "selectedVariants": {},
+        "selectedVariantsDetails": [],
+        "selectedAddons": [],
+        "selectedAddonsDetails": [],
+        "cartItemId": 1,
+        "checkoutTime": {
+          "_seconds": 1788792824,
+          "_nanoseconds": 0
+        },
+        "status": "PENDING"
+      },
+      {
+        "menuItemId": "mi_paneer65",
+        "name": "Paneer 65",
+        "description": "",
+        "quantity": 1,
+        "priceInfo": {
+          "basePrice": 240,
+          "discount": 15,
+          "finalPrice": 204
+        },
+        "selectedVariants": {},
+        "selectedVariantsDetails": [],
+        "selectedAddons": [],
+        "selectedAddonsDetails": [],
+        "cartItemId": 1,
+        "checkoutTime": {
+          "_seconds": 1788792825,
+          "_nanoseconds": 0
+        },
+        "status": "PENDING"
+      },
+      {
+        "menuItemId": "mi_paneer65",
+        "name": "Paneer 65",
+        "description": "",
+        "quantity": 1,
+        "priceInfo": {
+          "basePrice": 240,
+          "discount": 15,
+          "finalPrice": 204
+        },
+        "selectedVariants": {},
+        "selectedVariantsDetails": [],
+        "selectedAddons": [],
+        "selectedAddonsDetails": [],
+        "cartItemId": 1,
+        "checkoutTime": {
+          "_seconds": 1788792825,
+          "_nanoseconds": 0
+        },
+        "status": "PENDING"
+      },
+      {
+        "menuItemId": "mi_paneer65",
+        "name": "Paneer 65",
+        "description": "",
+        "quantity": 1,
+        "priceInfo": {
+          "basePrice": 240,
+          "discount": 15,
+          "finalPrice": 204
+        },
+        "selectedVariants": {},
+        "selectedVariantsDetails": [],
+        "selectedAddons": [],
+        "selectedAddonsDetails": [],
+        "cartItemId": 1,
+        "checkoutTime": {
+          "_seconds": 1788792825,
+          "_nanoseconds": 0
+        },
+        "status": "PENDING"
+      }
+    ]
+  }
+}

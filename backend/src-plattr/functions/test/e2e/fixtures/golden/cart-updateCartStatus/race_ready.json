@@ -1,0 +1,179 @@
+{
+  "success": true,
+  "message": "Cart status updated to READY",
+  "data": {
+    "id": "J7mgbKPuw3SSHm1CqTh9",
+    "restaurantId": "res_chowman",
+    "tableId": "tbl_cw_10",
+    "orderNumber": "ORD-00001",
+    "orderStatus": "IN_PROGRESS",
+    "paymentStatus": "unpaid",
+    "carts": [
+      {
+        "lastUpdated": 1788792900342,
+        "priceInfo": {
+          "totalAddonBasePrice": 0,
+          "totalDiscountAmount": 0,
+          "finalPrice": 220,
+          "totalDiscount": 0,
+          "totalVariantBasePrice": 0,
+          "basePrice": 220
+        },
+        "tableId": "tbl_cw_10",
+        "sessionId": "HFax36Q8ZwDqSclLQD1D",
+        "restaurantId": "res_chowman",
+        "items": [
+          {
+            "menuItemId": "ci_spring_roll",
+            "categoryId": "cc_starters",
+            "subcategoryIds": [
+              "cs_st_veg"
+            ],
+            "menuItem": {
+              "nutritionalInfo": {
+                "carbs": 38,
+                "protein": 16,
+                "fat": 14,
+                "calories": 318
+              },
+              "addons": [],
+              "allergenTags": [],
+              "variants": [],
+              "restaurantId": "res_chowman",
+              "menuItemId": "ci_spring_roll",
+              "lastUpdated": {
+                "_seconds": 1788792300,
+                "_nanoseconds": 0
+              },
+              "priceInfo": {
+                "discount": 0,
+                "finalPrice": 220,
+                "basePrice": 220
+              },
+              "primarySubcategoryId": "cs_st_veg",
+              "isCustomizable": false,
+              "meta": {
+                "primarySubcategoryName": "Veg Starters",
+                "image": "",
+                "name": "Veg Spring Roll",
+                "description": "",
+                "spiceLevel": 0,
+                "categoryName": "",
+                "dietaryType": "VEG",
+                "isVegan": false
+              },
+              "subcategoryIds": [
+                "cs_st_veg"
+              ],
+              "isInStock": true,
+              "categoryId": "cc_starters",
+              "order": 42
+            },
+            "selectedVariantsDetails": [],
+            "selectedAddonsDetails": [],
+            "quantity": 1,
+            "priceInfo": {
+              "itemBasePrice": 220,
+              "itemFinalPrice": 220,
+              "totalVariantBasePrice": 0,
+              "totalVariantFinalPrice": 0,
+              "totalAddonBasePrice": 0,
+              "totalAddonFinalPrice": 0,
+              "totalBasePrice": 220,
+              "finalPrice": 220,
+              "discount": 0,
+              "discountAmount": 0
+            },
+            "cartItemId": 1,
+            "status": "PENDING"
+          }
+        ],
+        "cartId": "res_chowman_tbl_cw_10_e583865d",
+        "status": "READY",
+        "statusHistory": [
+          {
+            "status": "PENDING",
+            "timestamp": {
+              "_seconds": 1788792900,
+              "_nanoseconds": 0
+            },
+            "userId": "system"
+          },
+          {
+            "status": "READY",
+            "timestamp": 1788792900381,
+            "userId": "system",
+            "notes": ""
+          }
+        ],
+        "checkoutTime": {
+          "_seconds": 1788792900,
+          "_nanoseconds": 0
+        },
+        "notes": "",
+        "estimatedPrepTime": 12,
+        "assignedTo": "system"
+      }
+    ],
+    "items": [
+      {
+        "menuItemId": "ci_spring_roll",
+        "name": "Veg Spring Roll",
+        "description": "",
+        "quantity": 1,
+        "priceInfo": {
+          "basePrice": 220,
+          "discount": 0,
+          "finalPrice": 220
+        },
+        "selectedVariants": {},
+        "selectedVariantsDetails": [],
+        "selectedAddons": [],
+        "selectedAddonsDetails": [],
+        "cartItemId": 1,
+        "checkoutTime": {
+          "_seconds": 1788792900,
+          "_nanoseconds": 0
+        },
+        "status": "PENDING"
+      }
+    ],
+    "priceInfo": {
+      "basePrice": 220,
+      "finalPrice": 140,
+      "totalDiscount": 0,
+      "totalDiscountAmount": 80,
+      "offerDiscount": 80,
+      "charges": [
+        {
+          "type": "SERVICE_CHARGE",
+          "percentage": 6,
+          "amount": 8.4
+        },
+        {
+          "type": "LOYALTY_DISCOUNT",
+          "percentage": -5,
+          "amount": -7
+        }
+      ],
+      "chargesTotal": 1.4
+    },
+    "createdAt": {
+      "_seconds": 1788792900,
+      "_nanoseconds": 0
+    },
+    "updatedAt": 1788792900381,
+    "isActive": true,
+    "assignedServer": null,
+    "notes": "",
+    "sessionId": "HFax36Q8ZwDqSclLQD1D",
+    "appliedOffer": {
+      "id": "off_cw_flat80",
+      "title": "₹80 Off (min ₹199)",
+      "type": "FLAT",
+      "scope": "ORDER",
+      "discountAmount": 80,
+      "appliedItems": []
+    }
+  }
+}

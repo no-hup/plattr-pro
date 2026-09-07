@@ -1,0 +1,10 @@
+{
+  "status": "success",
+  "message": "Primary customer authenticated",
+  "data": {
+    "status": "success",
+    "customToken": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwczovL2lkZW50aXR5dG9vbGtpdC5nb29nbGVhcGlzLmNvbS9nb29nbGUuaWRlbnRpdHkuaWRlbnRpdHl0b29sa2l0LnYxLklkZW50aXR5VG9vbGtpdCIsImlhdCI6MTc4ODc5MjgxOSwiZXhwIjoxNzg4Nzk2NDE5LCJpc3MiOiJmaXJlYmFzZS1hZG1pbnNkay1md2Y2dkBybXMtYXBwLWRkODc1LmlhbS5nc2VydmljZWFjY291bnQuY29tIiwic3ViIjoiZmlyZWJhc2UtYWRtaW5zZGstZndmNnZAcm1zLWFwcC1kZDg3NS5pYW0uZ3NlcnZpY2VhY2NvdW50LmNvbSIsInVpZCI6Ijk4NzY1NDMyMTAifQ.lH8sg3QmdFEvS5kLIZ1c7GlmDqHX75dRhIJ2PJc__b49U4vjOw7srSOAXFMuJUlVdvEG3A6QCe2xc_XBhqmI_aQsDb9vlwweJHKi28pt5kFc6T54qdg6_4DZIp8TXsedZDJrSxxouulWRPbP4bvm5cJ3qZCGkvpEUg6ZdNLPs1p2RKMofpR2vVsi7xoRfRlk4hrQiBwGM-2FhVrpi43SKw8Zu6jMfdwiGGUlgiGo-MEdlE9oP7DbRojZoObBgvufpk-7BJo4-wIQT_KdP7CUcc7PMyY5305WV7E-1i2FdAYAeVh_GH8Kwc0ml_nNTvA9DHIw7ZJSLOCggn4UiDMSYQ",
+    "isPrimaryCustomer": true,
+    "sessionId": "Gwe4zYTSg9eevYwFugDT"
+  }
+}

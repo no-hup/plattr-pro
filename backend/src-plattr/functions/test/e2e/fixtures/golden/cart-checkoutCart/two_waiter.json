@@ -1,0 +1,10 @@
+{
+  "status": "success",
+  "message": "Checkout completed successfully.",
+  "data": {
+    "orderId": "hvkklv4ZSH6mtMsdweuj",
+    "orderNumber": "ORD-00007",
+    "orderStatus": "IN_PROGRESS",
+    "timestamp": "2026-09-07T14:53:42.817Z"
+  }
+}

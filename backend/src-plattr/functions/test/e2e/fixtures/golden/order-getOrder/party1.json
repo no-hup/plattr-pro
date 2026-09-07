@@ -1,0 +1,210 @@
+{
+  "status": "success",
+  "message": "Order retrieved successfully",
+  "data": {
+    "id": "wSAYyf8McoMILSpXuEOc",
+    "orderNumber": "ORD-00006",
+    "orderStatus": "IN_PROGRESS",
+    "createdAt": {
+      "_seconds": 1788792828,
+      "_nanoseconds": 0
+    },
+    "updatedAt": {
+      "_seconds": 1788792828,
+      "_nanoseconds": 0
+    },
+    "tableId": "tbl_meg_7",
+    "restaurantId": "res_meghana",
+    "sessionId": "DCYFZub28CWcJ7yzPc8W",
+    "total": 520,
+    "priceInfo": {
+      "basePrice": 620,
+      "finalPrice": 520,
+      "totalDiscount": 0,
+      "totalDiscountAmount": 100,
+      "offerDiscount": 100,
+      "charges": [
+        {
+          "type": "SERVICE_CHARGE",
+          "percentage": 5,
+          "amount": 26
+        }
+      ],
+      "chargesTotal": 26
+    },
+    "offerDiscount": 100,
+    "appliedOffer": {
+      "id": "off_meg_flat100",
+      "title": "₹100 Off (min ₹499)",
+      "type": "FLAT",
+      "scope": "ORDER",
+      "discountAmount": 100,
+      "appliedItems": []
+    },
+    "items": [
+      {
+        "menuItemId": "mi_chicken_bir",
+        "name": "Chicken Dum Biryani",
+        "quantity": 1,
+        "price": 320,
+        "variants": [
+          {
+            "id": "mv_bir_portion",
+            "name": "Portion",
+            "isMandatory": true,
+            "respectParentDiscount": true,
+            "selected_variant_id": "family",
+            "selected_variant_name": "Family (serves 3)",
+            "priceInfo": {
+              "basePrice": 260,
+              "finalPrice": 260,
+              "discount": 0
+            }
+          }
+        ],
+        "addons": [
+          {
+            "id": "ma_extra_raita",
+            "name": "Extra Raita",
+            "priceInfo": {
+              "discount": 0,
+              "finalPrice": 40,
+              "basePrice": 40
+            },
+            "respectParentDiscount": false
+          }
+        ]
+      }
+    ],
+    "notes": "",
+    "carts": [
+      {
+        "lastUpdated": 1788792828268,
+        "priceInfo": {
+          "basePrice": 620,
+          "finalPrice": 620,
+          "totalVariantBasePrice": 260,
+          "totalAddonBasePrice": 40,
+          "totalDiscount": 0,
+          "totalDiscountAmount": 0
+        },
+        "tableId": "tbl_meg_7",
+        "sessionId": "DCYFZub28CWcJ7yzPc8W",
+        "restaurantId": "res_meghana",
+        "items": [
+          {
+            "menuItemId": "mi_chicken_bir",
+            "categoryId": "mc_biryani",
+            "subcategoryIds": [
+              "ms_bir_chicken"
+            ],
+            "menuItem": {
+              "nutritionalInfo": {
+                "carbs": 33,
+                "protein": 33,
+                "fat": 20,
+                "calories": 408
+              },
+              "addons": [
+                "ma_extra_raita",
+                "ma_extra_egg",
+                "ma_extra_gravy"
+              ],
+              "allergenTags": [],
+              "variants": [
+                {
+                  "id": "mv_bir_portion",
+                  "name": "Portion"
+                }
+              ],
+              "restaurantId": "res_meghana",
+              "menuItemId": "mi_chicken_bir",
+              "lastUpdated": {
+                "_seconds": 1788792223,
+                "_nanoseconds": 0
+              },
+              "priceInfo": {
+                "discount": 0,
+                "finalPrice": 320,
+                "basePrice": 320
+              },
+              "primarySubcategoryId": "ms_bir_chicken",
+              "isCustomizable": true,
+              "meta": {
+                "primarySubcategoryName": "Chicken Biryani",
+                "image": "",
+                "name": "Chicken Dum Biryani",
+                "description": "Signature dum biryani",
+                "spiceLevel": 3,
+                "categoryName": "",
+                "dietaryType": "NON_VEG",
+                "isVegan": false
+              },
+              "subcategoryIds": [
+                "ms_bir_chicken"
+              ],
+              "isInStock": true,
+              "categoryId": "mc_biryani",
+              "order": 0
+            },
+            "selectedVariantsDetails": [
+              {
+                "id": "mv_bir_portion",
+                "name": "Portion",
+                "isMandatory": true,
+                "respectParentDiscount": true,
+                "selected_variant_id": "family",
+                "selected_variant_name": "Family (serves 3)",
+                "priceInfo": {
+                  "basePrice": 260,
+                  "finalPrice": 260,
+                  "discount": 0
+                }
+              }
+            ],
+            "selectedAddonsDetails": [
+              {
+                "id": "ma_extra_raita",
+                "name": "Extra Raita",
+                "priceInfo": {
+                  "discount": 0,
+                  "finalPrice": 40,
+                  "basePrice": 40
+                },
+                "respectParentDiscount": false
+              }
+            ],
+            "quantity": 1,
+            "priceInfo": {
+              "itemBasePrice": 320,
+              "itemFinalPrice": 320,
+              "totalVariantBasePrice": 260,
+              "totalVariantFinalPrice": 260,
+              "totalAddonBasePrice": 40,
+              "totalAddonFinalPrice": 40,
+              "totalBasePrice": 620,
+              "finalPrice": 620,
+              "discount": 0,
+              "discountAmount": 0
+            },
+            "cartItemId": 1,
+            "status": "PENDING"
+          }
+        ],
+        "cartId": "res_meghana_tbl_meg_7_e9970057",
+        "status": "PENDING",
+        "statusHistory": [
+          {
+            "status": "PENDING",
+            "timestamp": "2026-09-07T14:53:48.000Z",
+            "userId": "system"
+          }
+        ],
+        "checkoutTime": "2026-09-07T14:53:48.000Z",
+        "notes": "",
+        "estimatedPrepTime": 12,
+        "assignedTo": null
+      }
+    ]
+  }
+}
