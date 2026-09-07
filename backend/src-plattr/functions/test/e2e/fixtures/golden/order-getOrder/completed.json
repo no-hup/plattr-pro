@@ -2,27 +2,35 @@
   "status": "success",
   "message": "Order retrieved successfully",
   "data": {
-    "id": "HMrvMWG07p7xAvpUJUwP",
+    "id": "ID_1",
     "orderNumber": "ORD-00001",
     "orderStatus": "COMPLETED",
     "createdAt": {
-      "_seconds": 1788794913,
+      "_seconds": 1780000000,
       "_nanoseconds": 0
     },
     "updatedAt": {
-      "_seconds": 1788794916,
+      "_seconds": 1780000000,
       "_nanoseconds": 0
     },
     "tableId": "tbl_meg_10",
     "restaurantId": "res_meghana",
-    "sessionId": "4LugzxTg1rWEgpFUbVpG",
+    "sessionId": "SESSIONID_2",
     "total": 724,
     "priceInfo": {
       "basePrice": 860,
       "finalPrice": 724,
       "totalDiscount": 4.19,
       "totalDiscountAmount": 136,
-      "offerDiscount": 100
+      "offerDiscount": 100,
+      "charges": [
+        {
+          "type": "SERVICE_CHARGE",
+          "percentage": 5,
+          "amount": 36.2
+        }
+      ],
+      "chargesTotal": 36.2
     },
     "offerDiscount": 100,
     "appliedOffer": {
@@ -38,7 +46,7 @@
         "menuItemId": "mi_chicken_bir",
         "name": "Chicken Dum Biryani",
         "quantity": 1,
-        "price": 320,
+        "price": 620,
         "variants": [
           {
             "id": "mv_bir_portion",
@@ -80,7 +88,7 @@
     "carts": [
       {
         "tableId": "tbl_meg_10",
-        "sessionId": "4LugzxTg1rWEgpFUbVpG",
+        "sessionId": "SESSIONID_2",
         "restaurantId": "res_meghana",
         "priceInfo": {
           "basePrice": 860,
@@ -119,7 +127,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_chicken_bir",
               "lastUpdated": {
-                "_seconds": 1788794313,
+                "_seconds": 1780000000,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -208,7 +216,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_paneer65",
               "lastUpdated": {
-                "_seconds": 1788794313,
+                "_seconds": 1780000000,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -254,34 +262,34 @@
             "status": "SERVED"
           }
         ],
-        "lastUpdated": "2026-09-07T15:28:33.675Z",
-        "cartId": "res_meghana_tbl_meg_10_ad7d34ae",
+        "lastUpdated": "2026-01-01T00:00:00.000Z",
+        "cartId": "res_meghana_tbl_meg_10_CART",
         "status": "SERVED",
         "statusHistory": [
           {
             "status": "PENDING",
-            "timestamp": "2026-09-07T15:28:33.000Z",
+            "timestamp": "2026-01-01T00:00:00.000Z",
             "userId": "system"
           },
           {
             "status": "PREPARING",
-            "timestamp": "2026-09-07T15:28:34.561Z",
+            "timestamp": "2026-01-01T00:00:00.000Z",
             "userId": "system",
             "notes": ""
           },
           {
             "status": "READY",
-            "timestamp": "2026-09-07T15:28:34.585Z",
+            "timestamp": "2026-01-01T00:00:00.000Z",
             "userId": "system",
             "notes": ""
           },
           {
             "status": "SERVED",
-            "timestamp": "2026-09-07T15:28:35.000Z",
+            "timestamp": "2026-01-01T00:00:00.000Z",
             "userId": "srv_meg_1"
           }
         ],
-        "checkoutTime": "2026-09-07T15:28:33.000Z",
+        "checkoutTime": "2026-01-01T00:00:00.000Z",
         "notes": "",
         "estimatedPrepTime": 14,
         "assignedTo": "srv_meg_1"

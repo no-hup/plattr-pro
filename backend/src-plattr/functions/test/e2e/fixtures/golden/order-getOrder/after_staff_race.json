@@ -2,20 +2,17 @@
   "status": "success",
   "message": "Order retrieved successfully",
   "data": {
-    "id": "sezprZAbCopEYcnvajb9",
+    "id": "ID_1",
     "orderNumber": "ORD-00006",
     "orderStatus": "IN_PROGRESS",
     "createdAt": {
-      "_seconds": 1788794917,
+      "_seconds": 1780000000,
       "_nanoseconds": 0
     },
-    "updatedAt": {
-      "_seconds": 1788794917,
-      "_nanoseconds": 0
-    },
+    "updatedAt": 1788801905794,
     "tableId": "tbl_meg_8",
     "restaurantId": "res_meghana",
-    "sessionId": "6j8AulTNYTAs9bwUtJyH",
+    "sessionId": "SESSIONID_2",
     "total": 204,
     "priceInfo": {
       "basePrice": 240,
@@ -47,7 +44,7 @@
     "notes": "",
     "carts": [
       {
-        "lastUpdated": 1788794917122,
+        "lastUpdated": 1788801904982,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -57,7 +54,7 @@
           "basePrice": 240
         },
         "tableId": "tbl_meg_8",
-        "sessionId": "6j8AulTNYTAs9bwUtJyH",
+        "sessionId": "SESSIONID_2",
         "restaurantId": "res_meghana",
         "items": [
           {
@@ -79,7 +76,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_paneer65",
               "lastUpdated": {
-                "_seconds": 1788794313,
+                "_seconds": 1780000000,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -122,27 +119,28 @@
               "discountAmount": 36
             },
             "cartItemId": 1,
-            "status": "SERVED"
+            "status": "READY"
           }
         ],
-        "cartId": "res_meghana_tbl_meg_8_32956890",
-        "status": "SERVED",
+        "cartId": "res_meghana_tbl_meg_8_CART",
+        "status": "READY",
         "statusHistory": [
           {
             "status": "PENDING",
-            "timestamp": "2026-09-07T15:28:37.000Z",
+            "timestamp": "2026-01-01T00:00:00.000Z",
             "userId": "system"
           },
           {
-            "status": "SERVED",
-            "timestamp": "2026-09-07T15:28:37.000Z",
-            "userId": "srv_meg_1"
+            "status": "READY",
+            "timestamp": "2026-01-01T00:00:00.000Z",
+            "userId": "system",
+            "notes": ""
           }
         ],
-        "checkoutTime": "2026-09-07T15:28:37.000Z",
+        "checkoutTime": "2026-01-01T00:00:00.000Z",
         "notes": "",
         "estimatedPrepTime": 12,
-        "assignedTo": "srv_meg_1"
+        "assignedTo": "system"
       }
     ]
   }

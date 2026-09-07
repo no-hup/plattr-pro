@@ -6,10 +6,11 @@
  */
 import { call } from '../lib/api.js';
 import { assertSuccess } from '../lib/assert.js';
+import { customerLogin, serverLogin } from '../lib/auth.js';
 import config from '../lib/config.js';
 import { narrator } from '../lib/narrator.js';
 
-const { RESTAURANT_ID, RESTAURANT_EMPTY_MENU, TABLE_CLEAN_4, ITEMS } = config;
+const { RESTAURANT_ID, RESTAURANT_EMPTY_MENU, TABLE_CLEAN_4, TABLE_2, ITEMS } = config;
 
 export default async function errorCasesSuite() {
   const results = { name: 'error-cases', pass: 0, fail: 0, tests: [] };
@@ -20,6 +21,41 @@ export default async function errorCasesSuite() {
     const isError = resp.status === 'error' || resp._httpStatus >= 400;
     record({ pass: isError, message: `${label} → ${isError ? 'error as expected' : 'unexpectedly succeeded'}`, actual: isError ? undefined : resp });
   }
+
+  /**
+   * Like expectError, but the rejection must NOT have come from the auth gate.
+   *
+   * Since the 2026-09-07 hardening, cart and staff endpoints reject a caller
+   * with no session before they ever look at the payload. A negative test that
+   * sends no session therefore "passes" without exercising the thing it names —
+   * a fake menuItemId test that never reaches the menu lookup. These tests now
+   * carry a real session, and this assertion is what keeps them honest.
+   */
+  function expectErrorPastAuth(resp, label) {
+    const isError = resp.status === 'error' || resp._httpStatus >= 400;
+    const blob = `${resp.message || ''} ${resp.error?.status || ''} ${resp.error?.message || ''}`.toLowerCase();
+    const auth = resp._httpStatus === 401 || resp._httpStatus === 403 ||
+      blob.includes('unauthenticated') || blob.includes('permission-denied') ||
+      blob.includes('active session') || blob.includes('session') && blob.includes('required');
+    const pass = isError && !auth;
+    record({
+      pass,
+      message: `${label} → ${!isError ? 'unexpectedly succeeded' : auth ? 'REJECTED BY AUTH GATE, not by the case under test' : 'error as expected'}`,
+      actual: pass ? undefined : resp,
+    });
+  }
+
+  // A real table session and a real staff session, so the negative tests below
+  // are rejected for the reason they claim rather than for having no session.
+  // TABLE_2 is used by no other suite, so this cannot disturb their state.
+  let tableSession = null;
+  let staffSession = null;
+  try { tableSession = await customerLogin(RESTAURANT_ID, TABLE_2); } catch (e) { /* asserted below */ }
+  try { staffSession = await serverLogin(); } catch (e) { /* asserted below */ }
+  record({
+    pass: !!tableSession && !!staffSession,
+    message: `0. Fixture sessions for negative tests → ${tableSession ? 'table ok' : 'TABLE FAILED'}, ${staffSession ? 'staff ok' : 'STAFF FAILED'}`,
+  });
 
   // ── Table endpoints: missing params ────────────────────────────
 
@@ -57,13 +93,15 @@ export default async function errorCasesSuite() {
   }), '7. Cart add: negative quantity');
 
   // 8. addItemToCart: non-existent menu item
-  expectError(await call('cart-addItemToCart', {
-    restaurantId: RESTAURANT_ID, tableId: 'table_1', menuItemId: 'nonexistent_item_xyz', quantity: 1,
+  expectErrorPastAuth(await call('cart-addItemToCart', {
+    restaurantId: RESTAURANT_ID, tableId: TABLE_2, sessionId: tableSession,
+    menuItemId: 'nonexistent_item_xyz', quantity: 1,
   }), '8. Cart add: fake menuItemId');
 
   // 9. addItemToCart: out-of-stock item
-  expectError(await call('cart-addItemToCart', {
-    restaurantId: RESTAURANT_ID, tableId: 'table_1', menuItemId: ITEMS.BEER.id, quantity: 1,
+  expectErrorPastAuth(await call('cart-addItemToCart', {
+    restaurantId: RESTAURANT_ID, tableId: TABLE_2, sessionId: tableSession,
+    menuItemId: ITEMS.BEER.id, quantity: 1,
   }), '9. Cart add: out-of-stock (beer)');
 
   // 10. getCart: non-existent table
@@ -95,13 +133,15 @@ export default async function errorCasesSuite() {
   }), '13. Get order: fake orderId');
 
   // 14. updateOrderStatus: fake orderId
-  expectError(await call('order-updateOrderStatus', {
+  expectErrorPastAuth(await call('order-updateOrderStatus', {
     restaurantId: RESTAURANT_ID, orderId: 'fake', orderStatus: 'COMPLETED',
+    sessionId: staffSession,
   }), '14. Update order status: fake orderId');
 
   // 15. updateCartStatus: invalid transition
-  expectError(await call('cart-updateCartStatus', {
+  expectErrorPastAuth(await call('cart-updateCartStatus', {
     restaurantId: RESTAURANT_ID, orderId: 'fake', cartIndex: 0, newStatus: 'SERVED',
+    sessionId: staffSession,
   }), '15. Update cart status: fake orderId');
 
   // ── Server endpoints: auth failures ────────────────────────────
@@ -159,7 +199,7 @@ export default async function errorCasesSuite() {
 
   // ── 23. Order updateStatus with wrong restaurantId ────────────
   expectError(
-    await call('order-updateOrderStatus', { restaurantId: 'wrong_restaurant', orderId: 'order_active_1', orderStatus: 'COMPLETED' }),
+    await call('order-updateOrderStatus', { restaurantId: 'wrong_restaurant', orderId: 'order_active_1', orderStatus: 'COMPLETED', sessionId: staffSession }),
     '23. Order update with wrong restaurantId'
   );
   narrator.errorCase('Order update wrong restaurant', 'not found');

@@ -2,7 +2,7 @@
   "success": true,
   "message": "Server login successful with new session",
   "data": {
-    "sessionId": "mCQ9fR8KhuMCBoqrgBBL",
+    "sessionId": "SESSIONID_1",
     "serverId": "srv_meg_kit",
     "name": "Kitchen",
     "entity": "server",

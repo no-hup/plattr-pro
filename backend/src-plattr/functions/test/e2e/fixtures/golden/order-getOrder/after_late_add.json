@@ -2,20 +2,20 @@
   "status": "success",
   "message": "Order retrieved successfully",
   "data": {
-    "id": "UwZgACKhwc8Cns84XsPZ",
+    "id": "ID_1",
     "orderNumber": "ORD-00005",
     "orderStatus": "IN_PROGRESS",
     "createdAt": {
-      "_seconds": 1788794917,
+      "_seconds": 1780000000,
       "_nanoseconds": 0
     },
     "updatedAt": {
-      "_seconds": 1788794917,
+      "_seconds": 1780000000,
       "_nanoseconds": 0
     },
     "tableId": "tbl_meg_7",
     "restaurantId": "res_meghana",
-    "sessionId": "lzJOiCycQ632MNpOyt41",
+    "sessionId": "SESSIONID_2",
     "total": 204,
     "priceInfo": {
       "basePrice": 240,
@@ -47,7 +47,7 @@
     "notes": "",
     "carts": [
       {
-        "lastUpdated": 1788794917053,
+        "lastUpdated": 1788801900672,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -57,7 +57,7 @@
           "basePrice": 240
         },
         "tableId": "tbl_meg_7",
-        "sessionId": "lzJOiCycQ632MNpOyt41",
+        "sessionId": "SESSIONID_2",
         "restaurantId": "res_meghana",
         "items": [
           {
@@ -79,7 +79,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_paneer65",
               "lastUpdated": {
-                "_seconds": 1788794313,
+                "_seconds": 1780000000,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -125,16 +125,16 @@
             "status": "PENDING"
           }
         ],
-        "cartId": "res_meghana_tbl_meg_7_996ab32d",
+        "cartId": "res_meghana_tbl_meg_7_CART",
         "status": "PENDING",
         "statusHistory": [
           {
             "status": "PENDING",
-            "timestamp": "2026-09-07T15:28:37.000Z",
+            "timestamp": "2026-01-01T00:00:00.000Z",
             "userId": "system"
           }
         ],
-        "checkoutTime": "2026-09-07T15:28:37.000Z",
+        "checkoutTime": "2026-01-01T00:00:00.000Z",
         "notes": "",
         "estimatedPrepTime": 12,
         "assignedTo": null

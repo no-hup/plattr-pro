@@ -85,7 +85,7 @@ export const SCENARIOS = [
 | File | Does |
 |---|---|
 | `run-matrix.mjs` | seeds, logs staff in, hands each scenario a table pool, reports |
-| `scenarios.mjs` | the 11 situations; this is where you add coverage |
+| `scenarios.mjs` | the 12 situations; this is where you add coverage |
 | `actors.mjs` | `Customer` / `Waiter` / `Kitchen` over `lib/api.js`, plus fixture capture |
 | `static-findings.cjs` | issues found by reading the code, seeded each run as `unconfirmed` |
 | `../../findings.cjs` | the shared issue log every layer appends to |
@@ -98,3 +98,23 @@ Every response the actors receive is written to
 both the contract checker and the Flutter `test/contract` suites, so the app-side
 checks assert against what the backend really returned today. Re-run the matrix
 to refresh them.
+
+**They are committed on purpose, and the diff is the point.** Layers E and F run
+with no emulator and no network, so a clone can check every Flutter model against
+real responses without booting anything — but only if the corpus is in the repo.
+A fixture diff is then also review signal: it is the cheapest place to see that a
+response shape or a price changed.
+
+For that to work the capture has to be stable, so `writeFixtures()` replaces
+volatile values on write — Firestore auto-ids become `ID_1`, `SESSIONID_1` and so
+on, generated cart-id suffixes become `CART`, and every timestamp collapses to a
+fixed epoch. Equal values still map to equal placeholders, so "this cart belongs
+to that session" survives; types and structure are untouched, so a field that
+stops being a timestamp still shows up.
+
+This was not cosmetic. The June per-unit pricing change produced a 1365-line
+fixture diff made entirely of ids and second-counts, with **zero** lines of the
+actual change — every fixture used quantity 1, where a per-unit price and a line
+total are the same number. Re-capture now yields an empty diff unless something
+real moved. Do not gitignore these files; a stale corpus is caught by re-running
+the matrix, an absent one silently reduces layers E and F to nothing.

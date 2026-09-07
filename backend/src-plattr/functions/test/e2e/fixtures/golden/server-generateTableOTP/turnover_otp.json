@@ -1,0 +1,12 @@
+{
+  "status": "success",
+  "message": "OTP generated successfully",
+  "data": {
+    "tableId": "tbl_meg_7",
+    "restaurantId": "res_meghana",
+    "tableNumber": "7",
+    "otp": "123456",
+    "expiresAt": "2026-01-01T00:00:00.000Z",
+    "tableStatus": "pending"
+  }
+}

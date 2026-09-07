@@ -5,7 +5,7 @@
     "cart": {
       "restaurantId": "res_meghana",
       "tableId": "tbl_meg_10",
-      "sessionId": "Sx7sMePQSmrP9dtJF5t1",
+      "sessionId": "SESSIONID_1",
       "items": [
         {
           "menuItemId": "mi_paneer65",
@@ -26,7 +26,7 @@
             "restaurantId": "res_meghana",
             "menuItemId": "mi_paneer65",
             "lastUpdated": {
-              "_seconds": 1788794325,
+              "_seconds": 1780000000,
               "_nanoseconds": 0
             },
             "priceInfo": {

@@ -1,0 +1,151 @@
+{
+  "status": "success",
+  "message": "Tables retrieved successfully",
+  "data": {
+    "restaurantId": "res_meghana",
+    "tables": [
+      {
+        "id": "tbl_meg_1",
+        "number": "1",
+        "status": "active",
+        "capacity": 4,
+        "assignedServerId": "srv_meg_1",
+        "isOccupied": true,
+        "primaryCustomer": {
+          "phoneNumber": "9876543210",
+          "name": "Customer One"
+        },
+        "lastActivity": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "tbl_meg_2",
+        "number": "2",
+        "status": "pending",
+        "capacity": 2,
+        "assignedServerId": null,
+        "isOccupied": false,
+        "primaryCustomer": null,
+        "lastActivity": null
+      },
+      {
+        "id": "tbl_meg_3",
+        "number": "3",
+        "status": "pending",
+        "capacity": 4,
+        "assignedServerId": null,
+        "isOccupied": false,
+        "primaryCustomer": null,
+        "lastActivity": null
+      },
+      {
+        "id": "tbl_meg_4",
+        "number": "4",
+        "status": "vacant",
+        "capacity": 6,
+        "assignedServerId": null,
+        "isOccupied": false,
+        "primaryCustomer": null,
+        "lastActivity": null
+      },
+      {
+        "id": "tbl_meg_5",
+        "number": "5",
+        "status": "disabled",
+        "capacity": 4,
+        "assignedServerId": null,
+        "isOccupied": false,
+        "primaryCustomer": null,
+        "lastActivity": null
+      },
+      {
+        "id": "tbl_meg_6",
+        "number": "6",
+        "status": "active",
+        "capacity": 4,
+        "assignedServerId": null,
+        "isOccupied": true,
+        "primaryCustomer": {
+          "phoneNumber": "9876543210",
+          "name": "Customer One"
+        },
+        "lastActivity": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "tbl_meg_7",
+        "number": "7",
+        "status": "active",
+        "capacity": 2,
+        "assignedServerId": null,
+        "isOccupied": true,
+        "primaryCustomer": {
+          "phoneNumber": "9876543210",
+          "name": "Customer One"
+        },
+        "lastActivity": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "tbl_meg_8",
+        "number": "8",
+        "status": "active",
+        "capacity": 4,
+        "assignedServerId": null,
+        "isOccupied": true,
+        "primaryCustomer": {
+          "phoneNumber": "9876543210",
+          "name": "Customer One"
+        },
+        "lastActivity": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "tbl_meg_9",
+        "number": "9",
+        "status": "vacant",
+        "capacity": 2,
+        "assignedServerId": null,
+        "isOccupied": false,
+        "primaryCustomer": null,
+        "lastActivity": null
+      },
+      {
+        "id": "tbl_meg_10",
+        "number": "10",
+        "status": "active",
+        "capacity": 4,
+        "assignedServerId": null,
+        "isOccupied": true,
+        "primaryCustomer": {
+          "phoneNumber": "9876543210",
+          "name": "Customer One"
+        },
+        "lastActivity": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "tbl_meg_11",
+        "number": "11",
+        "status": "active",
+        "capacity": 2,
+        "assignedServerId": null,
+        "isOccupied": true,
+        "primaryCustomer": {
+          "phoneNumber": "9876543210",
+          "name": "Customer One"
+        },
+        "lastActivity": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "tbl_meg_12",
+        "number": "12",
+        "status": "active",
+        "capacity": 4,
+        "assignedServerId": null,
+        "isOccupied": true,
+        "primaryCustomer": {
+          "phoneNumber": "9876543210",
+          "name": "Customer One"
+        },
+        "lastActivity": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "count": 12
+  }
+}

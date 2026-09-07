@@ -11,6 +11,33 @@ const F = require('../../findings.cjs');
 
 const STATIC = [
   // ── Lifecycle / concurrency ────────────────────────────────────────────────
+  // ── Added after the 2026-06-05-goodbye merge (order.items went per-unit) ───
+  {
+    title: 'Variant and addon prices are repeated next to an all-inclusive item price',
+    severity: 'MEDIUM', area: 'pricing', endpoint: 'order-getOrder',
+    file: 'orders/getOrder.js:211-215, orders/serverGetOrderDetails.js:124-128',
+    detail: 'items[].price is now per-unit AND all-inclusive, but items[].variants[] and items[].addons[] still ship their own per-unit priceInfo beside it. The same money is in the response twice. No client sums them today — the consumer renders customisation names only, and the waiter/kitchen/admin read paths are price-blind here — so this is a trap rather than a live defect. On res_meghana it turns a correct 1860 line into 2760. Either drop the sibling prices or document them as display-only; the matrix asserts that the additive form does NOT reconcile, so a regression to the base-only basis is caught.',
+  },
+  {
+    title: 'One order can hold items priced on two different bases across a deploy',
+    severity: 'HIGH', area: 'pricing', endpoint: 'order-getOrder',
+    file: 'orders/createOrUpdateOrder.js normalizeCartItemsForOrder / updateExistingOrder',
+    detail: 'ACCEPTED-TRANSITIONAL — reviewed and deliberately not fixed before go-live. updateExistingOrder APPENDS newly normalised items to order.items and never re-normalises what is already there, and no field records which price basis an entry used. items[].price changed basis twice on 2026-09-07 (line total, then base-item-only per-unit, now per-unit all-inclusive), so an order left open across such a deploy mixes them and the flat item list stops adding up. REPRODUCED: the multicart_3 fixture, captured across an emulator reload, held mi_chicken_bir at 320 (base-only) beside its own cart snapshot at 620 — short by exactly the 260 variant + 40 addon. Items with no variants or addons are identical under both bases, so it only shows on customised lines. WHY IT IS ACCEPTED: order.items is display-only — every total, including the COMPLETED recompute, is derived from carts[], confirmed by three independent reader inventories — and this is the first production deploy, so no live order can straddle the basis change. OPERATIONAL RULE: drain open orders, or wait for them to reach COMPLETED, before any future deploy that changes the order.items price basis. A code fix is NOT small: normalizeCartItemsForOrder stamps a fresh status and checkoutTime, so re-normalising existing items would reset SERVED ones.',
+    status: 'confirmed'
+  },
+  {
+    title: 'The consumer prices an order line without its variants and addons',
+    severity: 'HIGH', area: 'pricing', endpoint: 'order-getOrder',
+    file: 'flutter_boilerplate/lib/pages/checkout_order_flow/order_listing_page.dart:542',
+    detail: 'items[].price is the base component only — a Chicken Dum Biryani with a 260 variant and a 40 addon is published at 320 while contributing 620 per unit. The response is still sufficient: variants[] and addons[] carry their own per-unit priceInfo and the matrix confirms (price + variants + addons) x quantity rebuilds the order total exactly. But OrderItemTile renders `item.price * item.quantity` and only lists the customisation NAMES, so at quantity 3 it shows 960 for a line the customer is charged 1860 for. The bill total shown below it is correct, so the itemisation visibly fails to add up.'
+  },
+  {
+    title: 'The waiter table list crashes on a table with no capacity',
+    severity: 'HIGH', area: 'contract', endpoint: 'server-getTables',
+    file: 'server/tables_fetch.js:61 vs platter_server .../tables_home/models/table_models.g.dart',
+    detail: 'The backend deliberately emits `capacity: tableData.capacity || null`, so a table doc missing capacity (or holding 0) sends an explicit null. TableModel is $checkKeys-guarded with capacity in both requiredKeys and disallowNullValues and then casts `(json[\'capacity\'] as num).toInt()`. One such table throws DisallowedNullValueException and takes down the whole table list, which is the waiter app home screen. The MockData7 seed gives all 52 tables a capacity, so this cannot reproduce locally — it is a production-data risk per the change-impact checklist.',
+  },
+
   {
     title: 'markCartAsServed skips the fulfillment transition table',
     severity: 'HIGH', area: 'lifecycle', endpoint: 'order-markCartAsServed',

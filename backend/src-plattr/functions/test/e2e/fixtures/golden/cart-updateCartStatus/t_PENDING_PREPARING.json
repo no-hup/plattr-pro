@@ -2,7 +2,7 @@
   "success": true,
   "message": "Cart status updated to PREPARING",
   "data": {
-    "id": "G82vNVbShRmFrLSbbNJt",
+    "id": "ID_1",
     "restaurantId": "res_meghana",
     "tableId": "tbl_meg_10",
     "orderNumber": "ORD-00001",
@@ -10,7 +10,7 @@
     "paymentStatus": "unpaid",
     "carts": [
       {
-        "lastUpdated": 1788794928660,
+        "lastUpdated": 1788801913789,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -20,7 +20,7 @@
           "basePrice": 240
         },
         "tableId": "tbl_meg_10",
-        "sessionId": "Sx7sMePQSmrP9dtJF5t1",
+        "sessionId": "SESSIONID_2",
         "restaurantId": "res_meghana",
         "items": [
           {
@@ -42,7 +42,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_paneer65",
               "lastUpdated": {
-                "_seconds": 1788794325,
+                "_seconds": 1780000000,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -85,29 +85,29 @@
               "discountAmount": 36
             },
             "cartItemId": 1,
-            "status": "PENDING"
+            "status": "PREPARING"
           }
         ],
-        "cartId": "res_meghana_tbl_meg_10_9be24849",
+        "cartId": "res_meghana_tbl_meg_10_CART",
         "status": "PREPARING",
         "statusHistory": [
           {
             "status": "PENDING",
             "timestamp": {
-              "_seconds": 1788794929,
+              "_seconds": 1780000000,
               "_nanoseconds": 0
             },
             "userId": "system"
           },
           {
             "status": "PREPARING",
-            "timestamp": 1788794929996,
+            "timestamp": 1788801913852,
             "userId": "system",
             "notes": ""
           }
         ],
         "checkoutTime": {
-          "_seconds": 1788794929,
+          "_seconds": 1780000000,
           "_nanoseconds": 0
         },
         "notes": "",
@@ -132,7 +132,7 @@
         "selectedAddonsDetails": [],
         "cartItemId": 1,
         "checkoutTime": {
-          "_seconds": 1788794929,
+          "_seconds": 1780000000,
           "_nanoseconds": 0
         },
         "status": "PENDING"
@@ -154,14 +154,14 @@
       "chargesTotal": 10.2
     },
     "createdAt": {
-      "_seconds": 1788794929,
+      "_seconds": 1780000000,
       "_nanoseconds": 0
     },
-    "updatedAt": 1788794929996,
+    "updatedAt": 1788801913852,
     "isActive": true,
     "assignedServer": null,
     "notes": "",
-    "sessionId": "Sx7sMePQSmrP9dtJF5t1",
+    "sessionId": "SESSIONID_2",
     "appliedOffer": null
   }
 }
