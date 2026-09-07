@@ -136,20 +136,15 @@ class MenuData with _$MenuData {
           parsedMenuItems[entry.key] = value
               .whereType<Map<String, dynamic>>()
               .map((json) {
-                // 🛠️ MOCK DATA INJECTION (Temporary)
-                // Since backend doesn't send these fields yet, we inject them randomly/fixed for demo.
                 final mutableJson = Map<String, dynamic>.from(json);
                 
-                // Mock Dietary Type based on name or random
+                // Dietary type is authored on the item's meta by the backend.
+                // NEVER guess it from the dish name: the old fallback defaulted
+                // to VEG, so "Mutton Rogan Josh" rendered a green veg dot.
+                // If the restaurant hasn't tagged the dish, show no marker.
+                final meta = mutableJson['meta'] as Map<String, dynamic>;
                 if (mutableJson['dietaryType'] == null) {
-                   final name = (mutableJson['meta'] as Map<String, dynamic>)['name'].toString().toLowerCase();
-                   if (name.contains('chicken') || name.contains('beef') || name.contains('prawn') || name.contains('lamb')) {
-                     mutableJson['dietaryType'] = 'NON_VEG';
-                   } else if (name.contains('egg')) {
-                     mutableJson['dietaryType'] = 'EGG';
-                   } else {
-                     mutableJson['dietaryType'] = 'VEG';
-                   }
+                  mutableJson['dietaryType'] = meta['dietaryType'];
                 }
                 
                 // Mock Spice Level
