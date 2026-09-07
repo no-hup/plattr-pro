@@ -1,0 +1,100 @@
+{
+  "_provenance": {
+    "source": "Swiggy (live) via Apify actor thirdwatch/swiggy-scraper, searchType=restaurant",
+    "city": "Bangalore",
+    "scrapedAt": "2026-07-07T10:17:00Z",
+    "note": "Real restaurant SKELETONS only (names, cuisines, price bands, live offer strings, ratings). Item-level menus are NOT scrapable on the free/US-proxy tier (India-residential wall), so authored per-cuisine menus + Plattr constructs are layered on these skeletons in buildMockData7.js. Full 36-restaurant candidate pool retained in _candidatePool for future re-curation.",
+    "actorRunId": "xzimyxIMqN1Y5avpn"
+  },
+  "chosen": [
+    {
+      "seedId": "res_meghana",
+      "restaurant_id": "3241",
+      "name": "Meghana Foods",
+      "area_name": "Residency Road",
+      "cost_for_two_rupees": 500,
+      "rating": 4.7,
+      "cuisine": ["Biryani", "Andhra", "South Indian", "Chinese", "Seafood"],
+      "liveOffer": "FLAT DEAL: ₹100 OFF ABOVE ₹499",
+      "stresses": "Large multi-cuisine menu; biryani + addons (raita, extra gravy, egg); FLAT offer with minOrderValue condition; seafood high-ticket items."
+    },
+    {
+      "seedId": "res_pizzabakery",
+      "restaurant_id": "342643",
+      "name": "The Pizza Bakery - Wood Fired Sourdough",
+      "area_name": "Central Bangalore",
+      "cost_for_two_rupees": 700,
+      "rating": 4.6,
+      "cuisine": ["Pizzas", "Pastas", "Italian", "Desserts", "Continental"],
+      "liveOffer": "FLAT DEAL: ₹100 OFF ABOVE ₹499",
+      "stresses": "Deep variant trees (size: Regular/Medium/Large; crust: Sourdough/Thin/Gluten-free) with respectParentDiscount TRUE; topping addons with respectParentDiscount FALSE; CATEGORY-scoped dessert offer."
+    },
+    {
+      "seedId": "res_truffles",
+      "restaurant_id": "3369",
+      "name": "Truffles",
+      "area_name": "St. Marks Road",
+      "cost_for_two_rupees": 450,
+      "rating": 4.6,
+      "cuisine": ["American", "Desserts", "Continental", "Italian"],
+      "liveOffer": "FLAT DEAL: ₹80 OFF ABOVE ₹299",
+      "stresses": "Burgers with mandatory patty variant + optional topping addons; combos (FREE_ITEM offer); multi-config cart (same burger, different builds); item-level discounts."
+    },
+    {
+      "seedId": "res_salt",
+      "restaurant_id": "484939",
+      "name": "SALT - Indian Restaurant",
+      "area_name": "UB City",
+      "cost_for_two_rupees": 1000,
+      "rating": 4.5,
+      "cuisine": ["North Indian", "Kebabs", "Tandoori", "Biryani", "Thalis"],
+      "liveOffer": "FLAT DEAL: 50% OFF",
+      "stresses": "High-ticket fine dining; PERCENTAGE order offer with maxDiscount cap; service charge + GST charges (grand total = finalPrice + chargesTotal); thali combos; BOGO on kebabs."
+    },
+    {
+      "seedId": "res_chowman",
+      "restaurant_id": "791183",
+      "name": "Chowman",
+      "area_name": "Koramangala",
+      "cost_for_two_rupees": 1200,
+      "rating": 4.3,
+      "cuisine": ["Chinese", "Beverages"],
+      "liveOffer": "FLAT DEAL: ₹80 OFF ABOVE ₹199",
+      "stresses": "Premium Chinese; spice-level variants (non-priced); beverage add-ons; negative charge (loyalty global discount) via Charges V1; userHistory-conditioned offer."
+    }
+  ],
+  "_candidatePool": [
+    {"restaurant_id": "3241", "name": "Meghana Foods", "cuisine": ["Biryani","Andhra","South Indian","Chinese","Seafood"], "offers": ["FLAT DEAL: ₹100 OFF ABOVE ₹499"]},
+    {"restaurant_id": "701044", "name": "Paradise Biryani", "cuisine": ["Biryani","Kebabs","North Indian","Hyderabadi"], "offers": ["ITEMS AT ₹37"]},
+    {"restaurant_id": "102334", "name": "Dindigul Thalappakatti", "cuisine": ["Biryani","Barbecue","South Indian","Chinese","North Indian"], "offers": ["ITEMS AT ₹39"]},
+    {"restaurant_id": "439141", "name": "Biryani Blues", "cuisine": ["Biryani","Kebabs","Lucknowi","Hyderabadi"], "offers": ["70% OFF UPTO ₹140"]},
+    {"restaurant_id": "3434", "name": "Nandhini Deluxe", "cuisine": ["Andhra","Biryani","Chinese","North Indian"], "offers": ["ITEMS AT ₹99"]},
+    {"restaurant_id": "755276", "name": "La Pino'z Pizza", "cuisine": ["Pizzas","Pastas","Italian","Desserts","Beverages"], "offers": ["ITEMS AT ₹49"]},
+    {"restaurant_id": "10575", "name": "Pizza Hut", "cuisine": ["Pizzas"], "offers": ["FLAT DEAL: ₹100 OFF ABOVE ₹249"]},
+    {"restaurant_id": "23847", "name": "Domino's Pizza", "cuisine": ["Pizzas","Italian","Pastas","Desserts"], "offers": ["ITEMS AT ₹59"]},
+    {"restaurant_id": "342643", "name": "The Pizza Bakery", "cuisine": ["Pizzas","Pastas","Italian","Desserts","Continental"], "offers": ["FLAT DEAL: ₹100 OFF ABOVE ₹499"]},
+    {"restaurant_id": "401186", "name": "Onesta", "cuisine": ["Italian","Desserts","Pizzas","American","Snacks"], "offers": ["FLAT DEAL: 50% OFF"]},
+    {"restaurant_id": "396744", "name": "Oven Story Pizza", "cuisine": ["Pizzas","Pastas","Italian","Desserts","Beverages"], "offers": ["ITEMS AT ₹109"]},
+    {"restaurant_id": "43836", "name": "McDonald's", "cuisine": ["Burgers","Beverages","Cafe","Desserts"], "offers": ["FLAT DEAL: ₹100 OFF ABOVE ₹399"]},
+    {"restaurant_id": "5938", "name": "Burger King", "cuisine": ["Burgers","American"], "offers": ["ITEMS AT ₹59"]},
+    {"restaurant_id": "464509", "name": "Leon's - Burgers & Wings", "cuisine": ["American","Snacks","Turkish","Portuguese","Continental"], "offers": ["ITEMS AT ₹99"]},
+    {"restaurant_id": "3369", "name": "Truffles", "cuisine": ["American","Desserts","Continental","Italian"], "offers": ["FLAT DEAL: ₹80 OFF ABOVE ₹299"]},
+    {"restaurant_id": "1194325", "name": "Seoul Burgers & Shakes", "cuisine": ["Burger","Bubble Tea","Fast Food","Beverages","Juice and shake"], "offers": ["60% OFF UPTO ₹120"]},
+    {"restaurant_id": "953489", "name": "Wendy's Burgers", "cuisine": ["Burgers","Fast Food","wrap"], "offers": ["FLAT DEAL: 50% OFF"]},
+    {"restaurant_id": "17168", "name": "The Punjabi Rasoi", "cuisine": ["North Indian"], "offers": ["ITEMS AT ₹199"]},
+    {"restaurant_id": "696232", "name": "ITC Aashirvaad Soul Creations", "cuisine": ["Indian","pure veg","Healthy Food","Home Food","South Indian","North Indian","Sweets"], "offers": ["70% OFF UPTO ₹130"]},
+    {"restaurant_id": "1226365", "name": "India Canteen- Thalis & Combos", "cuisine": ["North Indian","Thali","Biryani","Tandoori"], "offers": ["FLAT DEAL: 50% OFF"]},
+    {"restaurant_id": "484939", "name": "SALT - Indian Restaurant", "cuisine": ["North Indian","Kebabs","Tandoori","Biryani","Thalis"], "offers": ["FLAT DEAL: 50% OFF"]},
+    {"restaurant_id": "102324", "name": "Kapoor's Cafe", "cuisine": ["North Indian"], "offers": []},
+    {"restaurant_id": "129538", "name": "Rang De Basanti Dhaba", "cuisine": ["North Indian","Kebabs","Tandoor","Indian"], "offers": ["ITEMS AT ₹29"]},
+    {"restaurant_id": "1274622", "name": "Chow's Nano Duzi", "cuisine": ["Chinese","Thai"], "offers": ["FLAT DEAL: ₹125 OFF ABOVE ₹299"]},
+    {"restaurant_id": "8766", "name": "Beijing Bites", "cuisine": ["Chinese"], "offers": ["FLAT DEAL: ₹100 OFF ABOVE ₹199"]},
+    {"restaurant_id": "405798", "name": "Chinese Wok", "cuisine": ["Chinese","Asian","Tibetan","Desserts"], "offers": ["ITEMS AT ₹109"]},
+    {"restaurant_id": "791183", "name": "Chowman", "cuisine": ["Chinese","Beverages"], "offers": ["FLAT DEAL: ₹80 OFF ABOVE ₹199"]},
+    {"restaurant_id": "392828", "name": "Big Bowl", "cuisine": ["Chinese","Tibetan","Desserts"], "offers": ["ITEMS AT ₹109"]},
+    {"restaurant_id": "264240", "name": "Wow! China", "cuisine": ["Chinese","Asian","fastfood","Beverages","Snacks"], "offers": ["70% OFF UPTO ₹130"]},
+    {"restaurant_id": "831086", "name": "NBC - Nothing Before Coffee", "cuisine": ["Coffee","Fast Food","Cafe"], "offers": ["ITEMS AT ₹56"]},
+    {"restaurant_id": "673190", "name": "Go Zero Ice Creams & Desserts", "cuisine": ["Ice Cream","Desserts"], "offers": ["60% OFF UPTO ₹110"]},
+    {"restaurant_id": "471009", "name": "Virinchi Cafe", "cuisine": ["South Indian","Fast Food"], "offers": ["ITEMS AT ₹69"]}
+  ]
+}

@@ -80,3 +80,48 @@ Mock data often contains fields that drive time-based logic (e.g., "Elapsed Time
     *   **Agent Action:** Ensure `sessions` for the testing restaurant have `status: "active"`.
 
 A good practice is to update these values in `MockData5EndToEndTesting.json` immediately before running the import script to ensure the UI feels alive.
+
+## 7. Verified Schema Corrections (from MockData6 build — Jun 2026)
+
+These were validated against the live backend + Flutter models. MockData5 violates
+several of them; `MockData6BigRestaurants.json` (built by `buildMockData6.js`) fixes
+them. **Prefer these rules for any new mock data.**
+
+- **Fulfillment field is `status`, NOT `kitchenStatus`.** Grep confirms zero reads
+  of `kitchenStatus` in the backend. Cart items and cart/order snapshots use
+  `status` with the `FULFILLMENT_STATUS` enum: `PENDING`, `PREPARING`, `READY`,
+  `SERVED`, `RETURNED`, `CANCELLED` (uppercase). (`orders/orderConstants.js`)
+- **`ORDER_STATUS`**: `PENDING`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`. New orders
+  are born `IN_PROGRESS`. **`PAYMENT_STATUS`**: `unpaid`, `partially_paid`, `paid`.
+- **Server `role` must be UPPERCASE**: `ADMIN`/`MANAGER`/`SERVER`/`KITCHEN`
+  (`adminApp/auth.js`). MockData5's `"waiter"`/lowercase fails the role gate.
+- **Variants need a top-level `name`** (required by the Flutter `Variant` model) in
+  addition to `meta.name`.
+- **Menu items need `nutritionalInfo`** `{carbs,protein,fat,calories}` (required by
+  the `platter_core` MenuItem model). Also `meta.spiceLevel` is an **int**.
+- **`viewType`** (`'list'`/`'carousel'`) and `defaultExpanded` live on the
+  **category** doc (consumer model), not the subcategory.
+- **Table status** values: `active`, `vacant`, `pending` (the value of the
+  `OTP_PENDING` constant — store `"pending"`, not `"OTP_PENDING"`), `reserved`,
+  `disabled`. OTP `code` is a **string**. (`table/table.js`)
+- **Session doc** shape: `{tableId, primaryUserId, users[] (phone strings), status
+  ('active'|'ended'|'expired'), createdAt, updatedAt, expiresAt}`. Doc id IS the
+  sessionId; orders/carts reference it via `sessionId`. (`session/sessionService.js`)
+- **Live cart vs order snapshot are different shapes.** The live cart doc id ==
+  `tableId` and has **no** `status`/`cartId`/`statusHistory`. The cart snapshot
+  inside `order.carts[]` adds `cartId`, `status`, `statusHistory`, `checkoutTime`,
+  `estimatedPrepTime`, `assignedTo`. (`orders/createOrUpdateOrder.js`)
+- **Cart items should carry top-level `categoryId` + `subcategoryIds`** (not only
+  inside the embedded `menuItem`) so CATEGORY/ITEM offers match at checkout.
+  (`offers/strategies/BaseOfferStrategy.js`)
+- **Offers V2** — engine reads only these `conditions`: `minOrderValue`,
+  `requiredItems:[{menuItemId,quantity}]`, `userHistory:{minOrderCount,
+  activeSessionOrderCount}`. **Dead/ignored**: `isFirstTimeUser`, `minQuantity`,
+  `stackable`, `code`. Types: `PERCENTAGE`/`FLAT`/`BOGO`/`FREE_ITEM`. Scopes:
+  `ORDER`/`CATEGORY`/`ITEM` (**`CART`/`SUBCATEGORY` are invalid** — subcategories
+  are targeted via CATEGORY scope). `validity` dates are **ISO strings**. Engine
+  picks the SINGLE best offer (not stacked). (`offers/offerEngine.js`)
+- **Billing charges** (`config/settings` → `billing.charges`): only
+  `{type:string, percentage:number}` is supported; `percentage` may be **negative**
+  (discount). Charges are a separate line list — grand total =
+  `finalPrice + chargesTotal`. (`cart/.../calculateCharges.js`)
