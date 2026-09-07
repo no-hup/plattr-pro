@@ -125,6 +125,7 @@ class TablesProvider extends ChangeNotifier {
           isDisabled: _tables[index].isDisabled,
           currentOrderId: _tables[index].currentOrderId,
           tableOtp: _tables[index].tableOtp,
+          primaryCustomer: _tables[index].primaryCustomer,
         );
         _tables[index] = updatedTable;
 
@@ -169,6 +170,7 @@ class TablesProvider extends ChangeNotifier {
           isDisabled: _selectedTable!.isDisabled,
           currentOrderId: _selectedTable!.currentOrderId,
           tableOtp: newOtp,
+          primaryCustomer: _selectedTable!.primaryCustomer,
         );
       }
 
@@ -183,6 +185,7 @@ class TablesProvider extends ChangeNotifier {
           isDisabled: _tables[index].isDisabled,
           currentOrderId: _tables[index].currentOrderId,
           tableOtp: newOtp,
+          primaryCustomer: _tables[index].primaryCustomer,
         );
       }
 

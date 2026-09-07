@@ -34,6 +34,8 @@ class DioClient {
     //dio.interceptors.add(AuthInterceptor());      // Handles Authorization
     dio.interceptors
         .add(ErrorInterceptor()); // Handles error logic (e.g., 401 refresh)
+    dio.interceptors.add(InterruptFlowInterceptor
+        .instance); // Forced update, blocked, session expired dialogs
     if (kDebugMode) {
       dio.interceptors.add(ResponseGuardInterceptor());
     }
