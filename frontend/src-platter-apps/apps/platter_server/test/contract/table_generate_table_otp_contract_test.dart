@@ -25,6 +25,7 @@ void main() {
           final response = await apiService.generateTableOTP(
             restaurantId: ContractTestConfig.restaurantId,
             tableId: ContractTestConfig.otpTableId,
+            sessionId: ContractTestConfig.sessionId,
           );
 
           expect(
@@ -54,6 +55,7 @@ void main() {
           final response = await apiService.generateTableOTP(
             restaurantId: ContractTestConfig.restaurantId,
             tableId: ContractTestConfig.invalidTableId,
+            sessionId: ContractTestConfig.sessionId,
           );
 
           expect(response.success, isFalse);

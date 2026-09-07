@@ -187,24 +187,4 @@ class TableApiService {
           errorCode: 'parsing_error');
     }
   }
-
-  /// Legacy method maintained for backward compatibility
-  @Deprecated('Use generateTableOTP instead')
-  Future<ApiResponse<String>> refreshTableOtp({
-    required String restaurantId,
-    required String tableId,
-  }) async {
-    final response = await generateTableOTP(
-      restaurantId: restaurantId,
-      tableId: tableId,
-    );
-
-    if (response.success && response.data != null) {
-      return ApiResponse.success(response.data!.otp, message: response.message);
-    } else {
-      return ApiResponse<String>.error(
-          response.message ?? 'Failed to refresh OTP',
-          errorCode: response.errorCode);
-    }
-  }
 }

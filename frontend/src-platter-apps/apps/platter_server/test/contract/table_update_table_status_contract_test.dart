@@ -26,6 +26,7 @@ void main() {
             restaurantId: ContractTestConfig.restaurantId,
             tableId: ContractTestConfig.tableId,
             status: 'active',
+            sessionId: ContractTestConfig.sessionId,
           );
 
           expect(
@@ -55,6 +56,7 @@ void main() {
             restaurantId: ContractTestConfig.restaurantId,
             tableId: ContractTestConfig.tableId,
             status: 'INVALID_STATUS',
+            sessionId: ContractTestConfig.sessionId,
           );
 
           expect(response.success, isFalse);
