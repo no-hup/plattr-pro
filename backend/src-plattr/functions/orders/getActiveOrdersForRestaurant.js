@@ -51,6 +51,11 @@ async function getActiveOrdersForRestaurant(data, context) {
         sessionId
       });
     }
+    // Staff only: consumer table sessions live in the same collection but
+    // have no entity field.
+    if (sessionDoc.data().entity !== 'server') {
+      errorHandler.unauthorized('Staff session required', { restaurantId, sessionId });
+    }
 
     // Derive currentServerId from session document
     const currentServerId = sessionDoc.data().serverId || '';
@@ -61,13 +66,18 @@ async function getActiveOrdersForRestaurant(data, context) {
 
     setStage('fetch-orders');
     const ordersRef = db.collection('restaurants').doc(restaurantId).collection('orders');
-    const allOrdersQuery = await ordersRef.get();
+    // Bound the polled read: exclude COMPLETED server-side (same semantics as the
+    // in-Node filter below, which stays for legacy/lowercase status values).
+    // Note: '!=' also excludes docs missing orderStatus entirely.
+    const allOrdersQuery = await ordersRef
+      .where('orderStatus', '!=', ORDER_STATUS.COMPLETED)
+      .limit(300)
+      .get();
 
     setStage('process-orders');
     const orders = [];
     for (const doc of allOrdersQuery.docs) {
       const orderData = doc.data();
-      console.log('[poopoo ORDER_DATA]', JSON.stringify(orderData));
       const normalizedStatus = mapOrderStatus(orderData.orderStatus || orderData.status);
       // Only include orders that are NOT completed
       if (normalizedStatus === ORDER_STATUS.COMPLETED) continue;

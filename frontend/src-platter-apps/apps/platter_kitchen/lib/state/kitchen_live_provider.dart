@@ -38,6 +38,7 @@ class KitchenLiveProvider extends ChangeNotifier {
   KitchenLiveState _state = KitchenLiveState.loading;
   String? _error;
   Timer? _pollingTimer;
+  bool _inFlight = false;
 
   // Sorting: FIFO (oldest submission first) by default.
   bool _sortAscending = true;
@@ -88,6 +89,9 @@ class KitchenLiveProvider extends ChangeNotifier {
       // Explicit user action is required to leave the expired state.
       return;
     }
+    // Never stack requests: skip this tick if the previous fetch is still out.
+    if (_inFlight) return;
+    _inFlight = true;
     if (isInitialLoad) {
       _state = KitchenLiveState.loading;
       _error = null;
@@ -124,6 +128,7 @@ class KitchenLiveProvider extends ChangeNotifier {
             : KitchenLiveState.loaded;
       }
     } finally {
+      _inFlight = false;
       notifyListeners();
     }
   }

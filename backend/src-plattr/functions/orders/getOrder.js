@@ -86,21 +86,6 @@ const getOrder = functions.https.onCall(async (data, context) => {
     } 
     // CASE 2 & 3: Get orders by table
     else if (tableId) {
-      // Log all orders for debugging
-      console.log(`poopoo Fetching orders for tableId: ${tableId}, getAllOrders: ${getAllOrders}`);
-      const allOrdersSnapshot = await db.collection("restaurants").doc(restaurantId)
-        .collection("orders")
-        .where("tableId", "==", tableId)
-        .get();
-        
-      console.log(`poopoo Found ${allOrdersSnapshot.size} total orders for table ${tableId}`);
-      
-      if (!allOrdersSnapshot.empty) {
-        allOrdersSnapshot.forEach(doc => {
-          console.log(`poopoo Order ${doc.id} status: ${doc.data().orderStatus}`);
-        });
-      }
-      
       // If getAllOrders is true, return all orders for the table
       if (getAllOrders) {
         let ordersQuery = db.collection("restaurants").doc(restaurantId)
