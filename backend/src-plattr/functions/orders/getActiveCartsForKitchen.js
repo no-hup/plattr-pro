@@ -50,7 +50,12 @@ async function getActiveCartsForKitchen(data, context) {
 
     setStage('fetch-orders');
     const ordersRef = db.collection('restaurants').doc(restaurantId).collection('orders');
-    const allOrdersQuery = await ordersRef.get();
+    // Bound the polled read: exclude COMPLETED server-side (same semantics as the
+    // in-Node filter below, which stays for legacy/lowercase status values).
+    const allOrdersQuery = await ordersRef
+      .where('orderStatus', '!=', ORDER_STATUS.COMPLETED)
+      .limit(300)
+      .get();
 
     setStage('process-orders');
     const orders = [];

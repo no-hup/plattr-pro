@@ -15,5 +15,5 @@ class KitchenApiConstants {
 
   /// Default polling cadence for the live kitchen queue. Centralised here so
   /// the provider and any future manual-refresh code agree on the value.
-  static const Duration livePollingInterval = Duration(seconds: 60);
+  static const Duration livePollingInterval = Duration(seconds: 30);
 }
