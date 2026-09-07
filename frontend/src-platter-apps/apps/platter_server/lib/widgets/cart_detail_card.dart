@@ -95,6 +95,7 @@ class CartDetailCard extends StatelessWidget {
             final item = Map<String, dynamic>.from(entry.value as Map);
             return _CartItemRow(
               item: item,
+              cartStatus: status,
               onMarkServed: () => onItemServed(item),
             );
           }),
@@ -106,10 +107,12 @@ class CartDetailCard extends StatelessWidget {
 
 class _CartItemRow extends StatelessWidget {
   final Map<String, dynamic> item;
+  final String cartStatus;
   final VoidCallback onMarkServed;
 
   const _CartItemRow({
     required this.item,
+    required this.cartStatus,
     required this.onMarkServed,
   });
 
@@ -119,8 +122,10 @@ class _CartItemRow extends StatelessWidget {
     final itemStatus = StatusUtils.normalizeCartStatus(itemStatusRaw);
     final isServed = itemStatus == 'SERVED';
 
-    // Strict transition check
-    final canServe = StatusUtils.canTransition(itemStatus, 'SERVED');
+    // Use cart status for serve eligibility — item statuses stay PENDING
+    // until explicitly served, but the cart reaching READY means items
+    // are ready to be individually served.
+    final canServe = !isServed && StatusUtils.canTransition(cartStatus, 'SERVED');
 
     final itemName = item['name'] ??
         item['menuItem']?['meta']?['name'] ??

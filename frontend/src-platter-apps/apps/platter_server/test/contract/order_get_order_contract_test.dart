@@ -25,6 +25,7 @@ void main() {
           final response = await apiService.getOrder(
             restaurantId: ContractTestConfig.restaurantId,
             orderId: ContractTestConfig.orderId,
+            sessionId: ContractTestConfig.sessionId,
           );
 
           expect(
@@ -55,6 +56,7 @@ void main() {
           final response = await apiService.getOrder(
             restaurantId: ContractTestConfig.restaurantId,
             orderId: ContractTestConfig.invalidOrderId,
+            sessionId: ContractTestConfig.sessionId,
           );
 
           expect(response.success, isFalse);

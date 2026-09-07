@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:platter_server/pages/menu_home/repository/menu_api_service.dart';
-import 'package:platter_server/singleton/app_state.dart';
 
 import 'contract_test_utils.dart';
 
@@ -9,8 +8,6 @@ void main() {
 
   setUpAll(() async {
     await ContractTestConfig.ensureEmulatorIsRunning();
-    AppState.instance.restaurantId = ContractTestConfig.restaurantId;
-    AppState.instance.sessionId = ContractTestConfig.sessionId;
     apiService = MenuApiService();
   });
 
@@ -48,9 +45,6 @@ void main() {
         'getRestaurantMenu invalid restaurant',
         'success=false, errorCode=not-found',
         () async {
-          AppState.instance.restaurantId =
-              ContractTestConfig.invalidRestaurantId;
-          AppState.instance.sessionId = ContractTestConfig.sessionId;
           print(
             '[contract] getRestaurantMenu invalid: restaurantId='
             '${ContractTestConfig.invalidRestaurantId}',
@@ -66,8 +60,6 @@ void main() {
             '[contract] getRestaurantMenu invalid: errorCode='
             '${response.errorCode}, message=${response.message}',
           );
-
-          AppState.instance.restaurantId = ContractTestConfig.restaurantId;
         },
       );
     });

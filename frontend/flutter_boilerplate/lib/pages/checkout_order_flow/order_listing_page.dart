@@ -79,7 +79,14 @@ class _OrderListingPageState extends State<OrderListingPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          context.go('/r/${widget.restaurantId}/t/${widget.tableId}/menu');
+        }
+      },
+      child: Scaffold(
       appBar: ConsumerAppBar(
         titleWidget: Text(
           widget.orderId != null ? 'Order Details' : 'Orders',
@@ -145,6 +152,7 @@ class _OrderListingPageState extends State<OrderListingPage>
           );
         },
       ),
+    ),
     );
   }
 
@@ -582,117 +590,30 @@ class OrderItemTile extends StatelessWidget {
             ],
           ),
           
-          // Variants Section
-          _buildVariantsSection(theme),
-          
-          // Addons Section
-          _buildAddonsSection(theme),
+          // Compact variant + addon summary (single line, comma-separated)
+          _buildCustomizationSummary(theme),
         ],
       ),
     );
   }
   
-  Widget _buildVariantsSection(ThemeData theme) {
-    if (item.variants.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AppSpacing.verticalMD,
-        const Divider(height: 1),
-        AppSpacing.verticalSM,
-        Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Text(
-            'Variants',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.primary,
-            ),
-          ),
+  Widget _buildCustomizationSummary(ThemeData theme) {
+    final parts = <String>[
+      ...item.variants.map((v) => v.selected_variant_name),
+      ...item.addons.map((a) => a.name),
+    ];
+    if (parts.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, left: 36),
+      child: Text(
+        parts.join(', '),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurface.withOpacity(0.6),
         ),
-        ...item.variants.map((variant) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 4, left: 8),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.check_circle_outline,
-                  size: 16,
-                  color: theme.colorScheme.primary,
-                ),
-                AppSpacing.horizontalSM,
-                Expanded(
-                  child: Text(
-                    variant.selected_variant_name,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ),
-                if (variant.priceInfo.finalPrice > 0)
-                  Text(
-                    '₹${variant.priceInfo.finalPrice.toStringAsFixed(2)}',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
-  
-  Widget _buildAddonsSection(ThemeData theme) {
-    if (item.addons.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AppSpacing.verticalMD,
-        if (item.variants.isEmpty) const Divider(height: 1),
-        AppSpacing.verticalSM,
-        Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Text(
-            'Add-ons',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.secondary,
-            ),
-          ),
-        ),
-        ...item.addons.map((addon) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 4, left: 8),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.add_circle,
-                  size: 16,
-                  color: theme.colorScheme.secondary,
-                ),
-                AppSpacing.horizontalSM,
-                Expanded(
-                  child: Text(
-                    addon.name,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ),
-                if (addon.priceInfo.finalPrice > 0)
-                  Text(
-                    '₹${addon.priceInfo.finalPrice.toStringAsFixed(2)}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-              ],
-            ),
-          );
-        }),
-      ],
+      ),
     );
   }
 }

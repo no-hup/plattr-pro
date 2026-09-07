@@ -123,7 +123,7 @@ class DioClient {
           // Show OTP prompt generically if required
           try {
             if (error.response?.extra['auth_required'] == true) {
-              AuthPrompt.showIfNeeded();
+              AuthPrompt.showIfNeeded(force: true);
             }
           } catch (_) {}
           return handler.next(error);

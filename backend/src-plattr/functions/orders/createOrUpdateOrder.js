@@ -177,12 +177,16 @@ function normalizeCartItemsForOrder(cart) {
     // Skip items without menuItemId
     if (!item.menuItemId) return null;
 
-    // Create a simplified version of the cart item for the order using BasicPriceInfo
-    // to ensure proper price validation and standardization
+    // Create a simplified version of the cart item for the order using BasicPriceInfo.
+    // Use PER-UNIT prices (not line totals) — the consumer divides by quantity
+    // to get unit base/final, which matches getOrder.js returning unit price.
+    const qty = typeof item.quantity === 'number' && item.quantity > 0 ? item.quantity : 1;
+    const unitBasePrice = (item.priceInfo?.itemBasePrice || 0) / qty;
+    const unitFinalPrice = (item.priceInfo?.itemFinalPrice || 0) / qty;
     const priceInfo = new BasicPriceInfo(
-      item.priceInfo?.itemBasePrice,
+      unitBasePrice,
       item.priceInfo?.discount,
-      item.priceInfo?.itemFinalPrice
+      unitFinalPrice
     ).toObject();
 
     return {
@@ -308,7 +312,7 @@ async function createNewOrder(transaction, restaurantId, tableId, cartSnapshot, 
  * @param {string} sessionId - ID of the session (optional)
  * @returns {Object} The updated order
  */
-async function updateExistingOrder(transaction, restaurantId, orderId, existingOrder, cartSnapshot, orderItems, sessionId = null, chargesConfig = [], tableDoc = null, counterRef = null, counterDoc = null) {
+async function updateExistingOrder(transaction, restaurantId, orderId, existingOrder, cartSnapshot, orderItems, sessionId = null, chargesConfig = [], tableDoc = null, counterRef, counterDoc) {
   // Ensure arrays exist with fallbacks
   const existingCarts = Array.isArray(existingOrder.carts) ? existingOrder.carts : [];
   const existingItems = Array.isArray(existingOrder.items) ? existingOrder.items : [];
@@ -428,6 +432,7 @@ async function updateExistingOrder(transaction, restaurantId, orderId, existingO
  * @param {Object} counterDoc - Pre-fetched Firestore document snapshot for the counter
  * @returns {string} A unique order number (e.g. ORD-00001)
  */
+// Note: synchronous — do not await. Queues a transactional write only.
 function writeOrderCounter(transaction, counterRef, counterDoc) {
   let nextCount = 1;
   if (counterDoc && counterDoc.exists) {

@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:platter_core/platter_core.dart';
-import 'login_provider.dart'; // DataState will be accessible from here
-
-// import '../../models/data_state.dart'; // Removed incorrect import
+import 'login_provider.dart';
 import '../../main_navigation.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -13,7 +11,7 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => LoginProvider(apiService: LoginApiService()),
+      create: (_) => LoginProvider(),
       child: const _LoginScreenContent(),
     );
   }
