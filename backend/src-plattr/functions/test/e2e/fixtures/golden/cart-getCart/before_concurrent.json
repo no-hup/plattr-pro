@@ -3,7 +3,7 @@
   "message": "Cart retrieved successfully.",
   "data": {
     "cart": {
-      "lastUpdated": 1788792822127,
+      "lastUpdated": 1788794916587,
       "priceInfo": {
         "basePrice": 240,
         "finalPrice": 204,
@@ -13,7 +13,7 @@
         "totalDiscountAmount": 36
       },
       "tableId": "tbl_meg_6",
-      "sessionId": "9Ig4yh8NIFYWMHilxT6J",
+      "sessionId": "SfwJBz2yG047YATuzVp6",
       "restaurantId": "res_meghana",
       "items": [
         {
@@ -35,7 +35,7 @@
             "restaurantId": "res_meghana",
             "menuItemId": "mi_paneer65",
             "lastUpdated": {
-              "_seconds": 1788792218,
+              "_seconds": 1788794313,
               "_nanoseconds": 0
             },
             "priceInfo": {

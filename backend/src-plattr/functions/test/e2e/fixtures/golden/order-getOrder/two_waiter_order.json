@@ -2,17 +2,17 @@
   "status": "success",
   "message": "Order retrieved successfully",
   "data": {
-    "id": "hvkklv4ZSH6mtMsdweuj",
+    "id": "OGBczFBcteMGq8R8l1R6",
     "orderNumber": "ORD-00007",
     "orderStatus": "IN_PROGRESS",
     "createdAt": {
-      "_seconds": 1788792822,
+      "_seconds": 1788794923,
       "_nanoseconds": 0
     },
-    "updatedAt": 1788792822829,
+    "updatedAt": 1788794924157,
     "tableId": "tbl_meg_9",
     "restaurantId": "res_meghana",
-    "sessionId": "bCKEKQLde36nV4EYBn6t",
+    "sessionId": "f5UfzTFU1ZOj0YybQHRQ",
     "total": 204,
     "priceInfo": {
       "basePrice": 240,
@@ -44,7 +44,7 @@
     "notes": "",
     "carts": [
       {
-        "lastUpdated": 1788792822789,
+        "lastUpdated": 1788794922672,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -54,7 +54,7 @@
           "basePrice": 240
         },
         "tableId": "tbl_meg_9",
-        "sessionId": "bCKEKQLde36nV4EYBn6t",
+        "sessionId": "f5UfzTFU1ZOj0YybQHRQ",
         "restaurantId": "res_meghana",
         "items": [
           {
@@ -76,7 +76,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_paneer65",
               "lastUpdated": {
-                "_seconds": 1788792218,
+                "_seconds": 1788794313,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -122,22 +122,22 @@
             "status": "PENDING"
           }
         ],
-        "cartId": "res_meghana_tbl_meg_9_9f303fa4",
+        "cartId": "res_meghana_tbl_meg_9_da89162a",
         "status": "READY",
         "statusHistory": [
           {
             "status": "PENDING",
-            "timestamp": "2026-09-07T14:53:42.000Z",
+            "timestamp": "2026-09-07T15:28:43.000Z",
             "userId": "system"
           },
           {
             "status": "READY",
-            "timestamp": "2026-09-07T14:53:42.829Z",
+            "timestamp": "2026-09-07T15:28:44.157Z",
             "userId": "system",
             "notes": ""
           }
         ],
-        "checkoutTime": "2026-09-07T14:53:42.000Z",
+        "checkoutTime": "2026-09-07T15:28:43.000Z",
         "notes": "",
         "estimatedPrepTime": 12,
         "assignedTo": "system"

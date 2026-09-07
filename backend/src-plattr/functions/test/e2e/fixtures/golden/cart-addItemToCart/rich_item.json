@@ -5,7 +5,7 @@
     "cart": {
       "restaurantId": "res_meghana",
       "tableId": "tbl_meg_10",
-      "sessionId": "Gwe4zYTSg9eevYwFugDT",
+      "sessionId": "4LugzxTg1rWEgpFUbVpG",
       "items": [
         {
           "menuItemId": "mi_chicken_bir",
@@ -35,7 +35,7 @@
             "restaurantId": "res_meghana",
             "menuItemId": "mi_chicken_bir",
             "lastUpdated": {
-              "_seconds": 1788792218,
+              "_seconds": 1788794313,
               "_nanoseconds": 0
             },
             "priceInfo": {

@@ -3,7 +3,7 @@
   "status": "success",
   "data": {
     "cart": {
-      "lastUpdated": 1788792819342,
+      "lastUpdated": 1788794913653,
       "priceInfo": {
         "basePrice": 860,
         "finalPrice": 824,
@@ -13,7 +13,7 @@
         "totalDiscountAmount": 36
       },
       "tableId": "tbl_meg_10",
-      "sessionId": "Gwe4zYTSg9eevYwFugDT",
+      "sessionId": "4LugzxTg1rWEgpFUbVpG",
       "restaurantId": "res_meghana",
       "items": [
         {
@@ -44,7 +44,7 @@
             "restaurantId": "res_meghana",
             "menuItemId": "mi_chicken_bir",
             "lastUpdated": {
-              "_seconds": 1788792218,
+              "_seconds": 1788794313,
               "_nanoseconds": 0
             },
             "priceInfo": {
@@ -133,7 +133,7 @@
             "restaurantId": "res_meghana",
             "menuItemId": "mi_paneer65",
             "lastUpdated": {
-              "_seconds": 1788792218,
+              "_seconds": 1788794313,
               "_nanoseconds": 0
             },
             "priceInfo": {
