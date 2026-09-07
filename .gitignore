@@ -40,3 +40,7 @@ local.properties
 **/ios/Runner.xcodeproj/xcshareddata/
 **/ios/Flutter/ephemeral
 **/ios/ServiceDefinitions.json.context-layer/
+.gstack/
+
+# Secrets — never commit new copies
+**/secure_stuff/
