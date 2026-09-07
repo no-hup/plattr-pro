@@ -1,0 +1,184 @@
+{
+  "message": "Item removed from cart successfully.",
+  "status": "success",
+  "data": {
+    "cart": {
+      "tableId": "tbl_meg_8",
+      "sessionId": "SESSIONID_1",
+      "restaurantId": "res_meghana",
+      "lastUpdated": 1788801925414,
+      "priceInfo": {
+        "basePrice": 2340,
+        "finalPrice": 2268,
+        "totalVariantBasePrice": 780,
+        "totalAddonBasePrice": 120,
+        "totalDiscount": 3.08,
+        "totalDiscountAmount": 72
+      },
+      "items": [
+        {
+          "menuItemId": "mi_chicken_bir",
+          "categoryId": "mc_biryani",
+          "subcategoryIds": [
+            "ms_bir_chicken"
+          ],
+          "menuItem": {
+            "nutritionalInfo": {
+              "carbs": 33,
+              "protein": 33,
+              "fat": 20,
+              "calories": 408
+            },
+            "addons": [
+              "ma_extra_raita",
+              "ma_extra_egg",
+              "ma_extra_gravy"
+            ],
+            "allergenTags": [],
+            "variants": [
+              {
+                "id": "mv_bir_portion",
+                "name": "Portion"
+              }
+            ],
+            "restaurantId": "res_meghana",
+            "menuItemId": "mi_chicken_bir",
+            "lastUpdated": {
+              "_seconds": 1780000000,
+              "_nanoseconds": 0
+            },
+            "priceInfo": {
+              "discount": 0,
+              "finalPrice": 320,
+              "basePrice": 320
+            },
+            "primarySubcategoryId": "ms_bir_chicken",
+            "isCustomizable": true,
+            "meta": {
+              "primarySubcategoryName": "Chicken Biryani",
+              "image": "",
+              "name": "Chicken Dum Biryani",
+              "description": "Signature dum biryani",
+              "spiceLevel": 3,
+              "categoryName": "",
+              "dietaryType": "NON_VEG",
+              "isVegan": false
+            },
+            "subcategoryIds": [
+              "ms_bir_chicken"
+            ],
+            "isInStock": true,
+            "categoryId": "mc_biryani",
+            "order": 0
+          },
+          "selectedVariantsDetails": [
+            {
+              "id": "mv_bir_portion",
+              "name": "Portion",
+              "isMandatory": true,
+              "respectParentDiscount": true,
+              "selected_variant_id": "family",
+              "selected_variant_name": "Family (serves 3)",
+              "priceInfo": {
+                "basePrice": 260,
+                "finalPrice": 260,
+                "discount": 0
+              }
+            }
+          ],
+          "selectedAddonsDetails": [
+            {
+              "id": "ma_extra_raita",
+              "name": "Extra Raita",
+              "priceInfo": {
+                "discount": 0,
+                "finalPrice": 40,
+                "basePrice": 40
+              },
+              "respectParentDiscount": false
+            }
+          ],
+          "quantity": 3,
+          "priceInfo": {
+            "itemBasePrice": 960,
+            "itemFinalPrice": 960,
+            "totalVariantBasePrice": 780,
+            "totalVariantFinalPrice": 780,
+            "totalAddonBasePrice": 120,
+            "totalAddonFinalPrice": 120,
+            "totalBasePrice": 1860,
+            "finalPrice": 1860,
+            "discount": 0,
+            "discountAmount": 0
+          },
+          "cartItemId": 1,
+          "status": "PENDING"
+        },
+        {
+          "menuItemId": "mi_paneer65",
+          "categoryId": "mc_starters",
+          "subcategoryIds": [
+            "ms_st_veg"
+          ],
+          "menuItem": {
+            "nutritionalInfo": {
+              "carbs": 40,
+              "protein": 17,
+              "fat": 15,
+              "calories": 336
+            },
+            "addons": [],
+            "allergenTags": [],
+            "variants": [],
+            "restaurantId": "res_meghana",
+            "menuItemId": "mi_paneer65",
+            "lastUpdated": {
+              "_seconds": 1780000000,
+              "_nanoseconds": 0
+            },
+            "priceInfo": {
+              "discount": 15,
+              "finalPrice": 204,
+              "basePrice": 240
+            },
+            "primarySubcategoryId": "ms_st_veg",
+            "isCustomizable": false,
+            "meta": {
+              "primarySubcategoryName": "Veg Starters",
+              "image": "",
+              "name": "Paneer 65",
+              "description": "",
+              "spiceLevel": 3,
+              "categoryName": "",
+              "dietaryType": "VEG",
+              "isVegan": false
+            },
+            "subcategoryIds": [
+              "ms_st_veg"
+            ],
+            "isInStock": true,
+            "categoryId": "mc_starters",
+            "order": 3
+          },
+          "selectedVariantsDetails": [],
+          "selectedAddonsDetails": [],
+          "quantity": 2,
+          "priceInfo": {
+            "itemBasePrice": 480,
+            "itemFinalPrice": 408,
+            "totalVariantBasePrice": 0,
+            "totalVariantFinalPrice": 0,
+            "totalAddonBasePrice": 0,
+            "totalAddonFinalPrice": 0,
+            "totalBasePrice": 480,
+            "finalPrice": 408,
+            "discount": 15,
+            "discountAmount": 72
+          },
+          "cartItemId": 2,
+          "status": "PENDING"
+        }
+      ]
+    }
+  }
+}

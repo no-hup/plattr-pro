@@ -2,7 +2,7 @@
   "status": "success",
   "message": "Order status updated successfully",
   "data": {
-    "orderId": "0tnfwhNVYitvHuiOu2pq",
+    "orderId": "ORDERID_1",
     "orderStatus": "COMPLETED"
   }
 }

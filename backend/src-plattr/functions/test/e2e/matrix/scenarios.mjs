@@ -74,8 +74,10 @@ async function singleUserLifecycle(ctx) {
   if (!ctx.record(!!orderId, 'checkout returns an orderId')) return;
 
   // The bill as it stands the moment the order is placed.
-  const placed = priceInfoOf(await c.getOrder(orderId, 'placed'));
+  const placedResp = await c.getOrder(orderId, 'placed');
+  const placed = priceInfoOf(placedResp);
   if (!ctx.record(!!placed, 'order carries priceInfo')) return;
+  const placedOffer = orderOf(placedResp)?.appliedOffer || null;
   const atPlacement = {
     finalPrice: placed.finalPrice,
     chargesTotal: placed.chargesTotal ?? 0,
@@ -108,14 +110,37 @@ async function singleUserLifecycle(ctx) {
   ctx.record(ok(completed), 'waiter can complete the order', completed?.message);
 
   // THE moment that matters: what the customer actually pays.
-  const final = priceInfoOf(await c.getOrder(orderId, 'completed'));
+  const finalResp = await c.getOrder(orderId, 'completed');
+  const final = priceInfoOf(finalResp);
+  const finalOffer = orderOf(finalResp)?.appliedOffer || null;
   const finalGrand = (final?.finalPrice ?? 0) + (final?.chargesTotal ?? 0);
+
+  // COMPLETED re-evaluates offers. If a DIFFERENT offer wins there, the bill
+  // the customer agreed to is not the bill they are charged — and the usual
+  // cause is the order making itself eligible: the loyalty rule counts prior
+  // orders in the session, and by COMPLETED this order is one of them.
+  if ((placedOffer?.title || null) !== (finalOffer?.title || null)) {
+    ctx.finding({
+      title: 'The winning offer changes between checkout and COMPLETED',
+      severity: 'CRITICAL', area: 'pricing', endpoint: 'order-updateOrderStatus',
+      file: 'orders/updateOrderStatus.js re-evaluates via evaluateAndPickBestOffer',
+      detail: `The customer checked out under "${placedOffer?.title || 'no offer'}" and was billed under "${finalOffer?.title || 'no offer'}". COMPLETED re-runs the offer engine against the order's session, and a "requires N prior orders" rule counts THIS order once it exists, so the order qualifies itself for a discount it did not have at checkout. The quoted bill and the charged bill differ, and which one a customer sees depends only on when they look.`,
+      expected: `${atPlacement.grand} (quoted at checkout, offer "${placedOffer?.title || 'none'}")`,
+      actual: `${finalGrand} (charged at COMPLETED, offer "${finalOffer?.title || 'none'}")`,
+    });
+  }
+  ctx.record((placedOffer?.title || null) === (finalOffer?.title || null),
+    'the same offer applies at checkout and at COMPLETED',
+    `placed "${placedOffer?.title || 'none'}" -> completed "${finalOffer?.title || 'none'}"`);
 
   ctx.record(near(final?.finalPrice, atPlacement.finalPrice),
     'item total unchanged at COMPLETED',
     `placed ${atPlacement.finalPrice} -> completed ${final?.finalPrice}`);
 
-  if (atPlacement.chargesTotal !== 0 && !near(final?.chargesTotal ?? 0, atPlacement.chargesTotal)) {
+  // Only claim charges were DROPPED when they actually went to zero. If they
+  // are merely a different number, the base moved under them (see the offer
+  // switch above) and reporting it as a lost service charge would be wrong.
+  if (atPlacement.chargesTotal !== 0 && (final?.chargesTotal ?? 0) === 0) {
     ctx.finding({
       title: 'Charges are dropped from the bill when an order is COMPLETED',
       severity: 'CRITICAL', area: 'pricing', endpoint: 'order-updateOrderStatus',
@@ -586,7 +611,7 @@ async function orderTransitionMatrix(ctx) {
 // 10. A new party sits at a table whose previous order was never closed.
 // ═══════════════════════════════════════════════════════════════════════════
 async function staleOrderSameTable(ctx) {
-  const { restaurantId } = ctx;
+  const { restaurantId, waiter } = ctx;
   const menu = menuOf(restaurantId);
   const table = ctx.freshTable();
   if (!table) return;
@@ -600,10 +625,25 @@ async function staleOrderSameTable(ctx) {
   if (!ctx.record(ok(co1) && !!order1, 'first party checks out', co1?.message)) return;
   const total1 = priceInfoOf(await first.getOrder(order1, 'party1'))?.finalPrice ?? 0;
 
-  // Party two sits at the same table. Nobody closed the previous order.
+  // THE TURNOVER. Without this the second customer is just another person
+  // joining the sitting that is already there, and sharing an order is correct
+  // behaviour — which is why this scenario used to prove nothing. Setting the
+  // table vacant is what ends the table's sessions, so this is a real new party.
+  const turned = await waiter.setTableStatus(table, 'vacant', 'turnover');
+  if (!ctx.record(ok(turned), 'waiter can turn the table over', turned?.message)) return;
+
+  // Going vacant clears the table's OTP along with its sessions, so the waiter
+  // mints a fresh one before the next party can scan in. Skipping this is what
+  // made the first version of this fix fail with "OTP data missing".
+  const otp = await waiter.generateTableOtp(table, 'turnover_otp');
+  ctx.record(ok(otp), 'waiter can issue a fresh OTP after a turnover', otp?.message);
+
   const second = new Customer(restaurantId, '9876543211', 'Customer Two');
   const joined = await second.join(table);
-  if (!ok(joined)) { ctx.record(true, 'second party cannot join a table with a live order (acceptable)'); return; }
+  if (!ctx.record(ok(joined), 'a new party can be seated after a turnover', joined?.message)) return;
+  ctx.record(second.sessionId !== first.sessionId,
+    'the new party gets a new session',
+    `first ${first.sessionId}, second ${second.sessionId}`);
 
   await second.addItem(menu.simple, 'party2');
   const co2 = await second.checkout('party2');
@@ -616,12 +656,12 @@ async function staleOrderSameTable(ctx) {
       title: 'A new party inherits the previous party\'s unpaid order',
       severity: 'CRITICAL', area: 'lifecycle', endpoint: 'cart-checkoutCart',
       file: 'orders/createOrUpdateOrder.js:89-113',
-      detail: 'Orders are grouped by tableId alone, never by sessionId. The second party\'s cart was appended to the first party\'s still-open order, so the new customer\'s bill now includes food they did not order, and the order\'s sessionId was overwritten with theirs. On a table that is not properly closed between sittings this charges the wrong people.',
+      detail: 'The table was explicitly turned over — set vacant, which ends the table\'s sessions — and a genuinely new customer with a new session still had their cart appended to the previous party\'s open order. The new customer\'s bill includes food they did not order. This is the version that matters: it is not two people sharing one sitting, it is one party being charged for another.',
       expected: `a new order for session ${second.sessionId}`,
       actual: `reused order ${order1}; total went ${total1} -> ${merged?.finalPrice}`,
     });
   }
-  ctx.record(order2 !== order1, 'a new party gets its own order',
+  ctx.record(order2 !== order1, 'a new party gets its own order after a turnover',
     order2 === order1 ? `both parties on ${order1}` : `${order1} then ${order2}`);
 }
 
@@ -742,6 +782,165 @@ async function crossAppAgreement(ctx) {
   }
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// 12. Quantity, and the two meanings of "price" on an order.
+//
+// Every other scenario adds quantity 1, which makes per-unit and line-total
+// indistinguishable. That blind spot is why the June merge could change
+// order.items[].priceInfo from a line total to a PER-UNIT price and still pass
+// every layer of this harness untouched. The two shapes now coexist in one
+// response — order.items[] is per-unit, order.carts[].items[] is a line total —
+// and the consumer feeds BOTH into the same OrderItem model, which renders
+// price × quantity. This scenario is the coverage that was missing.
+// ════════════════════════════════════════════════════════════════════════════
+async function itemPriceShape(ctx) {
+  const { restaurantId, waiter } = ctx;
+  const menu = menuOf(restaurantId);
+  const c = new Customer(restaurantId);
+  if (!ctx.record(ok(await c.join(ctx.freshTable())), 'customer joins for price-shape check')) return;
+
+  const RICH_QTY = 3;
+  const SIMPLE_QTY = 2;
+  const addRich = await c.addItem({ ...menu.rich, quantity: RICH_QTY }, 'qty3_rich');
+  const addSimple = await c.addItem({ ...menu.simple, quantity: SIMPLE_QTY }, 'qty2_simple');
+  if (!ctx.record(ok(addRich) && ok(addSimple), 'multi-quantity items add to the cart',
+    addRich?.message || addSimple?.message)) return;
+
+  // Removal is on the same pricing path (the merge added jest coverage for the
+  // decrement bug); exercise it here so the endpoint has a live fixture too.
+  // Removing at quantity 2 DECREMENTS (the branch that carried the pricing bug),
+  // removing again at quantity 1 splices the line out. Do both, so the cart is
+  // back to the two lines the assertions below expect.
+  const addThird = await c.addItem({ ...menu.second, quantity: 2 }, 'qty2_second');
+  if (ok(addThird)) {
+    const dec = await c.removeItem(menu.second.menuItemId, undefined, 'qty_decrement');
+    ctx.record(ok(dec), 'a quantity-2 line can be decremented', dec?.message);
+    const gone = await c.removeItem(menu.second.menuItemId, undefined, 'qty_remove_last');
+    ctx.record(ok(gone), 'the last unit of a line can be removed', gone?.message);
+  }
+
+  // The cart is the reference. Its per-line priceInfo is a LINE TOTAL: quantity,
+  // variants and addons are all already baked in by buildCartItemPriceInfoForQuantity.
+  const cartResp = await c.getCart('qty_cart');
+  const cart = cartResp?.data?.cart || cartResp?.data;
+  const cartItems = cart?.items || [];
+  if (!ctx.record(cartItems.length === 2, 'cart holds both multi-quantity lines',
+    `got ${cartItems.length}`)) return;
+
+  const byMenuId = new Map(cartItems.map(i => [i.menuItemId, i]));
+  const cartLineTotal = cartItems.reduce((s, i) => s + (i.priceInfo?.finalPrice || 0), 0);
+  ctx.record(near(cart?.priceInfo?.finalPrice, cartLineTotal),
+    'cart total equals the sum of its line totals',
+    `cart ${cart?.priceInfo?.finalPrice}, lines ${cartLineTotal}`);
+
+  // Quantity must actually move the money. If a qty-3 line costs the same as a
+  // qty-1 line, quantity is being dropped somewhere in the pricing path.
+  const richCart = byMenuId.get(menu.rich.menuItemId);
+  if (richCart) {
+    const unitish = (richCart.priceInfo?.itemFinalPrice || 0) / RICH_QTY;
+    ctx.record(richCart.quantity === RICH_QTY, 'cart preserves the requested quantity',
+      `asked ${RICH_QTY}, got ${richCart.quantity}`);
+    ctx.record(unitish > 0 && (richCart.priceInfo?.itemFinalPrice || 0) > unitish,
+      'a quantity-3 line costs more than one unit',
+      `line ${richCart.priceInfo?.itemFinalPrice}, unit ${unitish}`);
+  }
+
+  const co = await c.checkout('qty_checkout');
+  const orderId = orderIdOf(co);
+  if (!ctx.record(ok(co) && !!orderId, 'multi-quantity checkout succeeds', co?.message)) return;
+
+  const orderResp = await c.getOrder(orderId, 'qty_order');
+  const order = orderOf(orderResp);
+  const flatItems = order?.items || [];
+  const snapItems = (order?.carts || []).flatMap(c2 => c2.items || []);
+  if (!ctx.record(flatItems.length > 0, 'order exposes a flat items list')) return;
+
+  // ── The per-unit contract ────────────────────────────────────────────────
+  // order.items[].price is per-unit AND all-inclusive: the cart line total
+  // (which already contains quantity, variants and addons) divided by quantity.
+  // Prove it against the cart line it came from rather than trusting the
+  // comment — the base-item-only variant of this field was live until recently
+  // and reads identically at quantity 1.
+  for (const fi of flatItems) {
+    const src = byMenuId.get(fi.menuItemId);
+    if (!src) continue;
+    const qty = fi.quantity || 1;
+    const perUnitLine = (src.priceInfo?.finalPrice || 0) / qty;
+    const baseOnly = (src.priceInfo?.itemFinalPrice || 0) / qty;
+    ctx.record(near(fi.price, perUnitLine, 0.5),
+      `order item "${fi.name}" carries a PER-UNIT, ALL-INCLUSIVE price`,
+      `price ${fi.price}, cart line/qty ${perUnitLine} (base-only would be ${baseOnly})`);
+  }
+
+  // ── The invariant that actually protects the bill ────────────────────────
+  // A client must be able to rebuild the order total from the item list it is
+  // given. Variants and addons are emitted per-unit alongside the item, so the
+  // whole line is (item + variants + addons) x quantity.
+  // price is all-inclusive, so variants[] and addons[] must NOT be added — they
+  // are display metadata that repeats money already inside price. Adding them
+  // is the live trap: on res_meghana it turns 1860 into 2760.
+  const sumDetails = (arr) => (arr || []).reduce((s, d) => s + (d?.priceInfo?.finalPrice || 0), 0);
+  const rebuilt = flatItems.reduce((s, fi) => s + (fi.price || 0) * (fi.quantity || 1), 0);
+  const doubleCounted = flatItems.reduce((s, fi) =>
+    s + ((fi.price || 0) + sumDetails(fi.variants) + sumDetails(fi.addons)) * (fi.quantity || 1), 0);
+  const preOffer = (order?.priceInfo?.finalPrice || 0) + (order?.priceInfo?.offerDiscount || 0);
+  const rebuiltOk = near(rebuilt, preOffer, 1);
+  ctx.record(rebuiltOk,
+    'the flat item list rebuilds the pre-offer order total',
+    `rebuilt ${rebuilt.toFixed(2)}, order pre-offer ${preOffer.toFixed(2)}`);
+
+  // Guard the other direction: if price ever goes back to base-item-only, the
+  // additive form starts matching and this assertion is what notices.
+  if (doubleCounted > rebuilt + 0.5) {
+    ctx.record(!near(doubleCounted, preOffer, 1),
+      'adding variants/addons on top of price does NOT also reconcile',
+      `additive ${doubleCounted.toFixed(2)} vs pre-offer ${preOffer.toFixed(2)} — if these match, price is base-only again`);
+  }
+  if (!rebuiltOk) {
+    ctx.finding({
+      title: 'order.items[] cannot reconstruct the order total once quantity > 1',
+      severity: 'HIGH', area: 'pricing', endpoint: 'order-getOrder',
+      file: 'orders/createOrUpdateOrder.js normalizeCartItemsForOrder',
+      detail: 'Rebuilding the bill from the flat item list — (price + variants + addons) x quantity — does not reach the order total. Any client that itemises the bill from this list shows a set of line prices that do not add up to what the customer is charged.',
+      expected: `${preOffer.toFixed(2)} (order pre-offer total)`,
+      actual: `${rebuilt.toFixed(2)} (sum of item lines)`,
+    });
+  }
+
+  // ── The two lists must stay in step ──────────────────────────────────────
+  // The same item appears twice in one response in two different UNITS:
+  // carts[].items[].priceInfo.finalPrice is a line total, items[].price is
+  // per-unit. That is by design, so the invariant is not equality — it is that
+  // one converts into the other. This catches either list drifting alone.
+  for (const si of snapItems) {
+    const fi = flatItems.find(f => f.menuItemId === si.menuItemId);
+    if (!fi) continue;
+    const qty = si.quantity || 1;
+    if (qty < 2) continue;                    // at qty 1 the units are identical
+    const snapLine = si.priceInfo?.finalPrice || 0;
+    const fromFlat = (fi.price || 0) * qty;
+    const agree = near(snapLine, fromFlat, 0.5);
+    ctx.record(agree,
+      `"${fi.name}" reads the same from both lists once units are reconciled`,
+      `carts[].items[] line ${snapLine}, items[].price x qty ${fromFlat}`);
+    if (!agree) {
+      ctx.finding({
+        title: 'The two item lists on one order disagree once quantity > 1',
+        severity: 'HIGH', area: 'pricing', endpoint: 'order-getOrder',
+        file: 'orders/createOrUpdateOrder.js normalizeCartItemsForOrder',
+        detail: 'order.items[].price is per-unit and order.carts[].items[].priceInfo.finalPrice is a line total. They must satisfy price x quantity == line total; they do not. One of the two lists is being built from a different price basis than the other, so two screens reading the same order show different money.',
+        expected: `${snapLine} (cart line total)`,
+        actual: `${fromFlat} (items[].price x quantity)`,
+      });
+    }
+  }
+
+  // The waiter's table list is the app's home screen and had no fixture at all
+  // until now, so its strict TableModel was never contract-checked.
+  const tables = await waiter.tables('qty_tables');
+  ctx.record(ok(tables), 'waiter can list tables', tables?.message);
+}
+
 export const SCENARIOS = [
   { id: 'single-user-lifecycle', tables: 1, run: singleUserLifecycle },
   { id: 'multi-cart-order', tables: 1, run: multiCartOrder },
@@ -754,4 +953,5 @@ export const SCENARIOS = [
   { id: 'stale-order-same-table', tables: 1, run: staleOrderSameTable },
   { id: 'staff-load', tables: 4, run: staffLoad },
   { id: 'cross-app-agreement', tables: 1, run: crossAppAgreement },
+  { id: 'item-price-shape', tables: 1, run: itemPriceShape },
 ];

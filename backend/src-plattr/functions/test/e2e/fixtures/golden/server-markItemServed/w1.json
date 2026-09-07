@@ -1,0 +1,10 @@
+{
+  "status": "success",
+  "message": "Item marked as served",
+  "data": {
+    "orderId": "ORDERID_1",
+    "menuItemId": "mi_paneer65",
+    "cartItemId": 1,
+    "status": "SERVED"
+  }
+}

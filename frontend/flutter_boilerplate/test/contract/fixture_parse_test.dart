@@ -142,4 +142,73 @@ void main() {
       });
     }
   });
+
+  // ── What an order line actually costs ──────────────────────────────────────
+  // The June 2026 merge made order.items[].priceInfo PER-UNIT while
+  // order.carts[].items[].priceInfo stayed a LINE TOTAL. Both lists are
+  // normalised into the same OrderItem and rendered by the same OrderItemTile,
+  // which shows `price * quantity`. Until then every fixture used quantity 1,
+  // where the two shapes are indistinguishable — which is exactly why the
+  // change passed every layer of the harness. These tests need a fixture with
+  // quantity > 1 to say anything, and the item-price-shape scenario captures one.
+  group('consumer order line prices', () {
+    for (final file in orderFixtures) {
+      final name = file.uri.pathSegments.last;
+
+      test('$name — the flat item list rebuilds the order total', () {
+        final body = _read(file);
+        if (body['status'] != 'success') return;
+        final raw = (body['data'] as Map).cast<String, dynamic>();
+        final priceInfo = raw['priceInfo'] as Map<String, dynamic>?;
+        if (priceInfo == null) return;
+
+        final parsed = OrderResponse.fromJson(body);
+        final order = parsed.data;
+        if (order == null || order.items.isEmpty) return;
+
+        // price is per-unit AND all-inclusive: variants and addons are already
+        // inside it. They are still emitted alongside as display metadata, so
+        // adding them here would double-count the same money.
+        var rebuilt = 0.0;
+        for (final item in order.items) {
+          rebuilt += item.price * item.quantity;
+        }
+
+        final finalPrice = (priceInfo['finalPrice'] as num?)?.toDouble() ?? 0.0;
+        final offerDiscount =
+            (priceInfo['offerDiscount'] as num?)?.toDouble() ?? 0.0;
+
+        expect(rebuilt, closeTo(finalPrice + offerDiscount, 1.0),
+            reason: 'the itemised lines do not add up to the bill the customer '
+                'is shown, so the order screen cannot be reconciled by hand');
+      });
+
+      test('$name — both item lists agree on what a unit costs', () {
+        final body = _read(file);
+        if (body['status'] != 'success') return;
+        final parsed = OrderResponse.fromJson(body);
+        final order = parsed.data;
+        if (order == null) return;
+
+        // order.items[] is per-unit; order.carts[].items[] arrives as a line
+        // total and _sanitizeCartItems divides it back down. After that both
+        // lists feed the same OrderItemTile, which renders price x quantity,
+        // so a disagreement here is two different bills on one screen.
+        for (final cart in order.carts) {
+          for (final histItem in cart.items) {
+            if (histItem.quantity < 2) continue;   // units coincide at qty 1
+            final flat = order.items
+                .where((i) => i.menuItemId == histItem.menuItemId)
+                .toList();
+            if (flat.isEmpty) continue;
+
+            expect(histItem.price, closeTo(flat.first.price, 0.01),
+                reason: 'the cart-history list and the flat item list price the '
+                    'same unit differently, so the order screen contradicts '
+                    'itself at quantity ${histItem.quantity}');
+          }
+        }
+      });
+    }
+  });
 }

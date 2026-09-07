@@ -2,20 +2,20 @@
   "status": "success",
   "message": "Order retrieved successfully",
   "data": {
-    "id": "nr8TEUT8yeQP2Pizl9D5",
+    "id": "ID_1",
     "orderNumber": "ORD-00004",
     "orderStatus": "IN_PROGRESS",
     "createdAt": {
-      "_seconds": 1788794916,
+      "_seconds": 1780000000,
       "_nanoseconds": 0
     },
     "updatedAt": {
-      "_seconds": 1788794916,
+      "_seconds": 1780000000,
       "_nanoseconds": 0
     },
     "tableId": "tbl_meg_6",
     "restaurantId": "res_meghana",
-    "sessionId": "SfwJBz2yG047YATuzVp6",
+    "sessionId": "SESSIONID_2",
     "total": 204,
     "priceInfo": {
       "basePrice": 240,
@@ -56,7 +56,7 @@
           "basePrice": 240
         },
         "tableId": "tbl_meg_6",
-        "sessionId": "SfwJBz2yG047YATuzVp6",
+        "sessionId": "SESSIONID_2",
         "restaurantId": "res_meghana",
         "items": [
           {
@@ -78,7 +78,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_paneer65",
               "lastUpdated": {
-                "_seconds": 1788794313,
+                "_seconds": 1780000000,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -124,17 +124,17 @@
             "status": "PENDING"
           }
         ],
-        "lastUpdated": "2026-09-07T15:28:36.591Z",
-        "cartId": "res_meghana_tbl_meg_6_d6cd9371",
+        "lastUpdated": "2026-01-01T00:00:00.000Z",
+        "cartId": "res_meghana_tbl_meg_6_CART",
         "status": "PENDING",
         "statusHistory": [
           {
             "status": "PENDING",
-            "timestamp": "2026-09-07T15:28:36.000Z",
+            "timestamp": "2026-01-01T00:00:00.000Z",
             "userId": "system"
           }
         ],
-        "checkoutTime": "2026-09-07T15:28:36.000Z",
+        "checkoutTime": "2026-01-01T00:00:00.000Z",
         "notes": "",
         "estimatedPrepTime": 12,
         "assignedTo": null

@@ -47,20 +47,33 @@ function walk(dir, out = []) {
 }
 
 /**
- * Pull `Class _$ClassFromJson(...) => Class( field: json['k'] as T, ... )` and
- * record which keys are cast without a `?`, i.e. which ones throw when absent.
+ * Pull the generated `fromJson` bodies and record which keys are cast without a
+ * `?`, i.e. which ones throw when absent.
+ *
+ * json_serializable emits TWO shapes and we must read both. The arrow form
+ * `Class _$ClassFromJson(json) => Class(...)` is the common one; the block form
+ * `Class _$ClassFromJson(json) { $checkKeys(...); return Class(...); }` is what
+ * it emits once a model declares required/disallow-null keys — i.e. exactly the
+ * STRICTEST models, the ones most likely to hard-crash on a field change.
+ * Matching only the arrow form silently skipped all of platter_core's menu
+ * models plus the waiter's TableModel, which is how `primaryCustomer` landed
+ * with no contract coverage at all.
  */
 function parseGenerated(file) {
   const src = readFileSync(file, 'utf8');
   const models = {};
-  const fnRe = /(\w+)\s+_\$(\w+)FromJson\(Map<String, dynamic> json\)\s*=>\s*\1\(([\s\S]*?)\n\s*\);/g;
+  const fnRe = /(\w+)\s+_\$+(\w+)FromJson\(Map(?:<String, dynamic>)? json\)\s*(?:=>\s*\1\(|\{[\s\S]*?\breturn\s+\1\()([\s\S]*?)\n\s*\);/g;
   let m;
   while ((m = fnRe.exec(src))) {
     const className = m[1];
     const body = m[3];
     const required = [];
     const optional = [];
-    const fieldRe = /(\w+):\s*(?:\(\s*)?json\['([^']+)'\]\s*as\s*([A-Za-z<>, ]+?)(\?)?\s*(?:\)|,|\))/g;
+    // The type must be matched as a whole, generics included: a lazy
+    // `[A-Za-z<>, ]+?` stops at the comma inside `Map<String, dynamic>`, reads
+    // the type as `Map<String`, misses the trailing `?` and reports a nullable
+    // field as required. That is how `primaryCustomer` came back as a violation.
+    const fieldRe = /(\w+):\s*(?:\(\s*)?json\['([^']+)'\]\s*as\s+([A-Za-z_]\w*(?:<(?:[^<>]|<[^<>]*>)*>)?)(\?)?/g;
     let f;
     while ((f = fieldRe.exec(body))) {
       const [, , key, type, nullable] = f;
@@ -92,6 +105,11 @@ const BINDINGS = [
   { endpoint: 'order-getActiveOrdersForRestaurant', path: 'data.orders[].carts[].items[]', model: 'waiter.CartItemSummary' },
   { endpoint: 'order-getActiveCartsForKitchen', path: 'data.orders[]', model: 'waiter.OrderSummary' },
   { endpoint: 'order-getServedCartsForServer', path: 'data.servedCarts[]', model: 'waiter.ServedCart' },
+  // The waiter's home screen. TableModel is $checkKeys-guarded (number, id,
+  // capacity, status are all required AND disallow null) while the backend
+  // emits `capacity: tableData.capacity || null`, so this binding is the one
+  // that catches a table doc without a capacity before it blanks the screen.
+  { endpoint: 'server-getTables', path: 'data.tables[]', model: 'waiter.TableModel' },
 ];
 
 function selectPath(root, path) {
@@ -134,6 +152,10 @@ const coverage = [];   // per binding, so an unexercised model is visible, not s
 for (const b of BINDINGS) {
   const model = MODELS[b.model];
   if (!model) {
+    // Report it. A renamed or deleted model used to `continue` before the
+    // coverage push, so it was neither a violation nor a gap — the binding
+    // just quietly stopped checking anything.
+    coverage.push({ ...b, nodes: 0, reason: 'no generated parser found for this model' });
     console.log(`  ?  no generated parser found for ${b.model} (skipped)`);
     continue;
   }

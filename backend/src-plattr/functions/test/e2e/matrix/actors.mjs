@@ -37,6 +37,47 @@ function capture(endpoint, label, resp) {
   if (!slot.has(label)) slot.set(label, resp);
 }
 
+/**
+ * Fixtures are committed, so a re-capture diff is meant to be REVIEWABLE: it
+ * should show a changed response shape or a changed price and nothing else.
+ * Raw captures do the opposite — every run mints new Firestore ids and new
+ * wall-clock timestamps, so all 117 files churn and the real change drowns.
+ * (The June per-unit pricing change produced a 1365-line fixture diff that was
+ * 100% ids and seconds, and zero lines of the actual change.)
+ *
+ * So volatile values are replaced on write with stable placeholders. Equal
+ * values still map to equal placeholders, which keeps the relationships a
+ * reader cares about — this cart belongs to that session — intact and visible.
+ * Types and structure are untouched, so a field that stops being a timestamp,
+ * or an id that turns into an object, still shows up as a diff.
+ */
+const STABLE_EPOCH = 1780000000;
+const STABLE_ISO = '2026-01-01T00:00:00.000Z';
+const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z?$/;
+// Firestore auto-ids (20 chars) and the hex suffix on a generated cartId.
+const AUTO_ID_RE = /^[A-Za-z0-9]{20}$/;
+const CART_ID_RE = /^(.*_)[0-9a-f]{8}$/;
+
+function stabilize(value, key, ids) {
+  if (Array.isArray(value)) return value.map(v => stabilize(v, key, ids));
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      out[k] = k === '_seconds' && typeof v === 'number' ? STABLE_EPOCH : stabilize(v, k, ids);
+    }
+    return out;
+  }
+  if (typeof value !== 'string') return value;
+  if (ISO_RE.test(value)) return STABLE_ISO;
+  const cart = CART_ID_RE.exec(value);
+  if (cart) return `${cart[1]}CART`;
+  if (AUTO_ID_RE.test(value)) {
+    if (!ids.has(value)) ids.set(value, `${(key || 'ID').toUpperCase()}_${ids.size + 1}`);
+    return ids.get(value);
+  }
+  return value;
+}
+
 export function writeFixtures() {
   let count = 0;
   for (const [endpoint, slot] of captured) {
@@ -45,7 +86,13 @@ export function writeFixtures() {
     for (const [label, resp] of slot) {
       const safe = label.replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 80);
       const { _httpStatus, ...clean } = resp;
-      writeFileSync(resolve(dir, `${safe}.json`), JSON.stringify(clean, null, 2));
+      // Numbering is per FILE, not per run: a whole-matrix run and a single
+      // `--scenario` run must produce byte-identical fixtures, or "re-capture
+      // and read the diff" only works when you happen to re-run the same scope.
+      // The cost is that the same session in two files gets two placeholders;
+      // within a file — where it actually gets read — identity is preserved.
+      const ids = new Map();
+      writeFileSync(resolve(dir, `${safe}.json`), JSON.stringify(stabilize(clean, null, ids), null, 2));
       count++;
     }
   }
@@ -122,8 +169,10 @@ export class Customer {
     return invoke('offers-getApplicableOffers', { ...this.base }, label || 'offers');
   }
 
-  removeItem(cartItemId) {
-    return invoke('cart-removeItemFromCart', { ...this.base, cartItemId }, 'remove');
+  /** validateRemoveItemFields requires menuItemId; cartItemId alone is rejected. */
+  removeItem(menuItemId, cartItemId, label) {
+    return invoke('cart-removeItemFromCart',
+      { ...this.base, menuItemId, cartItemId }, label || 'remove');
   }
 }
 
@@ -203,6 +252,25 @@ export class Waiter extends Staff {
   tables(label) {
     return invoke('server-getTables', { restaurantId: this.restaurantId, sessionId: this.sessionId }, label || 'tables');
   }
+
+  /**
+   * Turning a table over. Setting it 'vacant' is what actually ends the table's
+   * sessions (table.js calls sessionService.endTableSessions), so this is the
+   * only way a scenario can stage a genuinely new sitting rather than a second
+   * person joining the party that is already seated.
+   */
+  /** Setting a table vacant clears its OTP, so a new party needs a fresh one. */
+  generateTableOtp(tableId, label) {
+    return invoke('server-generateTableOTP', {
+      restaurantId: this.restaurantId, tableId, sessionId: this.sessionId,
+    }, label || 'table_otp');
+  }
+
+  setTableStatus(tableId, status, label) {
+    return invoke('table-updateTableStatus', {
+      restaurantId: this.restaurantId, tableId, status, sessionId: this.sessionId,
+    }, label || `table_${status}`);
+  }
 }
 
 // ── Small helpers scenarios keep needing ────────────────────────────────────
@@ -210,9 +278,11 @@ export const orderIdOf = (checkoutResp) =>
   checkoutResp?.data?.order?.orderId || checkoutResp?.data?.orderId || null;
 
 /**
- * order-getOrder returns the order's fields FLAT under `data`, while
- * server-getOrderDetails nests them under `data.order`. Callers must accept
- * both, which is exactly the ambiguity the Flutter models have to live with.
+ * Both order-getOrder and server-getOrderDetails return the order's fields FLAT
+ * under `data` — verified against captured fixtures, not assumed. This accessor
+ * still tolerates a nested `data.order` because the two endpoints disagree on
+ * everything else (priceInfo vs a scalar total, `id` vs `orderId` in lists) and
+ * a caller that has to handle both shapes should not also have to guess.
  */
 export const orderOf = (resp) => resp?.data?.order || resp?.data || null;
 

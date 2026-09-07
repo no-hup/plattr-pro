@@ -2,20 +2,20 @@
   "status": "success",
   "message": "Order retrieved successfully",
   "data": {
-    "id": "HMrvMWG07p7xAvpUJUwP",
+    "id": "ID_1",
     "orderNumber": "ORD-00001",
     "orderStatus": "IN_PROGRESS",
     "createdAt": {
-      "_seconds": 1788794913,
+      "_seconds": 1780000000,
       "_nanoseconds": 0
     },
     "updatedAt": {
-      "_seconds": 1788794913,
+      "_seconds": 1780000000,
       "_nanoseconds": 0
     },
     "tableId": "tbl_meg_10",
     "restaurantId": "res_meghana",
-    "sessionId": "4LugzxTg1rWEgpFUbVpG",
+    "sessionId": "SESSIONID_2",
     "total": 724,
     "priceInfo": {
       "basePrice": 860,
@@ -46,7 +46,7 @@
         "menuItemId": "mi_chicken_bir",
         "name": "Chicken Dum Biryani",
         "quantity": 1,
-        "price": 320,
+        "price": 620,
         "variants": [
           {
             "id": "mv_bir_portion",
@@ -88,7 +88,7 @@
     "carts": [
       {
         "tableId": "tbl_meg_10",
-        "sessionId": "4LugzxTg1rWEgpFUbVpG",
+        "sessionId": "SESSIONID_2",
         "restaurantId": "res_meghana",
         "priceInfo": {
           "basePrice": 860,
@@ -127,7 +127,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_chicken_bir",
               "lastUpdated": {
-                "_seconds": 1788794313,
+                "_seconds": 1780000000,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -216,7 +216,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_paneer65",
               "lastUpdated": {
-                "_seconds": 1788794313,
+                "_seconds": 1780000000,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -262,17 +262,17 @@
             "status": "PENDING"
           }
         ],
-        "lastUpdated": "2026-09-07T15:28:33.675Z",
-        "cartId": "res_meghana_tbl_meg_10_ad7d34ae",
+        "lastUpdated": "2026-01-01T00:00:00.000Z",
+        "cartId": "res_meghana_tbl_meg_10_CART",
         "status": "PENDING",
         "statusHistory": [
           {
             "status": "PENDING",
-            "timestamp": "2026-09-07T15:28:33.000Z",
+            "timestamp": "2026-01-01T00:00:00.000Z",
             "userId": "system"
           }
         ],
-        "checkoutTime": "2026-09-07T15:28:33.000Z",
+        "checkoutTime": "2026-01-01T00:00:00.000Z",
         "notes": "",
         "estimatedPrepTime": 14,
         "assignedTo": null

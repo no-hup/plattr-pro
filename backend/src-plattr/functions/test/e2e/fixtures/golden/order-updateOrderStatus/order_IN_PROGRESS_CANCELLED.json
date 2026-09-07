@@ -2,7 +2,7 @@
   "status": "success",
   "message": "Order status updated successfully",
   "data": {
-    "orderId": "YncqANB5oFtXF8MrE13y",
+    "orderId": "ORDERID_1",
     "orderStatus": "CANCELLED"
   }
 }

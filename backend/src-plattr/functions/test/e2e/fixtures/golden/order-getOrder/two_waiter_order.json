@@ -2,17 +2,17 @@
   "status": "success",
   "message": "Order retrieved successfully",
   "data": {
-    "id": "OGBczFBcteMGq8R8l1R6",
+    "id": "ID_1",
     "orderNumber": "ORD-00007",
     "orderStatus": "IN_PROGRESS",
     "createdAt": {
-      "_seconds": 1788794923,
+      "_seconds": 1780000000,
       "_nanoseconds": 0
     },
-    "updatedAt": 1788794924157,
+    "updatedAt": 1788801908003,
     "tableId": "tbl_meg_9",
     "restaurantId": "res_meghana",
-    "sessionId": "f5UfzTFU1ZOj0YybQHRQ",
+    "sessionId": "SESSIONID_2",
     "total": 204,
     "priceInfo": {
       "basePrice": 240,
@@ -44,7 +44,7 @@
     "notes": "",
     "carts": [
       {
-        "lastUpdated": 1788794922672,
+        "lastUpdated": 1788801907083,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -54,7 +54,7 @@
           "basePrice": 240
         },
         "tableId": "tbl_meg_9",
-        "sessionId": "f5UfzTFU1ZOj0YybQHRQ",
+        "sessionId": "SESSIONID_2",
         "restaurantId": "res_meghana",
         "items": [
           {
@@ -76,7 +76,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_paneer65",
               "lastUpdated": {
-                "_seconds": 1788794313,
+                "_seconds": 1780000000,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -119,25 +119,25 @@
               "discountAmount": 36
             },
             "cartItemId": 1,
-            "status": "PENDING"
+            "status": "READY"
           }
         ],
-        "cartId": "res_meghana_tbl_meg_9_da89162a",
+        "cartId": "res_meghana_tbl_meg_9_CART",
         "status": "READY",
         "statusHistory": [
           {
             "status": "PENDING",
-            "timestamp": "2026-09-07T15:28:43.000Z",
+            "timestamp": "2026-01-01T00:00:00.000Z",
             "userId": "system"
           },
           {
             "status": "READY",
-            "timestamp": "2026-09-07T15:28:44.157Z",
+            "timestamp": "2026-01-01T00:00:00.000Z",
             "userId": "system",
             "notes": ""
           }
         ],
-        "checkoutTime": "2026-09-07T15:28:43.000Z",
+        "checkoutTime": "2026-01-01T00:00:00.000Z",
         "notes": "",
         "estimatedPrepTime": 12,
         "assignedTo": "system"

@@ -2,17 +2,17 @@
   "status": "success",
   "message": "Order retrieved successfully",
   "data": {
-    "id": "HMrvMWG07p7xAvpUJUwP",
+    "id": "ID_1",
     "orderNumber": "ORD-00001",
     "orderStatus": "IN_PROGRESS",
     "createdAt": {
-      "_seconds": 1788794913,
+      "_seconds": 1780000000,
       "_nanoseconds": 0
     },
-    "updatedAt": 1788794914585,
+    "updatedAt": 1788801895701,
     "tableId": "tbl_meg_10",
     "restaurantId": "res_meghana",
-    "sessionId": "4LugzxTg1rWEgpFUbVpG",
+    "sessionId": "SESSIONID_2",
     "total": 724,
     "priceInfo": {
       "basePrice": 860,
@@ -43,7 +43,7 @@
         "menuItemId": "mi_chicken_bir",
         "name": "Chicken Dum Biryani",
         "quantity": 1,
-        "price": 320,
+        "price": 620,
         "variants": [
           {
             "id": "mv_bir_portion",
@@ -85,7 +85,7 @@
     "carts": [
       {
         "tableId": "tbl_meg_10",
-        "sessionId": "4LugzxTg1rWEgpFUbVpG",
+        "sessionId": "SESSIONID_2",
         "restaurantId": "res_meghana",
         "priceInfo": {
           "basePrice": 860,
@@ -124,7 +124,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_chicken_bir",
               "lastUpdated": {
-                "_seconds": 1788794313,
+                "_seconds": 1780000000,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -192,7 +192,7 @@
               "discountAmount": 0
             },
             "cartItemId": 1,
-            "status": "PENDING"
+            "status": "READY"
           },
           {
             "menuItemId": "mi_paneer65",
@@ -213,7 +213,7 @@
               "restaurantId": "res_meghana",
               "menuItemId": "mi_paneer65",
               "lastUpdated": {
-                "_seconds": 1788794313,
+                "_seconds": 1780000000,
                 "_nanoseconds": 0
               },
               "priceInfo": {
@@ -256,32 +256,32 @@
               "discountAmount": 36
             },
             "cartItemId": 2,
-            "status": "PENDING"
+            "status": "READY"
           }
         ],
-        "lastUpdated": "2026-09-07T15:28:33.675Z",
-        "cartId": "res_meghana_tbl_meg_10_ad7d34ae",
+        "lastUpdated": "2026-01-01T00:00:00.000Z",
+        "cartId": "res_meghana_tbl_meg_10_CART",
         "status": "READY",
         "statusHistory": [
           {
             "status": "PENDING",
-            "timestamp": "2026-09-07T15:28:33.000Z",
+            "timestamp": "2026-01-01T00:00:00.000Z",
             "userId": "system"
           },
           {
             "status": "PREPARING",
-            "timestamp": "2026-09-07T15:28:34.561Z",
+            "timestamp": "2026-01-01T00:00:00.000Z",
             "userId": "system",
             "notes": ""
           },
           {
             "status": "READY",
-            "timestamp": "2026-09-07T15:28:34.585Z",
+            "timestamp": "2026-01-01T00:00:00.000Z",
             "userId": "system",
             "notes": ""
           }
         ],
-        "checkoutTime": "2026-09-07T15:28:33.000Z",
+        "checkoutTime": "2026-01-01T00:00:00.000Z",
         "notes": "",
         "estimatedPrepTime": 14,
         "assignedTo": "system"

@@ -1,0 +1,11 @@
+{
+  "status": "success",
+  "message": "Table status updated successfully",
+  "data": {
+    "tableId": "tbl_meg_7",
+    "tableNumber": "7",
+    "previousStatus": "active",
+    "currentStatus": "vacant",
+    "changed": true
+  }
+}
