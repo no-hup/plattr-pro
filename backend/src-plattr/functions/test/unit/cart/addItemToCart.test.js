@@ -4,7 +4,7 @@ const cartFixtures = require('../../fixtures/cart.fixtures');
 const menuItemFixtures = require('../../fixtures/menuItem.fixtures');
 
 // Mock specific constants if needed, otherwise assume strings
-const FULFILLMENT_STATUS = { PENDING: 'PENDING' };
+const FULFILLMENT_STATUS = { PENDING: 'PENDING', CANCELLED: 'CANCELLED' };
 
 describe('addItemToCart Tests (Phase 5 & 6)', () => {
     let mockData;

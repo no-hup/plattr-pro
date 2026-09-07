@@ -3,20 +3,10 @@ const admin = require('../admin/initializeAdmin');
 const db = admin.firestore();
 const { Timestamp } = require("firebase-admin/firestore");
 const { FULFILLMENT_STATUS } = require('../orders/orderConstants');
-const { mapCartStatus } = require('../utils/statusUtils');
+const { mapCartStatus, isValidCartTransition } = require('../utils/statusUtils');
 const OrderInputValidation = require('../orders/orderInputValidation');
 const timestamp = require('../utils/timestamp');
 const { validateStaffSession } = require('../adminApp/auth');
-
-// Valid status transitions map
-const VALID_TRANSITIONS = {
-  [FULFILLMENT_STATUS.PENDING]: [FULFILLMENT_STATUS.PREPARING, FULFILLMENT_STATUS.READY, FULFILLMENT_STATUS.CANCELLED],
-  [FULFILLMENT_STATUS.PREPARING]: [FULFILLMENT_STATUS.READY, FULFILLMENT_STATUS.CANCELLED],
-  [FULFILLMENT_STATUS.READY]: [FULFILLMENT_STATUS.SERVED, FULFILLMENT_STATUS.CANCELLED],
-  [FULFILLMENT_STATUS.SERVED]: [FULFILLMENT_STATUS.RETURNED],
-  [FULFILLMENT_STATUS.RETURNED]: [],
-  [FULFILLMENT_STATUS.CANCELLED]: []
-};
 
 /**
  * Updates the status of a specific cart in an order
@@ -127,7 +117,7 @@ async function _updateCartStatus(
       const normalizedNewStatus = OrderInputValidation.validateCartStatus(newStatus);
 
       // Validate status transition
-      if (!isValidStatusTransition(currentStatus, normalizedNewStatus)) {
+      if (!isValidCartTransition(currentStatus, normalizedNewStatus)) {
         throw new Error(`Invalid status transition from ${currentStatus} to ${normalizedNewStatus}`);
       }
 
@@ -139,9 +129,24 @@ async function _updateCartStatus(
         notes: notes
       };
 
-      // Update cart status
+      // Update cart status and cascade it to every live item, so a READY cart
+      // has READY items (server-markItemServed needs that) and a CANCELLED cart
+      // drops out of the bill. Items already CANCELLED/RETURNED/SERVED keep their
+      // status (an individually served item must not flip back to READY or to
+      // CANCELLED). The flat order.items copy is not cascaded: no read path
+      // returns its status and it carries no cart reference to match on.
+      const cascadedItems = (cart.items || []).map(item => {
+        const itemStatus = mapCartStatus(item.status);
+        if (itemStatus === FULFILLMENT_STATUS.CANCELLED ||
+            itemStatus === FULFILLMENT_STATUS.RETURNED ||
+            itemStatus === FULFILLMENT_STATUS.SERVED) {
+          return item;
+        }
+        return { ...item, status: normalizedNewStatus };
+      });
       const updatedCart = {
         ...cart,
+        items: cascadedItems,
         status: normalizedNewStatus,
         statusHistory: [...(cart.statusHistory || []), statusEntry]
       };
@@ -191,23 +196,6 @@ async function _updateCartStatus(
     console.error(`updateCartStatus: Error updating cart status for order ${orderId}:`, error);
     throw error; // Re-throw error to be caught by the main function
   }
-}
-
-/**
- * Validates if a status transition is allowed
- * @param {string} currentStatus - Current status
- * @param {string} newStatus - Proposed new status
- * @returns {boolean} Whether the transition is valid
- */
-function isValidStatusTransition(currentStatus, newStatus) {
-  const fromStatus = mapCartStatus(currentStatus);
-  const toStatus = mapCartStatus(newStatus);
-
-  if (!VALID_TRANSITIONS[fromStatus]) {
-    return false;
-  }
-
-  return VALID_TRANSITIONS[fromStatus].includes(toStatus);
 }
 
 module.exports = updateCartStatus; 

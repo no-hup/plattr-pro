@@ -69,6 +69,22 @@ function mapCartStatus(value) {
   }
 }
 
+// Single source of truth for cart / cart-item fulfillment transitions.
+// Every endpoint that writes a fulfillment status must go through this.
+const CART_STATUS_TRANSITIONS = {
+  [FULFILLMENT_STATUS.PENDING]: [FULFILLMENT_STATUS.PREPARING, FULFILLMENT_STATUS.READY, FULFILLMENT_STATUS.CANCELLED],
+  [FULFILLMENT_STATUS.PREPARING]: [FULFILLMENT_STATUS.READY, FULFILLMENT_STATUS.CANCELLED],
+  [FULFILLMENT_STATUS.READY]: [FULFILLMENT_STATUS.SERVED, FULFILLMENT_STATUS.CANCELLED],
+  [FULFILLMENT_STATUS.SERVED]: [FULFILLMENT_STATUS.RETURNED],
+  [FULFILLMENT_STATUS.RETURNED]: [],
+  [FULFILLMENT_STATUS.CANCELLED]: []
+};
+
+function isValidCartTransition(currentStatus, newStatus) {
+  const allowed = CART_STATUS_TRANSITIONS[mapCartStatus(currentStatus)] || [];
+  return allowed.includes(mapCartStatus(newStatus));
+}
+
 /**
  * Gets the hex color code for a given fulfillment status
  * @param {string} status - The raw status string
@@ -84,4 +100,6 @@ module.exports = {
   mapOrderStatus,
   mapCartStatus,
   getStatusColorHex,
+  CART_STATUS_TRANSITIONS,
+  isValidCartTransition,
 };

@@ -2,20 +2,11 @@ const functions = require('firebase-functions');
 const admin = require('../admin/initializeAdmin');
 const db = admin.firestore();
 const { FULFILLMENT_STATUS } = require('./orderConstants');
-const { mapCartStatus } = require('../utils/statusUtils');
+const { mapCartStatus, isValidCartTransition } = require('../utils/statusUtils');
 const OrderInputValidation = require('./orderInputValidation');
 const timestamp = require('../utils/timestamp');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 const errorHandler = require('../singleton/ErrorHandler');
-
-const VALID_TRANSITIONS = {
-  [FULFILLMENT_STATUS.PENDING]: [FULFILLMENT_STATUS.PREPARING, FULFILLMENT_STATUS.READY, FULFILLMENT_STATUS.CANCELLED],
-  [FULFILLMENT_STATUS.PREPARING]: [FULFILLMENT_STATUS.READY, FULFILLMENT_STATUS.CANCELLED],
-  [FULFILLMENT_STATUS.READY]: [FULFILLMENT_STATUS.SERVED, FULFILLMENT_STATUS.CANCELLED],
-  [FULFILLMENT_STATUS.SERVED]: [FULFILLMENT_STATUS.RETURNED],
-  [FULFILLMENT_STATUS.RETURNED]: [],
-  [FULFILLMENT_STATUS.CANCELLED]: []
-};
 
 /**
  * Server app: mark a specific item as served
@@ -80,7 +71,9 @@ const serverMarkItemServed = functions.https.onCall(async (data, context) => {
 
           found = true;
           currentStatus = mapCartStatus(item.status || '');
-          if (!isValidTransition(currentStatus, normalizedStatus)) {
+          // Idempotent: a second waiter tapping an already-served item is a no-op.
+          if (currentStatus === normalizedStatus) return item;
+          if (!isValidCartTransition(currentStatus, normalizedStatus)) {
             errorHandler.badRequest(
               `Invalid status transition from ${currentStatus} to ${normalizedStatus}`,
               { restaurantId, orderId, menuItemId, cartItemId }
@@ -144,12 +137,5 @@ const serverMarkItemServed = functions.https.onCall(async (data, context) => {
     });
   }
 });
-
-function isValidTransition(currentStatus, newStatus) {
-  const fromStatus = mapCartStatus(currentStatus);
-  const toStatus = mapCartStatus(newStatus);
-  const allowed = VALID_TRANSITIONS[fromStatus] || [];
-  return allowed.includes(toStatus);
-}
 
 module.exports = { serverMarkItemServed };

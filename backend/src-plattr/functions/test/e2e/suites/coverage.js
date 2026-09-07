@@ -152,11 +152,11 @@ export default async function coverageSuite() {
         totalOk ? '' : `→ ${JSON.stringify(det).slice(0, 250)}`);
 
       // server-markItemServed (previously zero coverage).
-      // Item state machine only allows READY → SERVED. NOTE: no API ever sets
-      // item-level READY (kitchen's cart-updateCartStatus does not cascade to
-      // items) — a known design gap. Assert the rejection first, then seed
-      // READY directly in Firestore (test seam, like setFeatureFlags) and
-      // assert the serve succeeds.
+      // Item state machine only allows READY → SERVED. Items are PENDING right
+      // after checkout (cart-updateCartStatus cascades cart status to items,
+      // but this cart is never moved to READY here). Assert the rejection
+      // first, then seed READY directly in Firestore (test seam, like
+      // setFeatureFlags) and assert the serve succeeds.
       const cart = (order?.carts || []).find(c => (c.items || []).length > 0);
       const item = cart?.items?.[0];
       if (item) {
