@@ -52,6 +52,7 @@ class _TableDetailDialogState extends State<TableDetailDialog> {
       restaurantId: widget.restaurantId,
       tableId: widget.tableId,
       status: status,
+      sessionId: widget.sessionId,
     );
 
     setState(() {
@@ -76,6 +77,7 @@ class _TableDetailDialogState extends State<TableDetailDialog> {
     final newOtp = await widget.tablesProvider.refreshTableOtp(
       restaurantId: widget.restaurantId,
       tableId: widget.tableId,
+      sessionId: widget.sessionId,
     );
 
     setState(() {

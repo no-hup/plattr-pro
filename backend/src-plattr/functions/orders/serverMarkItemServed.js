@@ -41,6 +41,11 @@ const serverMarkItemServed = functions.https.onCall(async (data, context) => {
         sessionId
       });
     }
+    // Staff only: consumer table sessions live in the same collection but
+    // have no entity field.
+    if (sessionDoc.data().entity !== 'server') {
+      errorHandler.unauthorized('Staff session required', { restaurantId, sessionId });
+    }
 
     const userId = sessionDoc.data().serverId || context.auth?.uid || 'system';
     const hasCartItemId = cartItemId !== undefined && cartItemId !== null;

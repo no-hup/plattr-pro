@@ -8,6 +8,8 @@ const featureFlags = require('../singleton/FeatureFlags');
 const errorHandler = require('../singleton/ErrorHandler');
 const httpStatusCodes = require('../singleton/HttpStatusCodes');
 const timestamp = require('../utils/timestamp');
+const environment = require('../singleton/Environment');
+const { validateStaffSession } = require('../adminApp/auth');
 const { safeArrayUnion, applyArrayOperation } = require('../utils/arrayOperations');
 const { buildAuthDetails } = require('./tableHelperFunctions');
 const customerService = require('../customer/customerService');
@@ -579,6 +581,11 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
 */
 exports.cleanupInactiveSessions = functions.https.onCall(async (data, context) => {
     try {
+        // Unauthenticated cross-tenant mutation — emulator/dev only until it
+        // becomes a scheduled function.
+        if (!environment.isEmulator()) {
+            errorHandler.forbidden('cleanupInactiveSessions is emulator-only', {});
+        }
         console.log("poopoo cleanupInactiveSessions: Starting cleanup of inactive sessions");
         const restaurantsSnapshot = await db.collection('restaurants').get();
         console.log(`poopoo cleanupInactiveSessions: Found ${restaurantsSnapshot.size} restaurants`);
@@ -1103,6 +1110,8 @@ exports.assignTableToServer = functions.https.onCall(async (request, context) =>
         TableInputValidation.validateAssignTableInput(data);
         const { restaurantId, tableId, serverId } = data;
 
+        await validateStaffSession(restaurantId, data.sessionId);
+
         // 3. Get table and restaurant data
         console.log(`poopoo assignTableToServer - Getting table and restaurant data`);
         const { tableData, tableRef, restaurantData } = await TableInputValidation.getTableAndRestaurantData(restaurantId, tableId);
@@ -1207,6 +1216,8 @@ exports.unassignTableFromServer = functions.https.onCall(async (request, context
         // 2. Validate required parameters
         TableInputValidation.validateUnassignTableInput(data);
         const { restaurantId, tableId } = data;
+
+        await validateStaffSession(restaurantId, data.sessionId);
 
         // 3. Get table and restaurant data
         console.log(`poopoo unassignTableFromServer - Getting table and restaurant data`);
@@ -1313,6 +1324,9 @@ exports.generateTableOTP = functions.https.onCall(async (request, context) => {
         TableInputValidation.validateGenerateOTPInput(data);
         const { restaurantId, tableId } = data;
 
+        // OTP minting is the root of the consumer auth chain — staff only.
+        await validateStaffSession(restaurantId, data.sessionId);
+
         // 3. Get table and restaurant data
         console.log(`poopoo generateTableOTP - Getting table and restaurant data`);
         const { tableData, tableRef } = await TableInputValidation.getTableAndRestaurantData(restaurantId, tableId);
@@ -1392,6 +1406,8 @@ exports.updateTableStatus = functions.https.onCall(async (request, context) => {
         // 2. Validate required parameters
         TableInputValidation.validateUpdateTableStatusInput(data);
         const { restaurantId, tableId, status } = data;
+
+        await validateStaffSession(restaurantId, data.sessionId);
 
         // 3. Get table and restaurant data
         console.log(`poopoo updateTableStatus - Getting table and restaurant data`);

@@ -70,7 +70,10 @@ async function validateCheckoutSession(restaurantId, tableId, sessionId) {
   }
 
   const session = await sessionService.validateTableSession(restaurantId, tableId, { throwError: false });
-  if (!session) {
+  // The caller must present the table's own active session id, not just any
+  // non-empty string — otherwise knowing restaurantId+tableId (printed on the
+  // QR code) is enough to check out someone else's cart.
+  if (!session || session.id !== sessionId) {
     errorHandler.unauthorized("Authentication required", {
       otpRequired: true,
       isUsernameMandatory: featureFlags.isEnabled('isUsernameEnabled'),
@@ -78,6 +81,24 @@ async function validateCheckoutSession(restaurantId, tableId, sessionId) {
       isMultiUserSupported: featureFlags.isEnabled('isMultiUserSupportEnabled')
     });
   }
+}
+
+/**
+ * Requires that the table currently has an active session. Used by cart
+ * mutations whose legacy consumer payloads don't carry sessionId yet — blocks
+ * drive-by cart writes against vacant tables using only the public
+ * restaurantId/tableId from a QR code.
+ * @throws {HttpsError} If no active session exists for the table
+ */
+async function requireActiveTableSession(restaurantId, tableId) {
+  const session = await sessionService.validateTableSession(restaurantId, tableId, { throwError: false });
+  if (!session) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'No active session for this table.'
+    );
+  }
+  return session;
 }
 
 /**
@@ -167,5 +188,6 @@ module.exports = {
   validateCheckoutFields,
   validateGetCartFields,
   validateSessionId,
-  validateCheckoutSession
+  validateCheckoutSession,
+  requireActiveTableSession
 }; 

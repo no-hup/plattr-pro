@@ -1,5 +1,9 @@
 const functions = require("firebase-functions");
+const { setGlobalOptions } = require("firebase-functions/v2");
 console.error("AG_DEBUG: Loading functions/index.js");
+
+// Bill guard: cap instances so a runaway polling client can't scale us up.
+setGlobalOptions({ maxInstances: 10 });
 const admin = require('./admin/admin');
 
 // Import and export functions from other files
@@ -59,9 +63,10 @@ exports['admin-updateOffer'] = adminAppFunctions.updateOffer;
 exports['admin-deleteOffer'] = adminAppFunctions.deleteOffer;
 
 // Export order functions using the orderFunctions import
+// NOTE: createOrUpdateOrder is intentionally NOT exported — it is a bare async
+// helper (not an onCall function) used internally by checkoutCart.
 exports.order = {
   getOrder: orderFunctions.getOrder,
-  createOrder: orderFunctions.createOrUpdateOrder,
   updateOrderStatus: orderFunctions.updateOrderStatus,
   getActiveOrdersForRestaurant: orderFunctions.getActiveOrdersForRestaurant,
   getActiveCartsForKitchen: orderFunctions.getActiveCartsForKitchen,

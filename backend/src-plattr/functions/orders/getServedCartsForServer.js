@@ -47,6 +47,11 @@ async function getServedCartsForServerHandler(data, context) {
                 sessionId
             });
         }
+        // Staff only: consumer table sessions live in the same collection but
+        // have no entity field.
+        if (sessionDoc.data().entity !== 'server') {
+            errorHandler.unauthorized('Staff session required', { restaurantId, sessionId });
+        }
 
         // Derive currentServerId from session document
         const currentServerId = sessionDoc.data().serverId || '';

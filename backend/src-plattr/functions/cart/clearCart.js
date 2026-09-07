@@ -1,6 +1,6 @@
 const functions = require("firebase-functions");
 const { admin, db } = require('../admin/admin');
-const { validateCheckoutFields } = require('./cartInputValidation');
+const { validateCheckoutFields, requireActiveTableSession } = require('./cartInputValidation');
 
 /**
  * Internal function to clear a cart
@@ -38,6 +38,8 @@ const clearCart = functions.https.onCall(async (data, context) => {
   const { tableId, restaurantId } = data.data;
 
   try {
+    // Public restaurantId/tableId must not be enough to wipe a cart.
+    await requireActiveTableSession(restaurantId, tableId);
     await clearCartInternal(restaurantId, tableId);
     return { message: "Cart cleared successfully." };
   } catch (error) {

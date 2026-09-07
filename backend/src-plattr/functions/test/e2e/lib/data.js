@@ -52,7 +52,8 @@ export async function setFeatureFlags(flags) {
 
   const resp = await fetch(url, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    // 'Bearer owner' = emulator admin bypass (rules are locked in prod)
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' },
     body: JSON.stringify({ fields }),
   });
 
@@ -67,7 +68,7 @@ export async function setFeatureFlags(flags) {
  */
 export async function resetFeatureFlags() {
   const url = `http://${config.FIRESTORE_HOST}/v1/projects/${config.PROJECT_ID}/databases/(default)/documents/_system/featureFlagOverrides`;
-  await fetch(url, { method: 'DELETE' }).catch(() => {});
+  await fetch(url, { method: 'DELETE', headers: { Authorization: 'Bearer owner' } }).catch(() => {});
   console.log('[data] Feature flags reset to defaults');
 }
 

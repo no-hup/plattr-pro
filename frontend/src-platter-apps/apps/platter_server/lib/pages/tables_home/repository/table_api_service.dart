@@ -52,6 +52,7 @@ class TableApiService {
     required String restaurantId,
     required String tableId,
     required String status,
+    required String sessionId,
   }) async {
     try {
       final response = await _dio.post(
@@ -61,6 +62,7 @@ class TableApiService {
             'restaurantId': restaurantId,
             'tableId': tableId,
             'status': status,
+            'sessionId': sessionId,
           }
         },
       );
@@ -127,6 +129,7 @@ class TableApiService {
   Future<ApiResponse<TableOtpResponse>> generateTableOTP({
     required String restaurantId,
     required String tableId,
+    required String sessionId,
   }) async {
     try {
       // Call the Firebase Cloud Function directly
@@ -136,6 +139,7 @@ class TableApiService {
           'data': {
             'restaurantId': restaurantId,
             'tableId': tableId,
+            'sessionId': sessionId,
           }
         },
       );

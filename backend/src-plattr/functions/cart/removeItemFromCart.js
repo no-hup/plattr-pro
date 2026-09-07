@@ -1,6 +1,6 @@
 const functions = require("firebase-functions");
 const { admin, db } = require('../admin/admin');
-const { validateRemoveItemFields } = require('./cartInputValidation');
+const { validateRemoveItemFields, requireActiveTableSession } = require('./cartInputValidation');
 const timestamp = require('../utils/timestamp');
 const { calculateCartValue } = require('./calculateCartValue');
 const { CartTotalPriceInfo } = require('../genericModels/priceinfo');
@@ -20,6 +20,9 @@ const removeItemFromCart = functions.https.onCall(async (data, context) => {
   validateRemoveItemFields(data.data);
 
   try {
+    // Public restaurantId/tableId must not be enough to mutate a cart.
+    await requireActiveTableSession(restaurantId, tableId);
+
     const cartRef = db.collection("restaurants").doc(restaurantId).collection("carts").doc(tableId);
     const cartDoc = await cartRef.get();
 

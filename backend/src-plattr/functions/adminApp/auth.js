@@ -4,6 +4,7 @@
 
 const { db } = require('../admin/admin');
 const errorHandler = require('../singleton/ErrorHandler');
+const timestamp = require('../utils/timestamp');
 
 /**
  * Server role constants
@@ -80,6 +81,62 @@ async function validateAdminSession(restaurantId, sessionId) {
 }
 
 /**
+ * Validates that a session belongs to ANY staff member (SERVER, KITCHEN,
+ * MANAGER, or ADMIN). Blocks customer sessions, which live in the same
+ * collection but have no `entity` field. Use for staff-facing endpoints that
+ * don't need the ADMIN/MANAGER restriction of validateAdminSession.
+ * @returns {Promise<{serverData: object, serverId: string}>}
+ */
+async function validateStaffSession(restaurantId, sessionId) {
+    if (!sessionId) {
+        errorHandler.unauthorized('Session ID is required', { restaurantId });
+    }
+
+    const sessionDoc = await db
+        .collection('restaurants')
+        .doc(restaurantId)
+        .collection('sessions')
+        .doc(sessionId)
+        .get();
+
+    if (!sessionDoc.exists) {
+        errorHandler.unauthorized('Invalid or expired session', { restaurantId, sessionId });
+    }
+
+    const sessionData = sessionDoc.data();
+
+    if (sessionData.status !== 'active') {
+        errorHandler.unauthorized('Invalid or expired session', { restaurantId, sessionId });
+    }
+
+    // safeToDate: seed/legacy sessions may store expiresAt as an ISO string
+    const staffExpiry = timestamp.safeToDate(sessionData.expiresAt);
+    if (sessionData.expiresAt && staffExpiry && staffExpiry < new Date()) {
+        errorHandler.unauthorized('Session has expired', { restaurantId, sessionId });
+    }
+
+    if (sessionData.entity !== 'server' || !sessionData.serverId) {
+        errorHandler.unauthorized('Staff session required', { restaurantId, sessionId });
+    }
+
+    const serverDoc = await db
+        .collection('restaurants')
+        .doc(restaurantId)
+        .collection('servers')
+        .doc(sessionData.serverId)
+        .get();
+
+    if (!serverDoc.exists) {
+        errorHandler.unauthorized('Server not found', {
+            restaurantId,
+            serverId: sessionData.serverId,
+        });
+    }
+
+    return { serverData: serverDoc.data(), serverId: sessionData.serverId };
+}
+
+/**
  * Transforms dot-path keys into nested objects.
  * e.g., { 'theme.primaryColor': '#FF0000' } => { theme: { primaryColor: '#FF0000' } }
  * @param {Object} flatObject - Object with dot-path keys
@@ -129,6 +186,7 @@ function deepMerge(target, source) {
 module.exports = {
     SERVER_ROLES,
     validateAdminSession,
+    validateStaffSession,
     transformDotPathsToNested,
     deepMerge,
 };
