@@ -27,6 +27,24 @@ const SEND_SERVER_NOTIFICATIONS = 'sendServerNotifications';
  * - Updates orderStatus (and paymentStatus if COMPLETE)
  * - Notifies server when order is marked complete
  */
+async function notifyAssignedServer(restaurantId, orderId) {
+  const restaurantRef = db.collection(COLLECTIONS.RESTAURANTS).doc(restaurantId);
+  const orderDoc = await restaurantRef.collection(COLLECTIONS.ORDERS).doc(orderId).get();
+  const tableId = orderDoc.data()?.tableId;
+  if (!tableId) return;
+  const tableDoc = await restaurantRef.collection(COLLECTIONS.TABLES).doc(tableId).get();
+  const serverId = tableDoc.data()?.assignedServerId;
+  if (!serverId) return;
+  const serverDoc = await restaurantRef.collection(COLLECTIONS.SERVERS).doc(serverId).get();
+  const token = serverDoc.data()?.fcmToken;
+  if (!token) return;
+  await sendFCMNotification(token, {
+    title: 'Order Completed',
+    body: `Order ${orderId} marked complete – please collect payment`,
+    data: { restaurantId, orderId, type: 'ORDER_COMPLETED' }
+  });
+}
+
 exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
   // Load feature flag overrides from Firestore (for test environments)
   await featureFlags.loadOverrides(db);
@@ -44,7 +62,7 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
       .collection(COLLECTIONS.RESTAURANTS).doc(restaurantId)
       .collection(COLLECTIONS.ORDERS).doc(orderId);
 
-    return await db.runTransaction(async (tx) => {
+    const response = await db.runTransaction(async (tx) => {
       const orderDoc = await tx.get(orderRef);
       if (!orderDoc.exists) {
         errorHandler.notFound('Order not found', { restaurantId, orderId });
@@ -135,37 +153,23 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
 
       tx.update(orderRef, updatePayload);
 
-      // Notify server on completion
-      if (orderStatus === ORDER_STATUS.COMPLETED && featureFlags.isEnabled(SEND_SERVER_NOTIFICATIONS)) {
-        const { tableId } = order;
-        const tableDoc = await db
-          .collection(COLLECTIONS.RESTAURANTS).doc(restaurantId)
-          .collection(COLLECTIONS.TABLES).doc(tableId).get();
-        if (tableDoc.exists) {
-          const serverId = tableDoc.data().assignedServerId;
-          if (serverId) {
-            const serverDoc = await db
-              .collection(COLLECTIONS.RESTAURANTS).doc(restaurantId)
-              .collection(COLLECTIONS.SERVERS).doc(serverId).get();
-            if (serverDoc.exists) {
-              const token = serverDoc.data().fcmToken;
-              if (token) {
-                await sendFCMNotification(token, {
-                  title: 'Order Completed',
-                  body: `Order ${orderId} marked complete – please collect payment`,
-                  data: { restaurantId, orderId, type: 'ORDER_COMPLETED' }
-                });
-              }
-            }
-          }
-        }
-      }
-
       return ResponseBuilder.success(
         { orderId, orderStatus },
         'Order status updated successfully'
       );
     });
+
+    // Notify server after the commit: a transaction retry must not double-push
+    // and an FCM failure must not roll back the PAID write.
+    if (orderStatus === ORDER_STATUS.COMPLETED && featureFlags.isEnabled(SEND_SERVER_NOTIFICATIONS)) {
+      try {
+        await notifyAssignedServer(restaurantId, orderId);
+      } catch (notifyError) {
+        console.error(`updateOrderStatus: notification failed for order ${orderId}: ${notifyError.message}`);
+      }
+    }
+
+    return response;
   } catch (error) {
     console.error('Error in updateOrderStatus:', error);
     errorHandler.handleError(error, 'updateOrderStatus', {

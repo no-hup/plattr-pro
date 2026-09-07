@@ -337,39 +337,12 @@ async function updateExistingOrder(transaction, restaurantId, orderId, existingO
   // Merge new items with existing items (normalized, for order.items)
   const updatedItems = [...existingItems, ...orderItems];
 
-  // Calculate updated base price info across all carts (no offer yet)
-  const basePriceInfo = calculateTotalPriceInfo(updatedCarts);
-
-  // Offers V2: re-evaluate offers against ALL raw items from ALL carts.
-  // Use cart.items (raw) not updatedItems (normalized — strips categoryId).
-  const allCartItems = updatedCarts.flatMap(c => Array.isArray(c.items) ? c.items : []);
-  const bestOffer = await evaluateAndPickBestOffer(
+  const { priceInfo: updatedPriceInfo, appliedOffer, offerDiscount } = await buildOrderPriceInfo(
     restaurantId,
-    allCartItems,
-    basePriceInfo.basePrice || 0,
-    sessionId || existingOrder.sessionId
+    updatedCarts,
+    sessionId || existingOrder.sessionId,
+    chargesConfig
   );
-
-  const baseFinalPrice = basePriceInfo.finalPrice || 0;
-  const offerDiscount = bestOffer ? Math.min(bestOffer.discountAmount, baseFinalPrice) : 0;
-  const appliedOffer = bestOffer ? buildAppliedOfferObject(bestOffer) : null;
-
-  // Post-offer final price — used both as the stored finalPrice AND as the
-  // base for Charges V1 percentage computation.
-  const postOfferFinalPrice = Math.max(0, baseFinalPrice - offerDiscount);
-
-  // Charges V1: recompute on the new order total (previous cart's charges are
-  // replaced — charges always reflect current order finalPrice). Empty config
-  // → charges fields omitted from updated priceInfo.
-  const { charges, chargesTotal } = calculateCharges(postOfferFinalPrice, chargesConfig);
-
-  const updatedPriceInfo = {
-    ...basePriceInfo,
-    finalPrice: postOfferFinalPrice,
-    totalDiscountAmount: (basePriceInfo.totalDiscountAmount || 0) + offerDiscount,
-    offerDiscount,
-    ...(charges.length > 0 ? { charges, chargesTotal } : {})
-  };
 
   if (appliedOffer) {
     console.log(`Offers V2: auto-applied "${appliedOffer.title}" (${appliedOffer.id}) to existing order ${orderId} — saved ₹${offerDiscount}`);
@@ -459,6 +432,52 @@ function writeOrderCounter(transaction, counterRef, counterDoc) {
 }
 
 /**
+ * Rebuilds an order's priceInfo from its cart snapshots: item totals (skipping
+ * CANCELLED/RETURNED carts), best order-level offer, then Charges V1. Used by
+ * checkout (append cart) and by cart cancellation so every read path sees the
+ * same number the customer will pay.
+ * @returns {Promise<{priceInfo: Object, appliedOffer: Object|null, offerDiscount: number}>}
+ */
+async function buildOrderPriceInfo(restaurantId, carts, sessionId, chargesConfig = []) {
+  const basePriceInfo = calculateTotalPriceInfo(carts);
+
+  // Offers V2: evaluate against raw items of live carts only (normalized items strip categoryId).
+  const liveCarts = carts.filter(isLiveCart);
+  const allCartItems = liveCarts.flatMap(c => Array.isArray(c.items) ? c.items : []);
+  const bestOffer = await evaluateAndPickBestOffer(
+    restaurantId,
+    allCartItems,
+    basePriceInfo.basePrice || 0,
+    sessionId
+  );
+
+  const baseFinalPrice = basePriceInfo.finalPrice || 0;
+  const offerDiscount = bestOffer ? Math.min(bestOffer.discountAmount, baseFinalPrice) : 0;
+  const appliedOffer = bestOffer ? buildAppliedOfferObject(bestOffer) : null;
+  const postOfferFinalPrice = Math.max(0, baseFinalPrice - offerDiscount);
+
+  // Charges V1 on the post-offer total; empty config → fields omitted.
+  const { charges, chargesTotal } = calculateCharges(postOfferFinalPrice, chargesConfig);
+
+  return {
+    priceInfo: {
+      ...basePriceInfo,
+      finalPrice: postOfferFinalPrice,
+      totalDiscountAmount: (basePriceInfo.totalDiscountAmount || 0) + offerDiscount,
+      offerDiscount,
+      ...(charges.length > 0 ? { charges, chargesTotal } : {})
+    },
+    appliedOffer,
+    offerDiscount
+  };
+}
+
+function isLiveCart(cart) {
+  const status = mapCartStatus(cart?.status);
+  return status !== FULFILLMENT_STATUS.CANCELLED && status !== FULFILLMENT_STATUS.RETURNED;
+}
+
+/**
  * Calculates total price information across all carts
  * @param {Array} carts - Array of cart objects
  * @returns {Object} Aggregated price information
@@ -468,8 +487,8 @@ function calculateTotalPriceInfo(carts) {
     return new OrderPriceInfo().toObject();
   }
 
-  // Convert all cart price infos into CartTotalPriceInfo objects
-  const cartPriceInfos = carts.map(cart =>
+  // Convert live cart price infos into CartTotalPriceInfo objects (cancelled/returned carts are not billed)
+  const cartPriceInfos = carts.filter(isLiveCart).map(cart =>
     cart && cart.priceInfo ? new CartTotalPriceInfo(cart.priceInfo) : new CartTotalPriceInfo()
   );
 
@@ -508,5 +527,6 @@ function calculateEstimatedPrepTime(items) {
 
 module.exports = {
   createOrUpdateOrder: exports.createOrUpdateOrder,
+  buildOrderPriceInfo,
   normalizeCartItemsForOrder // exported for unit tests
 };
