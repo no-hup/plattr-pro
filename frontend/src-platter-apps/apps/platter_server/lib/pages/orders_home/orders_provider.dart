@@ -113,10 +113,13 @@ class OrdersProvider extends ChangeNotifier {
     String? serverId,
   }) {
     _pollingTimer?.cancel();
+    // First load shows the spinner; re-activation (tab switch / app resume)
+    // refreshes silently over the last-good list instead of flashing it.
     fetchActiveOrders(
       restaurantId: restaurantId,
       sessionId: sessionId,
       serverId: serverId,
+      isBackgroundPoll: _orders.isNotEmpty,
     );
     _pollingTimer = Timer.periodic(pollingInterval, (_) {
       fetchActiveOrders(

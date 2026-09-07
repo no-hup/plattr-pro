@@ -54,6 +54,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final response = await _apiService.getOrder(
       restaurantId: widget.restaurantId,
       orderId: widget.orderId,
+      sessionId: widget.sessionId,
     );
 
     setState(() {
@@ -407,6 +408,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         restaurantId: widget.restaurantId,
         orderId: widget.orderId,
         menuItemId: menuItemId,
+        sessionId: widget.sessionId,
         cartItemId: cartItemId is int ? cartItemId : null,
       );
 

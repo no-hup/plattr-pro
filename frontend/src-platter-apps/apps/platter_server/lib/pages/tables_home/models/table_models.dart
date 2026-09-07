@@ -25,6 +25,15 @@ class TableModel {
   @JsonKey(defaultValue: '', name: 'otp')
   final String tableOtp;
 
+  @JsonKey(name: 'primaryCustomer')
+  final Map<String, dynamic>? primaryCustomer;
+
+  /// Customer name from primaryCustomer, if present.
+  String? get customerName {
+    final name = primaryCustomer?['name'];
+    return (name is String && name.isNotEmpty) ? name : null;
+  }
+
   TableModel({
     required this.tableNumber,
     required this.tableId,
@@ -33,6 +42,7 @@ class TableModel {
     this.isDisabled = false,
     this.currentOrderId = '',
     this.tableOtp = '',
+    this.primaryCustomer,
   });
 
   factory TableModel.fromJson(Map<String, dynamic> json) =>

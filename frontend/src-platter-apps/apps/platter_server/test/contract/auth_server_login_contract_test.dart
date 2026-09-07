@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:platter_server/pages/auth/models/login_request.dart';
-import 'package:platter_server/pages/auth/repository/login_api_service.dart';
+import 'package:platter_core/platter_core.dart';
 
 import 'contract_test_utils.dart';
 
@@ -38,7 +37,7 @@ void main() {
           final data = response.data;
           expect(data, isNotNull);
           expect(data!.sessionId, isNotEmpty);
-          expect(data.serverId, isNotEmpty);
+          expect(data.staffId, isNotEmpty);
           expect(data.restaurantId, equals(ContractTestConfig.restaurantId));
         },
       );

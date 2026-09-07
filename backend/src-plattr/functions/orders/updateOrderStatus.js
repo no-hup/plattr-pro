@@ -57,7 +57,13 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
         [ORDER_STATUS.CANCELLED]:   [],   // terminal
       };
       const currentStatus = order.orderStatus;
-      const allowed = ALLOWED_TRANSITIONS[currentStatus] || [];
+      const allowed = ALLOWED_TRANSITIONS[currentStatus];
+      if (allowed === undefined) {
+        errorHandler.badRequest(
+          `Order has unknown status "${currentStatus}" — cannot determine valid transitions`,
+          { orderId, currentStatus, requestedStatus: orderStatus }
+        );
+      }
       if (!allowed.includes(orderStatus)) {
         errorHandler.badRequest(
           `Transition ${currentStatus} → ${orderStatus} is not allowed`,

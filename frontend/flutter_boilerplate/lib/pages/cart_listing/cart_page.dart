@@ -259,9 +259,16 @@ class CartItemTile extends StatelessWidget {
         (menuItem?.priceInfo.finalPrice.toDouble() ??
             (item.totalPrice ?? basePrice));
 
-    final discount = item.priceInfo?.discount.toDouble() ??
-        (menuItem?.priceInfo.discount.toDouble() ??
-            (basePrice > finalPrice ? basePrice - finalPrice : 0.0));
+    // Compute actual rupee discount (not the percentage field)
+    final discount = (item.priceInfo != null &&
+            item.priceInfo!.totalBasePrice > item.priceInfo!.finalPrice)
+        ? (item.priceInfo!.totalBasePrice - item.priceInfo!.finalPrice)
+            .toDouble()
+        : (menuItem != null &&
+                menuItem.priceInfo.basePrice > menuItem.priceInfo.finalPrice)
+            ? (menuItem.priceInfo.basePrice - menuItem.priceInfo.finalPrice)
+                .toDouble()
+            : (basePrice > finalPrice ? basePrice - finalPrice : 0.0);
 
     // Only show strikethrough if base price is different from final price
     final showBasePriceStrikethrough = basePrice > 0 && basePrice != finalPrice;
@@ -676,7 +683,7 @@ class CartPriceSummary extends StatelessWidget {
                             // Navigate to orders page to show order history
                             AppLogger.log(
                                 '🛒 CART: Checkout successful, navigating to orders page',);
-                            context.go('/r/$restaurantId/t/$tableId/orders');
+                            context.replace('/r/$restaurantId/t/$tableId/orders');
                           }
                         } else {
                           // Show error message

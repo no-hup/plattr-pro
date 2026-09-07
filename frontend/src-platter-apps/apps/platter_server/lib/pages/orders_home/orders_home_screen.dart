@@ -15,12 +15,14 @@ import '../../shared/status_utils.dart';
 class OrdersHomeScreen extends StatefulWidget {
   final String restaurantId;
   final String sessionId;
+  final bool isActiveTab;
   final ValueChanged<ServerAppBarConfiguration>? onAppBarConfigChanged;
 
   const OrdersHomeScreen({
     super.key,
     required this.restaurantId,
     required this.sessionId,
+    this.isActiveTab = true,
     this.onAppBarConfigChanged,
   });
 
@@ -57,9 +59,10 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
     // Served carts are not polled — refresh them when the Served tab opens.
     _tabController.addListener(_handleTabChange);
 
-    // Fetch + start polling when screen is first loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startPolling();
+      // Only the visible bottom-nav tab polls; MainNavigation flips
+      // isActiveTab and didUpdateWidget starts/stops accordingly.
+      if (widget.isActiveTab) _startPolling();
       _ordersProvider.fetchServedCarts(
         restaurantId: widget.restaurantId,
         sessionId: widget.sessionId,
@@ -68,11 +71,24 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
     });
   }
 
+  /// Immediate fetch + periodic background polls (provider owns the timer).
   void _startPolling() {
     _ordersProvider.startPolling(
       restaurantId: widget.restaurantId,
       sessionId: widget.sessionId,
     );
+  }
+
+  @override
+  void didUpdateWidget(covariant OrdersHomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActiveTab != oldWidget.isActiveTab) {
+      if (widget.isActiveTab) {
+        _startPolling();
+      } else {
+        _ordersProvider.stopPolling();
+      }
+    }
   }
 
   void _handleTabChange() {
@@ -95,7 +111,7 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
     // Only `paused` counts as backgrounded — `inactive` fires on transient
     // focus loss (iOS/web) and would churn the timer.
     if (state == AppLifecycleState.resumed) {
-      if (mounted) _startPolling();
+      if (mounted && widget.isActiveTab) _startPolling();
     } else if (state == AppLifecycleState.paused) {
       _ordersProvider.stopPolling();
     }
@@ -385,7 +401,7 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
   Widget _buildErrorState(String? errorMessage) {
     return ErrorStateWidget(
       message: errorMessage ?? 'Unknown error occurred',
-      onRetry: _fetchOrders,
+      onRetry: _startPolling,
     );
   }
 }

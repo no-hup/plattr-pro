@@ -574,9 +574,22 @@ class CartListingState extends ChangeNotifier with OffersStateMixin {
           return true;
         },
         error: (message, errorCode, errorDetails) {
-          _error = message;
           _isCheckingOut = false;
           notifyListeners();
+
+          // Session expired or invalid — trigger OTP re-auth dialog
+          if (errorCode == 'unauthenticated') {
+            AppLogger.log('🔐 CART: Session expired, triggering re-auth');
+            AuthPrompt.showIfNeeded(
+              restaurantId: restaurantId,
+              tableId: tableId,
+              force: true,
+            );
+            _error = null;
+            return false;
+          }
+
+          _error = message;
           AppLogger.log('❌ CART: Checkout failed: $message');
           return false;
         },
