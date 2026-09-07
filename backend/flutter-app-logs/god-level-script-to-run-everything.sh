@@ -13,7 +13,7 @@ set -e
 # -----------------------------------------------------------------------------
 # Configuration
 # -----------------------------------------------------------------------------
-PROJECT_ROOT="/Users/shauryajaiswal/Desktop/dev/plattr-pro"
+PROJECT_ROOT="${0:A:h:h:h}"   # <repo>/backend/flutter-app-logs/<script> -> <repo>
 BACKEND_DIR="$PROJECT_ROOT/backend/src-plattr"
 MOCK_DIR="$BACKEND_DIR/functions/mock"
 
@@ -134,11 +134,13 @@ select_mock_data() {
     echo "  5) mockData5EndToEndTesting (importMockData5.js) - New E2E Test data"
     echo "  6) mockData5 + Big Brewski - E2E data + real restaurant"
     echo "  7) Big Brewski only - standalone real restaurant"
-    echo "  8) Skip mock data import"
+    echo "  8) mockData6 (Toit + Karavalli, big realistic)"
+    echo "  9) mockData7 (5 Bangalore restaurants, goal-line seed) [recommended]"
+    echo " 10) Skip mock data import"
     echo ""
 
     while true; do
-        read "choice?Enter your choice [1-8]: "
+        read "choice?Enter your choice [1-10]: "
         case $choice in
             1)
                 MOCK_SCRIPT="importMockDataV2.js"
@@ -178,12 +180,24 @@ select_mock_data() {
                 break
                 ;;
             8)
+                MOCK_SCRIPT="importMockData5.js"
+                MOCK_NAME="mockData6 (Toit + Karavalli)"
+                MOCK_EXTRA_ARGS="--file=$MOCK_DIR/MockData6BigRestaurants.json --clean --refresh-timestamps"
+                break
+                ;;
+            9)
+                MOCK_SCRIPT="importMockData5.js"
+                MOCK_NAME="mockData7 (goal-line, 5 restaurants)"
+                MOCK_EXTRA_ARGS="--file=$MOCK_DIR/MockData7ProductionMenus.json --clean --refresh-timestamps"
+                break
+                ;;
+            10)
                 MOCK_SCRIPT=""
                 MOCK_NAME="(skipped)"
                 break
                 ;;
             *)
-                log_warn "Invalid choice. Please enter 1-8."
+                log_warn "Invalid choice. Please enter 1-10."
                 ;;
         esac
     done
@@ -320,7 +334,7 @@ import_mock_data() {
     export FUNCTIONS_EMULATOR=true
     export NODE_ENV=development
 
-    if node "$script_path" ${MOCK_EXTRA_ARGS:-}; then
+    if node "$script_path" ${=MOCK_EXTRA_ARGS}; then
         log_success "Mock data imported successfully"
     else
         log_error "Mock data import failed"
