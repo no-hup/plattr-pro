@@ -299,13 +299,13 @@
           },
           {
             "status": "PREPARING",
-            "timestamp": 1788801895684,
+            "timestamp": 1788802969193,
             "userId": "system",
             "notes": ""
           },
           {
             "status": "READY",
-            "timestamp": 1788801895701,
+            "timestamp": 1788802969221,
             "userId": "system",
             "notes": ""
           }
@@ -319,6 +319,6 @@
         "assignedTo": "system"
       }
     ],
-    "updatedAt": 1788801895701
+    "updatedAt": 1788802969221
   }
 }

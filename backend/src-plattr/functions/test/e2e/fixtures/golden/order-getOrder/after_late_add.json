@@ -16,24 +16,31 @@
     "tableId": "tbl_meg_7",
     "restaurantId": "res_meghana",
     "sessionId": "SESSIONID_2",
-    "total": 204,
+    "total": 384,
     "priceInfo": {
-      "basePrice": 240,
-      "finalPrice": 204,
-      "totalDiscount": 15,
-      "totalDiscountAmount": 36,
-      "offerDiscount": 0,
+      "basePrice": 520,
+      "finalPrice": 384,
+      "totalDiscount": 6.92,
+      "totalDiscountAmount": 136,
+      "offerDiscount": 100,
       "charges": [
         {
           "type": "SERVICE_CHARGE",
           "percentage": 5,
-          "amount": 10.2
+          "amount": 19.2
         }
       ],
-      "chargesTotal": 10.2
+      "chargesTotal": 19.2
     },
-    "offerDiscount": 0,
-    "appliedOffer": null,
+    "offerDiscount": 100,
+    "appliedOffer": {
+      "id": "off_meg_flat100",
+      "title": "₹100 Off (min ₹499)",
+      "type": "FLAT",
+      "scope": "ORDER",
+      "discountAmount": 100,
+      "appliedItems": []
+    },
     "items": [
       {
         "menuItemId": "mi_paneer65",
@@ -42,23 +49,31 @@
         "price": 204,
         "variants": [],
         "addons": []
+      },
+      {
+        "menuItemId": "mi_chicken65",
+        "name": "Chicken 65",
+        "quantity": 1,
+        "price": 280,
+        "variants": [],
+        "addons": []
       }
     ],
     "notes": "",
     "carts": [
       {
-        "lastUpdated": 1788801900672,
-        "priceInfo": {
-          "totalAddonBasePrice": 0,
-          "totalDiscountAmount": 36,
-          "finalPrice": 204,
-          "totalDiscount": 15,
-          "totalVariantBasePrice": 0,
-          "basePrice": 240
-        },
         "tableId": "tbl_meg_7",
         "sessionId": "SESSIONID_2",
         "restaurantId": "res_meghana",
+        "lastUpdated": 1788802974017,
+        "priceInfo": {
+          "totalAddonBasePrice": 0,
+          "totalDiscountAmount": 36,
+          "totalVariantBasePrice": 0,
+          "finalPrice": 484,
+          "totalDiscount": 6.92,
+          "basePrice": 520
+        },
         "items": [
           {
             "menuItemId": "mi_paneer65",
@@ -123,6 +138,70 @@
             },
             "cartItemId": 1,
             "status": "PENDING"
+          },
+          {
+            "menuItemId": "mi_chicken65",
+            "categoryId": "mc_starters",
+            "subcategoryIds": [
+              "ms_st_nonveg"
+            ],
+            "menuItem": {
+              "nutritionalInfo": {
+                "carbs": 30,
+                "protein": 30,
+                "fat": 19,
+                "calories": 372
+              },
+              "addons": [],
+              "allergenTags": [],
+              "variants": [],
+              "restaurantId": "res_meghana",
+              "menuItemId": "mi_chicken65",
+              "lastUpdated": {
+                "_seconds": 1780000000,
+                "_nanoseconds": 0
+              },
+              "priceInfo": {
+                "discount": 0,
+                "finalPrice": 280,
+                "basePrice": 280
+              },
+              "primarySubcategoryId": "ms_st_nonveg",
+              "isCustomizable": false,
+              "meta": {
+                "primarySubcategoryName": "Non-Veg Starters",
+                "image": "",
+                "name": "Chicken 65",
+                "description": "",
+                "spiceLevel": 4,
+                "categoryName": "",
+                "dietaryType": "NON_VEG",
+                "isVegan": false
+              },
+              "subcategoryIds": [
+                "ms_st_nonveg"
+              ],
+              "isInStock": true,
+              "categoryId": "mc_starters",
+              "order": 4
+            },
+            "selectedVariantsDetails": [],
+            "selectedAddonsDetails": [],
+            "quantity": 1,
+            "priceInfo": {
+              "itemBasePrice": 280,
+              "itemFinalPrice": 280,
+              "totalVariantBasePrice": 0,
+              "totalVariantFinalPrice": 0,
+              "totalAddonBasePrice": 0,
+              "totalAddonFinalPrice": 0,
+              "totalBasePrice": 280,
+              "finalPrice": 280,
+              "discount": 0,
+              "discountAmount": 0
+            },
+            "cartItemId": 2,
+            "status": "PENDING"
           }
         ],
         "cartId": "res_meghana_tbl_meg_7_CART",
@@ -136,7 +215,7 @@
         ],
         "checkoutTime": "2026-01-01T00:00:00.000Z",
         "notes": "",
-        "estimatedPrepTime": 12,
+        "estimatedPrepTime": 14,
         "assignedTo": null
       }
     ]

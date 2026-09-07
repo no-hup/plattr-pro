@@ -10,7 +10,7 @@
     "paymentStatus": "unpaid",
     "carts": [
       {
-        "lastUpdated": 1788801904982,
+        "lastUpdated": 1788802974073,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -101,7 +101,7 @@
           },
           {
             "status": "READY",
-            "timestamp": 1788801905794,
+            "timestamp": 1788802974637,
             "userId": "system",
             "notes": ""
           }
@@ -157,7 +157,7 @@
       "_seconds": 1780000000,
       "_nanoseconds": 0
     },
-    "updatedAt": 1788801905794,
+    "updatedAt": 1788802974637,
     "isActive": true,
     "assignedServer": null,
     "notes": "",
