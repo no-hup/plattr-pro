@@ -1,5 +1,36 @@
 # Go-Live Plan — Single-Restaurant Soft Launch
 
+## Execution status (updated 2026-09-07, evening)
+
+DONE (committed): Day 1 config (Node 22, locked rules, hosting block, build script,
+.gitignore, in-flight changeset committed) · Day 2 five field bugs + full
+session-validator audit **and** the resulting security fixes (staff gating on OTP
+minting/table mutations/menu mutations, entity checks on 5 staff order endpoints,
+active-table-session requirement on cart mutations, checkout session-id match,
+emulator-only cleanupInactiveSessions) · Day 3 backend (bounded polled queries, dead
+getOrder query deleted, maxInstances 10) and frontend polling (consumer 15s, waiter
+20s, kitchen 30s, all with in-flight guards + keep-last-good + lifecycle pause).
+NO key rotation (user decision). E2E: 178 pass / 5 pre-existing fails (see below).
+
+**Blocked on the user (this machine):**
+1. `firebase login` — then: deploy functions, rules, create hosting site, deploy hosting.
+2. Flutter SDK not on PATH — `flutter analyze` + web/apk builds must run wherever
+   Flutter lives. All Dart edits are unverified-by-compiler until then.
+
+**Known pre-existing failures (not from these changes; verified on pre-change tree):**
+- e2e `table` 15 (suite bug: resumes table 1 with table 2's session), 16/17
+  (`checkTableStatus` INTERNAL — long-known), `menu` 3 (shape assertion),
+  `server-journey` 5 (cross-suite state: table left OTP_PENDING).
+- goalline 67/79: CW category-offer scenarios get ₹300 discount (50%-capped offer
+  wins) where golden expects ₹80 — golden fixtures vs offer-eligibility drift;
+  reconcile before service-day (Day 4).
+- Jest: 2 failures — CANCELLED cart items still counted in totals (real product
+  bug candidate; check before go-live, kitchens cancel items).
+
+Remaining: Day 4-5 service-day.mjs + race fixes it proves + real-phone rehearsals.
+
+---
+
 Status: Verified against code 2026-09-07. Every blocker below was confirmed by direct
 inspection (file:line cited). Sequence: 5 working days + rehearsal, then soft launch.
 

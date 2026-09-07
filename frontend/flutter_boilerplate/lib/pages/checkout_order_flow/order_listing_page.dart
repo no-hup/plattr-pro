@@ -23,23 +23,58 @@ class OrderListingPage extends StatefulWidget {
   State<OrderListingPage> createState() => _OrderListingPageState();
 }
 
-class _OrderListingPageState extends State<OrderListingPage> {
+class _OrderListingPageState extends State<OrderListingPage>
+    with WidgetsBindingObserver {
+  // Cached so dispose() doesn't do an ancestor lookup on a deactivated context.
+  OrderListingState? _listingState;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _listingState = context.read<OrderListingState>();
+  }
+
   @override
   void initState() {
     super.initState();
     AppLogger.log('📋 ORDER_PAGE: Initializing order page for table ${widget.tableId}');
-    
+    WidgetsBinding.instance.addObserver(this);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Set the specific orderId if provided to the widget
       if (widget.orderId != null) {
         context.read<OrderListingState>().orderId = widget.orderId;
       }
-      
-      context.read<OrderListingState>().fetchOrder(
-        tableId: widget.tableId,
-        restaurantId: widget.restaurantId,
-      );
+
+      _startPolling();
     });
+  }
+
+  void _startPolling() {
+    context.read<OrderListingState>().startPolling(
+          tableId: widget.tableId,
+          restaurantId: widget.restaurantId,
+          specificOrderId: widget.orderId,
+        );
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    // Provider is app-scoped; polling is page-scoped.
+    _listingState?.stopPolling();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Don't poll while backgrounded; refresh immediately on return.
+    if (state == AppLifecycleState.resumed) {
+      if (mounted) _startPolling();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _listingState?.stopPolling();
+    }
   }
 
   @override
@@ -76,31 +111,37 @@ class _OrderListingPageState extends State<OrderListingPage> {
             return _buildErrorView(context, state.error!);
           }
 
-          // For multiple orders view (no specific orderId)
-          if (widget.orderId == null) {
-            if (state.order == null) {
-              return _buildEmptyOrderView(context);
-            }
-            
-            // If the API only returns a single order, display it directly
-            return OrderDetailsView(
-              orderData: state.order!,
-              orderStatusText: state.getOrderStatusText(),
-              orderStatusColor: state.getOrderStatusColor(),
-              formattedDate: state.getFormattedOrderDate(),
-            );
-          }
-          
-          // For single order detail view (with specific orderId)
           if (state.order == null) {
             return _buildEmptyOrderView(context);
           }
 
-          return OrderDetailsView(
-            orderData: state.order!,
-            orderStatusText: state.getOrderStatusText(),
-            orderStatusColor: state.getOrderStatusColor(),
-            formattedDate: state.getFormattedOrderDate(),
+          return RefreshIndicator(
+            onRefresh: () => state.fetchOrder(
+              tableId: widget.tableId,
+              restaurantId: widget.restaurantId,
+              specificOrderId: widget.orderId,
+              isBackgroundPoll: true,
+            ),
+            child: Column(
+              children: [
+                if (state.lastUpdated != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4, bottom: 2),
+                    child: Text(
+                      'Last updated ${DateFormat('h:mm:ss a').format(state.lastUpdated!)}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                Expanded(
+                  child: OrderDetailsView(
+                    orderData: state.order!,
+                    orderStatusText: state.getOrderStatusText(),
+                    orderStatusColor: state.getOrderStatusColor(),
+                    formattedDate: state.getFormattedOrderDate(),
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),
