@@ -20,6 +20,10 @@ class ErrorInterceptor extends Interceptor {
         dioError = err.copyWith(
           error: 'Send timeout in connection with API server',
         );
+      case DioExceptionType.transformTimeout:
+        dioError = err.copyWith(
+          error: 'Transform timeout in connection with API server',
+        );
       case DioExceptionType.badResponse:
         if (err.response!.data != null) {
           if (err.response!.data is String) {
