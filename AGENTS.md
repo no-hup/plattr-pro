@@ -40,17 +40,17 @@ Restaurant management platform with 4 apps: Consumer (QR scan → menu → order
 
 ### Testing Strategy (Two Homes)
 
-All backend tests live in exactly 2 locations:
+All backend tests live under **one folder**: `backend/src-plattr/functions/test/` (see `TEST_STRATEGY.md`). Two modes:
 
 1. **Unit Tests (Jest):** `backend/src-plattr/functions/test/unit/` — pure function tests, no emulator needed, runs in milliseconds. Covers `calculateItemPrice`, `BasicPriceInfo`, input validation, response builder.
    - Run: `cd backend/src-plattr/functions && npx jest --verbose`
 
-2. **E2E API Tests (Agent-friendly):** `backend/claude-api-testing-workflow/` — 12 suites, ~180 tests hitting real Cloud Functions against Firebase emulator. Covers pricing, cart, checkout, order lifecycle, customer journey, server operations, feature flags, offers, error cases.
-   - Run: `cd backend/claude-api-testing-workflow && bash run-tests.sh`
+2. **E2E API Tests (Agent-friendly):** `backend/src-plattr/functions/test/e2e/` — 12 suites hitting real Cloud Functions against Firebase emulator. Covers pricing, cart, checkout, order lifecycle, customer journey, server operations, feature flags, offers, error cases.
+   - Run: `cd backend/src-plattr/functions/test/e2e && bash run-tests.sh`
    - Run single suite: `bash run-tests.sh --suite pricing`
-   - Agent instructions: `backend/claude-api-testing-workflow/README_AGENT.md`
+   - Agent instructions: `backend/src-plattr/functions/test/e2e/README_AGENT.md`
 
-**Do NOT scatter test files elsewhere in the codebase.** Frontend Dart tests live in their respective app `test/` directories — that is the only exception.
+**Do NOT scatter test files elsewhere in the codebase.** Frontend Dart tests live in their respective app `test/` directories (including `test/contract/` contract tests) — that is the only exception.
 
 ### Test Data & Credentials
 
@@ -68,11 +68,34 @@ The `calculateItemPrice` function in `cart/calculateCartValue.js` applies discou
 - Addons: same logic as variants via `respectParentDiscount` flag
 - Example: Burger(₹200, 10% off=₹180) + Large(₹50, inherits=₹45) + Cheese(₹20, no inherit=₹20) = **₹245**
 
+### Cross-App Consistency Layer (goalline.mjs)
+
+The goal-line suite (`test/e2e/goalline.mjs`) verifies that every app's read path
+reports the **same golden offer-adjusted order total**, not just the consumer path.
+After each golden checkout it re-reads the order via `order-getActiveCartsForKitchen`
+(kitchen), `order-getActiveOrdersForRestaurant` (server list), and
+`server-getOrderDetails` (server detail). A mismatch localizes the bug to that app's
+read/sanitize path. Full run is **79 assertions**. Always `--clean` re-import
+MockData7 before a fresh run (repeated checkouts on one session group into a single
+multi-cart order and inflate totals). Staff auth: `kitchen@<slug>.test` /
+`server@<slug>.test`, password `1234`.
+
+### coverage Suite (orphaned endpoints)
+
+`test/e2e/suites/coverage.js` covers endpoints no other suite hits: customer
+profile/visit (auth-gated), `menu-fetchMenu-fetchMenu` (the doubled name is
+load-bearing — the live consumer app calls it), `table-updateTableStatus`,
+`server-getOrderDetails`, `server-markItemServed`. Uses dedicated `table_clean_8`.
+Auth-gated customer endpoints need the emulator started via `npm run emulators`
+(now sets `FIREBASE_DEBUG_FEATURES='{"skipTokenVerification":true}'` so an unsigned
+bearer token authenticates); otherwise the suite falls back to asserting the auth gate.
+
 ### Known Test Gaps
 
 - `offers` and `offer-pricing` suites are SKIPped — `applyOffer` endpoint was removed in Offers V2 (auto-apply at checkout). These suites need rewriting to verify offers via checkout flow.
 - `admin` suite tests are SKIPped — emulator namespace bug with `admin-*` dash-naming in Cloud Function exports.
 - `checkTableStatus` endpoint returns INTERNAL error — needs investigation.
+- No API sets item-level `READY`: kitchen's `cart-updateCartStatus` updates cart status only and does not cascade to items, but `server-markItemServed` requires `READY` items. The coverage suite documents this (asserts the `PENDING→SERVED` rejection, then seeds `READY` via a Firestore test seam).
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph

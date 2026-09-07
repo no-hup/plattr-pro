@@ -26,3 +26,10 @@ Thumbs.db
 # Build artifacts
 functions/lib/
 functions/dist/
+
+# Test artifacts (never commit raw output dumps — see TEST_STRATEGY.md)
+coverage/
+test_output*.txt
+test/e2e/results/
+firebase.temp.json
+tests/.env.ports
