@@ -171,6 +171,13 @@ async function importData() {
             }
         }
 
+        if (mockData._system) {
+            console.log('Importing _system (v5)...');
+            for (const [docId, docData] of Object.entries(mockData._system)) {
+                await db.collection('_system').doc(docId).set(transformData(docData), { merge: true });
+            }
+        }
+
         console.log('Data (v5) import completed successfully');
     } catch (error) {
         console.error('Error importing data (v5):', error);

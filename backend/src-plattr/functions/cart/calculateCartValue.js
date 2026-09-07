@@ -1,6 +1,7 @@
 const { db } = require('../admin/admin'); // Use the exported db from admin.js
 const { BasicPriceInfo, CartItemPriceInfo, CartTotalPriceInfo } = require('../genericModels/priceinfo');
 const { FULFILLMENT_STATUS } = require('../orders/orderConstants');
+const { mapCartStatus } = require('../utils/statusUtils');
 
 /**
  * Calculates the price of an item based on its base price, selected variants, and addons.
@@ -147,8 +148,8 @@ async function calculateCartValue(cart) {
         continue;
       }
 
-      // Skip cancelled items
-      if (item.status === FULFILLMENT_STATUS.CANCELLED) {
+      // Skip cancelled items (normalised: legacy docs may store lower-case)
+      if (mapCartStatus(item.status) === FULFILLMENT_STATUS.CANCELLED) {
         continue;
       }
 

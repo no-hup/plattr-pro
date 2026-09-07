@@ -10,7 +10,9 @@ const { BasicPriceInfo } = require('../genericModels/priceinfo');
 const { v4: uuidv4 } = require('uuid');
 const { mapOrderStatus, mapCartStatus } = require('../utils/statusUtils');
 const { evaluateAndPickBestOffer, buildAppliedOfferObject } = require('../offers/evaluateOrderOffers');
-const { calculateCharges } = require('./calculateCharges');
+const { calculateCharges, loadChargesConfig } = require('./calculateCharges');
+const { validateCart } = require('../cart/validateCart');
+const { calculateCartValue } = require('../cart/calculateCartValue');
 
 
 /**
@@ -41,51 +43,28 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
   // No cart-level offer revalidation is needed here — carts no longer carry
   // offer fields in Offers V2.
 
-  // Charges V1: load restaurant `billing.charges` config out-of-band (rarely
-  // changes — same pattern as Offers V2 reading offer configs outside the
-  // transaction). Missing doc / missing field → empty config → zero behavior
-  // change for restaurants that haven't opted in.
-  let chargesConfig = [];
-  try {
-    const settingsDoc = await db
-      .collection('restaurants').doc(restaurantId)
-      .collection('config').doc('settings')
-      .get();
-    if (settingsDoc.exists) {
-      const billing = settingsDoc.data()?.billing;
-      if (billing && Array.isArray(billing.charges)) {
-        chargesConfig = billing.charges;
-      }
-    }
-  } catch (err) {
-    console.warn(`createOrUpdateOrder: failed to load billing.charges for ${restaurantId}: ${err.message}`);
-    chargesConfig = [];
-  }
+  // Charges V1: rarely changes, read out-of-band (same pattern as offer configs).
+  const chargesConfig = await loadChargesConfig(restaurantId);
 
-  // Prepare cart snapshot to add to order
-  const cartSnapshot = {
-    ...cart,
-    cartId: `${restaurantId}_${tableId}_${uuidv4().substring(0, 8)}`, // Add a unique cartId with restaurant and table prefix
-    status: FULFILLMENT_STATUS.PENDING,
-    statusHistory: [{
-      status: FULFILLMENT_STATUS.PENDING,
-      timestamp: timestamp.serverTimestamp(),
-      userId
-    }],
-    checkoutTime: timestamp.serverTimestamp(),
-    notes,
-    estimatedPrepTime: calculateEstimatedPrepTime(cart.items),
-    assignedTo: null
-  };
-
-  // sanitise the format of the cart items for the order
-  const orderItems = normalizeCartItemsForOrder(cart);
+  // The cart is re-read INSIDE the transaction below. `cart` (the caller's
+  // out-of-band read) was only used for pre-checks; the live doc is authoritative
+  // so an addItemToCart that lands mid-checkout either retries this transaction
+  // or recreates the cart after it — it is never silently dropped.
+  const cartRef = db.collection("restaurants").doc(restaurantId)
+    .collection("carts").doc(tableId);
 
   try {
     // Begin a transaction to ensure data consistency
     return await db.runTransaction(async (transaction) => {
       // ── ALL READS FIRST ──────────────────────────────────────────
       // Firestore transactions require all reads before all writes.
+
+      // 0. Read the live cart (locks it for the duration of the transaction)
+      const liveCartDoc = await transaction.get(cartRef);
+      const liveCart = liveCartDoc.exists ? liveCartDoc.data() : null;
+      if (!liveCart || !Array.isArray(liveCart.items) || liveCart.items.length === 0) {
+        errorHandler.preconditionFailed('Cannot process an empty cart', { restaurantId, tableId });
+      }
 
       // 1. Read existing orders for this table
       const orderQuery = db.collection("restaurants").doc(restaurantId)
@@ -105,9 +84,38 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
 
       // ── PROCESSING (no more reads after this point) ──────────────
 
+      if (!validateCart(liveCart)) {
+        console.error('Cart validation failed inside checkout transaction; recalculating prices.');
+        liveCart.priceInfo = await calculateCartValue(liveCart);
+      }
+
+      // Prepare cart snapshot to add to order
+      const cartSnapshot = {
+        ...liveCart,
+        cartId: `${restaurantId}_${tableId}_${uuidv4().substring(0, 8)}`, // Add a unique cartId with restaurant and table prefix
+        status: FULFILLMENT_STATUS.PENDING,
+        statusHistory: [{
+          status: FULFILLMENT_STATUS.PENDING,
+          timestamp: timestamp.serverTimestamp(),
+          userId
+        }],
+        checkoutTime: timestamp.serverTimestamp(),
+        notes,
+        estimatedPrepTime: calculateEstimatedPrepTime(liveCart.items),
+        assignedTo: null
+      };
+
+      // sanitise the format of the cart items for the order
+      const orderItems = normalizeCartItemsForOrder(liveCart);
+
+      // Only append to an open order that belongs to THIS sitting. Grouping by
+      // tableId alone made a new party inherit the previous party's unpaid order.
+      // Orders written by older code may lack sessionId — they never match.
       const existingOrderDoc = orderSnapshot.docs.find(doc => {
-        const normalizedStatus = mapOrderStatus(doc.data().orderStatus || doc.data().status);
-        return normalizedStatus === ORDER_STATUS.IN_PROGRESS || normalizedStatus === ORDER_STATUS.PENDING;
+        const data = doc.data();
+        const normalizedStatus = mapOrderStatus(data.orderStatus || data.status);
+        const isOpen = normalizedStatus === ORDER_STATUS.IN_PROGRESS || normalizedStatus === ORDER_STATUS.PENDING;
+        return isOpen && !!sessionId && data.sessionId === sessionId;
       });
 
       let orderResult;
@@ -147,10 +155,14 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
         );
       }
 
+      // The cart becomes the order atomically — no window where both exist.
+      transaction.delete(cartRef);
+
       return orderResult;
     });
   } catch (error) {
     console.error(`createOrUpdateOrder: Error processing order for table ${tableId}: ${error.message}`);
+    if (error instanceof functions.https.HttpsError) throw error;
     errorHandler.internalError(`Error processing order for table ${tableId}`, {
       originalError: error.message,
       tableId,
@@ -172,17 +184,19 @@ function normalizeCartItemsForOrder(cart) {
 
   return cart.items.map(item => {
     // Skip cancelled items
-    if (item.status === FULFILLMENT_STATUS.CANCELLED) return null;
+    if (mapCartStatus(item.status) === FULFILLMENT_STATUS.CANCELLED) return null;
 
     // Skip items without menuItemId
     if (!item.menuItemId) return null;
 
     // Create a simplified version of the cart item for the order using BasicPriceInfo.
-    // Use PER-UNIT prices (not line totals) — the consumer divides by quantity
-    // to get unit base/final, which matches getOrder.js returning unit price.
+    // Use PER-UNIT, ALL-INCLUSIVE prices: cart priceInfo is a line total (×qty),
+    // and totalBasePrice/finalPrice include variants + addons (itemBasePrice/
+    // itemFinalPrice are the base item only). getOrder.js returns this as
+    // `price` and the consumer multiplies by quantity, so lines sum to the total.
     const qty = typeof item.quantity === 'number' && item.quantity > 0 ? item.quantity : 1;
-    const unitBasePrice = (item.priceInfo?.itemBasePrice || 0) / qty;
-    const unitFinalPrice = (item.priceInfo?.itemFinalPrice || 0) / qty;
+    const unitBasePrice = (item.priceInfo?.totalBasePrice || 0) / qty;
+    const unitFinalPrice = (item.priceInfo?.finalPrice || 0) / qty;
     const priceInfo = new BasicPriceInfo(
       unitBasePrice,
       item.priceInfo?.discount,
@@ -461,11 +475,14 @@ function calculateTotalPriceInfo(carts) {
 
   // Accumulate values. Note: carts no longer carry offer fields in Offers V2.
   // Any offerDiscount is applied by the caller after this function returns.
+  const basePrice = cartPriceInfos.reduce((sum, info) => sum + info.basePrice, 0);
+  const totalDiscountAmount = cartPriceInfos.reduce((sum, info) => sum + info.totalDiscountAmount, 0);
   const totalPriceInfo = new OrderPriceInfo({
-    basePrice: cartPriceInfos.reduce((sum, info) => sum + info.basePrice, 0),
+    basePrice,
     finalPrice: cartPriceInfos.reduce((sum, info) => sum + info.finalPrice, 0),
-    totalDiscount: cartPriceInfos.reduce((sum, info) => sum + info.totalDiscount, 0) / carts.length, // Average discount
-    totalDiscountAmount: cartPriceInfos.reduce((sum, info) => sum + info.totalDiscountAmount, 0),
+    // Effective item-discount % across the order (not an average of cart %s)
+    totalDiscount: basePrice > 0 ? Math.round((totalDiscountAmount / basePrice) * 10000) / 100 : 0,
+    totalDiscountAmount,
     offerDiscount: 0
   });
 
@@ -490,5 +507,6 @@ function calculateEstimatedPrepTime(items) {
 }
 
 module.exports = {
-  createOrUpdateOrder: exports.createOrUpdateOrder
+  createOrUpdateOrder: exports.createOrUpdateOrder,
+  normalizeCartItemsForOrder // exported for unit tests
 };

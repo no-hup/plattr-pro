@@ -95,7 +95,7 @@ bearer token authenticates); otherwise the suite falls back to asserting the aut
 - `offers` and `offer-pricing` suites are SKIPped — `applyOffer` endpoint was removed in Offers V2 (auto-apply at checkout). These suites need rewriting to verify offers via checkout flow.
 - `admin` suite tests are SKIPped — emulator namespace bug with `admin-*` dash-naming in Cloud Function exports.
 - `checkTableStatus` endpoint returns INTERNAL error — needs investigation.
-- No API sets item-level `READY`: kitchen's `cart-updateCartStatus` updates cart status only and does not cascade to items, but `server-markItemServed` requires `READY` items. The coverage suite documents this (asserts the `PENDING→SERVED` rejection, then seeds `READY` via a Firestore test seam).
+- `cart-updateCartStatus` cascades the cart status to its non-terminal items (`carts[].items` only; the flat `order.items` copy is not cascaded — no read path returns its status and it carries no cart reference). The coverage suite still asserts the `PENDING→SERVED` rejection on a fresh checkout (that cart is never moved to READY), then seeds `READY` via a Firestore test seam.
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph

@@ -16,6 +16,28 @@
 
 'use strict';
 
+const { db } = require('../admin/admin');
+
+/**
+ * Loads restaurant `billing.charges`. Missing doc / field / read error → []
+ * so restaurants that never opted in see zero behavior change.
+ * @param {string} restaurantId
+ * @returns {Promise<ChargeConfig[]>}
+ */
+async function loadChargesConfig(restaurantId) {
+  try {
+    const settingsDoc = await db
+      .collection('restaurants').doc(restaurantId)
+      .collection('config').doc('settings')
+      .get();
+    const charges = settingsDoc.exists ? settingsDoc.data()?.billing?.charges : null;
+    return Array.isArray(charges) ? charges : [];
+  } catch (err) {
+    console.warn(`loadChargesConfig: failed for ${restaurantId}: ${err.message}`);
+    return [];
+  }
+}
+
 /**
  * @typedef {Object} ChargeConfig
  * @property {string} type - Free-form identifier (e.g. "SERVICE_CHARGE", "GLOBAL_DISCOUNT")
@@ -77,4 +99,4 @@ function _roundTo2(n) {
   return Math.round((n + Number.EPSILON) * 100) / 100;
 }
 
-module.exports = { calculateCharges };
+module.exports = { calculateCharges, loadChargesConfig };

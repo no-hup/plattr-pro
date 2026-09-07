@@ -11,6 +11,7 @@ const { sendFCMNotification } = require('../notifications/sendNotification');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 const errorHandler = require('../singleton/ErrorHandler');
 const { evaluateAndPickBestOffer, buildAppliedOfferObject } = require('../offers/evaluateOrderOffers');
+const { calculateCharges, loadChargesConfig } = require('./calculateCharges');
 
 const COLLECTIONS = {
   RESTAURANTS: 'restaurants',
@@ -37,6 +38,7 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
   // Staff only: this endpoint closes the bill (COMPLETED sets paymentStatus
   // PAID). validateSessionId was optional-and-anonymous — unacceptable here.
   await validateStaffSession(restaurantId, sessionId);
+  const chargesConfig = orderStatus === ORDER_STATUS.COMPLETED ? await loadChargesConfig(restaurantId) : [];
   try {
     const orderRef = db
       .collection(COLLECTIONS.RESTAURANTS).doc(restaurantId)
@@ -98,24 +100,26 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
         );
         const offerDiscount = bestOffer ? Math.min(bestOffer.discountAmount, totalFinal) : 0;
         const appliedOffer = bestOffer ? buildAppliedOfferObject(bestOffer) : null;
+        const postOfferFinalPrice = Math.max(0, totalFinal - offerDiscount);
+
+        // Charges V1: same computation as checkout, on the post-offer total.
+        const { charges, chargesTotal } = calculateCharges(postOfferFinalPrice, chargesConfig);
 
         const recomputedPriceInfo = new OrderPriceInfo({
           basePrice: totalBase,
-          finalPrice: Math.max(0, totalFinal - offerDiscount),
-          totalDiscount: order.priceInfo?.totalDiscount || 0,
+          finalPrice: postOfferFinalPrice,
+          totalDiscount: totalBase > 0 ? Math.round((totalItemDiscount / totalBase) * 10000) / 100 : 0,
           totalDiscountAmount: totalItemDiscount + offerDiscount,
-          offerDiscount
+          offerDiscount,
+          charges,
+          chargesTotal
         }).toObject();
 
-        // 4. Sanity check: the recomputed base/final (before offer) must match the stored base.
-        //    The offer portion is allowed to differ (e.g., cancellations changed eligibility).
+        // 4. The recompute is authoritative: a base drift means items/carts were
+        //    cancelled after checkout (exactly what this safety net is for), so log it
+        //    rather than block payment.
         if (Math.abs(recomputedPriceInfo.basePrice - (order.priceInfo?.basePrice || 0)) > 0.05) {
-          errorHandler.preconditionFailed('Recomputed bill base does not match stored bill', {
-            restaurantId,
-            orderId,
-            recomputedBase: recomputedPriceInfo.basePrice,
-            storedBase: order.priceInfo?.basePrice
-          });
+          console.warn(`updateOrderStatus: order ${orderId} base drifted ${order.priceInfo?.basePrice} -> ${recomputedPriceInfo.basePrice} (cancellations after checkout)`);
         }
 
         if (appliedOffer && !order.appliedOffer) {
@@ -134,15 +138,15 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
       // Notify server on completion
       if (orderStatus === ORDER_STATUS.COMPLETED && featureFlags.isEnabled(SEND_SERVER_NOTIFICATIONS)) {
         const { tableId } = order;
-        const tableDoc = await tx.get(db
+        const tableDoc = await db
           .collection(COLLECTIONS.RESTAURANTS).doc(restaurantId)
-          .collection(COLLECTIONS.TABLES).doc(tableId));
+          .collection(COLLECTIONS.TABLES).doc(tableId).get();
         if (tableDoc.exists) {
           const serverId = tableDoc.data().assignedServerId;
           if (serverId) {
-            const serverDoc = await tx.get(db
+            const serverDoc = await db
               .collection(COLLECTIONS.RESTAURANTS).doc(restaurantId)
-              .collection(COLLECTIONS.SERVERS).doc(serverId));
+              .collection(COLLECTIONS.SERVERS).doc(serverId).get();
             if (serverDoc.exists) {
               const token = serverDoc.data().fcmToken;
               if (token) {

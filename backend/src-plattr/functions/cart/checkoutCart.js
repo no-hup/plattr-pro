@@ -1,7 +1,6 @@
 const functions = require('firebase-functions');
 const { admin, db, Timestamp } = require('../admin/admin');
 const getCartFunction = require('./getCart');
-const { clearCartInternal } = require('./clearCart');
 const createOrUpdateOrder = require('../orders/createOrUpdateOrder').createOrUpdateOrder;
 const { validateCheckoutFields, validateCheckoutSession } = require('./cartInputValidation');
 const errorHandler = require('../singleton/ErrorHandler');
@@ -93,9 +92,8 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
       errorHandler.internalError('Failed to validate item stock: ' + stockError.message);
     }
 
-    // Create/Update Order and Clear Cart
+    // Create/Update Order and clear the cart — one transaction (see createOrUpdateOrder)
     try {
-      // First, create or update the order (this has its own transaction)
       const order = await createOrUpdateOrder(
         restaurantId,
         tableId,
@@ -104,16 +102,6 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
         notes,
         sessionId
       );
-
-      // After successful order creation, clear the cart
-      // Use clearCartInternal which is already implemented
-      try {
-        await clearCartInternal(restaurantId, tableId);
-      } catch (clearError) {
-        // If clearing fails but order was created, log error but consider checkout successful
-        console.error(`Warning: Order created but cart clearing failed: ${clearError.message}`);
-        // We don't throw here to avoid leaving the system in an inconsistent state
-      }
 
       // console.log(`Checkout completed successfully for table ${tableId}, order ID: ${order.id}`);
 
@@ -130,7 +118,7 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
       );
     } catch (orderError) {
       console.error(`Error during checkout process: ${orderError.message}`);
-      // Throw internal error for order processing failures
+      if (orderError instanceof functions.https.HttpsError) throw orderError;
       errorHandler.internalError('Error processing checkout: ' + orderError.message);
     }
   } catch (error) {

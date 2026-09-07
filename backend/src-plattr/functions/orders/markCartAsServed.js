@@ -2,7 +2,7 @@ const functions = require("firebase-functions");
 const admin = require('../admin/initializeAdmin');
 const db = admin.firestore();
 const { FULFILLMENT_STATUS } = require('./orderConstants');
-const { mapCartStatus } = require('../utils/statusUtils');
+const { mapCartStatus, isValidCartTransition } = require('../utils/statusUtils');
 const OrderInputValidation = require('./orderInputValidation');
 const timestamp = require('../utils/timestamp');
 const ResponseBuilder = require('../utils/ResponseBuilder');
@@ -93,6 +93,13 @@ async function markCartAsServedHandler(data, context) {
             // Already served - return early
             if (currentStatus === FULFILLMENT_STATUS.SERVED) {
                 return { alreadyServed: true, cart };
+            }
+
+            // Same rules as cart-updateCartStatus / server-markItemServed: only a
+            // READY cart can be served. Otherwise a waiter could serve food the
+            // kitchen has not started and the kitchen's later READY would fail.
+            if (!isValidCartTransition(currentStatus, FULFILLMENT_STATUS.SERVED)) {
+                errorHandler.badRequest(`Cart must be READY before it can be served (current: ${currentStatus})`, { currentStatus });
             }
 
             const now = timestamp.serverTimestamp();
