@@ -1,0 +1,952 @@
+{
+  "generatedAtUnix": 1783421083,
+  "scenarios": [
+    {
+      "scenarioId": "MEG_ITEM_bir_egg",
+      "kind": "item",
+      "restaurantId": "res_meghana",
+      "description": "Chicken Biryani single + boiled egg (addon respectParent FALSE, item disc 0)",
+      "tags": [
+        "addon-no-inherit",
+        "variant-respectparent-true"
+      ],
+      "input": {
+        "menuItemId": "mi_chicken_bir",
+        "quantity": 1,
+        "selVariants": [
+          {
+            "variantId": "mv_bir_portion",
+            "optionId": "single"
+          }
+        ],
+        "selAddonIds": [
+          "ma_extra_egg"
+        ]
+      },
+      "expected": {
+        "itemBasePrice": 320,
+        "itemFinalPrice": 320,
+        "totalVariantFinalPrice": 0,
+        "totalAddonFinalPrice": 30,
+        "totalBasePrice": 350,
+        "finalPrice": 350,
+        "discountAmount": 0
+      }
+    },
+    {
+      "scenarioId": "MEG_ITEM_mutton_family_gravy",
+      "kind": "item",
+      "restaurantId": "res_meghana",
+      "description": "Mutton Biryani(10%) family + extra gravy(respectParent TRUE inherits 10%)",
+      "tags": [
+        "variant-respectparent-true",
+        "addon-inherit",
+        "item-discount"
+      ],
+      "input": {
+        "menuItemId": "mi_mutton_bir",
+        "quantity": 1,
+        "selVariants": [
+          {
+            "variantId": "mv_bir_portion",
+            "optionId": "family"
+          }
+        ],
+        "selAddonIds": [
+          "ma_extra_gravy"
+        ]
+      },
+      "expected": {
+        "itemBasePrice": 420,
+        "itemFinalPrice": 378,
+        "totalVariantFinalPrice": 234,
+        "totalAddonFinalPrice": 54,
+        "totalBasePrice": 740,
+        "finalPrice": 666,
+        "discountAmount": 74
+      }
+    },
+    {
+      "scenarioId": "MEG_ITEM_paneer_qty3",
+      "kind": "item",
+      "restaurantId": "res_meghana",
+      "description": "Paneer 65 (15% off) × 3 — quantity math",
+      "tags": [
+        "quantity",
+        "item-discount"
+      ],
+      "input": {
+        "menuItemId": "mi_paneer65",
+        "quantity": 3,
+        "selVariants": [],
+        "selAddonIds": []
+      },
+      "expected": {
+        "itemBasePrice": 720,
+        "itemFinalPrice": 612,
+        "totalVariantFinalPrice": 0,
+        "totalAddonFinalPrice": 0,
+        "totalBasePrice": 720,
+        "finalPrice": 612,
+        "discountAmount": 108
+      }
+    },
+    {
+      "scenarioId": "MEG_CHK_flat_service",
+      "kind": "checkout",
+      "restaurantId": "res_meghana",
+      "description": "Biryani family + crab → FLAT ₹100 order offer + 5% service charge",
+      "tags": [
+        "offer-flat-order",
+        "charge-service"
+      ],
+      "input": {
+        "items": [
+          {
+            "menuItemId": "mi_chicken_bir",
+            "selVariants": [
+              {
+                "variantId": "mv_bir_portion",
+                "optionId": "family"
+              }
+            ]
+          },
+          {
+            "menuItemId": "mi_crab_roast"
+          }
+        ],
+        "offerId": "off_meg_flat100"
+      },
+      "expected": {
+        "basePrice": 1200,
+        "itemFinalPrice": 1200,
+        "offerDiscount": 100,
+        "finalPriceAfterOffer": 1100,
+        "charges": [
+          {
+            "type": "SERVICE_CHARGE",
+            "percentage": 5,
+            "amount": 55
+          }
+        ],
+        "chargesTotal": 55,
+        "grandTotal": 1155,
+        "totalDiscountAmount": 100,
+        "appliedOfferId": "off_meg_flat100",
+        "appliedOfferTitle": "₹100 Off (min ₹499)"
+      }
+    },
+    {
+      "scenarioId": "MEG_CHK_category_biryani",
+      "kind": "checkout",
+      "restaurantId": "res_meghana",
+      "description": "Single veg biryani (< ₹499) → CATEGORY 10% biryani offer, no FLAT",
+      "tags": [
+        "offer-category-percentage",
+        "min-order-gate"
+      ],
+      "input": {
+        "items": [
+          {
+            "menuItemId": "mi_veg_bir",
+            "selVariants": [
+              {
+                "variantId": "mv_bir_portion",
+                "optionId": "single"
+              }
+            ]
+          }
+        ],
+        "offerId": "off_meg_bir10"
+      },
+      "expected": {
+        "basePrice": 260,
+        "itemFinalPrice": 260,
+        "offerDiscount": 26,
+        "finalPriceAfterOffer": 234,
+        "charges": [
+          {
+            "type": "SERVICE_CHARGE",
+            "percentage": 5,
+            "amount": 11.7
+          }
+        ],
+        "chargesTotal": 11.7,
+        "grandTotal": 245.7,
+        "totalDiscountAmount": 26,
+        "appliedOfferId": "off_meg_bir10",
+        "appliedOfferTitle": "10% Off Biryani (max ₹120)"
+      }
+    },
+    {
+      "scenarioId": "MEG_CHK_bogo_paneer",
+      "kind": "checkout",
+      "restaurantId": "res_meghana",
+      "description": "Paneer 65 × 2 → BOGO (one free)",
+      "tags": [
+        "offer-bogo"
+      ],
+      "input": {
+        "items": [
+          {
+            "menuItemId": "mi_paneer65",
+            "quantity": 2
+          }
+        ],
+        "offerId": "off_meg_bogo_paneer"
+      },
+      "expected": {
+        "basePrice": 480,
+        "itemFinalPrice": 408,
+        "offerDiscount": 204,
+        "finalPriceAfterOffer": 204,
+        "charges": [
+          {
+            "type": "SERVICE_CHARGE",
+            "percentage": 5,
+            "amount": 10.2
+          }
+        ],
+        "chargesTotal": 10.2,
+        "grandTotal": 214.2,
+        "totalDiscountAmount": 276,
+        "appliedOfferId": "off_meg_bogo_paneer",
+        "appliedOfferTitle": "BOGO Paneer 65"
+      }
+    },
+    {
+      "scenarioId": "PB_ITEM_marg_large_cheese",
+      "kind": "item",
+      "restaurantId": "res_pizzabakery",
+      "description": "Margherita Large(+320) sourdough + extra cheese(₹90 no-inherit), item disc 0",
+      "tags": [
+        "variant-mandatory",
+        "addon-no-inherit"
+      ],
+      "input": {
+        "menuItemId": "pi_margherita",
+        "quantity": 1,
+        "selVariants": [
+          {
+            "variantId": "pv_size",
+            "optionId": "large"
+          },
+          {
+            "variantId": "pv_crust",
+            "optionId": "sourdough"
+          }
+        ],
+        "selAddonIds": [
+          "pa_cheese"
+        ]
+      },
+      "expected": {
+        "itemBasePrice": 360,
+        "itemFinalPrice": 360,
+        "totalVariantFinalPrice": 320,
+        "totalAddonFinalPrice": 90,
+        "totalBasePrice": 770,
+        "finalPrice": 770,
+        "discountAmount": 0
+      }
+    },
+    {
+      "scenarioId": "PB_ITEM_funghi_medium_gf",
+      "kind": "item",
+      "restaurantId": "res_pizzabakery",
+      "description": "Funghi(10%) Medium(+160) Gluten-Free(+120) — variants respectParent TRUE inherit 10%",
+      "tags": [
+        "variant-respectparent-true",
+        "item-discount",
+        "variant-priced"
+      ],
+      "input": {
+        "menuItemId": "pi_funghi",
+        "quantity": 1,
+        "selVariants": [
+          {
+            "variantId": "pv_size",
+            "optionId": "medium"
+          },
+          {
+            "variantId": "pv_crust",
+            "optionId": "gf"
+          }
+        ],
+        "selAddonIds": []
+      },
+      "expected": {
+        "itemBasePrice": 440,
+        "itemFinalPrice": 396,
+        "totalVariantFinalPrice": 252,
+        "totalAddonFinalPrice": 0,
+        "totalBasePrice": 720,
+        "finalPrice": 648,
+        "discountAmount": 72
+      }
+    },
+    {
+      "scenarioId": "PB_ITEM_funghi_large_loaded",
+      "kind": "item",
+      "restaurantId": "res_pizzabakery",
+      "description": "Funghi(10%) Large + cheese + mushroom + chicken (addons no-inherit stay full price)",
+      "tags": [
+        "variant-respectparent-true",
+        "addon-no-inherit",
+        "mixed"
+      ],
+      "input": {
+        "menuItemId": "pi_funghi",
+        "quantity": 1,
+        "selVariants": [
+          {
+            "variantId": "pv_size",
+            "optionId": "large"
+          }
+        ],
+        "selAddonIds": [
+          "pa_cheese",
+          "pa_mushroom",
+          "pa_chicken"
+        ]
+      },
+      "expected": {
+        "itemBasePrice": 440,
+        "itemFinalPrice": 396,
+        "totalVariantFinalPrice": 288,
+        "totalAddonFinalPrice": 290,
+        "totalBasePrice": 1050,
+        "finalPrice": 974,
+        "discountAmount": 76
+      }
+    },
+    {
+      "scenarioId": "PB_CHK_two_large_flat",
+      "kind": "checkout",
+      "restaurantId": "res_pizzabakery",
+      "description": "Two large pizzas → FLAT ₹100 + 5% service charge",
+      "tags": [
+        "offer-flat-order",
+        "charge-service"
+      ],
+      "input": {
+        "items": [
+          {
+            "menuItemId": "pi_pepperoni",
+            "selVariants": [
+              {
+                "variantId": "pv_size",
+                "optionId": "large"
+              }
+            ]
+          },
+          {
+            "menuItemId": "pi_chicken_tikka",
+            "selVariants": [
+              {
+                "variantId": "pv_size",
+                "optionId": "large"
+              }
+            ]
+          }
+        ],
+        "offerId": "off_pb_flat100"
+      },
+      "expected": {
+        "basePrice": 1660,
+        "itemFinalPrice": 1578,
+        "offerDiscount": 100,
+        "finalPriceAfterOffer": 1478,
+        "charges": [
+          {
+            "type": "SERVICE_CHARGE",
+            "percentage": 5,
+            "amount": 73.9
+          }
+        ],
+        "chargesTotal": 73.9,
+        "grandTotal": 1551.9,
+        "totalDiscountAmount": 182,
+        "appliedOfferId": "off_pb_flat100",
+        "appliedOfferTitle": "₹100 Off (min ₹499)"
+      }
+    },
+    {
+      "scenarioId": "PB_CHK_dessert_cap",
+      "kind": "checkout",
+      "restaurantId": "res_pizzabakery",
+      "description": "Tiramisu + Brownie → 15% dessert offer capped at ₹80",
+      "tags": [
+        "offer-category-percentage",
+        "offer-cap"
+      ],
+      "input": {
+        "items": [
+          {
+            "menuItemId": "pi_tiramisu"
+          },
+          {
+            "menuItemId": "pi_brownie"
+          }
+        ],
+        "offerId": "off_pb_dessert15"
+      },
+      "expected": {
+        "basePrice": 480,
+        "itemFinalPrice": 480,
+        "offerDiscount": 72,
+        "finalPriceAfterOffer": 408,
+        "charges": [
+          {
+            "type": "SERVICE_CHARGE",
+            "percentage": 5,
+            "amount": 20.4
+          }
+        ],
+        "chargesTotal": 20.4,
+        "grandTotal": 428.4,
+        "totalDiscountAmount": 72,
+        "appliedOfferId": "off_pb_dessert15",
+        "appliedOfferTitle": "15% Off Desserts (max ₹80)"
+      }
+    },
+    {
+      "scenarioId": "TR_ITEM_classic_mutton_loaded",
+      "kind": "item",
+      "restaurantId": "res_truffles",
+      "description": "Classic(0%) Mutton patty(+70) + cheese + bacon (addons no-inherit)",
+      "tags": [
+        "variant-mandatory",
+        "addon-no-inherit"
+      ],
+      "input": {
+        "menuItemId": "tri_classic",
+        "quantity": 1,
+        "selVariants": [
+          {
+            "variantId": "trv_patty",
+            "optionId": "mutton"
+          }
+        ],
+        "selAddonIds": [
+          "tra_cheese",
+          "tra_bacon"
+        ]
+      },
+      "expected": {
+        "itemBasePrice": 300,
+        "itemFinalPrice": 300,
+        "totalVariantFinalPrice": 70,
+        "totalAddonFinalPrice": 130,
+        "totalBasePrice": 500,
+        "finalPrice": 500,
+        "discountAmount": 0
+      }
+    },
+    {
+      "scenarioId": "TR_ITEM_bombay_extrapatty",
+      "kind": "item",
+      "restaurantId": "res_truffles",
+      "description": "Bombay(10%) Chicken + Extra Patty(respectParent TRUE inherits 10%) + egg(no-inherit)",
+      "tags": [
+        "addon-inherit",
+        "addon-no-inherit",
+        "item-discount"
+      ],
+      "input": {
+        "menuItemId": "tri_bombay",
+        "quantity": 1,
+        "selVariants": [
+          {
+            "variantId": "trv_patty",
+            "optionId": "chicken"
+          }
+        ],
+        "selAddonIds": [
+          "tra_patty",
+          "tra_egg"
+        ]
+      },
+      "expected": {
+        "itemBasePrice": 340,
+        "itemFinalPrice": 306,
+        "totalVariantFinalPrice": 0,
+        "totalAddonFinalPrice": 129,
+        "totalBasePrice": 480,
+        "finalPrice": 435,
+        "discountAmount": 45
+      }
+    },
+    {
+      "scenarioId": "TR_ITEM_classic_veg_qty2",
+      "kind": "item",
+      "restaurantId": "res_truffles",
+      "description": "Classic Veg patty × 2 — quantity + zero-price variant",
+      "tags": [
+        "quantity",
+        "variant-zero-price"
+      ],
+      "input": {
+        "menuItemId": "tri_classic",
+        "quantity": 2,
+        "selVariants": [
+          {
+            "variantId": "trv_patty",
+            "optionId": "veg"
+          }
+        ],
+        "selAddonIds": []
+      },
+      "expected": {
+        "itemBasePrice": 600,
+        "itemFinalPrice": 600,
+        "totalVariantFinalPrice": 0,
+        "totalAddonFinalPrice": 0,
+        "totalBasePrice": 600,
+        "finalPrice": 600,
+        "discountAmount": 0
+      }
+    },
+    {
+      "scenarioId": "TR_CHK_flat_vs_category",
+      "kind": "checkout",
+      "restaurantId": "res_truffles",
+      "description": "Two burgers → best of FLAT ₹80 vs 10% burgers + 5% service",
+      "tags": [
+        "offer-competition",
+        "charge-service"
+      ],
+      "input": {
+        "items": [
+          {
+            "menuItemId": "tri_classic",
+            "selVariants": [
+              {
+                "variantId": "trv_patty",
+                "optionId": "chicken"
+              }
+            ],
+            "selAddonIds": [
+              "tra_cheese"
+            ]
+          },
+          {
+            "menuItemId": "tri_bombay",
+            "selVariants": [
+              {
+                "variantId": "trv_patty",
+                "optionId": "mutton"
+              }
+            ]
+          }
+        ],
+        "offerId": "off_tr_flat80"
+      },
+      "expected": {
+        "basePrice": 750,
+        "itemFinalPrice": 709,
+        "offerDiscount": 80,
+        "finalPriceAfterOffer": 629,
+        "charges": [
+          {
+            "type": "SERVICE_CHARGE",
+            "percentage": 5,
+            "amount": 31.45
+          }
+        ],
+        "chargesTotal": 31.45,
+        "grandTotal": 660.45,
+        "totalDiscountAmount": 121,
+        "appliedOfferId": "off_tr_flat80",
+        "appliedOfferTitle": "₹80 Off (min ₹299)"
+      }
+    },
+    {
+      "scenarioId": "TR_CHK_bogo_shakes",
+      "kind": "checkout",
+      "restaurantId": "res_truffles",
+      "description": "Choc + Oreo shake → BOGO, Oreo (cheaper) free",
+      "tags": [
+        "offer-bogo"
+      ],
+      "input": {
+        "items": [
+          {
+            "menuItemId": "tri_shake_choc"
+          },
+          {
+            "menuItemId": "tri_shake_oreo"
+          }
+        ],
+        "offerId": "off_tr_bogo_shake"
+      },
+      "expected": {
+        "basePrice": 420,
+        "itemFinalPrice": 420,
+        "offerDiscount": 200,
+        "finalPriceAfterOffer": 220,
+        "charges": [
+          {
+            "type": "SERVICE_CHARGE",
+            "percentage": 5,
+            "amount": 11
+          }
+        ],
+        "chargesTotal": 11,
+        "grandTotal": 231,
+        "totalDiscountAmount": 200,
+        "appliedOfferId": "off_tr_bogo_shake",
+        "appliedOfferTitle": "BOGO Shakes"
+      }
+    },
+    {
+      "scenarioId": "SALT_ITEM_seekh_full",
+      "kind": "item",
+      "restaurantId": "res_salt",
+      "description": "Mutton Seekh Full portion(+220, respectParent TRUE, item 0%) + mint(no-inherit)",
+      "tags": [
+        "variant-respectparent-true",
+        "addon-no-inherit"
+      ],
+      "input": {
+        "menuItemId": "si_seekh",
+        "quantity": 1,
+        "selVariants": [
+          {
+            "variantId": "sv_portion",
+            "optionId": "full"
+          }
+        ],
+        "selAddonIds": [
+          "sa_mint"
+        ]
+      },
+      "expected": {
+        "itemBasePrice": 560,
+        "itemFinalPrice": 560,
+        "totalVariantFinalPrice": 220,
+        "totalAddonFinalPrice": 30,
+        "totalBasePrice": 810,
+        "finalPrice": 810,
+        "discountAmount": 0
+      }
+    },
+    {
+      "scenarioId": "SALT_ITEM_paneer_full_disc",
+      "kind": "item",
+      "restaurantId": "res_salt",
+      "description": "Paneer Tikka(10%) Full(+220 inherits 10%) — variant respectParent TRUE with discount",
+      "tags": [
+        "variant-respectparent-true",
+        "item-discount"
+      ],
+      "input": {
+        "menuItemId": "si_paneer_tikka",
+        "quantity": 1,
+        "selVariants": [
+          {
+            "variantId": "sv_portion",
+            "optionId": "full"
+          }
+        ],
+        "selAddonIds": []
+      },
+      "expected": {
+        "itemBasePrice": 460,
+        "itemFinalPrice": 414,
+        "totalVariantFinalPrice": 198,
+        "totalAddonFinalPrice": 0,
+        "totalBasePrice": 680,
+        "finalPrice": 612,
+        "discountAmount": 68
+      }
+    },
+    {
+      "scenarioId": "SALT_CHK_50cap_twocharges",
+      "kind": "checkout",
+      "restaurantId": "res_salt",
+      "description": "Butter chicken + full seekh → 50% (cap ₹300) + 8% service + 5% GST",
+      "tags": [
+        "offer-percentage-cap",
+        "charge-service",
+        "charge-gst",
+        "multi-charge"
+      ],
+      "input": {
+        "items": [
+          {
+            "menuItemId": "si_butter_chicken"
+          },
+          {
+            "menuItemId": "si_seekh",
+            "selVariants": [
+              {
+                "variantId": "sv_portion",
+                "optionId": "full"
+              }
+            ]
+          }
+        ],
+        "offerId": "off_salt_50cap"
+      },
+      "expected": {
+        "basePrice": 1400,
+        "itemFinalPrice": 1400,
+        "offerDiscount": 300,
+        "finalPriceAfterOffer": 1100,
+        "charges": [
+          {
+            "type": "SERVICE_CHARGE",
+            "percentage": 8,
+            "amount": 88
+          },
+          {
+            "type": "GST",
+            "percentage": 5,
+            "amount": 55
+          }
+        ],
+        "chargesTotal": 143,
+        "grandTotal": 1243,
+        "totalDiscountAmount": 300,
+        "appliedOfferId": "off_salt_50cap",
+        "appliedOfferTitle": "50% Off (max ₹300)"
+      }
+    },
+    {
+      "scenarioId": "SALT_CHK_loyalty_history",
+      "kind": "checkout",
+      "restaurantId": "res_salt",
+      "description": "Big ticket, returning guest (2 seeded prior orders) → loyalty 12% (₹333.6) beats 50%-cap (₹300)",
+      "tags": [
+        "offer-userhistory",
+        "requires-session-history"
+      ],
+      "input": {
+        "items": [
+          {
+            "menuItemId": "si_seekh",
+            "selVariants": [
+              {
+                "variantId": "sv_portion",
+                "optionId": "full"
+              }
+            ]
+          },
+          {
+            "menuItemId": "si_malai_tikka",
+            "selVariants": [
+              {
+                "variantId": "sv_portion",
+                "optionId": "full"
+              }
+            ]
+          },
+          {
+            "menuItemId": "si_butter_chicken"
+          },
+          {
+            "menuItemId": "si_rogan"
+          }
+        ],
+        "offerId": "off_salt_loyalty"
+      },
+      "expected": {
+        "basePrice": 2780,
+        "itemFinalPrice": 2716,
+        "offerDiscount": 333.6,
+        "finalPriceAfterOffer": 2382.4,
+        "charges": [
+          {
+            "type": "SERVICE_CHARGE",
+            "percentage": 8,
+            "amount": 190.59
+          },
+          {
+            "type": "GST",
+            "percentage": 5,
+            "amount": 119.12
+          }
+        ],
+        "chargesTotal": 309.71,
+        "grandTotal": 2692.11,
+        "totalDiscountAmount": 397.6,
+        "appliedOfferId": "off_salt_loyalty",
+        "appliedOfferTitle": "Loyalty 12% (≥2 prior orders, max ₹400)"
+      }
+    },
+    {
+      "scenarioId": "CW_ITEM_hakka_full_prawns",
+      "kind": "item",
+      "restaurantId": "res_chowman",
+      "description": "Hakka Full(+120 respectParent TRUE, item 0%) + prawns(₹140 no-inherit) + spicy(zero-price)",
+      "tags": [
+        "variant-respectparent-true",
+        "addon-no-inherit",
+        "variant-zero-price"
+      ],
+      "input": {
+        "menuItemId": "ci_hakka",
+        "quantity": 1,
+        "selVariants": [
+          {
+            "variantId": "cv_portion",
+            "optionId": "full"
+          },
+          {
+            "variantId": "cv_spice",
+            "optionId": "spicy"
+          }
+        ],
+        "selAddonIds": [
+          "ca_prawns"
+        ]
+      },
+      "expected": {
+        "itemBasePrice": 280,
+        "itemFinalPrice": 280,
+        "totalVariantFinalPrice": 120,
+        "totalAddonFinalPrice": 140,
+        "totalBasePrice": 540,
+        "finalPrice": 540,
+        "discountAmount": 0
+      }
+    },
+    {
+      "scenarioId": "CW_ITEM_chilli_full_disc",
+      "kind": "item",
+      "restaurantId": "res_chowman",
+      "description": "Chilli Chicken(10%) Full(+120 inherits 10%) — variant respectParent TRUE with discount",
+      "tags": [
+        "variant-respectparent-true",
+        "item-discount"
+      ],
+      "input": {
+        "menuItemId": "ci_chilli_chicken",
+        "quantity": 1,
+        "selVariants": [
+          {
+            "variantId": "cv_portion",
+            "optionId": "full"
+          }
+        ],
+        "selAddonIds": []
+      },
+      "expected": {
+        "itemBasePrice": 360,
+        "itemFinalPrice": 324,
+        "totalVariantFinalPrice": 108,
+        "totalAddonFinalPrice": 0,
+        "totalBasePrice": 480,
+        "finalPrice": 432,
+        "discountAmount": 48
+      }
+    },
+    {
+      "scenarioId": "CW_CHK_negative_charge",
+      "kind": "checkout",
+      "restaurantId": "res_chowman",
+      "description": "Two full mains → FLAT ₹80 + 6% service − 5% loyalty (negative charge nets ~+1%)",
+      "tags": [
+        "offer-flat-order",
+        "charge-service",
+        "charge-negative"
+      ],
+      "input": {
+        "items": [
+          {
+            "menuItemId": "ci_hakka",
+            "selVariants": [
+              {
+                "variantId": "cv_portion",
+                "optionId": "full"
+              }
+            ]
+          },
+          {
+            "menuItemId": "ci_schezwan_rice",
+            "selVariants": [
+              {
+                "variantId": "cv_portion",
+                "optionId": "full"
+              }
+            ]
+          }
+        ],
+        "offerId": "off_cw_flat80"
+      },
+      "expected": {
+        "basePrice": 820,
+        "itemFinalPrice": 820,
+        "offerDiscount": 80,
+        "finalPriceAfterOffer": 740,
+        "charges": [
+          {
+            "type": "SERVICE_CHARGE",
+            "percentage": 6,
+            "amount": 44.4
+          },
+          {
+            "type": "LOYALTY_DISCOUNT",
+            "percentage": -5,
+            "amount": -37
+          }
+        ],
+        "chargesTotal": 7.4,
+        "grandTotal": 747.4,
+        "totalDiscountAmount": 80,
+        "appliedOfferId": "off_cw_flat80",
+        "appliedOfferTitle": "₹80 Off (min ₹199)"
+      }
+    },
+    {
+      "scenarioId": "CW_CHK_starters_category",
+      "kind": "checkout",
+      "restaurantId": "res_chowman",
+      "description": "Chilli paneer + lollipop → FLAT ₹80 beats 10% starters (₹61); charges applied",
+      "tags": [
+        "offer-competition",
+        "charge-negative"
+      ],
+      "input": {
+        "items": [
+          {
+            "menuItemId": "ci_chilli_paneer"
+          },
+          {
+            "menuItemId": "ci_chicken_lollipop"
+          }
+        ],
+        "offerId": "off_cw_flat80"
+      },
+      "expected": {
+        "basePrice": 640,
+        "itemFinalPrice": 610,
+        "offerDiscount": 80,
+        "finalPriceAfterOffer": 530,
+        "charges": [
+          {
+            "type": "SERVICE_CHARGE",
+            "percentage": 6,
+            "amount": 31.8
+          },
+          {
+            "type": "LOYALTY_DISCOUNT",
+            "percentage": -5,
+            "amount": -26.5
+          }
+        ],
+        "chargesTotal": 5.3,
+        "grandTotal": 535.3,
+        "totalDiscountAmount": 110,
+        "appliedOfferId": "off_cw_flat80",
+        "appliedOfferTitle": "₹80 Off (min ₹199)"
+      }
+    }
+  ],
+  "note": "Independent expected values computed by seedKit math (mirrors backend). E2E asserts LIVE backend ↔ these. Divergence = regression or model gap.",
+  "credentials": {
+    "otp": "123456",
+    "serverPassword": "1234"
+  }
+}

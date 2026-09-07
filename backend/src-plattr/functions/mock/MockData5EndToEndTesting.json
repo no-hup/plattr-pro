@@ -614,6 +614,22 @@
               "_nanoseconds": 0
             }
           }
+        },
+        "table_clean_8": {
+          "number": "C8",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
         }
       },
       "sessions": {},
@@ -854,7 +870,10 @@
         "settings": {
           "billing": {
             "charges": [
-              { "type": "SERVICE_CHARGE", "percentage": 7.5 }
+              {
+                "type": "SERVICE_CHARGE",
+                "percentage": 7.5
+              }
             ]
           }
         }
@@ -3806,8 +3825,14 @@
         "settings": {
           "billing": {
             "charges": [
-              { "type": "SERVICE_CHARGE", "percentage": 7.5 },
-              { "type": "GLOBAL_DISCOUNT", "percentage": -5 }
+              {
+                "type": "SERVICE_CHARGE",
+                "percentage": 7.5
+              },
+              {
+                "type": "GLOBAL_DISCOUNT",
+                "percentage": -5
+              }
             ]
           }
         }
