@@ -125,13 +125,17 @@ export interface Bill extends BillBody, Meta {
   cancelled?: { at: number; by: string; reason: string };
   creditNotes: { billId: string; number: string; at: number }[];
   creditNoteOf?: { billId: string; number: string; issuedAt: number };
+  refundedTotal?: number;   // credit notes only, minor units, PY is the only writer (its R7: refunds never sum past the note)
 }
 
 /** BL-S7: a preview body becomes a bill. Lines are copied, never referenced. A bill with nothing to charge is refused. */
 export function issue(body: BillBody, meta: Meta): Result<Bill> {
   if (!body.lines.some(l => l.countsTowardTotal)) return { ok: false, code: 'failed-precondition', message: 'nothing to bill' };
   const copy: BillBody = JSON.parse(JSON.stringify(body));
-  return { ok: true, value: { ...copy, ...meta, seller: { ...meta.seller }, status: 'issued', creditNotes: [] } };
+  // BL-S22 / PY-S8: nothing to collect means settled at issue. This is PY's isSettled(payable, 0) written out;
+  // swap in the shared helper from domain/payments.ts the day it exports one, so there is one definition.
+  const status: Bill['status'] = copy.payable === 0 ? 'paid' : 'issued';
+  return { ok: true, value: { ...copy, ...meta, seller: { ...meta.seller }, status, creditNotes: [] } };
 }
 
 /** BL-S9: issued and unpaid only. Number kept, lines kept, charges kept; the caller frees the lines (billId → null). */
@@ -184,6 +188,7 @@ export function creditNote(bill: Bill, credits: { lineId: string; qty: number }[
     ...meta, seller: { ...meta.seller }, status: 'issued', creditNotes: [], lines, blocks: list, charges: [], discount: null,
     subtotal, taxTotal: sum - subtotal, roundOff, payable: sum + roundOff,
     creditNoteOf: { billId: bill.billId, number: bill.number, issuedAt: bill.issuedAt },
+    refundedTotal: 0,
   };
   const original: Bill = { ...bill, lines: updated, creditNotes: [...bill.creditNotes, { billId: meta.billId, number: meta.number, at: meta.issuedAt }] };
   return { ok: true, value: { note, original } };

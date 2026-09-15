@@ -194,7 +194,9 @@ export function canRefund(bill: Bill | null, rows: Row[], note: Note | null, tar
   if (byRow) {
     // PY-S32: returning an overpay. Never bill money, so it does not reopen a settled bill.
     if (!target || target.void) return no('failed-precondition', 'No such payment row');
-    const left = (target.overpaid || 0);
+    // What is left of the overpay after the refunds already made against that row. Derived, so voiding one restores it.
+    const already = live(rows).filter((r) => r.kind === 'refund' && r.refundsPaymentId === req.refundsPaymentId).reduce((n, r) => n + r.amount, 0);
+    const left = (target.overpaid || 0) - already;
     if (left <= 0) return no('failed-precondition', 'That payment has no overpay to return');
     if (req.amount > left) return no('failed-precondition', 'More than the overpay on that payment');
     return yes;

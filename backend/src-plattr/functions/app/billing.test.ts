@@ -129,7 +129,7 @@ describe('app/billing issue', () => {
   });
   it('BL-S22 a 100 % bill discount still takes a number', async () => {
     const b = await issue(fakePorts(), issueReq({ discount: { amount: 58000, pct: 100, source: { reason: 'comp', note: '', approverId: 'm1' } } }));
-    expect(b).toMatchObject({ number: '0417', payable: 0 });
+    expect(b).toMatchObject({ number: '0417', payable: 0, status: 'paid' });   // PY-S8
   });
 });
 
