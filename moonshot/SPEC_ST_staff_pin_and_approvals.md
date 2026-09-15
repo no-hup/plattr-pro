@@ -140,7 +140,7 @@ Same shape for `requires: 'otp'` or `'password'` later. Nothing per screen.
 | 2026-09-15 | Arch review 1, item 4: non-line audit ids carry a random suffix, `${cid}_${action}_${ts}_${rand}` | Two drawer opens in one millisecond collided on `createAudit`. Test: app "arch-4", two rows |
 | 2026-09-15 | Arch review 1, item 5: the till answers at most 10 challenges per call, then "Too many PIN attempts, start again". R7 never locks, so nothing server-side ended the loop | Playwright "arch-5" with a routed server that always asks |
 | 2026-09-15 | Arch review 1, item 3: the staging line doc is TD-008; TD-004 stays the no-ceiling row | Two rows shared one id |
-| 2026-09-15 | Arch review 1, item 1 (gate on `net` instead of `listPrice`) **not taken, waiting on Shaurya**: R9 and ST-S11 say `discount / listPrice` in so many words, and a domain test asserts it. Gating on `listPrice − offer` keeps every scenario's outcome (S11: 40/256 = 15.6 %, still a PIN) and closes the ₹1,000-with-₹900-offer hole the reviewer found. Recommendation: take it | A sheet rule is Shaurya's to change, not a reviewer's or mine |
+| 2026-09-15 | Arch review item 1 (gate on net, not list price): **not taken, accepted risk by Shaurya, 2026-09-15**. Tracked as TD-009 | A sheet rule is Shaurya's to change, not a reviewer's or mine |
 
 ## Out of scope
 
