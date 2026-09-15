@@ -4,15 +4,6 @@ The one page a fresh session reads to continue. Updated at the end of every work
 Newest at the top of each list.
 
 ## In flight
-- PY · Payments, session `plattr-pro-8c`, 2026-09-15 evening. Plan page `reviews/2026-09-15-PY-plan.md`, Shaurya said go. Today `paymentStatus` is one string with two writers, and `paid` is a side effect of `orderStatus → COMPLETED` (`updateOrderStatus.js:156`): no amount, no tender, no time, no refund, and it can move backwards. PY replaces it with an append-only ledger at `restaurants/{id}/payments/{paymentId}`; `order.paymentStatus` becomes a one-line mirror (TD-010). Phase plan (each a commit):
-  0. DONE: plan page, Shaurya said go.
-  1. DONE (awaiting sign-off): `SPEC_PY_payments.md` draft v2. Fan-out merged (Grok, Gemini; Codex out of quota). Grok and Gemini independently found the same two holes: no idempotency key, so a retried tap is a second payment; and `paid` latched one-way, so voiding the row that settled a bill left it marked paid while owing the full amount. Both fixed (R13, R2). Also taken: `businessDate` frozen server-side, credit notes only on a fully paid bill (asked of BL), order mirror moved inside the transaction, integer minor units on the wire, no client writes to `payments/`. Reversed one of Shaurya's approved defaults (refunds are no longer cash-only) and flagged it as must-decide.
-  2. Test skeleton, blind Opus + fan-out, merged. Shown to Shaurya.
-  3. `domain/payments.ts` against a fake bill, so nothing waits on BL.
-  4. `adapters/firestore/payments.ts` + `app/payments.ts`, fake adapters and fake clock.
-  5. `api/payments.ts` + `index.js` exports. E2E `todo` until BL's finalise lands.
-  6. Till `features/payments/`. Playwright `todo`, same reason. Donor review (Odoo `pos_payment.py`, `pos_payment_method.py`) in parallel from phase 3.
-  Open for Shaurya: who may refund, rounding per tender, refund tender. Each has a default on the plan page.
 - BL · Billing & tax, session `plattr-pro-9a`, 2026-09-15 evening. Shaurya said go; tax facts come from four consults (Grok and Gemini, one open pass and one source-guided pass each) and are marked "CA to confirm" until signed. Phase plan (each a commit):
   0. DONE: `SPEC_BL_billing_and_tax.md` draft v1 with the line snapshot (F/L fields) and tax config shape as Objects.
   1. DONE: four tax consults and two blind sheet reviews merged into Decisions. Shaurya signed every Review row 2026-09-15 night.
@@ -35,9 +26,10 @@ Newest at the top of each list.
 2. Scaffold `frontend/till/` (Vite + React + TS) with Playwright and one smoke test against the emulator.
 3. ~~Golden module ST~~ done (see Done). Next for ST: RP report screen reads `summarise(rows, lines)`; BL/PO replace the staging line doc (TD-008).
 4. Write the line-snapshot field list (one page) and extend the golden fixture for it.
-5. Spec sheet BL · Billing & tax, then OF · Offline & sync.
+5. ~~Spec sheet BL~~ in flight (9a); ~~PY~~ done. Next sheets: DC · Day close (PY names three things it needs from it), then OF · Offline & sync.
 
 ## Done
+- 2026-09-15 · PY · Payments built end to end on `moonshot` (commits 6cb89f8 → this one): plan page, sheet v3 (36 scenarios, 19 rules), skeleton of 330 cases merged from three blind passes, `domain/app/adapters/api/payments.ts`, `payments-take/-refund/-void/-list`, till `features/payments/`. Unit 272, e2e 45/45, Playwright 13/13, `make check` 604 green. Shaurya's calls: refund to the original tender with cash as last resort (PY-S36), round-off via `payments.settleWithin` 99 (PY-S21), TD-010 closed (the `paid` side effect left `updateOrderStatus.js` with a characterization test), table release is OR's (TD-011). ST's PIN check is now one exported `pinGate()`. Donor review merged (`reviews/2026-09-15-donor-PY.md`), DONORS.md has a Payments section, TD-012 logs the missing tab. Open for DC: it writes `restaurants/{id}/dayClose/{businessDate}` `{closed: true}`, refuses to close over an issued bill (reads BL's `bills/`), and owns non-sale drawer movements. Sheet: `moonshot/SPEC_PY_payments.md`; rendered copy `reviews/2026-09-15-PY-sheet.html`.
 - 2026-09-15 · Shaurya confirmed the mid-build sheet changes (R7 slowdown, R9 paise, R10 report from lines) were his. Drift finding closed.
 - 2026-09-15 · Arch P1 "admin exports restructured in ST" resolved: the nested `exports.admin` group is the prod requirement from 2026-09-08 (`INFRASTRUCTURE.md:142`), uncommitted in the working tree since, swept into `68fcccf`. Correct code, wrong commit; not worth a history rewrite. Admin suite's remaining 9 role failures are TD-007. Remaining arch P1/P2 sent to the ST session to fix per DoD.
 - 2026-09-15 · First architecture review run: P0 confirmed and fixed (`make check` could not fail; pipefail added, proven red then green). Five P1/P2 left in `reviews/2026-09-15-arch.md`, two need Shaurya: admin exports restructured in an ST commit; discount gate on list price not net.
