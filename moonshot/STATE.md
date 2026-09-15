@@ -4,11 +4,20 @@ The one page a fresh session reads to continue. Updated at the end of every work
 Newest at the top of each list.
 
 ## In flight
+- PY · Payments, session `plattr-pro-8c`, 2026-09-15 evening. Plan page `reviews/2026-09-15-PY-plan.md`, waiting on Shaurya's yes. Today `paymentStatus` is one string with two writers, and `paid` is a side effect of `orderStatus → COMPLETED` (`updateOrderStatus.js:156`): no amount, no tender, no time, no refund, and it can move backwards. PY replaces it with an append-only ledger at `restaurants/{id}/payments/{paymentId}`; `order.paymentStatus` becomes a one-line mirror (TD-010). Phase plan (each a commit):
+  0. Plan page + this entry. Awaiting yes.
+  1. `SPEC_PY_payments.md`, draft → fan-out → decide.
+  2. Test skeleton, blind Opus + fan-out, merged. Shown to Shaurya.
+  3. `domain/payments.ts` against a fake bill, so nothing waits on BL.
+  4. `adapters/firestore/payments.ts` + `app/payments.ts`, fake adapters and fake clock.
+  5. `api/payments.ts` + `index.js` exports. E2E `todo` until BL's finalise lands.
+  6. Till `features/payments/`. Playwright `todo`, same reason. Donor review (Odoo `pos_payment.py`, `pos_payment_method.py`) in parallel from phase 3.
+  Open for Shaurya: who may refund, rounding per tender, refund tender. Each has a default on the plan page.
 - BL · Billing & tax, session `plattr-pro-9a`, 2026-09-15 evening. Shaurya said go; tax facts come from four consults (Grok and Gemini, one open pass and one source-guided pass each) and are marked "CA to confirm" until signed. Phase plan (each a commit):
   0. DONE: `SPEC_BL_billing_and_tax.md` draft v1 with the line snapshot (F/L fields) and tax config shape as Objects.
   1. DONE: four tax consults and two blind sheet reviews merged into Decisions. Shaurya signed every Review row 2026-09-15 night.
   2. DONE (proposed, fixture is Shaurya's): 21 rows at `reviews/2026-09-15-BL-golden-proposal.json`, every number re-derived by a throwaway script; two of my hand sums were wrong and are fixed. Critical-pieces diff at `reviews/2026-09-15-BL-critical-pieces-diff.md`. PY is a separate session (HANDOFF_PY_payments.md); it asks BL for bill fields via the inbox.
-  3. `domain/line.ts`, `domain/billing.ts`, `domain/invoice.ts` green one scenario at a time; skeleton + blind Opus + fan-out lists first.
+  3. DONE: `domain/line.ts`, `domain/billing.ts` (preview, issue, cancel, creditNote), `domain/invoice.ts`; 56 tests (48 + 8), every BL-S id a test name; blind lists from Opus, Gemini and Grok merged (`reviews/2026-09-15-BL-consults/tests-*.md`). Donor review (ERPNext `taxes_and_totals.py`, sparse clone 9be19e6) running blind in parallel; merge before done.
   4. Checkout hook writes line docs (characterization test on `createOrUpdateOrder.js` first). Closes TD-008.
   5. `app/billing.ts`, `adapters/firestore/billing.ts`, `api/billing.ts`, e2e suite. ST gains the "bill already issued" precondition (BL-S8).
   6. Till `features/billing/`, Playwright. Donor review (ERPNext `taxes_and_totals.py`, clone first) in parallel with 3–5.
