@@ -407,3 +407,38 @@ describe('domain/billing — cases from Grok\'s list', () => {
     }
   });
 });
+
+// The hand-computed golden bills. Kept in their own file because mock/goldenExpectedValues.json is generated
+// wholesale by buildMockData7.js on every build, so rows hand-added there would vanish on the next rebuild.
+/* eslint-disable @typescript-eslint/no-var-requires */
+// Path is from the COMPILED test (lib/domain/) back to functions/mock/.
+const golden = require('../../mock/goldenBills.json') as { scenarios: unknown[] };
+
+type GoldenLine = { id: string; block: string; list: number; qty?: number; offer?: number; discount?: number };
+type GoldenRow = {
+  scenarioId: string; kind: string; description: string;
+  input: { lines?: GoldenLine[]; billDiscount?: number; charges?: { type: string; pctBps: number; taxBlockId: string }[]; cfgOverride?: Record<string, never> };
+  expected: Record<string, never>;
+};
+
+describe('domain/billing against mock/goldenBills.json', () => {
+  const rows = (golden.scenarios as unknown as GoldenRow[]).filter(r => r.kind === 'bill');
+  it('every bill row in the file is covered here', () => { expect(rows.length).toBeGreaterThanOrEqual(15); });
+
+  for (const row of rows) {
+    it(`${row.scenarioId} ${row.description}`, () => {
+      const o = (row.input.cfgOverride ?? {}) as { partRounding?: 'independent' | 'residualLast'; roundTo?: number; liquor?: { parts: { label: string; rateBps: number }[] } };
+      const c = { ...cfg, ...(o.partRounding ? { partRounding: o.partRounding } : {}), ...(o.roundTo !== undefined ? { roundTo: o.roundTo } : {}) };
+      const liquor: TaxBlock = o.liquor ? { ...LIQ, parts: o.liquor.parts } : LIQ;
+      const lines = (row.input.lines ?? []).map(l => line(l.id, l.list, { block: l.block === 'liquor' ? liquor : FOOD, blockId: l.block, qty: l.qty, offer: l.offer, discount: l.discount }));
+      const r = preview(lines, row.input.billDiscount ? bd(row.input.billDiscount) : null, row.input.charges ?? [], c);
+      const e = row.expected as { error?: string; blocks?: Record<string, { taxable: number; parts: number[]; total: number }>; lineBillDiscount?: Record<string, number>; charges?: { base: number; amount: number }[]; payable?: number; roundOff?: number; taxTotal?: number; subtotal?: number };
+      if (e.error) { expect(r).toMatchObject({ ok: false, code: e.error }); return; }
+      const v = ok(r);
+      for (const [id, exp] of Object.entries(e.blocks ?? {})) expect({ block: id, ...amounts(v, id) }).toEqual({ block: id, ...exp });
+      for (const [id, exp] of Object.entries(e.lineBillDiscount ?? {})) expect({ id, share: v.lines.find(l => l.lineId === id)!.billDiscount }).toEqual({ id, share: exp });
+      (e.charges ?? []).forEach((ch, i) => expect(v.charges[i]).toMatchObject({ base: ch.base, amount: ch.amount }));
+      for (const k of ['payable', 'roundOff', 'taxTotal', 'subtotal'] as const) if (e[k] !== undefined) expect({ [k]: v[k] }).toEqual({ [k]: e[k] });
+    });
+  }
+});
