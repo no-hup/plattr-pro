@@ -1,0 +1,94 @@
+{
+  "_note": "BL phase 2. Proposed kind:\"bill\" rows for mock/goldenExpectedValues.json (fixture is Shaurya's; not applied). All money integer minor units (paise). Bill rows are input-explicit: lines carry their snapshot, cfg carries the tax blocks, so the row needs no menu seed. verifyGolden.js does not run them; domain/billing.test.ts (phase 3) reads every kind:\"bill\" row and asserts preview(). Defaults unless overridden: food = exclusive CGST 250 + SGST 250, liquor = inclusive parts [], partRounding independent, roundTo 100.",
+  "cfg": {
+    "food": { "label": "GST", "mode": "exclusive", "collect": true, "parts": [{ "label": "CGST", "rateBps": 250 }, { "label": "SGST", "rateBps": 250 }] },
+    "liquor": { "label": "Liquor", "mode": "inclusive", "collect": true, "parts": [] },
+    "partRounding": "independent",
+    "roundTo": 100
+  },
+  "scenarios": [
+    { "scenarioId": "BL-S1", "kind": "bill", "description": "Pizza 500 + coke 80, food block",
+      "input": { "lines": [ { "id": "pizza", "block": "food", "list": 50000 }, { "id": "coke", "block": "food", "list": 8000 } ] },
+      "expected": { "blocks": { "food": { "taxable": 58000, "parts": [1450, 1450], "total": 60900 } }, "subtotal": 58000, "taxTotal": 2900, "roundOff": 0, "payable": 60900 } },
+
+    { "scenarioId": "BL-S2", "kind": "bill", "description": "Pizza 500 with 100 offer; discount before tax",
+      "input": { "lines": [ { "id": "pizza", "block": "food", "list": 50000, "offer": 10000 } ] },
+      "expected": { "blocks": { "food": { "taxable": 40000, "parts": [1000, 1000], "total": 42000 } }, "payable": 42000, "roundOff": 0, "never": 52500 } },
+
+    { "scenarioId": "BL-S3", "kind": "bill", "description": "200 off a 1200 food + 800 liquor bill, apportioned by net share",
+      "input": { "lines": [ { "id": "pizza", "block": "food", "list": 50000 }, { "id": "biryani", "block": "food", "list": 70000 }, { "id": "whisky", "block": "liquor", "list": 80000 } ], "billDiscount": 20000 },
+      "expected": { "lineBillDiscount": { "pizza": 5000, "biryani": 7000, "whisky": 8000 },
+        "blocks": { "food": { "taxable": 108000, "parts": [2700, 2700], "total": 113400 }, "liquor": { "taxable": 72000, "parts": [], "total": 72000 } },
+        "subtotal": 180000, "taxTotal": 5400, "roundOff": 0, "payable": 185400 } },
+
+    { "scenarioId": "BL-S4a", "kind": "bill", "description": "Beer 499 (liquor, no tax part) + pizza 500 on one paper",
+      "input": { "lines": [ { "id": "beer", "block": "liquor", "list": 49900 }, { "id": "pizza", "block": "food", "list": 50000 } ] },
+      "expected": { "blocks": { "liquor": { "taxable": 49900, "parts": [], "total": 49900 }, "food": { "taxable": 50000, "parts": [1250, 1250], "total": 52500 } }, "subtotal": 99900, "taxTotal": 2500, "roundOff": 0, "payable": 102400 } },
+
+    { "scenarioId": "BL-S4b", "kind": "bill", "description": "Same, liquor block configured inclusive VAT 550 bps: floor, remainder to tax, guest pays the same",
+      "input": { "cfgOverride": { "liquor": { "parts": [{ "label": "VAT", "rateBps": 550 }] } }, "lines": [ { "id": "beer", "block": "liquor", "list": 49900 }, { "id": "pizza", "block": "food", "list": 50000 } ] },
+      "expected": { "blocks": { "liquor": { "taxable": 47298, "parts": [2602], "total": 49900 }, "food": { "taxable": 50000, "parts": [1250, 1250], "total": 52500 } }, "payable": 102400, "roundOff": 0,
+        "hand": "49900*10000/10550 = 47298.57 -> 47298; 49900-47298 = 2602" } },
+
+    { "scenarioId": "BL-S5a", "kind": "bill", "description": "Half a paisa, partRounding independent: 8.325 -> 8.33 each",
+      "input": { "lines": [ { "id": "x", "block": "food", "list": 33300 } ] },
+      "expected": { "blocks": { "food": { "taxable": 33300, "parts": [833, 833], "total": 34966 } }, "taxTotal": 1666, "roundOff": 34, "payable": 35000 } },
+
+    { "scenarioId": "BL-S5b", "kind": "bill", "description": "Same, partRounding residualLast: combined 5% = 1665, split 832 + 833",
+      "input": { "cfgOverride": { "partRounding": "residualLast" }, "lines": [ { "id": "x", "block": "food", "list": 33300 } ] },
+      "expected": { "blocks": { "food": { "taxable": 33300, "parts": [832, 833], "total": 34965 } }, "taxTotal": 1665, "roundOff": 35, "payable": 35000 } },
+
+    { "scenarioId": "BL-S6a", "kind": "bill", "description": "Round-off down: taxable 580.38, tax 14.51 + 14.51, 609.40 -> 609.00",
+      "input": { "lines": [ { "id": "x", "block": "food", "list": 58038 } ] },
+      "expected": { "blocks": { "food": { "taxable": 58038, "parts": [1451, 1451], "total": 60940 } }, "roundOff": -40, "payable": 60900, "hand": "58038*250/10000 = 1450.95 -> 1451" } },
+
+    { "scenarioId": "BL-S6b", "kind": "bill", "description": "Round-off half up: 609.50 -> 610.00",
+      "input": { "lines": [ { "id": "x", "block": "food", "list": 58048 } ] },
+      "expected": { "blocks": { "food": { "taxable": 58048, "parts": [1451, 1451], "total": 60950 } }, "roundOff": 50, "payable": 61000, "hand": "58048*250/10000 = 1451.2 -> 1451" } },
+
+    { "scenarioId": "BL-S6c", "kind": "bill", "description": "roundTo 0: no round-off row",
+      "input": { "cfgOverride": { "roundTo": 0 }, "lines": [ { "id": "x", "block": "food", "list": 58038 } ] },
+      "expected": { "roundOff": 0, "payable": 60940 } },
+
+    { "scenarioId": "BL-S11a", "kind": "creditNote", "description": "Credit note on the BL-S1 bill, coke line qty 1 of 1",
+      "input": { "bill": "BL-S1", "credit": [ { "id": "coke", "qty": 1 } ] },
+      "expected": { "lines": { "coke": { "qty": -1, "taxable": -8000, "parts": [-200, -200] } }, "total": -8400, "originalStatus": "paid", "originalPayable": 60900 } },
+
+    { "scenarioId": "BL-S11b", "kind": "creditNote", "description": "One of three beers (list 500 each, qty 3 line) credited pro rata by qty",
+      "input": { "bill": { "lines": [ { "id": "beer", "block": "liquor", "list": 150000, "qty": 3 } ] }, "credit": [ { "id": "beer", "qty": 1 } ] },
+      "expected": { "lines": { "beer": { "qty": -1, "taxable": -50000, "parts": [] } }, "total": -50000, "remainingCreditable": { "beer": 2 } } },
+
+    { "scenarioId": "BL-S11c", "kind": "creditNote", "description": "Credit note carries the line's billDiscount share as charged (BL-S3 bill, pizza qty 1)",
+      "input": { "bill": "BL-S3", "credit": [ { "id": "pizza", "qty": 1 } ] },
+      "expected": { "lines": { "pizza": { "billDiscount": -5000, "taxable": -45000, "parts": [-1125, -1125] } }, "total": -47250 } },
+
+    { "scenarioId": "BL-S12", "kind": "split", "description": "Table 7: food on one draft, beers on the other; each issues its own number",
+      "input": { "lines": [ { "id": "pizza", "block": "food", "list": 50000 }, { "id": "coke", "block": "food", "list": 8000 }, { "id": "beer1", "block": "liquor", "list": 49900 }, { "id": "beer2", "block": "liquor", "list": 49900 } ], "drafts": { "d1": ["pizza", "coke"], "d2": ["beer1", "beer2"] } },
+      "expected": { "d1": { "payable": 60900, "taxTotal": 2900 }, "d2": { "payable": 99800, "taxTotal": 0 }, "numbers": ["0417", "0418"] } },
+
+    { "scenarioId": "BL-S13", "kind": "bill", "description": "Two for one: qty 2 beers, offer -500",
+      "input": { "lines": [ { "id": "beer", "block": "liquor", "list": 100000, "qty": 2, "offer": 50000 } ] },
+      "expected": { "blocks": { "liquor": { "taxable": 50000, "parts": [], "total": 50000 } }, "payable": 50000, "printedQty": 2, "printedList": 100000, "printedOffer": -50000 } },
+
+    { "scenarioId": "BL-S21", "kind": "bill", "description": "10% service charge in the food block on 1200 food + 800 liquor; base is the food net only",
+      "input": { "lines": [ { "id": "pizza", "block": "food", "list": 50000 }, { "id": "biryani", "block": "food", "list": 70000 }, { "id": "whisky", "block": "liquor", "list": 80000 } ], "charges": [ { "type": "SERVICE_CHARGE", "pctBps": 1000, "taxBlockId": "food" } ] },
+      "expected": { "charges": [ { "base": 120000, "amount": 12000, "parts": [300, 300] } ],
+        "blocks": { "food": { "taxable": 132000, "parts": [3300, 3300], "total": 138600 }, "liquor": { "taxable": 80000, "parts": [], "total": 80000 } }, "payable": 218600, "roundOff": 0 } },
+
+    { "scenarioId": "BL-S22", "kind": "bill", "description": "Whole bill on the house: 100% bill discount, still numbered",
+      "input": { "lines": [ { "id": "pizza", "block": "food", "list": 50000 }, { "id": "coke", "block": "food", "list": 8000 } ], "billDiscount": 58000 },
+      "expected": { "lineBillDiscount": { "pizza": 50000, "coke": 8000 }, "blocks": { "food": { "taxable": 0, "parts": [0, 0], "total": 0 } }, "payable": 0, "roundOff": 0, "numbered": true } },
+
+    { "scenarioId": "BL-S23a", "kind": "bill", "description": "Stacked cuts: 500 list, 100 offer, 50 ST discount, 200 bill discount on a 350 net table -> net 150",
+      "input": { "lines": [ { "id": "pizza", "block": "food", "list": 50000, "offer": 10000, "discount": 5000 } ], "billDiscount": 20000 },
+      "expected": { "lineBillDiscount": { "pizza": 20000 }, "blocks": { "food": { "taxable": 15000, "parts": [375, 375], "total": 15750 } }, "payable": 15800, "roundOff": 50 } },
+
+    { "scenarioId": "BL-S23b", "kind": "bill", "description": "Bill discount larger than the net is refused, nothing written",
+      "input": { "lines": [ { "id": "pizza", "block": "food", "list": 50000, "offer": 10000, "discount": 5000 } ], "billDiscount": 40000 },
+      "expected": { "error": "failed-precondition" } },
+
+    { "scenarioId": "BL-S3x", "kind": "bill", "description": "Leftover minor unit of an apportioned discount lands on the last line: 100 off three lines of 100 each -> 33, 33, 34",
+      "input": { "lines": [ { "id": "a", "block": "food", "list": 10000 }, { "id": "b", "block": "food", "list": 10000 }, { "id": "c", "block": "food", "list": 10000 } ], "billDiscount": 10000 },
+      "expected": { "lineBillDiscount": { "a": 3333, "b": 3333, "c": 3334 }, "blocks": { "food": { "taxable": 20000, "parts": [501, 501], "total": 21002 } }, "roundOff": -2, "payable": 21000, "hand": "tax is per line then summed (R5): 6667, 6667, 6666 each give 166.675, 166.675, 166.65 -> 167 x3 = 501 per part, not 500 on the block figure" } }
+  ]
+}
