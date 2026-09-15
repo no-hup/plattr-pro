@@ -13,6 +13,7 @@ const { evaluateAndPickBestOffer, buildAppliedOfferObject } = require('../offers
 const { calculateCharges, loadChargesConfig } = require('./calculateCharges');
 const { validateCart } = require('../cart/validateCart');
 const { calculateCartValue } = require('../cart/calculateCartValue');
+const { writeLineSnapshots, loadTaxBlocks } = require('./lineSnapshots');
 
 
 /**
@@ -46,6 +47,10 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
   // Charges V1: rarely changes, read out-of-band (same pattern as offer configs).
   const chargesConfig = await loadChargesConfig(restaurantId);
 
+  // BL: the tax blocks a placed line freezes. Read out-of-band for the same reason as the charges
+  // config, and never re-read at billing time (SPEC_BL R12).
+  const taxBlocks = await loadTaxBlocks(restaurantId);
+
   // The cart is re-read INSIDE the transaction below. `cart` (the caller's
   // out-of-band read) was only used for pre-checks; the live doc is authoritative
   // so an addItemToCart that lands mid-checkout either retries this transaction
@@ -66,11 +71,19 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
         errorHandler.preconditionFailed('Cannot process an empty cart', { restaurantId, tableId });
       }
 
-      // 1. Read existing orders for this table
-      const orderQuery = db.collection("restaurants").doc(restaurantId)
-        .collection("orders")
-        .where('tableId', '==', tableId);
-      const orderSnapshot = await transaction.get(orderQuery);
+      // 1. Read this sitting's existing orders.
+      // Scoped by sessionId, not tableId: the only order we can append to is one
+      // from this same session (see the find below), and a table accumulates
+      // orders forever — reading them all pulled every cart snapshot the table
+      // ever produced into the transaction on every checkout. With no sessionId
+      // nothing can match, so read nothing at all.
+      const orderSnapshot = sessionId
+        ? await transaction.get(
+            db.collection("restaurants").doc(restaurantId)
+              .collection("orders")
+              .where('sessionId', '==', sessionId)
+          )
+        : null;
 
       // 2. Read table doc (needed for assignedServerId)
       const tableRef = db.collection('restaurants').doc(restaurantId)
@@ -96,26 +109,28 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
         status: FULFILLMENT_STATUS.PENDING,
         statusHistory: [{
           status: FULFILLMENT_STATUS.PENDING,
-          timestamp: timestamp.serverTimestamp(),
+          timestamp: timestamp.now(), // concrete: a serverTimestamp sentinel is rejected inside an array (carts[])
           userId
         }],
-        checkoutTime: timestamp.serverTimestamp(),
+        checkoutTime: timestamp.now(),
         notes,
         estimatedPrepTime: calculateEstimatedPrepTime(liveCart.items),
         assignedTo: null
       };
 
-      // sanitise the format of the cart items for the order
-      const orderItems = normalizeCartItemsForOrder(liveCart);
+      // sanitise the format of the cart items for the order. Pass the snapshot,
+      // not liveCart: the snapshot carries the cartId that stamps each flat item
+      // with the cart it came from (see normalizeCartItemsForOrder).
+      const orderItems = normalizeCartItemsForOrder(cartSnapshot);
 
-      // Only append to an open order that belongs to THIS sitting. Grouping by
-      // tableId alone made a new party inherit the previous party's unpaid order.
-      // Orders written by older code may lack sessionId — they never match.
-      const existingOrderDoc = orderSnapshot.docs.find(doc => {
+      // Only append to an OPEN order from this sitting. The query above already
+      // scoped to this session (and is null when there is none), so all that is
+      // left to check is that the order is still open. Grouping by tableId alone
+      // made a new party inherit the previous party's unpaid order.
+      const existingOrderDoc = (orderSnapshot?.docs || []).find(doc => {
         const data = doc.data();
         const normalizedStatus = mapOrderStatus(data.orderStatus || data.status);
-        const isOpen = normalizedStatus === ORDER_STATUS.IN_PROGRESS || normalizedStatus === ORDER_STATUS.PENDING;
-        return isOpen && !!sessionId && data.sessionId === sessionId;
+        return normalizedStatus === ORDER_STATUS.IN_PROGRESS || normalizedStatus === ORDER_STATUS.PENDING;
       });
 
       let orderResult;
@@ -154,6 +169,19 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
           counterDoc
         );
       }
+
+      // BL: one line snapshot per placed item, in this same transaction. A bill is summed from these,
+      // so there must be no moment where the order exists and its lines do not (SPEC_BL, phase 4;
+      // this is the real collection TD-008's staging doc was standing in for).
+      writeLineSnapshots(transaction, restaurantId, {
+        cartSnapshot,
+        orderId: orderResult.id,
+        tableId,
+        sessionId,
+        placedBy: userId,
+        blocks: taxBlocks,
+        now: Date.now(),
+      });
 
       // The cart becomes the order atomically — no window where both exist.
       transaction.delete(cartRef);
@@ -214,7 +242,14 @@ function normalizeCartItemsForOrder(cart) {
       selectedAddons: Array.isArray(item.selectedAddons) ? item.selectedAddons : [],
       selectedAddonsDetails: Array.isArray(item.selectedAddonsDetails) ? item.selectedAddonsDetails : [],
       cartItemId: item.cartItemId || 0,
-      checkoutTime: timestamp.serverTimestamp(),
+      // Which cart this line came from. cartItemId alone is NOT unique across an
+      // order: it restarts at 1 in every new cart (getNextCartItemId reads only
+      // the live cart), so round 2's first item collides with round 1's. Writers
+      // that keep this flat copy in step with carts[] must match on cartId.
+      // Omitted when absent so Firestore never sees undefined; orders written
+      // before this field existed simply aren't cascaded to.
+      ...(cart.cartId ? { cartId: cart.cartId } : {}),
+      checkoutTime: timestamp.now(), // items[] is an array: no sentinels
       status: FULFILLMENT_STATUS.PENDING,
     };
   }).filter(Boolean); // Remove null items

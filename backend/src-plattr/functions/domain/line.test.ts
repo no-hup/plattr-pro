@@ -68,3 +68,27 @@ describe('domain/line placeLine', () => {
     expect(sh.reduce((a, b) => a + b, 0)).toBe(7500);
   });
 });
+
+// TD-008 closed: `lines/` is now the real snapshot, written by checkout. ST writes the same document.
+import { applyToLine } from './approvals';
+
+describe('an ST approval on a placed line keeps the snapshot', () => {
+  const placed = () => placeLine(burger(), ctx, 'L1');
+
+  it('a discount bumps v and adds the discount without dropping components, taxBlocks or provenance', () => {
+    const r = applyToLine(placed(), { action: 'discount', amount: 5000, pct: 6.17, reason: 'regular', note: '', approverId: 'm1' });
+    if (!r.ok) throw new Error(r.message);
+    const after = r.line as ReturnType<typeof placed>;
+    expect(after).toMatchObject({ v: 1, discount: { amount: 5000 }, lineId: 'L1', menuItemId: 'mi_burger', listPrice: 81000, billId: null });
+    expect(after.components).toHaveLength(3);
+    expect(after.taxBlocks.food.parts).toHaveLength(2);
+  });
+  it('a void and an offer removal keep them too', () => {
+    for (const action of ['void', 'removeOffer'] as const) {
+      const r = applyToLine(placed(), { action, reason: 'wrong dish', note: '', approverId: 'm1' });
+      if (!r.ok) throw new Error(r.message);
+      expect((r.line as ReturnType<typeof placed>).components).toHaveLength(3);
+      expect((r.line as ReturnType<typeof placed>).taxBlocks.food).toBeDefined();
+    }
+  });
+});

@@ -3,7 +3,7 @@ const { admin, db } = require('../admin/admin');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('./orderConstants');
 const OrderInputValidation = require('./orderInputValidation');
 const { validateStaffSession } = require('../adminApp/auth');
-const { calculateCartValue } = require('../cart/calculateCartValue');
+const { calculateCartValue, isBillableItem } = require('../cart/calculateCartValue');
 const { OrderPriceInfo } = require('../genericModels/priceinfo');
 const timestamp = require('../utils/timestamp');
 const featureFlags = require('../singleton/FeatureFlags');
@@ -108,9 +108,12 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
           totalItemDiscount += cartInfo.totalDiscountAmount || 0;
         }
 
-        // 2. Collect raw items from all carts (with categoryId / subcategoryIds)
+        // 2. Collect raw items from all carts (with categoryId / subcategoryIds).
+        //    Billable items only: a spend-threshold offer must not be unlocked by
+        //    food that was cancelled or returned and is not on the bill.
         const allCartItems = (order.carts || [])
-          .flatMap(c => Array.isArray(c.items) ? c.items : []);
+          .flatMap(c => Array.isArray(c.items) ? c.items : [])
+          .filter(isBillableItem);
 
         // 3. Re-evaluate offers — items may have been cancelled since checkout
         const bestOffer = await evaluateAndPickBestOffer(
