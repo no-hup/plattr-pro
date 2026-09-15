@@ -1,7 +1,7 @@
 // ST · Staff PIN & approvals — pure decisions. No firebase, no adapters, no clock: `now` is passed in.
 // Sheet: moonshot/SPEC_ST_staff_pin_and_approvals.md
 
-export type Action = 'discount' | 'removeOffer' | 'void' | 'reprint' | 'drawer';
+export type Action = 'discount' | 'removeOffer' | 'void' | 'reprint' | 'drawer' | 'cancelBill' | 'creditNote';
 export type Role = 'ADMIN' | 'MANAGER' | 'SERVER' | 'KITCHEN';
 export type Sev = 'P0' | 'P1';
 export type ErrorCode = 'permission-denied' | 'invalid-argument' | 'failed-precondition';
@@ -25,7 +25,7 @@ export const DEFAULTS: ApprovalsConfig = {
 };
 
 const NOTE_MAX = 200;
-const ACTIONS: Action[] = ['discount', 'removeOffer', 'void', 'reprint', 'drawer'];
+const ACTIONS: Action[] = ['discount', 'removeOffer', 'void', 'reprint', 'drawer', 'cancelBill', 'creditNote'];
 
 /** Raw `approvals` block from the config doc → full config plus one warning per bad key. Never PIN-free on bad input. */
 export function configFrom(raw: unknown): { config: ApprovalsConfig; warnings: string[] } {
@@ -82,6 +82,8 @@ export function decide(input: DecideInput, cfg: ApprovalsConfig): Decision {
         : { ok: true, needsPin: false, sev: 'P1' };
     case 'reprint': return { ok: true, needsPin: false, sev: 'P1' };
     case 'drawer': return { ok: true, needsPin: true, sev: 'P0' };
+    // BL-S9 / BL-S11: a bill-level reversal is always a PIN and always P0. BL calls this door before it moves a bill.
+    case 'cancelBill': case 'creditNote': return { ok: true, needsPin: true, sev: 'P0' };
   }
 }
 

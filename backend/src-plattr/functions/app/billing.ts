@@ -6,7 +6,7 @@ import {
   cancel as cancelBill, creditNote as noteOn, issue as issueBill, preview as previewBody,
 } from '../domain/billing';
 import { Counter, InvoiceConfig, INVOICE_DEFAULTS, counterKey, nextNumber } from '../domain/invoice';
-import { ApprovalError, Staff } from './approvals';
+import { ApprovalError, ApplyRequest, ApplyResult, Staff } from './approvals';
 export { ApprovalError };
 
 export interface BillingSettings {
@@ -34,6 +34,7 @@ export interface Ports {
   linesOfDraft(restaurantId: string, draftId: string): Promise<Line[]>;
   orderOffer(restaurantId: string, orderId: string): Promise<{ id: string; name: string; amount: number } | null>;   // BL-S24: as evaluated at placement
   getBill(restaurantId: string, billId: string): Promise<Bill | null>;
+  approve(req: ApplyRequest): Promise<ApplyResult>;   // ST's one door: role, reason, PIN, P0 audit row. Throws permission-denied {requires:'pin'} until the PIN arrives
   transact<T>(restaurantId: string, fn: (t: Tx) => Promise<T>): Promise<T>;
 }
 
@@ -102,13 +103,15 @@ export async function issue(ports: Ports, req: IssueRequest): Promise<Bill> {
   return bill;
 }
 
-export interface CancelRequest { restaurantId: string; sessionId: string; cid: string; billId: string; reason: string }
+export interface CancelRequest { restaurantId: string; sessionId: string; cid: string; billId: string; reason: string; note?: string; pin?: unknown }
 
-/** BL-S9: issued and unpaid → cancelled; number kept; lines freed. The PIN was checked by ST before this is called. */
+/** BL-S9: issued and unpaid → cancelled; number kept; lines freed. Role, reason and PIN are ST's (one door); ST writes the P0 audit row. */
 export async function cancel(ports: Ports, req: CancelRequest): Promise<Bill> {
   const staff = await ports.staff.bySession(req.restaurantId, req.sessionId);
-  if (!ISSUERS.includes(staff.role)) fail('permission-denied', 'Not allowed for your role');
-  if (typeof req.reason !== 'string' || !req.reason.trim()) fail('invalid-argument', 'reason required');
+  const existing = await ports.getBill(req.restaurantId, req.billId);
+  if (!existing) fail('not-found', 'bill not found');
+  if (existing!.status !== 'issued') fail('failed-precondition', `cannot cancel a ${existing!.status} bill`);   // before the PIN is asked for
+  await ports.approve({ restaurantId: req.restaurantId, sessionId: req.sessionId, action: 'cancelBill', cid: req.cid, reason: req.reason, note: `${req.note ?? ''} bill ${existing!.number} ₹${existing!.payable}`.trim().slice(0, 200), pin: req.pin });
   const now = ports.now();
   const bill = await ports.transact(req.restaurantId, async t => {
     const b = await t.getBill(req.billId);
@@ -117,21 +120,22 @@ export async function cancel(ports: Ports, req: CancelRequest): Promise<Bill> {
     if (!r.ok) throw new ApprovalError(r.code, r.message);
     t.updateBill(req.billId, { status: 'cancelled', cancelled: r.value.cancelled });
     for (const l of b.lines) t.setLine(l.lineId, { billId: null });
-    t.createAudit(`${req.billId}_cancel_${now}`, { ts: now, cid: req.cid, action: 'cancelBill', staffId: staff.staffId, sev: 'P0', amount: b.payable, reason: req.reason, note: '', lineId: null, billId: req.billId, before: 'issued', after: 'cancelled' });
     return r.value;
   });
   ports.log({ mod: 'billing', cid: req.cid, billId: req.billId, from: 'issued', to: 'cancelled' });
   return bill;
 }
 
-export interface CreditRequest { restaurantId: string; sessionId: string; cid: string; billId: string; reason: string; credits: { lineId: string; qty: number }[] }
+export interface CreditRequest { restaurantId: string; sessionId: string; cid: string; billId: string; reason: string; note?: string; pin?: unknown; credits: { lineId: string; qty: number }[] }
 
 /** BL-S11: a new document in the credit-note series, the original gains creditNotes[]. */
 export async function creditNote(ports: Ports, req: CreditRequest): Promise<Bill> {
   const staff = await ports.staff.bySession(req.restaurantId, req.sessionId);
-  if (!ISSUERS.includes(staff.role)) fail('permission-denied', 'Not allowed for your role');
-  if (typeof req.reason !== 'string' || !req.reason.trim()) fail('invalid-argument', 'reason required');
   if (!Array.isArray(req.credits) || !req.credits.length) fail('invalid-argument', 'nothing to credit');
+  const existing = await ports.getBill(req.restaurantId, req.billId);
+  if (!existing) fail('not-found', 'bill not found');
+  if (existing!.status !== 'paid') fail('failed-precondition', `credit note needs a paid bill, this one is ${existing!.status}`);   // before the PIN is asked for
+  await ports.approve({ restaurantId: req.restaurantId, sessionId: req.sessionId, action: 'creditNote', cid: req.cid, reason: req.reason, note: `${req.note ?? ''} bill ${existing!.number} ${req.credits.map(c => `${c.lineId}×${c.qty}`).join(' ')}`.trim().slice(0, 200), pin: req.pin });
   const now = ports.now();
   const note = await ports.transact(req.restaurantId, async t => {
     const b = await t.getBill(req.billId);
@@ -148,7 +152,6 @@ export async function creditNote(ports: Ports, req: CreditRequest): Promise<Bill
     t.setCounter(key, n.counter);
     t.setBill(meta.billId, r.value.note);
     t.updateBill(req.billId, { lines: r.value.original.lines, creditNotes: r.value.original.creditNotes });
-    t.createAudit(`${meta.billId}_credit_${now}`, { ts: now, cid: req.cid, action: 'creditNote', staffId: staff.staffId, sev: 'P0', amount: -r.value.note.payable, reason: req.reason, note: '', lineId: null, billId: req.billId, before: null, after: meta.billId });
     return r.value.note;
   });
   ports.log({ mod: 'billing', cid: req.cid, billId: req.billId, from: 'paid', to: 'paid', creditNote: note.billId, number: note.number, payable: note.payable });

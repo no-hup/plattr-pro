@@ -304,3 +304,13 @@ describe('domain/approvals summarise(rows, lines) — ST-S8 / R10', () => {
     expect(summarise([], [])).toEqual({});
   });
 });
+
+describe('BL-S9 / BL-S11 bill-level actions through the same door', () => {
+  it('cancelBill and creditNote: MANAGER → PIN always, P0; SERVER → permission-denied', () => {
+    for (const action of ['cancelBill', 'creditNote'] as const) {
+      expect(decide({ action, role: 'MANAGER' }, cfg)).toEqual({ ok: true, needsPin: true, sev: 'P0' });
+      expect(decide({ action, role: 'ADMIN' }, cfg)).toEqual({ ok: true, needsPin: true, sev: 'P0' });
+      expect(decide({ action, role: 'SERVER' }, cfg)).toEqual({ ok: false, code: 'permission-denied' });
+    }
+  });
+});

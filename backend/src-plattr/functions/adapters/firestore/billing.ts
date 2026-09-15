@@ -1,7 +1,8 @@
 // BL · Firestore ports for app/billing. The only place this module touches Firebase.
 // Runtime note: this file runs from functions/lib/adapters/firestore/, so existing JS is three levels up.
 import { Ports, Tx, settingsFrom } from '../../app/billing';
-import { Staff } from '../../app/approvals';
+import { Staff, apply as approve } from '../../app/approvals';
+import { ports as approvalPorts } from './approvals';
 import { Bill } from '../../domain/billing';
 import { Line } from '../../domain/line';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
@@ -44,6 +45,7 @@ export const ports: Ports = {
     return o && typeof o === 'object' ? { id: String(o.id ?? ''), name: String(o.title ?? o.name ?? 'Offer'), amount: minor(o.discountAmount) } : null;
   },
   async getBill(rid, id) { const s = await bills(rid).doc(id).get(); return s.exists ? (s.data() as Bill) : null; },
+  approve: req => approve(approvalPorts, req),
   transact(rid, fn) {
     return db.runTransaction((t: Transaction) => fn(<Tx>{
       getLines: async ids => { if (!ids.length) return []; const snaps = await t.getAll(...ids.map(i => lines(rid).doc(i))); return snaps.filter(s => s.exists).map(s => s.data() as Line); },
