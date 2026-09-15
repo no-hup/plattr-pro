@@ -31,6 +31,14 @@ function fakePorts(opts: { role?: string; offer?: { id: string; name: string; am
     linesOfDraft: async (_r, d) => [...lines.values()].filter(l => l.draftId === d),
     orderOffer: async () => opts.offer ?? null,
     getBill: async (_r, id) => bills.get(id) ?? null,
+    // ST's door, faked: no pin → the challenge; wrong pin → wrong; else a P0 audit row like ST writes.
+    approve: async req => {
+      if (staff.role !== 'MANAGER' && staff.role !== 'ADMIN') throw new ApprovalError('permission-denied', 'Not allowed for your role');
+      if (typeof req.reason !== 'string' || !req.reason) throw new ApprovalError('invalid-argument', 'reason required');
+      if (req.pin === undefined) throw new ApprovalError('permission-denied', 'PIN required', { requires: 'pin', action: req.action, sev: 'P0' });
+      if (req.pin !== '1234') throw new ApprovalError('permission-denied', 'Wrong PIN', { requires: 'pin', wrong: true });
+      const id = `${req.cid}_${req.action}_${ports.now()}`; audits.set(id, { action: req.action, sev: 'P0', reason: req.reason, note: req.note, staffId: staff.staffId }); return { auditId: id };
+    },
     transact: async (_r, fn) => {
       const pl = new Map<string, Partial<Line>>(), pb = new Map<string, Bill>(), pu = new Map<string, Partial<Bill>>(), pc = new Map<string, { next: number }>(), pa = new Map<string, object>();
       const t: Tx = {
@@ -129,37 +137,42 @@ describe('app/billing cancel / creditNote / split / get', () => {
   it('BL-S9 cancel: status cancelled, number kept, lines freed, P0 audit row with the payable', async () => {
     const p = fakePorts();
     const b = await issue(p, issueReq());
-    const c = await cancel(p, { ...base, billId: b.billId, reason: 'service charge removed' });
-    expect(c).toMatchObject({ status: 'cancelled', number: '0417', cancelled: { by: 'm1', reason: 'service charge removed' } });
+    const ask = await code(cancel(p, { ...base, billId: b.billId, reason: 'other', note: 'service charge removed' }));
+    expect(ask).toBe('permission-denied');   // requires pin, from ST
+    expect(p.bills.get(b.billId)!.status).toBe('issued');
+    const c = await cancel(p, { ...base, billId: b.billId, reason: 'other', note: 'service charge removed', pin: '1234' });
+    expect(c).toMatchObject({ status: 'cancelled', number: '0417', cancelled: { by: 'm1', reason: 'other' } });
     expect([...p.lines.values()].every(l => l.billId === null)).toBe(true);
-    expect([...p.audits.values()][0]).toMatchObject({ action: 'cancelBill', sev: 'P0', amount: 60900, billId: b.billId });
+    expect([...p.audits.values()][0]).toMatchObject({ action: 'cancelBill', sev: 'P0', reason: 'other', note: expect.stringContaining('bill 0417 ₹60900') });
     expect((await issue(p, issueReq())).number).toBe('0418');
   });
-  it('BL-S9 cancel needs a reason and refuses a paid bill', async () => {
+  it('BL-S9 cancel needs a reason (ST rule) and refuses a paid bill before asking for a PIN', async () => {
     const p = fakePorts();
     const b = await issue(p, issueReq());
-    expect(await code(cancel(p, { ...base, billId: b.billId, reason: ' ' }))).toBe('invalid-argument');
+    expect(await code(cancel(p, { ...base, billId: b.billId, reason: '', pin: '1234' }))).toBe('invalid-argument');
     p.bills.set(b.billId, { ...b, status: 'paid' });
-    expect(await code(cancel(p, { ...base, billId: b.billId, reason: 'x' }))).toBe('failed-precondition');
+    expect(await code(cancel(p, { ...base, billId: b.billId, reason: 'other' }))).toBe('failed-precondition');   // no pin needed to learn that
   });
   it('BL-S11 credit note: CN series 0001, original keeps paid and gains creditNotes[], credited qty moves, audit amount 8400', async () => {
     const p = fakePorts();
     const b = await issue(p, issueReq());
     p.bills.set(b.billId, { ...b, status: 'paid' });
-    const n = await creditNote(p, { ...base, billId: b.billId, reason: 'coke not served', credits: [{ lineId: 'coke', qty: 1 }] });
+    expect(await code(creditNote(p, { ...base, billId: b.billId, reason: 'complaint', credits: [{ lineId: 'coke', qty: 1 }] }))).toBe('permission-denied');   // requires pin
+    const n = await creditNote(p, { ...base, billId: b.billId, reason: 'complaint', note: 'coke not served', pin: '1234', credits: [{ lineId: 'coke', qty: 1 }] });
     expect(n).toMatchObject({ series: 'CN', number: '0001', payable: -8400, creditNoteOf: { billId: b.billId, number: '0417' } });
     const o = p.bills.get(b.billId)!;
     expect(o.status).toBe('paid'); expect(o.creditNotes).toEqual([{ billId: n.billId, number: '0001', at: p.now() }]);
     expect(o.lines.find(l => l.lineId === 'coke')!.credited).toEqual({ qty: 1 });
     expect(p.counters.get('CN_2026-27')).toEqual({ next: 2 });
-    expect([...p.audits.values()].find(a => (a as { action: string }).action === 'creditNote')).toMatchObject({ amount: 8400, sev: 'P0' });
-    expect(await code(creditNote(p, { ...base, billId: b.billId, reason: 'again', credits: [{ lineId: 'coke', qty: 1 }] }))).toBe('failed-precondition');
+    expect([...p.audits.values()].find(a => (a as { action: string }).action === 'creditNote')).toMatchObject({ sev: 'P0', reason: 'complaint', note: expect.stringContaining('coke×1') });
+    expect(await code(creditNote(p, { ...base, billId: b.billId, reason: 'complaint', pin: '1234', credits: [{ lineId: 'coke', qty: 1 }] }))).toBe('failed-precondition');
   });
   it('BL-S11 a note on an unpaid bill is refused before any counter moves', async () => {
     const p = fakePorts();
     const b = await issue(p, issueReq());
-    expect(await code(creditNote(p, { ...base, billId: b.billId, reason: 'x', credits: [{ lineId: 'coke', qty: 1 }] }))).toBe('failed-precondition');
+    expect(await code(creditNote(p, { ...base, billId: b.billId, reason: 'complaint', pin: '1234', credits: [{ lineId: 'coke', qty: 1 }] }))).toBe('failed-precondition');
     expect(p.counters.has('CN_2026-27')).toBe(false);
+    expect(p.audits.size).toBe(0);   // refused before the door, so no P0 row for a thing that did not happen
   });
   it('BL-S12 split moves lines to a second draft; each draft issues its own number; an issued line cannot move', async () => {
     const p = fakePorts();

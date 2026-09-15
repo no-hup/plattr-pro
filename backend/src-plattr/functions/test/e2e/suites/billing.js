@@ -110,34 +110,39 @@ export default async function billingSuite() {
   }
   // BL-S9 cancel → re-issue 0002
   {
-    const bad = await as(manager, 'cancel', { billId, reason: '' });
-    check('BL-S9 cancel without reason → invalid-argument', errData(bad).code === 'invalid-argument', bad);
-    const r = await as(manager, 'cancel', { billId, reason: 'service charge removed' });
+    const bad = await as(manager, 'cancel', { billId, reason: '', pin: '1234' });
+    check('BL-S9 cancel without reason → invalid-argument (ST rule)', errData(bad).code === 'invalid-argument', bad);
+    const ask = await as(manager, 'cancel', { billId, reason: 'other', note: 'service charge removed' });
+    check('BL-S9 cancel without PIN → permission-denied requires pin, bill still issued', errData(ask).code === 'permission-denied' && errData(ask).requires === 'pin' && (await getDoc(`bills/${billId}`))?.status === 'issued', ask);
+    const cap = await as(captain, 'cancel', { billId, reason: 'other', pin: '1234' });
+    check('BL-S9 captain cannot cancel', errData(cap).code === 'permission-denied' && errData(cap).requires === undefined, cap);
+    const r = await as(manager, 'cancel', { billId, reason: 'other', note: 'service charge removed', pin: '1234' });
     check('BL-S9 cancel → status cancelled, number 0001 kept', r.status === 'success' && r.data?.status === 'cancelled' && r.data?.number === '0001', r);
     check('BL-S9 lines freed (billId null)', (await getDoc('lines/bl_pizza'))?.billId === null);
     const audit = (await listCol('audit')).find(a => a.cid === 'cid_bl' && a.action === 'cancelBill');
-    check('BL-S9 P0 audit row with amount 60900, no pin anywhere', audit?.sev === 'P0' && audit?.amount === 60900 && !JSON.stringify(audit).includes('1234'), audit);
+    check('BL-S9 ST wrote the P0 audit row naming bill 0001 and ₹60900, no pin anywhere', audit?.sev === 'P0' && /bill 0001 ₹60900/.test(audit?.note || '') && !JSON.stringify(audit).includes('1234'), audit);
     const re = await as(manager, 'issue', {});
     billId = re.data?.billId;
     check('BL-S9 re-issue → 0002', re.data?.number === '0002', re);
-    const twice = await as(manager, 'cancel', { billId: re.data?.billId, reason: 'x' });
-    await as(manager, 'cancel', { billId: re.data?.billId, reason: 'x' });
-    check('BL-S9 cancel of 0002 then again → second is failed-precondition', twice.status === 'success' && errData(await as(manager, 'cancel', { billId, reason: 'x' })).code === 'failed-precondition');
+    const twice = await as(manager, 'cancel', { billId: re.data?.billId, reason: 'other', pin: '1234' });
+    check('BL-S9 cancel of 0002 then again → second is failed-precondition', twice.status === 'success' && errData(await as(manager, 'cancel', { billId, reason: 'other', pin: '1234' })).code === 'failed-precondition');
     const re3 = await as(manager, 'issue', {});
     billId = re3.data?.billId;
     check('BL-S9 third issue → 0003, no number reused', re3.data?.number === '0003', re3);
   }
   // BL-S11 credit note on a paid bill
   {
-    const unpaid = await as(manager, 'creditNote', { billId, reason: 'not served', credits: [{ lineId: 'bl_coke', qty: 1 }] });
+    const unpaid = await as(manager, 'creditNote', { billId, reason: 'complaint', pin: '1234', credits: [{ lineId: 'bl_coke', qty: 1 }] });
     check('BL-S11 credit note on an unpaid bill → failed-precondition', errData(unpaid).code === 'failed-precondition', unpaid);
     await seed(`bills/${billId}`, { ...(await getDoc(`bills/${billId}`)), status: 'paid' });   // PY's job; seeded here
-    const r = await as(manager, 'creditNote', { billId, reason: 'coke not served', credits: [{ lineId: 'bl_coke', qty: 1 }] });
+    const ask = await as(manager, 'creditNote', { billId, reason: 'complaint', credits: [{ lineId: 'bl_coke', qty: 1 }] });
+    check('BL-S11 credit note without PIN → requires pin', errData(ask).requires === 'pin', ask);
+    const r = await as(manager, 'creditNote', { billId, reason: 'complaint', note: 'coke not served', pin: '1234', credits: [{ lineId: 'bl_coke', qty: 1 }] });
     const n = r.data || {};
     check('BL-S11 CN 0001 in series CN: payable −8400, cites 0003', r.status === 'success' && n.series === 'CN' && n.number === '0001' && n.payable === -8400 && n.creditNoteOf?.number === '0003', r);
     const o = await getDoc(`bills/${billId}`);
     check('BL-S11 original still paid, creditNotes[] has one, coke credited 1', o?.status === 'paid' && o?.creditNotes?.length === 1 && o?.lines?.find(l => l.lineId === 'bl_coke')?.credited?.qty === 1, o);
-    const again = await as(manager, 'creditNote', { billId, reason: 'again', credits: [{ lineId: 'bl_coke', qty: 1 }] });
+    const again = await as(manager, 'creditNote', { billId, reason: 'complaint', pin: '1234', credits: [{ lineId: 'bl_coke', qty: 1 }] });
     check('BL-S11 crediting the coke again → failed-precondition, CN counter stays 2', errData(again).code === 'failed-precondition' && (await getDoc(`counters/CN_${n.fiscalYear}`))?.next === 2, again);
     const g = await call('billing-get', { restaurantId: RID, sessionId: captain, billId });
     check('BL-S16 get returns the bill for a captain (reprint is ST audit)', g.status === 'success' && g.data?.number === '0003', g);
