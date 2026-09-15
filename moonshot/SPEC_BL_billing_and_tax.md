@@ -125,11 +125,10 @@ Money in rupees for reading; every stored value is minor units. Food block: excl
 | `invoice.width` | 4 | print only |
 | `invoice.creditNoteSeries` | `CN` | BL-S11 |
 | `billing.roundTo` | 100 | BL-S6 |
-| `billing.taxRoundTo` | 0 | R5; per-head rounding if a CA asks (CGST s.170 reading) |
 | `tax.partRounding` | independent | R5, BL-S5 |
 | `print.title` / `print.titleWithExempt` | "Tax Invoice" / "Invoice-cum-Bill of Supply" | bill print (Rule 46, 46A) |
 | `print.placeOfSupply` / `print.reverseCharge` | "Karnataka (29)" / "No" | bill print (Rule 46(n), (o)) |
-| `billing.charges[]` | `[]` (existing key; each row gains `taxBlockId`; `percentage` read as bps) | BL-S9, S10, S21 |
+| `billing.charges[]` | seed: one service-charge row, rate set at onboarding (existing key; each row gains `taxBlockId`; `percentage: 5` stays five percent for the old checkout, `app/config.ts` derives `pctBps = percentage × 100` at read) | BL-S9, S10, S21 |
 
 ## Talks to
 
@@ -166,6 +165,14 @@ Money in rupees for reading; every stored value is minor units. Food block: excl
 | 2026-09-15 | Push back (Grok): drop the portability keys | Shaurya's requirement via the peer session; every key is a value, none a branch |
 | 2026-09-15 | Flagged, CA to confirm (Grok ~80 %): a tax invoice and a bill of supply sharing one series if `collect` flips mid-year | Not built; noted for the day BL-S15 is switched on |
 | 2026-09-15 | Deferred to OR (Grok ~75 %): which table states block release while a draft or an issued-unpaid bill exists | R13 names issue as the ordering stop; the rest is the order-lifecycle sheet |
+| 2026-09-15 | Blind test lists for the domain (Opus subagent, Gemini, Grok; kept at `reviews/2026-09-15-BL-consults/tests-*.md`). Taken as tests: blocks are sums, never a recompute (three lines of 10000 with 10000 off give 501 per part, not 500); an inclusive block with two parts always splits the remainder residual-last so the block total equals the gross (independent rounding would print 9999 for a 10000 gross); "last line" for the leftover is by `lineId`, never insertion order; the charge base is the block net **after** the bill discount; a charge in a block no line touches is a row with 0; an offer above the list price is refused; half-up is not banker's | Each was a wrong bill the sheet did not name |
+| 2026-09-15 | Credit note pro rata is cumulative floor: the k-th unit credited takes floor(total × k ÷ qty) − floor(total × (k−1) ÷ qty), so three notes of 1 on a 140000 line give 46666, 46667, 46667 and sum exactly. Nothing extra is stored: `credited.qty` is enough | Opus: Σ notes must equal the charged amount; the shape it proposed (residual on the last note) needs a stored running total, this one does not |
+| 2026-09-15 | Charges and round-off are never on a credit note; a note reverses lines and quantities only | Sheet Objects said so; the domain enforces it (`charges: []`, `roundOff: 0`) |
+| 2026-09-15 | `billing.taxRoundTo` dropped | Opus: named with no semantics. Add when a CA asks, with the rule written first |
+| 2026-09-15 | `fiscalYearStartMonth` 1 prints a single year ("2027"); any other month prints "2026-27" | Opus flagged it undefined |
+| 2026-09-15 | `collect: false` keeps the parts with rate 0 and amount 0 rather than dropping them | Gemini expected `parts: []`; keeping the shape means the print layout has nothing to branch on |
+| 2026-09-15 | `billing.charges[].percentage` stays a percent for the old checkout; `app/config.ts` derives `pctBps = percentage × 100` at read | Peer review: one stored field must not mean two things across old and new code |
+| 2026-09-15 | Serial length ≤ 16 (Rule 46(b)) is not enforced in code | Series "A" plus a 4-digit number is 5; a restaurant would need 10¹⁵ bills to breach it |
 | 2026-09-15 | All consult answers and both sheet reviews are kept at `reviews/2026-09-15-BL-consults/` | Scratchpad research was lost once already |
 | 2026-09-15 | Disagreement 2, none on substance: Grok's guided pass would not name a liquor VAT figure at all (UNVERIFIED), Grok's open pass says nil since 2017 with the Act; the court judgment settles it. Default `parts: []` stands | See the liquor row above |
 | 2026-09-15 | Tax facts folded from Gemini (guided pass), each with its basis: composition bill is a Bill of Supply with the wording above (CGST s.10, Rules 5(1)(f), 49); standalone restaurant 5 % without ITC, 18 % with ITC inside a hotel with any room at ₹7,500 or more (Notification 11/2017-CT(R) as amended by 46/2017); one paper for GST and liquor is an "invoice-cum-bill of supply" (Rule 46A); SAC 9963 is optional on a B2C bill under ₹5 crore (Notification 78/2020-CT); service charge cannot be added by default and must go on request (CCPA guidelines 04.07.2022) and when paid is part of the taxable value (s.15(2)(c)); a discount printed on the bill reduces taxable value (s.15(3)(a)); serial number ≤ 16 characters, consecutive per financial year (Rule 46(b)); rounding to the rupee permitted (s.170); credit note references the original invoice, deadline 30 November of the next financial year (s.34) | Each is a default or a rule in this sheet; verify list in Review before sign-off |
@@ -178,8 +185,8 @@ Merging bills · persisted drafts · offline reserved ranges (OF) · legal bill 
 
 - ~~BL-Q1~~ closed: a bar-licensed restaurant cannot be on composition (all consults agree). Default regular; `tax.collect` stays for a no-liquor outlet.
 - BL-Q2 One series for food and liquor, or two? Default one; Rule 46A allows one paper.
-- BL-Q3 Standalone at 5 % or inside a hotel at 18 %? Sets the food block default.
-- BL-Q4 Does the first customer add a service charge at all? Default off (CCPA); if yes, BL-S9/S10/S21 are the tests.
+- ~~BL-Q3~~ closed: per-restaurant setting in `tax.blocks.food`, set by the owner or at onboarding; 2.5 + 2.5 is only the seed (Shaurya via peer session).
+- ~~BL-Q4~~ closed: the first customer adds a service charge and the seed has the row present, rate theirs; removable per bill before issue (BL-S10), cancel and re-issue after (BL-S9). BL-S9/S10/S21 are live tests (Shaurya via peer session).
 
 ## Review before sign-off (Shaurya reads this section only)
 
@@ -189,7 +196,7 @@ Merging bills · persisted drafts · offline reserved ranges (OF) · legal bill 
 | Service charge: removable before issue without a PIN; after issue, cancel and re-issue | **must decide** | Every bill that carries one |
 | CGST and SGST rounded independently (8.33 + 8.33) rather than forced to the single-rate figure (8.32 + 8.33). Differs from the critical-pieces doc; a diff is proposed, not applied | **must decide** | Every bill with a half-paisa; a CA may have a view |
 | Liquor block prints no tax line in Karnataka (excise collected upstream), on a court judgment and two consults, not an accountant | **must decide** | Every liquor bill. If a CA disagrees it is one config part, no code |
-| Service charge default off and removable on request | fine to skip | CCPA guideline; matches your ask |
+| Service charge seeded ON for a new restaurant, removable on request before issue | decided (Shaurya via peer, BL-Q4) | The CCPA line says it must go on request; removal is BL-S10 |
 | Split by lines only | fine to skip | PY handles amounts |
 | Composition as one boolean | fine to skip | Only matters if BL-Q1 is yes |
 
