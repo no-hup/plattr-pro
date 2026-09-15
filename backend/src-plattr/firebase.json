@@ -14,6 +14,9 @@
         "firebase-debug.*.log",
         "*.local",
         "*.env"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run build"
       ]
     }
   ],
@@ -35,17 +38,129 @@
     },
     "singleProjectMode": true
   },
-  "hosting": {
-    "site": "plattrpro",
-    "public": "../../frontend/flutter_boilerplate/build/web",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
-  },
+  "hosting": [
+    {
+      "site": "plattrpro",
+      "public": "consumer-web",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "/",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "/index.html",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "**/!(*.*)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "/flutter_bootstrap.js",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        }
+      ],
+      "redirects": [
+        {
+          "source": "/r/:restaurantId/t/:tableId",
+          "destination": "/#/r/:restaurantId/t/:tableId",
+          "type": 302
+        }
+      ]
+    },
+    {
+      "site": "rms-app-dd875",
+      "public": "staff-web",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "/server/**",
+          "destination": "/server/index.html"
+        },
+        {
+          "source": "/kitchen/**",
+          "destination": "/kitchen/index.html"
+        },
+        {
+          "source": "/admin/**",
+          "destination": "/admin/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "/",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "**/index.html",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "**/!(*.*)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        {
+          "source": "**/flutter_bootstrap.js",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        }
+      ]
+    }
+  ],
   "remoteconfig": {
     "template": "remoteconfig.template.json"
   }

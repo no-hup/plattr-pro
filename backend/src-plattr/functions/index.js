@@ -28,39 +28,41 @@ exports.cart = {
 exports.menu = menuFunctions;
 exports.dev = devFunctions;
 exports.offers = offersFunctions;
-exports.adminApp = adminAppFunctions;
+// Admin app endpoints. MUST be a nested group: Cloud Run maps the id `admin-x` to the module path
+// `admin.x`, so a flat `exports['admin-x']` key deploys but the container can't find it at runtime.
+exports.admin = {
+  getRestaurantSettings: adminAppFunctions.getRestaurantSettings,
+  updateRestaurantSettings: adminAppFunctions.updateRestaurantSettings,
+  addCategory: adminMenuFunctions.addCategory,
+  updateCategory: adminMenuFunctions.updateCategory,
+  deleteCategory: adminMenuFunctions.deleteCategory,
+  addSubcategory: adminMenuFunctions.addSubcategory,
+  updateSubcategory: adminMenuFunctions.updateSubcategory,
+  deleteSubcategory: adminMenuFunctions.deleteSubcategory,
+  getServers: adminAppFunctions.getServers,
+  addServer: adminAppFunctions.addServer,
+  updateServer: adminAppFunctions.updateServer,
+  resetServerPin: adminAppFunctions.resetServerPin,
+  getTables: adminAppFunctions.getTables,
+  updateTableStatus: adminAppFunctions.updateTableStatus,
+  updateTable: adminAppFunctions.updateTable,
+  getHistoricalOrders: adminAppFunctions.getHistoricalOrders,
+  getOrderDetails: adminAppFunctions.getOrderDetails,
+  getOffers: adminAppFunctions.getOffers,
+  createOffer: adminAppFunctions.createOffer,
+  updateOffer: adminAppFunctions.updateOffer,
+  deleteOffer: adminAppFunctions.deleteOffer,
+};
 
 // Admin-prefixed endpoints for Admin app usage
-exports['admin-getRestaurantSettings'] = adminAppFunctions.getRestaurantSettings;
-exports['admin-updateRestaurantSettings'] =
-  adminAppFunctions.updateRestaurantSettings;
-exports['admin-addCategory'] = adminMenuFunctions.addCategory;
-exports['admin-updateCategory'] = adminMenuFunctions.updateCategory;
-exports['admin-deleteCategory'] = adminMenuFunctions.deleteCategory;
-exports['admin-addSubcategory'] = adminMenuFunctions.addSubcategory;
-exports['admin-updateSubcategory'] = adminMenuFunctions.updateSubcategory;
-exports['admin-deleteSubcategory'] = adminMenuFunctions.deleteSubcategory;
 
 // Staff Management (Phase 4)
-exports['admin-getServers'] = adminAppFunctions.getServers;
-exports['admin-addServer'] = adminAppFunctions.addServer;
-exports['admin-updateServer'] = adminAppFunctions.updateServer;
-exports['admin-resetServerPin'] = adminAppFunctions.resetServerPin;
 
 // Table Management (Phase 4)
-exports['admin-getTables'] = adminAppFunctions.getTables;
-exports['admin-updateTableStatus'] = adminAppFunctions.updateTableStatus;
-exports['admin-updateTable'] = adminAppFunctions.updateTable;
 
 // Historical Orders (Phase 5)
-exports['admin-getHistoricalOrders'] = adminAppFunctions.getHistoricalOrders;
-exports['admin-getOrderDetails'] = adminAppFunctions.getOrderDetails;
 
 // Offers Management (Offers V2)
-exports['admin-getOffers'] = adminAppFunctions.getOffers;
-exports['admin-createOffer'] = adminAppFunctions.createOffer;
-exports['admin-updateOffer'] = adminAppFunctions.updateOffer;
-exports['admin-deleteOffer'] = adminAppFunctions.deleteOffer;
 
 // Export order functions using the orderFunctions import
 // NOTE: createOrUpdateOrder is intentionally NOT exported — it is a bare async
@@ -72,6 +74,12 @@ exports.order = {
   getActiveCartsForKitchen: orderFunctions.getActiveCartsForKitchen,
   markCartAsServed: orderFunctions.markCartAsServed,
   getServedCartsForServer: orderFunctions.getServedCartsForServer
+};
+
+// New POS layers (moonshot/): TypeScript compiled into lib/ by `npm run build` (emu.sh and predeploy run it).
+// Nested group, same reason as `admin`: the id `approvals-apply` maps to the module path `approvals.apply`.
+exports.approvals = {
+  apply: require('./lib/api/approvals').applyHandler,
 };
 
 exports.helloWorld = functions.https.onRequest((req, res) => {
