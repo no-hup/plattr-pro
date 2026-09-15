@@ -104,7 +104,7 @@ Same shape for `requires: 'otp'` or `'password'` later. Nothing per screen.
 | 2026-09-15 | Concurrent discounts on one line both apply, serially, two audit rows | Firestore transaction serialises them; "second one fails" would need a client version and adds nothing the audit trail lacks |
 | 2026-09-15 | Assumption: one till per outlet. That is why serial apply with no client version is fine | Whoever adds a second till re-reads the row above first |
 | 2026-09-15 | Adapter is one file, `adapters/firestore/approvals.ts`, not `staff.ts` + `audit.ts` as the Files block said | Module-shape rule: one name in every layer. Staff lookup reuses `adminApp/auth.js validateStaffSession`, the existing auth door |
-| 2026-09-15 | Staging line doc is TD-004 | Peer review: a staging structure without a debt row becomes permanent by accident |
+| 2026-09-15 | Staging line doc is TD-008 | Peer review: a staging structure without a debt row becomes permanent by accident |
 | 2026-09-15 | R7 implementation: staff doc fields `pinWrongAt: number[]`, `pinRetryAfter: number|null`; the P0 row for the owner is `action: 'pinStreak'`, written once per streak on the 5th wrong, in the same transaction as the counter | Additive fields on `servers/{id}` as the sheet says; one row per streak keeps ST-S8 honest |
 | 2026-09-15 | R9 implementation: the till sends `amount` in rupees as typed (₹251, ₹0.30); the server rounds to paise once; line and audit `amount` are paise | Cashiers type rupees; money is stored as integers |
 | 2026-09-15 | Amount larger than the list price is `failed-precondition` (line below zero), not `invalid-argument` | ST-S13 says the line rule refuses it; one rule, one place (`applyToLine`) |
@@ -136,6 +136,11 @@ Same shape for `requires: 'otp'` or `'password'` later. Nothing per screen.
 | 2026-09-15 | Rejected: PCI-DSS as a reason for any of this | PCI-DSS v4.0.1 8.3.4 carves out "user accounts on point-of-sale terminals that have access to only one card number at a time … such as IDs used by cashiers". Our operator PIN is further out still. Whatever we do here is an operational choice, not a compliance one |
 | 2026-09-15 | No hard ceiling on a PIN-approved discount in v1 (TD-004) | Shaurya's call, delegated and taken: a PIN holder can still zero a bill. Rare, and the trail names them. One config key when the log-auditing agent lands |
 | 2026-09-15 | Future scope, documented not built: an agent reads the audit rows and flags patterns (one cashier's "placard" P0s every Friday, discounts clustering just under the limit) | Shaurya's. ST-S8 gives a human the same numbers today; the agent is what makes own-PIN approval safe enough to keep |
+| 2026-09-15 | Arch review 1, item 2 (ST-S5 race): the write transaction re-reads the line and decides again on the fresh `sent`; a line that went to the kitchen between the two reads now answers `requires: pin` instead of voiding for free. Test: app "arch-2" with a fake adapter that flips `sent` between reads | `reviews/2026-09-15-arch.md`. The first read was outside the transaction, so the decision could be stale |
+| 2026-09-15 | Arch review 1, item 4: non-line audit ids carry a random suffix, `${cid}_${action}_${ts}_${rand}` | Two drawer opens in one millisecond collided on `createAudit`. Test: app "arch-4", two rows |
+| 2026-09-15 | Arch review 1, item 5: the till answers at most 10 challenges per call, then "Too many PIN attempts, start again". R7 never locks, so nothing server-side ended the loop | Playwright "arch-5" with a routed server that always asks |
+| 2026-09-15 | Arch review 1, item 3: the staging line doc is TD-008; TD-004 stays the no-ceiling row | Two rows shared one id |
+| 2026-09-15 | Arch review 1, item 1 (gate on `net` instead of `listPrice`) **not taken, waiting on Shaurya**: R9 and ST-S11 say `discount / listPrice` in so many words, and a domain test asserts it. Gating on `listPrice − offer` keeps every scenario's outcome (S11: 40/256 = 15.6 %, still a PIN) and closes the ₹1,000-with-₹900-offer hole the reviewer found. Recommendation: take it | A sheet rule is Shaurya's to change, not a reviewer's or mine |
 
 ## Out of scope
 
