@@ -5,8 +5,8 @@ Newest at the top of each list.
 
 ## In flight
 - BL · Billing & tax, session `plattr-pro-9a`, 2026-09-15 evening. Shaurya said go; tax facts come from four consults (Grok and Gemini, one open pass and one source-guided pass each) and are marked "CA to confirm" until signed. Phase plan (each a commit):
-  0. `SPEC_BL_billing_and_tax.md` draft v0 with the line snapshot (F/L fields) and tax config shape as Objects. Shaurya signs the snapshot.
-  1. Fold the consult answers (liquor VAT default, composition wording, service-charge treatment) into the sheet; `/custom-fanout-consult` on the sheet; Decisions; Review before sign-off.
+  0. DONE: `SPEC_BL_billing_and_tax.md` draft v1 with the line snapshot (F/L fields) and tax config shape as Objects.
+  1. DONE: four tax consults and two blind sheet reviews merged into Decisions (`reviews/2026-09-15-BL-consults/`). Karnataka bar liquor carries no tax line since 2017 (HC judgment). Waiting on Shaurya: Review before sign-off (snapshot fields, service charge, CGST/SGST rounding, liquor no-tax default).
   2. Golden fixture rows kind "bill": BL-S1..S6, S11, S12, S13, hand-computed minor units.
   3. `domain/line.ts`, `domain/billing.ts`, `domain/invoice.ts` green one scenario at a time; skeleton + blind Opus + fan-out lists first.
   4. Checkout hook writes line docs (characterization test on `createOrUpdateOrder.js` first). Closes TD-008.
