@@ -2,6 +2,7 @@
 .DS_Store
 *.log
 .env*
+!.env.example
 
 
 
@@ -44,3 +45,18 @@ local.properties
 
 # Secrets — never commit new copies
 **/secure_stuff/
+
+# launch credentials / build outputs
+restaurant-menu-setup-prod/**/CREDENTIALS.local.md
+restaurant-menu-setup-prod/**/apks/
+
+# emulator slot configs (backend/src-plattr/emu.sh) and the hosting build output
+backend/src-plattr/firebase.emu-*.json
+backend/src-plattr/consumer-web/
+backend/src-plattr/staff-web/
+
+# moonshot runtime (reviews are tracked, runtime state is not)
+moonshot/reviews/sessions.jsonl
+moonshot/reviews/inbox/
+moonshot/reviews/.review-head
+moonshot/reviews/.drift-*

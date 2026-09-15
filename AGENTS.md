@@ -1,5 +1,8 @@
 # Plattr Pro — Agent Instructions
 
+> **New POS work (till, billing, day close, offline, reports, config) is governed by
+> [`moonshot/CLAUDE.md`](moonshot/CLAUDE.md). Read it first. This file still governs the existing apps.**
+
 ## Project Overview
 Restaurant management platform with 4 apps: Consumer (QR scan → menu → order), Kitchen (order management), Server (table/order management), Admin (restaurant settings). Backend is Firebase Cloud Functions + Firestore.
 
@@ -20,8 +23,9 @@ Restaurant management platform with 4 apps: Consumer (QR scan → menu → order
   - `frontend/src-platter-apps/apps/platter_kitchen/` — Kitchen app
   - `frontend/src-platter-apps/apps/platter_server/` — Server app
   - `frontend/src-platter-apps/apps/platter_admin/` — Admin app
-- **Shared core:** `frontend/src-platter-apps/packages/platter_core/` — models shared across kitchen/server/admin apps
+- **Shared core:** `frontend/src-platter-apps/modules/platter_core/` — models shared across kitchen/server/admin apps
 - **Emulator-first development:** All local dev uses Firebase emulators. Mock data lives in `backend/src-plattr/functions/mock/`
+- **Prod infra, hosting & billing:** `INFRASTRUCTURE.md` — project/billing identity, the two hosting sites, what costs money, and why `max-instances: 10` must not be raised casually.
 
 ## Backend Conventions
 
@@ -30,6 +34,24 @@ Restaurant management platform with 4 apps: Consumer (QR scan → menu → order
 - Session management through `backend/src-plattr/functions/session/sessionService.js`
 - OTP generation/validation through `backend/src-plattr/functions/session/otpService.js`
 
+## Writing PRDs & Feature Specs
+
+Every capability is written as: **short name → concrete scene → what the system does → what breaks without it.**
+
+Good:
+> **Stock toggle.** Prawns run out at 8pm. Staff marks prawns unavailable once. It goes off Swiggy and Zomato instantly. Without this, orders keep coming for a dish they cannot make, they cancel, and their Swiggy rating drops.
+
+Bad:
+> The system shall support real-time inventory availability synchronisation across integrated third-party channels.
+
+Rules:
+- One capability per bullet. Name it in one or two words, bolded, then a full stop.
+- The scene uses real specifics: a real dish, a real price, a real time of day. "Paneer tikka ₹320 → ₹340", never "an item's price".
+- Name the human who acts (manager, cashier, kitchen staff), never "the user".
+- Always end with the "Without this…" line. If you cannot write one, the feature probably should not exist.
+- Banned: "shall", "seamless", "robust", "leverage", "streamline", "solution".
+- Bare paths are never used — every file/folder is a clickable markdown link (see `../CLAUDE.md`).
+
 ## Data Defensiveness Rules
 
 - Always null-guard array fields from Firestore before calling `.includes()`, `.length`, `.map()`, etc. Use `(field || [])` pattern
@@ -37,6 +59,12 @@ Restaurant management platform with 4 apps: Consumer (QR scan → menu → order
 - Table documents may be in unexpected states (e.g., `OTP_PENDING` with expired OTP) — handle gracefully
 
 ## Testing
+
+### Browser / front-end testing
+
+Driving the Flutter apps in a browser: **gstack `/browse`, headless, via `scripts/ab.sh`** —
+never `--headed`, never a second browser tool. Seed is **MockData7**.
+Full recipe, identifiers and gotchas: `FRONTEND_TESTING.md`.
 
 ### Testing Strategy (Two Homes)
 
@@ -93,45 +121,55 @@ bearer token authenticates); otherwise the suite falls back to asserting the aut
 ### Known Test Gaps
 
 - `offers` and `offer-pricing` suites are SKIPped — `applyOffer` endpoint was removed in Offers V2 (auto-apply at checkout). These suites need rewriting to verify offers via checkout flow.
-- `admin` suite tests are SKIPped — emulator namespace bug with `admin-*` dash-naming in Cloud Function exports.
-- `checkTableStatus` endpoint returns INTERNAL error — needs investigation.
+- `admin` suite runs again since `index.js` exports admin endpoints as the nested `exports.admin = {…}` group (the prod requirement from 2026-09-08, see `INFRASTRUCTURE.md`; committed 2026-09-15 inside the ST commits). It fails 9/16 on "Insufficient permissions": the seeded session is not ADMIN/MANAGER. TD-007.
+- ~~`checkTableStatus` endpoint returns INTERNAL error~~ — FIXED 2026-09-08: the handler
+  destructured the callable request wrapper instead of reading `request.data`, so
+  `restaurantId`/`tableId` were always undefined. Covered by table suite tests 16 and 17.
 - `cart-updateCartStatus` cascades the cart status to its non-terminal items (`carts[].items` only; the flat `order.items` copy is not cascaded — no read path returns its status and it carries no cart reference). The coverage suite still asserts the `PENDING→SERVED` rejection on a fresh checkout (that cart is never moved to READY), then seeds `READY` via a Firestore test seam.
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
 
-**IMPORTANT: This project has a knowledge graph. ALWAYS use the
-code-review-graph MCP tools BEFORE using Grep/Glob/Read to explore
-the codebase.** The graph is faster, cheaper (fewer tokens), and gives
-you structural context (callers, dependents, test coverage) that file
-scanning cannot.
+This project has a Tree-sitter knowledge graph (`.code-review-graph/graph.db`).
+It is **not** a blanket replacement for Grep — measured on this repo (2026-09-13),
+a source-scoped `rg` and a graph search cost the same tokens for symbol lookup.
+Use each where it actually wins:
 
-### When to use graph tools FIRST
+### Use the graph for
 
-- **Exploring code**: `semantic_search_nodes` or `query_graph` instead of Grep
-- **Understanding impact**: `get_impact_radius` instead of manually tracing imports
-- **Code review**: `detect_changes` + `get_review_context` instead of reading entire files
-- **Finding relationships**: `query_graph` with callers_of/callees_of/imports_of/tests_for
-- **Architecture questions**: `get_architecture_overview` + `list_communities`
+- **Backend JS structure**: `query_graph` with callers_of/callees_of/imports_of/tests_for
+  on `backend/src-plattr/functions/**` — this is where it beats a grep loop, because
+  the answer needs several rounds of grep otherwise.
+- **Impact radius** of a JS function change: `get_impact_radius`.
+- **Test coverage** of a JS function: `query_graph` pattern="tests_for".
 
-Fall back to Grep/Glob/Read **only** when the graph doesn't cover what you need.
+### Use Grep for (the graph is blind here)
 
-### Key Tools
+- **Anything crossing the JS ↔ Dart seam.** The Flutter apps call the backend by
+  **string literal** (`'order-cancel'`, `'login-restaurant'`), not by symbol, so no
+  structural edge exists for the graph to follow. The rule in *Change Impact Checklist*
+  — grep the endpoint name across Consumer, Kitchen, Server, Admin — stays a grep.
+- **Feature-flag keys** (`featureFlags.isEnabled('...')`) — also string-keyed.
+- **Any string-identity coupling**: route paths, Firestore field names, status enums.
 
-| Tool | Use when |
-|------|----------|
-| `detect_changes` | Reviewing code changes — gives risk-scored analysis |
-| `get_review_context` | Need source snippets for review — token-efficient |
-| `get_impact_radius` | Understanding blast radius of a change |
-| `get_affected_flows` | Finding which execution paths are impacted |
-| `query_graph` | Tracing callers, callees, imports, tests, dependencies |
-| `semantic_search_nodes` | Finding functions/classes by name or keyword |
-| `get_architecture_overview` | Understanding high-level codebase structure |
-| `refactor_tool` | Planning renames, finding dead code |
+Scope greps to source (`-g '*.js' -g '*.dart'`) — unscoped rg drags in
+`deploy-logs/` and `docs/` and costs ~40x more for the same answer.
 
-### Workflow
+### Freshness — read this before trusting a query
 
-1. The graph auto-updates on file changes (via hooks).
-2. Use `detect_changes` for code review.
-3. Use `get_affected_flows` to understand impact.
-4. Use `query_graph` pattern="tests_for" to check coverage.
+The auto-update hooks in `.claude/settings.json` are **deliberately inert**: they
+invoke a bare `code-review-graph`, which is not on PATH (only `uvx code-review-graph`
+resolves). This is intentional — a `PostToolUse` update on every Edit/Write/Bash with
+a 5s timeout, against a ~90s full build, risks a partially-written graph that returns
+confidently wrong structure. **A stale graph is worse than no graph.**
+
+So the graph is only as fresh as the last manual build. Refresh it yourself before
+relying on it:
+
+```bash
+uvx code-review-graph build     # full rebuild, ~90s
+uvx code-review-graph status    # check "Last updated" and "Built at commit"
+```
+
+If `status` shows a commit older than the code you are reasoning about, rebuild or
+use Grep instead.

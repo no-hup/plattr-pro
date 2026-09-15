@@ -1,0 +1,86 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>ST review · Staff PIN & approvals</title>
+<style>
+body{font:16px/1.5 system-ui,sans-serif;max-width:860px;margin:32px auto;padding:0 16px;color:#222}
+h1{font-size:24px}h2{font-size:18px;margin-top:36px;border-bottom:1px solid #ddd;padding-bottom:4px}
+.must{background:#fff3cd;border-left:6px solid #e0a800;padding:12px 16px;margin:14px 0}
+.must b:first-child{display:block;font-size:17px;margin-bottom:4px}
+.tag{font-size:12px;font-weight:700;letter-spacing:.04em;padding:2px 8px;border-radius:4px;vertical-align:middle}
+.t-must{background:#e0a800;color:#000}.t-skip{background:#e5e5e5;color:#444}
+.call{border-left:6px solid #9ecbff;background:#f2f8ff;padding:10px 16px;margin:10px 0}
+details{margin:10px 0}summary{cursor:pointer;font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:15px}td,th{border:1px solid #ddd;padding:6px 8px;text-align:left;vertical-align:top}
+code{background:#f4f4f4;padding:1px 4px;border-radius:3px;font-size:14px}
+.ok{color:#1a7f37;font-weight:600}
+</style></head><body>
+<h1>ST · Staff PIN &amp; approvals — what to review</h1>
+<p>Status: setup committed, test list written and reviewed by four outside readers. <span class="ok">Nothing is implemented yet.</span> Answer the three yellow boxes and I start building. Everything else is written down and you can skip it.</p>
+
+<h2>1. Three calls only you can make <span class="tag t-must">MUST DECIDE</span></h2>
+
+<div class="must"><b>A. Where does the discounted line live?</b>
+Pricing (PO) and Billing (BL) do not exist yet. To decide "is ₹251 more than 10 % of this pitcher" the server needs the pitcher's list price from somewhere, and once approved it needs somewhere to write "₹251 off, reason placard, approved by Priya".<br><br>
+<b>My default:</b> a new small document per line, <code>restaurants/{id}/lines/{lineId}</code>, holding list price, whether it was sent to the kitchen, the discount or void, and a version number. Tests seed it; later PO/BL write it for real. Nothing existing changes.<br>
+<b>The other way:</b> write straight into today's order documents (<code>orders → carts → items</code>). Every Flutter app reads those, so that is a schema change to live data.<br>
+<b>Answer with:</b> "lines doc" or "orders".</div>
+
+<div class="must"><b>B. Over the limit, whose PIN?</b>
+The sheet says the cashier types <i>their own</i> PIN to approve <i>their own</i> ₹251 discount. That is a speed bump, not a control: a lone cashier at 11 pm can approve themselves. Every open-source POS we looked at makes over-limit something a cashier account simply cannot do.<br>
+<b>My default:</b> own PIN, as the sheet says. One config key later (<code>approvals.requireDifferentApprover</code>) flips it to "a manager's PIN", no schema change.<br>
+<b>Answer with:</b> "own PIN" or "manager's PIN".</div>
+
+<div class="must"><b>C. Limit in percent only?</b>
+10 % of a ₹300 beer is ₹30. 10 % of a ₹40,000 banquet table is ₹4,000 with no PIN asked. Gemini flagged this; it is your open question PO-Q1.<br>
+<b>My default:</b> percent only in v1. A rupee cap is one more config key later.<br>
+<b>Answer with:</b> "percent" or "percent + rupee cap".</div>
+
+<p>Two more from the sheet's own sign-off list, both marked fine to skip: the owner (ADMIN) is also asked for a PIN over the limit (default yes); captains cannot request approval from their phone, they walk to the till (default yes).</p>
+
+<h2>2. Calls I made while merging reviews <span class="tag t-skip">FINE TO SKIP</span></h2>
+<p>Each one is a line in the sheet's Decisions table. Say so if any is wrong.</p>
+<div class="call"><b>No account lock, a slowdown instead (sheet R7, evening edit).</b> From the 5th wrong PIN in ten minutes the next try waits 1 s, then 2, 4, 8 … up to 2 min. The account keeps working for everything that needs no PIN. Owner gets one P0 row per streak.</div>
+<div class="call"><b>Two cashiers discounting the same line: both apply, one after the other, two audit rows.</b> Last one wins on the line. The audit trail shows both. No "second one fails" error.</div>
+<div class="call"><b>A second discount replaces the first, it does not add (sheet R9).</b> ₹100 then ₹251 means ₹251 off, not ₹351. Money on a line is menu price − offer − discount, in paise, never below zero. The Monday rupee column sums the lines, not the audit rows (R10).</div>
+<div class="call"><b>Reprint now writes an audit row (P1).</b> The donor review caught this: without a row, "print two bills, settle on the second, keep the cash" leaves no number in the Monday report.</div>
+<div class="call"><b>"Ten minutes" became a config key.</b> <code>approvals.pinLockWindowMinutes</code>, default 10. The sheet had it as a literal.</div>
+<div class="call"><b>Kitchen strike-out on void is deferred.</b> The kitchen app reads the old order schema; the "struck line" marker is already assigned to the OR module. ST writes <code>void</code> on the line; OR shows it.</div>
+<div class="call"><b>Reducing quantity of a sent line is a void.</b> 2 biryanis → 1 removes ₹450; when the till gets line editing it must go through this same door. No test until then.</div>
+<div class="call"><b>Voiding an already-voided line is an error, not a silent OK.</b> A double tap should be visible.</div>
+
+<h2>3. What the tests will prove, in plain words</h2>
+<details open><summary>The rules being tested (82 cases)</summary>
+<table>
+<tr><th>Rule</th><th>Example the test uses</th></tr>
+<tr><td>Under the limit: applied at once, audit P1</td><td>₹100 off ₹1,250 = 8 %. No PIN box.</td></tr>
+<tr><td>Exactly on the limit is still under</td><td>₹125 = 10.00 %, no PIN. ₹125.01 asks. Compared in whole paise, never as a float.</td></tr>
+<tr><td>Over the limit: server says "PIN needed", till shows the box, resends</td><td>₹251 = 20.08 %. Exactly two network calls.</td></tr>
+<tr><td>Wrong PIN: asked again, 4 left, 3 left…; 5th in 10 min locks for 15 min, owner gets a P0 row</td><td>Boundaries: 5th wrong at 9:59.999 locks, at 10:00 does not. Correct PIN at 14:59 of the lock still refused, at 15:00 allowed.</td></tr>
+<tr><td>Captain (SERVER) gets a flat "not allowed", never a PIN box</td><td>Same for KITCHEN. Captain may void a line not yet sent.</td></tr>
+<tr><td>Void after kitchen: PIN + reason, P0. Void before kitchen: free, P1</td><td>₹450 biryani.</td></tr>
+<tr><td>No reason, or a reason not on the list: refused before any PIN</td><td>Blank, spaces, "because". Note optional, max 200 chars.</td></tr>
+<tr><td>Audit row and the change are one transaction</td><td>If the audit write fails, the discount is not applied and the cashier sees "try again".</td></tr>
+<tr><td>The PIN is in no log, no audit row, no response, no browser storage</td><td>Checked on success, wrong PIN and locked paths.</td></tr>
+<tr><td>Changing the limit needs no deploy</td><td>Set 5 %; the next ₹100 request asks for a PIN. Config read once per request.</td></tr>
+<tr><td>Missing or broken config falls back to defaults, never to "no PIN"</td><td>Limit "ten" → 10. Empty reasons list → every reason refused.</td></tr>
+<tr><td>Role comes from the staff record, never from the request</td><td>A session from another outlet is refused outright.</td></tr>
+<tr><td>Monday report numbers</td><td>3 placard P0 at ₹251 + 2 regular P1 at ₹100 by one cashier → p0 3, p1 2, ₹953.</td></tr>
+</table></details>
+
+<details><summary>Reviewer ideas I rejected (one line each)</summary>
+<ul>
+<li>Backwards-clock test for the lock: tests use a fake clock; no code for a state the platform clock should make impossible.</li>
+<li>Idempotency key on the request: not needed, see "replaces, does not add" above.</li>
+<li>"Discount on a settled bill": no bill exists until BL ships; BL adds that check.</li>
+<li>Audit row when the owner changes the limit: config editing is not in this module; noted for the Config sheet.</li>
+<li>Cache the config in memory: the sheet says the next request uses the new limit; one read per risky action is the price.</li>
+<li>Simpler lock counter (gap between failures): the sheet says five in ten minutes; a timestamp list is three lines and matches it.</li>
+<li>Reversing kitchen ticket on void: belongs to OR and printing, not here.</li>
+</ul></details>
+
+<details><summary>Where things are</summary>
+<ul>
+<li>Sheet with every decision: <code>moonshot/SPEC_ST_staff_pin_and_approvals.md</code></li>
+<li>Test list: <code>backend/src-plattr/functions/domain/approvals.test.ts</code>, <code>app/approvals.test.ts</code>, <code>test/e2e/suites/approvals.js</code>, <code>frontend/till/e2e/approvals.spec.ts</code></li>
+<li>Donor review report: <code>moonshot/reviews/2026-09-15-donor-ST.md</code></li>
+<li>Setup commit: <code>ccd7052</code>. <code>make check</code> green (82 todo, 104 passed). Till smoke test green on the emulator.</li>
+</ul></details>
+</body></html>
