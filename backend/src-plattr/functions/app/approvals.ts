@@ -1,6 +1,6 @@
 // ST · apply(): role → config → decide → verify PIN → one transaction (line + audit). No Firestore here; ports only.
 import {
-  Action, AuditRow, Line, PinState, Outcome, Sev, applyToLine, auditRow, decide, tooSoon, logLine,
+  Action, ApprovalsConfig, AuditRow, Line, PinState, Outcome, Sev, applyToLine, auditRow, decide, tooSoon, logLine,
   percentOf, recordWrongPin, toPaise, validateAmount, validateReason,
 } from '../domain/approvals';
 import { loadApprovalsConfig } from './config';
@@ -34,6 +34,44 @@ export interface ApplyResult { line?: Line; auditId: string }
 
 export class ApprovalError extends Error {
   constructor(public code: string, message: string, public details: Record<string, unknown> = {}) { super(message); }
+}
+
+
+export type PinPorts = Pick<Ports, 'now' | 'pin' | 'pinState'>;
+
+/**
+ * ST's one PIN door (R3, R7), shared with every module that asks for a PIN (PY refunds and voids).
+ * Resolves when the PIN is right. Throws ApprovalError otherwise; the caller logs, this never does.
+ * A streak slows the next attempt: too soon is refused unchecked and does not count.
+ */
+export async function pinGate(ports: PinPorts, cfg: ApprovalsConfig, restaurantId: string, staff: Staff, pin: unknown, cid: string, action: string, sev: Sev): Promise<void> {
+  if (pin === undefined || pin === '') throw new ApprovalError('permission-denied', 'PIN required', { requires: 'pin', action, sev });
+  if (typeof pin !== 'string') throw new ApprovalError('invalid-argument', 'pin must be a string', {});
+  const now = ports.now();
+  const state = await ports.pinState.get(restaurantId, staff.staffId);
+  if (tooSoon(state, now)) throw new ApprovalError('permission-denied', 'Too soon, wait before trying again', { requires: 'pin', tooSoon: true, retryAfter: state.retryAfter, action, sev });
+  const ok = await ports.pin.verify(pin, staff.password);
+  if (!ok) {
+    let r = { attemptsLeft: 0, penaltySeconds: 0, retryAfter: undefined as number | undefined };
+    await ports.pinState.update(restaurantId, staff.staffId, s => {
+      const rec = recordWrongPin(s, now, cfg);
+      r = { attemptsLeft: rec.attemptsLeft, penaltySeconds: rec.penaltySeconds, retryAfter: rec.state.retryAfter };
+      const audit = rec.audit
+        ? auditRow({ ts: now, cid, action: 'pinStreak', staffId: staff.staffId, sev: 'P0', reason: 'wrong pin streak', note: '', lineId: null, before: null, after: null })
+        : undefined;
+      return { state: rec.state, audit };
+    });
+    throw new ApprovalError('permission-denied', 'Wrong PIN', { requires: 'pin', wrong: true, attemptsLeft: r.attemptsLeft, ...(r.retryAfter !== undefined ? { retryAfter: r.retryAfter } : {}), action, sev });
+  }
+  await ports.pinState.update(restaurantId, staff.staffId, () => ({ state: { wrongAt: [] } }));
+}
+
+/** The log outcome for a pinGate refusal, so every caller logs the same word for the same event. */
+export function pinOutcome(e: ApprovalError): Outcome {
+  if (e.code === 'invalid-argument') return 'invalid';
+  if (e.details.tooSoon) return 'too_soon';
+  if (e.details.wrong) return 'wrong_pin';
+  return 'needs_pin';
 }
 
 const LINE_ACTIONS: Action[] = ['discount', 'removeOffer', 'void'];
@@ -81,27 +119,8 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
   const note = typeof req.note === 'string' ? req.note : '';
 
   if (needsPin) {
-    const pin = req.pin;
-    if (pin === undefined || pin === '') fail('permission-denied', 'PIN required', { requires: 'pin', action, sev }, sev, true, 'needs_pin');
-    if (typeof pin !== 'string') fail('invalid-argument', 'pin must be a string', {}, sev, true, 'invalid');
-    // R7: a streak slows the next attempt. Too soon is refused unchecked and does not count.
-    const now = ports.now();
-    const state = await ports.pinState.get(restaurantId, staff.staffId);
-    if (tooSoon(state, now)) fail('permission-denied', 'Too soon, wait before trying again', { requires: 'pin', tooSoon: true, retryAfter: state.retryAfter, action, sev }, sev, true, 'too_soon');
-    const ok = await ports.pin.verify(pin as string, staff.password);
-    if (!ok) {
-      let r = { attemptsLeft: 0, penaltySeconds: 0, retryAfter: undefined as number | undefined };
-      await ports.pinState.update(restaurantId, staff.staffId, s => {
-        const rec = recordWrongPin(s, now, cfg);
-        r = { attemptsLeft: rec.attemptsLeft, penaltySeconds: rec.penaltySeconds, retryAfter: rec.state.retryAfter };
-        const audit = rec.audit
-          ? auditRow({ ts: now, cid, action: 'pinStreak', staffId: staff.staffId, sev: 'P0', reason: 'wrong pin streak', note: '', lineId: null, before: null, after: null })
-          : undefined;
-        return { state: rec.state, audit };
-      });
-      fail('permission-denied', 'Wrong PIN', { requires: 'pin', wrong: true, attemptsLeft: r.attemptsLeft, ...(r.retryAfter !== undefined ? { retryAfter: r.retryAfter } : {}), action, sev }, sev, true, 'wrong_pin');
-    }
-    await ports.pinState.update(restaurantId, staff.staffId, () => ({ state: { wrongAt: [] } }));
+    try { await pinGate(ports, cfg, restaurantId, staff, req.pin, cid, action, sev); }
+    catch (e) { if (e instanceof ApprovalError) fail(e.code, e.message, e.details, sev, true, pinOutcome(e)); throw e; }
   }
 
   // The change and its audit row are one transaction (R4). Any failure: nothing applied, "try again".

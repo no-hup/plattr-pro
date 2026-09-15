@@ -8,3 +8,12 @@ export async function loadApprovalsConfig(read: (restaurantId: string) => Promis
   warnings.forEach(warn);
   return config;
 }
+
+import { PaymentsConfig, configFrom as paymentsConfigFrom } from '../domain/payments';
+
+/** PY. `read` returns the settings document (or undefined for a fresh restaurant); a throw refuses the payment. */
+export async function loadPaymentsConfig(read: (restaurantId: string) => Promise<unknown>, warn: (msg: string) => void, restaurantId: string): Promise<PaymentsConfig> {
+  const { config, warnings } = paymentsConfigFrom(await read(restaurantId));
+  warnings.forEach(warn);
+  return config;
+}
