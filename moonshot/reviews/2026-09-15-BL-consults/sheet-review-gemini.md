@@ -1,0 +1,16 @@
+1. WHAT IS MISSING:
+1. **Restaurant timezone config**: The `invoice.fiscalYearStartMonth` rollover (BL-S18) and epoch timestamps will default to UTC without a timezone key; without it, the legal invoice number counter will incorrectly reset at 5:30 AM IST on April 1st instead of midnight.
+2. **Component-level discount apportionment rules**: Lines sum `components[]` that may have different `taxBlockId`s (e.g., food + liquor), but line-level offers are a single amount; without a rule to split this offer across components, tax on mixed combos cannot be computed.
+3. **Distribution of block-level tax rounding to lines**: R5 computes tax on the block's aggregate taxable value, but the Line object requires exact `tax` amounts per component; without a reconciliation rule, the sum of stored line taxes will mismatch the block's printed tax total, breaking accounting exports.
+4. **Partial quantity refunds**: BL-S11 reverses a whole line, but `qty` is frozen and there is no refund quantity field; without this, refunding 1 of 3 beers requires refunding the entire line and issuing a messy new bill for the kept 2.
+
+2. WHAT BREAKS IN PRODUCTION:
+1. **Double-charging inclusive taxes in payable total**: The formula `payable = subtotal − discount + charges + tax + roundOff` adds `tax` to a `subtotal` that already contains the inclusive tax amount (e.g., BL-S4). Input: ₹499 beer (inclusive VAT). Wrong Output: Payable is calculated as ₹526.44 instead of ₹499.
+2. **Global composition toggle suppresses non-GST taxes**: The `tax.collect` global boolean for the composition scheme (BL-S15) applies to the whole bill, but state VAT on liquor must be collected regardless of federal GST status. Input: Composition restaurant sells ₹499 liquor with 5.5% VAT. Wrong Output: VAT is suppressed and not collected, violating state excise law.
+3. **Unbalanced CGST and SGST amounts**: R5 forces leftover fractions onto the last tax part to match the combined rate block total. Input: Taxable ₹333 at 2.5% CGST and 2.5% SGST (Total 5% = ₹16.65). Wrong Output: CGST is ₹8.32 and SGST is ₹8.33, violating GST portal rules that mandate perfectly equal intra-state splits.
+4. **Circular bill-level discount apportionment [<80% sure]**: R1 apportions bill discounts by "taxable share before tax", but for inclusive items, the pre-tax taxable value depends on the discount amount, creating a circular dependency. Input: Flat ₹200 bill discount on a mix of exclusive food and inclusive liquor. Wrong Output: Math crashes or mis-apportions compared to standard gross `listPrice` splitting.
+
+3. WHAT SHOULD BE OUT OF SCOPE:
+1. **Credit Notes (BL-S11)**: Building a separate document type, negative line subset logic, and dedicated number series is high effort; V0/V1 can survive by simply canceling the original bill and re-ringing correct items for same-day mistakes.
+2. **Apportioning bill discounts by taxable share (R1)**: Splitting discounts by pre-tax value is mathematically risky and circular with inclusive taxes; splitting by gross `listPrice` is the industry standard, legally acceptable, and completely safe for V0.
+3. **Complex block-rate tax reconciliation (R5)**: Forcing tax parts to sum perfectly to a combined block rate by skewing the last part adds logic risk; standard independent rounding per part is vastly simpler to build and keeps CGST/SGST legally equal.
