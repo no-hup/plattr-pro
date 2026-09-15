@@ -326,3 +326,60 @@ describe('domain/billing issue / cancel / creditNote', () => {
     expect(creditNote.length).toBe(3);
   });
 });
+
+describe('domain/billing — cases from Grok\'s list', () => {
+  it('T22/T23 tiny bills: 1 paisa → tax 0, roundOff −1, payable 0; 20 paise independent → [1,1], 22 → payable 0 roundOff −22', () => {
+    expect(ok(preview([line('x', 1)], null, [], cfg))).toMatchObject({ taxTotal: 0, roundOff: -1, payable: 0 });
+    expect(ok(preview([line('x', 20)], null, [], cfg))).toMatchObject({ taxTotal: 2, roundOff: -22, payable: 0 });
+  });
+  it('T32 an offer on a line spanning two blocks splits by component list share: 20000 off [food 50000, liquor 49900] → 10010 / 9990', () => {
+    const l = line('mix', 99900, { offer: 20000, components: [
+      { id: 'base', kind: 'item', name: 'mix', unitListPrice: 50000, taxBlockId: 'food', taxCode: '9963' },
+      { id: 'shot', kind: 'addon', name: 'shot', unitListPrice: 49900, taxBlockId: 'liquor', taxCode: '' } ] });
+    l.taxBlocks = { food: FOOD, liquor: LIQ };
+    const v = ok(preview([l], null, [], cfg));
+    expect(amounts(v, 'food')).toEqual({ taxable: 39990, parts: [1000, 1000], total: 41990 });
+    expect(amounts(v, 'liquor')).toEqual({ taxable: 39910, parts: [], total: 39910 });
+    expect(v).toMatchObject({ payable: 81900, roundOff: 0 });
+  });
+  it('T41 a charge in an inclusive block with no parts: 10 % on liquor 80000 → amount 8000, block total 88000, tax 0', () => {
+    const v = ok(preview([line('whisky', 80000, { block: LIQ })], null, [{ type: 'SERVICE_CHARGE', pctBps: 1000, taxBlockId: 'liquor' }], cfg));
+    expect(v.charges[0]).toMatchObject({ base: 80000, amount: 8000, tax: { taxable: 8000, parts: [] } });
+    expect(amounts(v, 'liquor')).toEqual({ taxable: 88000, parts: [], total: 88000 });
+  });
+  it('T42 a negative component price or qty 0 is refused (invalid-argument), never apportioned', () => {
+    const l = line('pizza', 40000, { components: [
+      { id: 'base', kind: 'item', name: 'pizza', unitListPrice: 50000, taxBlockId: 'food', taxCode: '9963' },
+      { id: 'small', kind: 'variant', name: 'small', unitListPrice: -10000, taxBlockId: 'food', taxCode: '9963' } ] });
+    expect(preview([l], null, [], cfg)).toMatchObject({ ok: false, code: 'invalid-argument' });
+    const z = line('pizza', 0); z.qty = 0;
+    expect(preview([z], null, [], cfg)).toMatchObject({ ok: false, code: 'invalid-argument' });
+  });
+  it('T55 a full credit of a rounded bill negates the block totals (−60950), not the rounded payable (−61000); original round-off stays', () => {
+    const bill = paid(ok(preview([line('x', 58048)], null, [], cfg)));
+    expect(bill).toMatchObject({ payable: 61000, roundOff: 50 });
+    const r = cn(bill, [{ lineId: 'x', qty: 1 }]); if (!r.ok) throw new Error(r.message);
+    expect(r.value.note).toMatchObject({ payable: -60950, roundOff: 0 });
+    expect(r.value.original).toMatchObject({ payable: 61000, roundOff: 50 });
+  });
+  it('I invariants on every success path: subtotal = Σ taxable, taxTotal = Σ parts = Σ line parts, payable = Σ totals + roundOff, |roundOff| < roundTo', () => {
+    const cases = [
+      preview([line('pizza', 50000), line('coke', 8000)], null, [], cfg),
+      preview([line('pizza', 50000), line('biryani', 70000), line('whisky', 80000, { block: LIQ })], bd(20000), [{ type: 'SERVICE_CHARGE', pctBps: 1000, taxBlockId: 'food' }], cfg),
+      preview([line('beer', 49900, { block: VAT }), line('x', 33300)], bd(1234), [], { ...cfg, partRounding: 'residualLast' }),
+      preview([line('a', 10000), line('b', 10000), line('c', 10000)], bd(10000), [], { ...cfg, roundTo: 500 }),
+    ];
+    for (const r of cases) {
+      const v = ok(r);
+      const sumParts = v.blocks.reduce((a, b) => a + b.parts.reduce((s, p) => s + p.amount, 0), 0);
+      const lineParts = v.lines.filter(l => l.countsTowardTotal).reduce((a, l) => a + Object.values(l.tax).reduce((s, t) => s + t.parts.reduce((q, p) => q + p.amount, 0), 0), 0)
+        + v.charges.reduce((a, c) => a + c.tax.parts.reduce((s, p) => s + p.amount, 0), 0);
+      expect(v.subtotal).toBe(v.blocks.reduce((a, b) => a + b.taxable, 0));
+      expect(v.taxTotal).toBe(sumParts);
+      expect(lineParts).toBe(sumParts);
+      expect(v.payable).toBe(v.blocks.reduce((a, b) => a + b.total, 0) + v.roundOff);
+      expect(Math.abs(v.roundOff)).toBeLessThan(Math.max(1, cfg.roundTo === 0 ? 1 : 500));
+      for (const b of v.blocks) if (b.mode === 'inclusive') expect(b.total).toBe(b.taxable + b.parts.reduce((s, p) => s + p.amount, 0));
+    }
+  });
+});

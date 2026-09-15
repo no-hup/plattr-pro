@@ -64,6 +64,7 @@ export function preview(lines: Line[], discount: BillDiscount | null, charges: C
   if (missing.length) return { ok: false, code: 'failed-precondition', message: `no tax block: ${missing.map(l => l.name).join(', ')}`, lineIds: missing.map(l => l.lineId) };
 
   // R1: bill discount onto lines by net share, then every cut onto components by list share.
+  if (live.some(l => l.qty < 1 || l.components.some(c => c.unitListPrice < 0))) return { ok: false, code: 'invalid-argument', message: 'qty below 1 or a negative component price' };
   const nets = live.map(net);
   if (nets.some(n => n < 0)) return { ok: false, code: 'failed-precondition', message: 'line below zero' };
   const shares = discount ? apportion(discount.amount, nets) : live.map(() => 0);
