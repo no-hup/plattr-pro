@@ -38,6 +38,30 @@ Paths are relative to the donor's clone. Line numbers are as of the pinned commi
 - URY `ury_order.py:1921-1940` `cancel_reason` is stored, and `ury/ury/report/cancelled_invoices/` is a report of its own.
 - Odoo `addons/point_of_sale/models/pos_order.py:1239` cancel, `:1426-1453` refund. A finalised order is never edited; a refund is a new reversing order. Dolibarr does the same with credit notes (`invoice.php:663`).
 
+**Payments, tenders, change, refunds**
+- Odoo `addons/point_of_sale/models/pos_payment.py:20-46`. The tender row: method, amount, its own time, session, cashier, the acquirer's card/auth/txn fields, `is_change`, and a unique client uuid. The shape to copy.
+- Odoo `addons/point_of_sale/models/pos_payment.py:60-70`. A payment cannot be edited on a posted order; a tender must be one the shop's config allows.
+- Odoo `addons/point_of_sale/models/pos_payment.py:74-93`. Change is a cash row of its own, netted against the first cash tender so the drawer shows one movement.
+- Odoo `addons/point_of_sale/models/pos_payment_method.py:23-60`, `:115-121`, `:139-153`. Tenders are config; cash/bank/pay-later is derived from the journal; a method cannot be edited while a session using it is open.
+- Odoo `addons/point_of_sale/models/pos_payment_method.py:202-212`, `:230-240`. UPI/QR as a method type with a validated account, plus a blank QR precomputed so it works offline.
+- Odoo `addons/point_of_sale/models/pos_order.py:194-195`, `:874-898`. Server recomputes paid from the rows; paid is checked at the transition and raises. **`:197-204` reads the change off the client anyway — do not copy.** `:621-622` only warns on overpay.
+- Odoo `addons/point_of_sale/models/pos_order.py:626-685`. Every add, change and removal of a tender written to the order's own log with old and new method and amount.
+- Odoo `addons/point_of_sale/models/pos_order.py:786-796`, `:889-898`. Round only the cash residual; non-cash pays its exact share; tolerance is half the rounding unit.
+- Odoo `addons/point_of_sale/models/pos_order.py:1390-1451`. Refund is a new reversing order in the currently-open session, `amount_paid` 0, its own number; no open session, no refund.
+- Odoo `addons/point_of_sale/models/pos_session.py:756-818`. What day close reads: cash in/out with reason and cashier, expected cash, every non-cash method with amount *and count*.
+- Odoo `addons/point_of_sale/models/pos_session.py:654-716`, `:1879-1904`. Counted cash stored, difference posted per method; cash-move and cash-move-delete are two separate rights, deletes logged. **`:401-408` forces counted = theoretical in a rescue session — do not copy.**
+- Odoo `addons/point_of_sale/models/report_sale_details.py:121-134`, `:376-421`. Day totals come off the payment rows, not the orders; cash moves appear in the same list.
+- SambaPOS `Ticket.cs:251-267`, `:280-290`, `:436-441`. Payments and change are two lists; removing a tender removes its ledger transaction with it; money is `decimal`.
+- SambaPOS `Ticket.cs:79-86`, `:169-173`, `:811-814`. A ticket will not close with a remainder; `PaidItems` tracks which lines are already settled, so a table pays item by item across tenders.
+- URY `ury/ury/doctype/ury_order/ury_order.py:1997-2055`. Split tender as a list of `{mode_of_payment, amount}`, rebuilt server-side; on a merged bill each tender is capped at each invoice's total so nothing double-counts. **`:2067-2070` appends the client's amounts unchecked on the plain path.**
+- URY `ury/ury/api/payment_terminal.py:41-89`. The card-terminal contract — start / status / cancel, cancel explicitly advisory — and a default that refuses honestly instead of faking approval.
+- URY `ury/ury/doctype/sub_pos_closing_payment/sub_pos_closing_payment.json:12-48`. Per-method close sheet where expected and difference are permission-gated, so the counting cashier counts blind.
+- URY `ury/ury/hooks/ury_pos_closing_entry.py:11-70`. The main till cannot close over an open sub-till, and a sub-cashier cannot make the day-close entry.
+- Dolibarr `invoice.php:342`, `:415-473`, `:540-546`. The settle is one rolled-back transaction; the amount is clamped to the remainder server-side; the bill flips to paid only at zero. **`:188` takes money as a PHP float off the request, `:193-201` hard-codes the tender codes, `:425` takes change from the browser.**
+- Dolibarr `invoice.php:344-367`, `:549-561`. A refund is a credit note that must point at a real validated invoice for that customer.
+- Dolibarr `split.php:66-138` and URY `ury/ury/doctype/ury_order/ury_order.py:545-570`. Splitting by moving lines to a second bill, not by amount — the other half of BL-S12.
+- Nobody. A tender chosen at the till refused for overshoot while one already in the bank is recorded. `businessDate` frozen on the row. Status that downgrades. A void bounded by day close.
+
 **Day close, shifts, cash count**
 - Odoo `addons/point_of_sale/models/pos_session.py`. Open, count, close, difference posted against the cashier.
 - Odoo `addons/pos_hr/models/pos_session.py`, `single_employee_sales_report.py`. Per-employee split of one session.
