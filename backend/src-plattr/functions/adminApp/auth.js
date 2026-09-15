@@ -43,8 +43,10 @@ async function validateAdminSession(restaurantId, sessionId) {
 
     const sessionData = sessionDoc.data();
 
-    // Check if session is still valid
-    if (sessionData.expiresAt && sessionData.expiresAt.toDate() < new Date()) {
+    // Check if session is still valid. Seed/legacy sessions store expiresAt as an
+    // ISO string; safeToDate handles Timestamp, Date, string and raw {_seconds}.
+    const adminExpiry = timestamp.safeToDate(sessionData.expiresAt);
+    if (sessionData.expiresAt && adminExpiry && adminExpiry < new Date()) {
         errorHandler.unauthorized('Session has expired', { restaurantId, sessionId });
     }
 
