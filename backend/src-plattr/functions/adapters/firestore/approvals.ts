@@ -10,7 +10,7 @@ const { validateStaffSession } = require('../../../adminApp/auth');
 const { comparePassword } = require('../../../utils/passwordUtils');
 
 const rest = (rid: string): DocumentReference => db.collection('restaurants').doc(rid);
-// DEBT(TD-004): `lines/` is a staging home for the line snapshot until PO/BL write the real one.
+// DEBT(TD-008): `lines/` is a staging home for the line snapshot until PO/BL write the real one.
 const lines = (rid: string) => rest(rid).collection('lines');
 const audit = (rid: string) => rest(rid).collection('audit');
 const servers = (rid: string) => rest(rid).collection('servers');
