@@ -4,6 +4,14 @@ The one page a fresh session reads to continue. Updated at the end of every work
 Newest at the top of each list.
 
 ## In flight
+- BL · Billing & tax, session `plattr-pro-9a`, 2026-09-15 evening. Shaurya said go; tax facts come from four consults (Grok and Gemini, one open pass and one source-guided pass each) and are marked "CA to confirm" until signed. Phase plan (each a commit):
+  0. `SPEC_BL_billing_and_tax.md` draft v0 with the line snapshot (F/L fields) and tax config shape as Objects. Shaurya signs the snapshot.
+  1. Fold the consult answers (liquor VAT default, composition wording, service-charge treatment) into the sheet; `/custom-fanout-consult` on the sheet; Decisions; Review before sign-off.
+  2. Golden fixture rows kind "bill": BL-S1..S6, S11, S12, S13, hand-computed minor units.
+  3. `domain/line.ts`, `domain/billing.ts`, `domain/invoice.ts` green one scenario at a time; skeleton + blind Opus + fan-out lists first.
+  4. Checkout hook writes line docs (characterization test on `createOrUpdateOrder.js` first). Closes TD-008.
+  5. `app/billing.ts`, `adapters/firestore/billing.ts`, `api/billing.ts`, e2e suite. ST gains the "bill already issued" precondition (BL-S8).
+  6. Till `features/billing/`, Playwright. Donor review (ERPNext `taxes_and_totals.py`, clone first) in parallel with 3–5.
 - ST arch fixes, session `plattr-pro-9a`, 2026-09-15 evening: items 2–5 of `reviews/2026-09-15-arch.md` done (ST-S5 race re-decide in the write transaction, drawer audit id suffix, till challenge cap of 10, TD-008 split). Item 1 (PIN gate on net instead of list price) closed by Shaurya as accepted risk, TD-009 (peer commit ac61694). BL plan for Shaurya at `reviews/2026-09-15-BL-plan.md`; his answers so far: tax labels set manually in Admin; snapshot-at-checkout is mine to decide; service charge must be removable per bill.
 - ST · Staff PIN & approvals, session `plattr-pro-9a`, 2026-09-15. Phases 1–6 committed; reworked to the evening sheet (R7 slowdown, R9 paise money, R10 report from lines, ST-S11–13). Phase plan (each phase is a commit):
   1. Setup, minimal: `make check` at repo root = tsc + jest + boundary grep; `frontend/till/` Vite+React+TS with one Playwright smoke test against the emulator.
