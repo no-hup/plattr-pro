@@ -9,18 +9,18 @@ export type ErrorCode = 'permission-denied' | 'invalid-argument' | 'failed-preco
 export interface ApprovalsConfig {
   discountPinAbovePercent: number;
   voidAfterKitchenNeedsPin: boolean;
-  pinLockAfterWrong: number;
-  pinLockMinutes: number;
-  pinLockWindowMinutes: number;
+  pinSlowAfterWrong: number;
+  pinSlowWindowMinutes: number;
+  pinSlowMaxSeconds: number;
   reasons: string[];
 }
 
 export const DEFAULTS: ApprovalsConfig = {
   discountPinAbovePercent: 10,
   voidAfterKitchenNeedsPin: true,
-  pinLockAfterWrong: 5,
-  pinLockMinutes: 15,
-  pinLockWindowMinutes: 10,
+  pinSlowAfterWrong: 5,
+  pinSlowWindowMinutes: 10,
+  pinSlowMaxSeconds: 120,
   reasons: ['placard', 'regular', 'complaint', 'birthday', 'guest left', 'staff meal', 'other'],
 };
 
@@ -45,21 +45,22 @@ export function configFrom(raw: unknown): { config: ApprovalsConfig; warnings: s
     config: {
       discountPinAbovePercent: pick('discountPinAbovePercent', nonNegNumber),
       voidAfterKitchenNeedsPin: pick('voidAfterKitchenNeedsPin', v => typeof v === 'boolean'),
-      pinLockAfterWrong: pick('pinLockAfterWrong', v => nonNegNumber(v) && (v as number) >= 1),
-      pinLockMinutes: pick('pinLockMinutes', nonNegNumber),
-      pinLockWindowMinutes: pick('pinLockWindowMinutes', nonNegNumber),
+      pinSlowAfterWrong: pick('pinSlowAfterWrong', v => nonNegNumber(v) && (v as number) >= 1),
+      pinSlowWindowMinutes: pick('pinSlowWindowMinutes', nonNegNumber),
+      pinSlowMaxSeconds: pick('pinSlowMaxSeconds', nonNegNumber),
       reasons: pick('reasons', v => Array.isArray(v) && v.every(x => typeof x === 'string')),
     },
     warnings,
   };
 }
 
+/** amount and listPrice are integer paise (R9). */
 export interface DecideInput { action: Action; role: Role; amount?: number; listPrice?: number; lineSent?: boolean }
 export type Decision = { ok: true; needsPin: boolean; sev: Sev } | { ok: false; code: ErrorCode };
 
-const paise = (rupees: number) => Math.round(rupees * 100);
+export const toPaise = (rupees: number) => Math.round(rupees * 100);
 
-/** The table in "Who can do what". Amount vs limit is compared in whole paise, never as a float percent. */
+/** The table in "Who can do what". Amount vs limit is compared in whole paise, never as a float percent (R9: discount / listPrice). */
 export function decide(input: DecideInput, cfg: ApprovalsConfig): Decision {
   const { action, role } = input;
   if (!ACTIONS.includes(action)) return { ok: false, code: 'invalid-argument' };
@@ -71,7 +72,7 @@ export function decide(input: DecideInput, cfg: ApprovalsConfig): Decision {
   }
   switch (action) {
     case 'discount': {
-      const over = paise(input.amount ?? 0) * 100 > paise(input.listPrice ?? 0) * cfg.discountPinAbovePercent;
+      const over = (input.amount ?? 0) * 100 > (input.listPrice ?? 0) * cfg.discountPinAbovePercent;
       return over ? { ok: true, needsPin: true, sev: 'P0' } : { ok: true, needsPin: false, sev: 'P1' };
     }
     case 'removeOffer': return { ok: true, needsPin: true, sev: 'P0' };
@@ -88,12 +89,11 @@ export function percentOf(amount: number, listPrice: number): number {
   return Math.round((amount / listPrice) * 10000) / 100;
 }
 
-/** null when fine, else the message for an invalid-argument error. */
+/** null when fine, else the message for an invalid-argument error. Below-zero is applyToLine's call (failed-precondition, ST-S13). */
 export function validateAmount(amount: unknown, listPrice: number): string | null {
-  if (typeof amount !== 'number' || Number.isNaN(amount)) return 'amount must be a number';
+  if (typeof amount !== 'number' || !Number.isFinite(amount)) return 'amount must be a number';
   if (!(listPrice > 0)) return 'line has no list price';
   if (amount <= 0) return 'amount must be more than 0';
-  if (amount > listPrice) return 'amount cannot exceed the list price';
   return null;
 }
 
@@ -104,25 +104,33 @@ export function validateReason(reason: unknown, note: unknown, cfg: ApprovalsCon
   return null;
 }
 
-// ── Wrong-PIN lock: state lives server-side per staffId, this is the pure part ─────────────
-export interface LockState { wrongAt: number[]; lockedUntil?: number }
+// ── Wrong-PIN slowdown (R7): a streak slows the next attempt, it never locks the account ────
+export interface PinState { wrongAt: number[]; retryAfter?: number }
 
-export function isLocked(state: LockState, now: number): boolean {
-  return state.lockedUntil !== undefined && now < state.lockedUntil;
+/** A PIN arriving before retryAfter is refused unchecked and does not count. */
+export function tooSoon(state: PinState, now: number): boolean {
+  return state.retryAfter !== undefined && now < state.retryAfter;
 }
 
-/** Window is [first wrong, first wrong + window): a wrong at exactly +window starts a fresh streak. */
-export function recordWrongPin(state: LockState, now: number, cfg: ApprovalsConfig): { state: LockState; locked: boolean; attemptsLeft: number } {
-  if (isLocked(state, now)) return { state, locked: true, attemptsLeft: 0 };
-  const windowMs = cfg.pinLockWindowMinutes * 60_000;
+/**
+ * Window is [first wrong, first wrong + window). From the `pinSlowAfterWrong`-th wrong in the window the
+ * next attempt waits min(pinSlowMaxSeconds, 2^(n − after)) seconds: 1, 2, 4, 8 … capped. `audit` is true
+ * exactly once per streak, on the wrong that starts the slowdown.
+ */
+export function recordWrongPin(state: PinState, now: number, cfg: ApprovalsConfig): { state: PinState; attemptsLeft: number; penaltySeconds: number; audit: boolean } {
+  const windowMs = cfg.pinSlowWindowMinutes * 60_000;
   const wrongAt = [...state.wrongAt.filter(t => t > now - windowMs), now];
-  const locked = wrongAt.length >= cfg.pinLockAfterWrong;
-  const next: LockState = locked ? { wrongAt, lockedUntil: now + cfg.pinLockMinutes * 60_000 } : { wrongAt };
-  return { state: next, locked, attemptsLeft: Math.max(0, cfg.pinLockAfterWrong - wrongAt.length) };
+  const n = wrongAt.length;
+  const slowed = n >= cfg.pinSlowAfterWrong;
+  const penaltySeconds = slowed ? Math.min(cfg.pinSlowMaxSeconds, 2 ** (n - cfg.pinSlowAfterWrong)) : 0;
+  const next: PinState = slowed ? { wrongAt, retryAfter: now + penaltySeconds * 1000 } : { wrongAt };
+  return { state: next, attemptsLeft: Math.max(0, cfg.pinSlowAfterWrong - n), penaltySeconds, audit: n === cfg.pinSlowAfterWrong };
 }
 
 // ── The line snapshot this module writes (v1 home: restaurants/{id}/lines/{lineId}, ST-Q2) ───
 export interface DiscountSource { reason: string; note: string; approverId: string }
+export interface Offer { id?: string; amount: number }
+/** Money fields are integer paise, all cuts of the GST-inclusive menu price (R9). */
 export interface Line {
   listPrice: number;
   sent: boolean;
@@ -130,8 +138,13 @@ export interface Line {
   countsTowardTotal: boolean;
   discount?: { amount: number; pct: number; source: DiscountSource };
   void?: DiscountSource;
-  offer?: unknown;
-  removedOffer?: unknown;
+  offer?: Offer | null;
+  removedOffer?: Offer | null;
+}
+
+/** R9: listPrice − offer − discount, in paise. */
+export function net(line: Line): number {
+  return line.listPrice - (line.offer?.amount ?? 0) - (line.discount?.amount ?? 0);
 }
 export interface Change { action: Action; amount?: number; pct?: number; reason: string; note: string; approverId: string }
 
@@ -140,7 +153,12 @@ export function applyToLine(line: Line, c: Change): { ok: true; line: Line } | {
   const source: DiscountSource = { reason: c.reason, note: c.note, approverId: c.approverId };
   const v = line.v + 1;
   switch (c.action) {
-    case 'discount': return { ok: true, line: { ...line, v, discount: { amount: c.amount ?? 0, pct: c.pct ?? 0, source } } };
+    case 'discount': {
+      // One manual discount slot: a new value replaces the old one (ST-S12). The line may not go below zero (ST-S13).
+      const after: Line = { ...line, v, discount: { amount: c.amount ?? 0, pct: c.pct ?? 0, source } };
+      if (net(after) < 0) return { ok: false, code: 'failed-precondition', message: 'line cannot go below zero' };
+      return { ok: true, line: after };
+    }
     case 'void': return { ok: true, line: { ...line, v, countsTowardTotal: false, void: source } };
     case 'removeOffer': return { ok: true, line: { ...line, v, offer: null, removedOffer: line.offer ?? null } };
     default: return { ok: false, code: 'invalid-argument', message: `${c.action} does not change a line` };
@@ -164,22 +182,23 @@ export function auditRow(i: AuditInput): AuditRow {
   return { ts: i.ts, cid: i.cid, action: i.action, staffId: i.staffId, sev: i.sev, amount, pct, reason: i.reason, note: i.note, lineId: i.lineId, before: i.before, after: i.after };
 }
 
-export type Outcome = 'applied' | 'needs_pin' | 'wrong_pin' | 'locked' | 'forbidden' | 'invalid' | 'try_again';
+export type Outcome = 'applied' | 'needs_pin' | 'wrong_pin' | 'too_soon' | 'forbidden' | 'invalid' | 'try_again';
 export interface LogLine { cid: string; action: string; sev: Sev | null; needsPin: boolean; outcome: Outcome }
 export function logLine(i: LogLine): LogLine {
   return { cid: i.cid, action: i.action, sev: i.sev, needsPin: i.needsPin, outcome: i.outcome };
 }
 
-// ── ST-S8: per-staff summary for the Discounts report ─────────────────────────────────────
+// ── ST-S8 / R10: who and why from the audit rows, how much from the line docs ─────────────
 export interface StaffSummary { p0: number; p1: number; rupees: number; topReasons: string[] }
-export function summarise(rows: AuditRow[]): Record<string, StaffSummary> {
+export function summarise(rows: AuditRow[], lines: Line[]): Record<string, StaffSummary> {
   const out: Record<string, StaffSummary & { counts: Record<string, number> }> = {};
+  const bucket = (id: string) => (out[id] ??= { p0: 0, p1: 0, rupees: 0, topReasons: [], counts: {} });
   for (const r of rows) {
-    const s = (out[r.staffId] ??= { p0: 0, p1: 0, rupees: 0, topReasons: [], counts: {} });
+    const s = bucket(r.staffId);
     if (r.sev === 'P0') s.p0++; else s.p1++;
-    s.rupees += r.amount;
     s.counts[r.reason] = (s.counts[r.reason] ?? 0) + 1;
   }
+  for (const l of lines) if (l.discount) bucket(l.discount.source.approverId).rupees += l.discount.amount / 100;
   return Object.fromEntries(Object.entries(out).map(([id, s]) => {
     const { counts, ...rest } = s;
     return [id, { ...rest, topReasons: Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([r]) => r) }];

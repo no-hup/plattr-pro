@@ -17,13 +17,17 @@ export function PinPrompt() {
 
   if (!pending) return null
   const { detail } = pending
-  const attemptsLeft = detail.wrong ? (detail.attemptsLeft as number) : null
+  const waitS = typeof detail.retryAfter === 'number' ? Math.max(1, Math.ceil((detail.retryAfter - Date.now()) / 1000)) : null
+  const hint = detail.tooSoon ? `Too soon, wait ${waitS} s`
+    : detail.wrong && waitS !== null ? `Wrong PIN, wait ${waitS} s`
+    : detail.wrong ? `Wrong PIN, ${detail.attemptsLeft as number} left`
+    : `Needed for this ${String(detail.action ?? 'action')}`
   const finish = (v: string | null) => { pending.resolve(v); setPending(null); setValue('') }
   return (
     <div role="dialog" aria-label="PIN required" data-testid="pin-prompt" style={{ position: 'fixed', inset: 0, background: '#0006', display: 'grid', placeItems: 'center' }}>
       <form onSubmit={e => { e.preventDefault(); finish(value) }} style={{ background: '#fff', padding: 24, borderRadius: 8, minWidth: 260 }}>
         <h2 style={{ marginTop: 0 }}>Enter your PIN</h2>
-        <p data-testid="pin-hint">{attemptsLeft !== null ? `Wrong PIN, ${attemptsLeft} left` : `Needed for this ${String(detail.action ?? 'action')}`}</p>
+        <p data-testid="pin-hint">{hint}</p>
         <input ref={input} data-testid="pin-input" type="password" inputMode="numeric" autoComplete="off" value={value} onChange={e => setValue(e.target.value)} />
         <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
           <button type="button" data-testid="pin-cancel" onClick={() => finish(null)}>Cancel</button>

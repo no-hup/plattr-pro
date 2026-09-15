@@ -1,7 +1,7 @@
 // ST · Firestore ports for app/approvals. The only place this module touches Firebase.
 // Runtime note: this file runs from functions/lib/adapters/firestore/, so existing JS is three levels up.
 import { Ports, Staff, Tx } from '../../app/approvals';
-import { AuditRow, Line, LockState } from '../../domain/approvals';
+import { AuditRow, Line, PinState } from '../../domain/approvals';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 
 /* eslint-disable @typescript-eslint/no-var-requires */
@@ -13,7 +13,7 @@ const rest = (rid: string): DocumentReference => db.collection('restaurants').do
 // DEBT(TD-004): `lines/` is a staging home for the line snapshot until PO/BL write the real one.
 const lines = (rid: string) => rest(rid).collection('lines');
 const audit = (rid: string) => rest(rid).collection('audit');
-const locks = (rid: string) => rest(rid).collection('pinLocks');
+const servers = (rid: string) => rest(rid).collection('servers');
 
 // Same rule as login (server/server_auth.js): bcrypt hash if it looks like one, else legacy plaintext.
 const looksLikeBcrypt = (v: unknown): v is string => typeof v === 'string' && ['$2a$', '$2b$', '$2y$'].some(p => v.startsWith(p));
@@ -44,18 +44,20 @@ export const ports: Ports = {
     },
   },
 
-  lockState: {
-    async get(rid, staffId): Promise<LockState> {
-      const snap = await locks(rid).doc(staffId).get();
-      return snap.exists ? (snap.data() as LockState) : { wrongAt: [] };
+  // R7: the streak lives on the staff doc as pinWrongAt[] and pinRetryAfter. Additive fields; nothing else reads them.
+  pinState: {
+    async get(rid, staffId): Promise<PinState> {
+      const snap = await servers(rid).doc(staffId).get();
+      const d = snap.data() ?? {};
+      return { wrongAt: d.pinWrongAt ?? [], ...(typeof d.pinRetryAfter === 'number' ? { retryAfter: d.pinRetryAfter } : {}) };
     },
     update(rid, staffId, fn) {
       return db.runTransaction(async (t: Transaction) => {
-        const ref: DocumentReference = locks(rid).doc(staffId);
-        const snap = await t.get(ref);
-        const r = fn(snap.exists ? (snap.data() as LockState) : { wrongAt: [] });
-        t.set(ref, r.state);
-        if (r.audit) t.create(audit(rid).doc(`${staffId}_lock_${r.audit.ts}`), r.audit);
+        const ref: DocumentReference = servers(rid).doc(staffId);
+        const d = (await t.get(ref)).data() ?? {};
+        const r = fn({ wrongAt: d.pinWrongAt ?? [], ...(typeof d.pinRetryAfter === 'number' ? { retryAfter: d.pinRetryAfter } : {}) });
+        t.update(ref, { pinWrongAt: r.state.wrongAt, pinRetryAfter: r.state.retryAfter ?? null });
+        if (r.audit) t.create(audit(rid).doc(`${staffId}_streak_${r.audit.ts}`), r.audit);
         return r.state;
       });
     },

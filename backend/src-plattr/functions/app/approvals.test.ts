@@ -1,20 +1,23 @@
 // ST app layer: apply() with fake adapters and a fake clock. No emulator.
 import { apply, reasons, ApprovalError, Ports, Tx, Staff } from './approvals';
-import { Line, LockState, AuditRow, DEFAULTS } from '../domain/approvals';
+import { Line, PinState, AuditRow, DEFAULTS } from '../domain/approvals';
 
 const RID = 'r1';
 const MIN = 60_000;
 
 function fakePorts(opts: { staff?: Partial<Staff>; config?: unknown; failAudit?: boolean } = {}) {
-  const lines = new Map<string, Line>([['line_pitcher', { listPrice: 1250, sent: true, v: 0, countsTowardTotal: true }]]);
+  const lines = new Map<string, Line>([
+    ['line_pitcher', { listPrice: 125000, sent: true, v: 0, countsTowardTotal: true }],
+    ['line_tikka', { listPrice: 32000, sent: true, v: 0, countsTowardTotal: true, offer: { id: 'happy_hour', amount: 6400 } }],
+  ]);
   const audits = new Map<string, AuditRow>();
-  const locks = new Map<string, LockState>();
+  const pins = new Map<string, PinState>();
   const logs: object[] = [];
   const warnings: string[] = [];
   let now = 1_000_000;
   const staff: Staff = { staffId: 'manager_st', role: 'MANAGER', status: 'active', password: 'hash(1234)', ...opts.staff };
-  const ports: Ports & { lines: typeof lines; audits: typeof audits; locks: typeof locks; logs: typeof logs; warnings: typeof warnings; tick(ms: number): void; sessions: Set<string> } = {
-    lines, audits, locks, logs, warnings, sessions: new Set([`${RID}/s1`]),
+  const ports: Ports & { lines: typeof lines; audits: typeof audits; pins: typeof pins; logs: typeof logs; warnings: typeof warnings; tick(ms: number): void; sessions: Set<string> } = {
+    lines, audits, pins, logs, warnings, sessions: new Set([`${RID}/s1`]),
     tick: (ms: number) => { now += ms; },
     now: () => now,
     log: l => logs.push(l),
@@ -22,7 +25,7 @@ function fakePorts(opts: { staff?: Partial<Staff>; config?: unknown; failAudit?:
     staff: { bySession: async (rid, sid) => { if (!ports.sessions.has(`${rid}/${sid}`)) throw new ApprovalError('unauthenticated', 'Invalid or expired session'); return staff; } },
     pin: { verify: async (pin, stored) => stored === `hash(${pin})` },
     config: { approvals: async () => opts.config },
-    lockState: { get: async (_rid, staffId) => locks.get(staffId) ?? { wrongAt: [] }, update: async (_rid, staffId, fn) => { const r = fn(locks.get(staffId) ?? { wrongAt: [] }); locks.set(staffId, r.state); if (r.audit) audits.set(`${staffId}_lock_${now}`, r.audit); return r.state; } },
+    pinState: { get: async (_rid, staffId) => pins.get(staffId) ?? { wrongAt: [] }, update: async (_rid, staffId, fn) => { const r = fn(pins.get(staffId) ?? { wrongAt: [] }); pins.set(staffId, r.state); if (r.audit) audits.set(`${staffId}_streak_${now}`, r.audit); return r.state; } },
     transact: async (_rid, fn) => {
       const pendingLines = new Map<string, Line>(); const pendingAudits = new Map<string, AuditRow>();
       const t: Tx = {
@@ -51,10 +54,10 @@ describe('app/approvals apply()', () => {
   it('ST-S1 MANAGER, ₹100, reason regular → line written with discount, audit row P1, log outcome:applied, no PIN asked', async () => {
     const p = fakePorts();
     const res = await apply(p, discount({ amount: 100 }));
-    expect(res.line).toMatchObject({ v: 1, discount: { amount: 100, pct: 8, source: { reason: 'regular', note: '', approverId: 'manager_st' } } });
+    expect(res.line).toMatchObject({ v: 1, discount: { amount: 10000, pct: 8, source: { reason: 'regular', note: '', approverId: 'manager_st' } } });
     expect(p.lines.get('line_pitcher')?.v).toBe(1);
     expect([...p.audits.values()]).toHaveLength(1);
-    expect(p.audits.get('line_pitcher_v1')).toMatchObject({ sev: 'P1', amount: 100, pct: 8, staffId: 'manager_st', cid: 'c1', ts: 1_000_000 });
+    expect(p.audits.get('line_pitcher_v1')).toMatchObject({ sev: 'P1', amount: 10000, pct: 8, staffId: 'manager_st', cid: 'c1', ts: 1_000_000 });
     expect(p.logs).toEqual([{ cid: 'c1', action: 'discount', sev: 'P1', needsPin: false, outcome: 'applied' }]);
   });
   it('ST-S2 ₹251 without pin → throws permission-denied {requires:pin, action:discount, sev:P0}; nothing written', async () => {
@@ -68,40 +71,55 @@ describe('app/approvals apply()', () => {
   it('ST-S2 ₹251 with correct pin → line + audit P0 reason placard in ONE transaction; response is the new line', async () => {
     const p = fakePorts();
     const res = await apply(p, discount({ amount: 251, reason: 'placard', pin: '1234' }));
-    expect(res.line).toMatchObject({ v: 1, discount: { amount: 251, pct: 20.08 } });
-    expect(p.audits.get('line_pitcher_v1')).toMatchObject({ sev: 'P0', reason: 'placard', amount: 251, pct: 20.08, before: { v: 0 }, after: { v: 1 } });
+    expect(res.line).toMatchObject({ v: 1, discount: { amount: 25100, pct: 20.08 } });
+    expect(p.audits.get('line_pitcher_v1')).toMatchObject({ sev: 'P0', reason: 'placard', amount: 25100, pct: 20.08, before: { v: 0 }, after: { v: 1 } });
     expect(p.logs.at(-1)).toEqual({ cid: 'c1', action: 'discount', sev: 'P0', needsPin: true, outcome: 'applied' });
   });
   it('ST-S3 wrong pin → permission-denied {requires:pin, wrong:true, attemptsLeft:4}; lock state written; no line/audit', async () => {
     const p = fakePorts();
     const e = await fails(apply(p, discount({ amount: 251, pin: '0000' })));
     expect(e).toMatchObject({ code: 'permission-denied', details: { requires: 'pin', wrong: true, attemptsLeft: 4 } });
-    expect(p.locks.get('manager_st')).toEqual({ wrongAt: [1_000_000] });
+    expect(e.details).not.toHaveProperty('retryAfter');
+    expect(p.pins.get('manager_st')).toEqual({ wrongAt: [1_000_000] });
     expect(p.lines.get('line_pitcher')?.v).toBe(0);
     expect(p.audits.size).toBe(0);
     expect(p.logs.at(-1)).toMatchObject({ outcome: 'wrong_pin' });
   });
-  it('ST-S3 5th wrong in 10 min → locked; audit pinLock P0 staffId; later correct pin within 15 min → refused reason locked', async () => {
+  it('ST-S3 5th wrong in 10 min → retryAfter now+1s, one pinStreak audit P0; correct pin too soon → refused unchecked, not counted; at retryAfter → applied', async () => {
     const p = fakePorts();
     for (let i = 0; i < 4; i++) { await fails(apply(p, discount({ amount: 251, pin: '0000' }))); p.tick(MIN); }
     const fifth = await fails(apply(p, discount({ amount: 251, pin: '0000' })));
-    expect(fifth).toMatchObject({ code: 'permission-denied', details: { locked: true, lockedUntil: 1_000_000 + 4 * MIN + 15 * MIN } });
-    expect(fifth.details).not.toHaveProperty('requires');
-    const lockRows = [...p.audits.values()].filter(a => a.action === 'pinLock');
-    expect(lockRows).toEqual([expect.objectContaining({ sev: 'P0', staffId: 'manager_st', cid: 'c1', lineId: null })]);
-    p.tick(14 * MIN);
-    const still = await fails(apply(p, discount({ amount: 251, pin: '1234' })));
-    expect(still).toMatchObject({ code: 'permission-denied', details: { locked: true } });
-    expect(p.logs.at(-1)).toMatchObject({ outcome: 'locked' });
-    p.tick(MIN);
+    const t5 = 1_000_000 + 4 * MIN;
+    expect(fifth).toMatchObject({ code: 'permission-denied', details: { requires: 'pin', wrong: true, attemptsLeft: 0, retryAfter: t5 + 1000 } });
+    const streakRows = [...p.audits.values()].filter(a => a.action === 'pinStreak');
+    expect(streakRows).toEqual([expect.objectContaining({ sev: 'P0', staffId: 'manager_st', cid: 'c1', lineId: null })]);
+    p.tick(500);
+    const soon = await fails(apply(p, discount({ amount: 251, reason: 'placard', pin: '1234' })));
+    expect(soon).toMatchObject({ code: 'permission-denied', details: { requires: 'pin', tooSoon: true, retryAfter: t5 + 1000 } });
+    expect(p.pins.get('manager_st')?.wrongAt).toHaveLength(5);      // not counted
+    expect(p.logs.at(-1)).toMatchObject({ outcome: 'too_soon' });
+    p.tick(500);
     const res = await apply(p, discount({ amount: 251, reason: 'placard', pin: '1234' }));
     expect(res.line?.v).toBe(1);
-    expect(p.locks.get('manager_st')).toEqual({ wrongAt: [] });
+    expect(p.pins.get('manager_st')).toEqual({ wrongAt: [] });
   });
-  it('wrong pin → lock state IS persisted even though the business transaction never ran', async () => {
+  it('ST-S3 6th wrong (after waiting) → retryAfter now+2s, no second pinStreak row', async () => {
+    const p = fakePorts();
+    for (let i = 0; i < 5; i++) { await fails(apply(p, discount({ amount: 251, pin: '0000' }))); p.tick(2000); }
+    const sixth = await fails(apply(p, discount({ amount: 251, pin: '0000' })));
+    expect(sixth.details).toMatchObject({ wrong: true, retryAfter: p.now() + 2000 });
+    expect([...p.audits.values()].filter(a => a.action === 'pinStreak')).toHaveLength(1);
+  });
+  it('ST-S3 the account is never locked: after the 5th wrong an under-limit ₹100 with no PIN still applies', async () => {
+    const p = fakePorts();
+    for (let i = 0; i < 5; i++) await fails(apply(p, discount({ amount: 251, pin: '0000' })));
+    const res = await apply(p, discount({ amount: 100 }));
+    expect(res.line?.v).toBe(1);
+  });
+  it('wrong pin → pin state IS persisted even though the business transaction never ran', async () => {
     const p = fakePorts();
     await fails(apply(p, discount({ amount: 251, pin: '0000' })));
-    expect(p.locks.get('manager_st')?.wrongAt).toHaveLength(1);
+    expect(p.pins.get('manager_st')?.wrongAt).toHaveLength(1);
   });
   it('ST-S4 SERVER → permission-denied without requires; no pin verify, no writes', async () => {
     const p = fakePorts({ staff: { role: 'SERVER' } });
@@ -109,7 +127,7 @@ describe('app/approvals apply()', () => {
     expect(e.code).toBe('permission-denied');
     expect(e.details).not.toHaveProperty('requires');
     expect(p.audits.size).toBe(0);
-    expect(p.locks.size).toBe(0);
+    expect(p.pins.size).toBe(0);
     expect(p.logs.at(-1)).toMatchObject({ outcome: 'forbidden', needsPin: false });
   });
   it('ST-S6 blank reason → invalid-argument before any PIN prompt', async () => {
@@ -144,13 +162,13 @@ describe('app/approvals apply()', () => {
   it('pin sent on an under-limit action → ignored, not verified, not counted', async () => {
     const p = fakePorts();
     await apply(p, discount({ amount: 100, pin: '0000' }));
-    expect(p.locks.size).toBe(0);
+    expect(p.pins.size).toBe(0);
   });
   it('pin "" is treated as missing → requires:pin, counter unchanged', async () => {
     const p = fakePorts();
     const e = await fails(apply(p, discount({ amount: 251, pin: '' })));
     expect(e.details).toMatchObject({ requires: 'pin' });
-    expect(p.locks.size).toBe(0);
+    expect(p.pins.size).toBe(0);
   });
   it('pin not a string (123456, null, {}) → invalid-argument, counter unchanged, no hash compare', async () => {
     const p = fakePorts();
@@ -158,18 +176,11 @@ describe('app/approvals apply()', () => {
       const e = await fails(apply(p, discount({ amount: 251, pin: bad })));
       expect(e.code).toBe('invalid-argument');
     }
-    expect(p.locks.size).toBe(0);
+    expect(p.pins.size).toBe(0);
   });
-  it('locked staff, under-limit ₹100 (no PIN needed) → still refused with locked:true; the lock blocks every approvals call', async () => {
-    const p = fakePorts();
-    p.locks.set('manager_st', { wrongAt: [1], lockedUntil: 1_000_000 + 10 * MIN });
-    const e = await fails(apply(p, discount({ amount: 100 })));
-    expect(e).toMatchObject({ code: 'permission-denied', details: { locked: true, lockedUntil: 1_000_000 + 10 * MIN } });
-    expect(p.lines.get('line_pitcher')?.v).toBe(0);
-  });
-  it('lock is per staffId: manager_a locked, manager_b correct pin → applied', async () => {
+  it('streak is per staffId: manager_a slowed, manager_b correct pin → applied', async () => {
     const p = fakePorts({ staff: { staffId: 'manager_b' } });
-    p.locks.set('manager_a', { wrongAt: [1], lockedUntil: 1_000_000 + 10 * MIN });
+    p.pins.set('manager_a', { wrongAt: [1], retryAfter: 1_000_000 + 10 * MIN });
     const res = await apply(p, discount({ amount: 251, reason: 'placard', pin: '1234' }));
     expect(res.line?.v).toBe(1);
   });
@@ -189,9 +200,31 @@ describe('app/approvals apply()', () => {
     expect((await fails(apply(p, discount({ amount: 100, cid: undefined })))).code).toBe('invalid-argument');
     expect((await fails(apply(p, discount({ amount: 100, action: 'refund' })))).code).toBe('invalid-argument');
   });
-  it('amount over list price → invalid-argument, no decision', async () => {
+  it('ST-S13 ₹400 on the ₹320 tikka with ₹64 offer (PIN given) → failed-precondition, no audit row, line unchanged', async () => {
     const p = fakePorts();
-    expect(await fails(apply(p, discount({ amount: 1251 })))).toMatchObject({ code: 'invalid-argument', message: 'amount cannot exceed the list price' });
+    const e = await fails(apply(p, discount({ amount: 400, lineId: 'line_tikka', reason: 'placard', pin: '1234' })));
+    expect(e).toMatchObject({ code: 'failed-precondition', message: 'line cannot go below zero' });
+    expect(p.audits.size).toBe(0);
+    expect(p.lines.get('line_tikka')?.v).toBe(0);
+  });
+  it('ST-S11 ₹40 on the tikka → PIN (12.5 % of ₹320), then discount 4000 paise beside the 6400 offer', async () => {
+    const p = fakePorts();
+    expect((await fails(apply(p, discount({ amount: 40, lineId: 'line_tikka' })))).details).toMatchObject({ requires: 'pin', sev: 'P0' });
+    const res = await apply(p, discount({ amount: 40, lineId: 'line_tikka', pin: '1234' }));
+    expect(res.line).toMatchObject({ offer: { amount: 6400 }, discount: { amount: 4000, pct: 12.5 } });
+  });
+  it('ST-S12 ₹100 then ₹251 (PIN) → discount 25100 not 35100, two audit rows, v 2', async () => {
+    const p = fakePorts();
+    await apply(p, discount({ amount: 100 }));
+    const res = await apply(p, discount({ amount: 251, reason: 'placard', pin: '1234', cid: 'c2' }));
+    expect(res.line).toMatchObject({ v: 2, discount: { amount: 25100 } });
+    expect([...p.audits.keys()]).toEqual(['line_pitcher_v1', 'line_pitcher_v2']);
+  });
+  it('amount typed in rupees with paise (₹0.30 on a ₹3 line = 10.00 %) → stored 30 paise, no PIN', async () => {
+    const p = fakePorts();
+    p.lines.set('line_tiny', { listPrice: 300, sent: false, v: 0, countsTowardTotal: true });
+    const res = await apply(p, discount({ amount: 0.1 + 0.2, lineId: 'line_tiny' }));
+    expect(res.line?.discount).toMatchObject({ amount: 30, pct: 10 });
   });
   it('staff status not active → permission-denied; staff doc missing → unauthenticated (via the session door)', async () => {
     expect((await fails(apply(fakePorts({ staff: { status: 'inactive' } }), discount({ amount: 100 })))).code).toBe('permission-denied');
@@ -222,7 +255,7 @@ describe('app/approvals apply()', () => {
     const p = fakePorts();
     const res = await apply(p, discount({ action: 'void', reason: 'guest left', pin: '1234' }));
     expect(res.line).toMatchObject({ countsTowardTotal: false, void: { reason: 'guest left' } });
-    expect(p.audits.get('line_pitcher_v1')).toMatchObject({ sev: 'P0', amount: 1250, pct: 100 });
+    expect(p.audits.get('line_pitcher_v1')).toMatchObject({ sev: 'P0', amount: 125000, pct: 100 });
     const again = await fails(apply(p, discount({ action: 'void', reason: 'guest left', pin: '1234' })));
     expect(again.code).toBe('failed-precondition');
   });

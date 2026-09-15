@@ -20,7 +20,7 @@ export default function App() {
   useEffect(() => {
     if (!error) return
     // A challenge the cashier cancelled keeps the server's own message; a plain 403 is a role refusal.
-    setMsg(error.data.locked ? 'Account locked, try later' : error.code === 'permission-denied' && !error.data.requires ? 'Not allowed' : error.message)
+    setMsg(error.code === 'permission-denied' && !error.data.requires ? 'Not allowed' : error.message)
   }, [error])
 
   async function login(e: FormEvent<HTMLFormElement>) {
@@ -41,7 +41,8 @@ export default function App() {
       restaurantId: RESTAURANT, sessionId: session.sessionId, action: 'discount', cid: `till_${Date.now()}`, lineId: LINE,
       amount: Number(f.get('amount')), reason: String(f.get('reason')), note: String(f.get('note') ?? ''),
     })
-    if (next) { setLine(next); setMsg(`Applied −₹${next.discount?.amount} (${next.discount?.pct} %)`) }
+    // Line money is paise (R9); the till shows rupees.
+    if (next) { setLine(next); setMsg(`Applied −₹${(next.discount?.amount ?? 0) / 100} (${next.discount?.pct} %)`) }
   }
 
   return (

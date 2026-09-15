@@ -6,11 +6,10 @@ const FS = `http://${process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080'}/v1
 const H = { 'Content-Type': 'application/json', Authorization: 'Bearer owner' }
 const enc = (v: unknown): object =>
   typeof v === 'string' ? { stringValue: v } : typeof v === 'boolean' ? { booleanValue: v } : typeof v === 'number' ? { integerValue: String(v) } : { nullValue: null }
-async function seed(path: string, obj: Record<string, unknown>) {
-  const r = await fetch(`${FS}/${path}`, { method: 'PATCH', headers: H, body: JSON.stringify({ fields: Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, enc(v)])) }) })
+async function seed(path: string, obj: Record<string, unknown>, mask?: string) {
+  const r = await fetch(`${FS}/${path}${mask ? `?updateMask.fieldPaths=${mask}` : ''}`, { method: 'PATCH', headers: H, body: JSON.stringify({ fields: Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, enc(v)])) }) })
   if (!r.ok) throw new Error(`seed ${path}: ${r.status}`)
 }
-async function del(path: string) { await fetch(`${FS}/${path}`, { method: 'DELETE', headers: H }) }
 const staff = (name: string, role: string, email: string) => ({ name, role, status: 'active', email, password: '1234' })
 
 async function login(page: Page, line: string, email: string) {
@@ -36,8 +35,7 @@ test.beforeEach(async () => {
   LINE = `pw_pitcher_${Date.now()}_${Math.floor(Math.random() * 1e6)}`   // a fresh line per test: no shared state
   await seed('servers/till_manager', staff('Till Manager', 'MANAGER', 'till.manager@st.test'))
   await seed('servers/till_captain', staff('Till Captain', 'SERVER', 'till.captain@st.test'))
-  await seed(`lines/${LINE}`, { listPrice: 1250, sent: true, v: 0, countsTowardTotal: true })
-  await del('pinLocks/till_manager')
+  await seed(`lines/${LINE}`, { listPrice: 125000, sent: true, v: 0, countsTowardTotal: true })   // paise (R9)
 })
 
 test('ST-S2 ₹251 off the ₹1,250 pitcher → PIN box appears → 1234 → line shows −₹251 and the box closes; exactly two calls', async ({ page }) => {
@@ -88,7 +86,7 @@ test('ST-S6 reason list comes from config; Apply is disabled until the list is l
   expect(options).toContain('guest left')
 })
 
-test('ST-S3 wrong PIN → "Wrong PIN, 4 left", box stays; 5th → box closes, "Account locked"', async ({ page }) => {
+test('ST-S3 wrong PIN → "Wrong PIN, 4 left", box stays; 5th → "wait 1 s"; correct PIN too soon → "Too soon"; after the wait → applied', async ({ page }) => {
   await login(page, LINE, 'till.manager@st.test')
   await discount(page, '251', 'placard')
   for (let left = 4; left >= 1; left--) {
@@ -98,6 +96,14 @@ test('ST-S3 wrong PIN → "Wrong PIN, 4 left", box stays; 5th → box closes, "A
   }
   await page.getByTestId('pin-input').fill('0000')
   await page.getByTestId('pin-ok').click()
+  await expect(page.getByTestId('pin-hint')).toHaveText(/^Wrong PIN, wait \d+ s$/)
+  await page.getByTestId('pin-input').fill('1234')
+  await page.getByTestId('pin-ok').click()
+  await expect(page.getByTestId('pin-hint')).toHaveText(/^Too soon, wait \d+ s$/)
+  await expect(page.getByTestId('pin-prompt')).toBeVisible()
+  await seed('servers/till_manager', { pinRetryAfter: 0 }, 'pinRetryAfter')   // the wait has passed; no sleeps
+  await page.getByTestId('pin-input').fill('1234')
+  await page.getByTestId('pin-ok').click()
+  await expect(page.getByTestId('msg')).toHaveText('Applied −₹251 (20.08 %)')
   await expect(page.getByTestId('pin-prompt')).toHaveCount(0)
-  await expect(page.getByTestId('msg')).toHaveText('Account locked, try later')
 })

@@ -1,7 +1,7 @@
 // ST · apply(): role → config → decide → verify PIN → one transaction (line + audit). No Firestore here; ports only.
 import {
-  Action, AuditRow, Line, LockState, Outcome, Sev, applyToLine, auditRow, decide, isLocked, logLine,
-  percentOf, recordWrongPin, validateAmount, validateReason,
+  Action, AuditRow, Line, PinState, Outcome, Sev, applyToLine, auditRow, decide, tooSoon, logLine,
+  percentOf, recordWrongPin, toPaise, validateAmount, validateReason,
 } from '../domain/approvals';
 import { loadApprovalsConfig } from './config';
 
@@ -18,16 +18,16 @@ export interface Ports {
   staff: { bySession(restaurantId: string, sessionId: string): Promise<Staff> };  // throws unauthenticated
   pin: { verify(pin: string, stored: string | undefined): Promise<boolean> };
   config: { approvals(restaurantId: string): Promise<unknown> };
-  lockState: {
-    get(restaurantId: string, staffId: string): Promise<LockState>;
-    update(restaurantId: string, staffId: string, fn: (s: LockState) => { state: LockState; audit?: AuditRow }): Promise<LockState>;
+  pinState: {   // wrong-PIN streak on the staff doc (R7): pinWrongAt[], pinRetryAfter
+    get(restaurantId: string, staffId: string): Promise<PinState>;
+    update(restaurantId: string, staffId: string, fn: (s: PinState) => { state: PinState; audit?: AuditRow }): Promise<PinState>;
   };
   transact<T>(restaurantId: string, fn: (t: Tx) => Promise<T>): Promise<T>;
 }
 
 export interface ApplyRequest {
   restaurantId: string; sessionId: string; action: string; cid: string;
-  lineId?: string; amount?: number; reason?: string; note?: string; pin?: unknown;
+  lineId?: string; amount?: number /* rupees as typed at the till; stored as paise */; reason?: string; note?: string; pin?: unknown;
   [extra: string]: unknown;
 }
 export interface ApplyResult { line?: Line; auditId: string }
@@ -59,13 +59,15 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
   if (needsLine && !line) fail('not-found', 'line not found', { lineId }, null, false, 'invalid');
 
   let pct = 0;
+  let amountPaise: number | undefined;
   if (action === 'discount') {
     const bad = validateAmount(req.amount, line!.listPrice);
     if (bad) fail('invalid-argument', bad, {}, null, false, 'invalid');
-    pct = percentOf(req.amount as number, line!.listPrice);
+    amountPaise = toPaise(req.amount as number);
+    pct = percentOf(amountPaise, line!.listPrice);
   }
 
-  const decision = decide({ action: action as Action, role: staff.role as never, amount: req.amount, listPrice: line?.listPrice, lineSent: line?.sent }, cfg);
+  const decision = decide({ action: action as Action, role: staff.role as never, amount: amountPaise, listPrice: line?.listPrice, lineSent: line?.sent }, cfg);
   if (!decision.ok) {
     fail(decision.code, decision.code === 'permission-denied' ? 'Not allowed for your role' : `unknown action ${action}`, {}, null, false, decision.code === 'permission-denied' ? 'forbidden' : 'invalid');
   }
@@ -78,33 +80,28 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
   }
   const note = typeof req.note === 'string' ? req.note : '';
 
-  // A locked account is refused for every approvals call, PIN or not (Decisions, 2026-09-15).
-  const lock = await ports.lockState.get(restaurantId, staff.staffId);
-  if (isLocked(lock, ports.now())) fail('permission-denied', 'Account locked after too many wrong PINs', { locked: true, lockedUntil: lock.lockedUntil }, sev, needsPin, 'locked');
-
   if (needsPin) {
     const pin = req.pin;
     if (pin === undefined || pin === '') fail('permission-denied', 'PIN required', { requires: 'pin', action, sev }, sev, true, 'needs_pin');
     if (typeof pin !== 'string') fail('invalid-argument', 'pin must be a string', {}, sev, true, 'invalid');
+    // R7: a streak slows the next attempt. Too soon is refused unchecked and does not count.
+    const now = ports.now();
+    const state = await ports.pinState.get(restaurantId, staff.staffId);
+    if (tooSoon(state, now)) fail('permission-denied', 'Too soon, wait before trying again', { requires: 'pin', tooSoon: true, retryAfter: state.retryAfter, action, sev }, sev, true, 'too_soon');
     const ok = await ports.pin.verify(pin as string, staff.password);
     if (!ok) {
-      const now = ports.now();
-      let result = { locked: false, attemptsLeft: 0 };
-      await ports.lockState.update(restaurantId, staff.staffId, s => {
-        const r = recordWrongPin(s, now, cfg);
-        result = r;
-        const audit = r.locked && !isLocked(s, now)
-          ? auditRow({ ts: now, cid, action: 'pinLock', staffId: staff.staffId, sev: 'P0', reason: 'wrong pin streak', note: '', lineId: null, before: null, after: null })
+      let r = { attemptsLeft: 0, penaltySeconds: 0, retryAfter: undefined as number | undefined };
+      await ports.pinState.update(restaurantId, staff.staffId, s => {
+        const rec = recordWrongPin(s, now, cfg);
+        r = { attemptsLeft: rec.attemptsLeft, penaltySeconds: rec.penaltySeconds, retryAfter: rec.state.retryAfter };
+        const audit = rec.audit
+          ? auditRow({ ts: now, cid, action: 'pinStreak', staffId: staff.staffId, sev: 'P0', reason: 'wrong pin streak', note: '', lineId: null, before: null, after: null })
           : undefined;
-        return { state: r.state, audit };
+        return { state: rec.state, audit };
       });
-      if (result.locked) {
-        const until = now + cfg.pinLockMinutes * 60_000;
-        fail('permission-denied', 'Account locked after too many wrong PINs', { locked: true, lockedUntil: until }, sev, true, 'locked');
-      }
-      fail('permission-denied', 'Wrong PIN', { requires: 'pin', wrong: true, attemptsLeft: result.attemptsLeft, action, sev }, sev, true, 'wrong_pin');
+      fail('permission-denied', 'Wrong PIN', { requires: 'pin', wrong: true, attemptsLeft: r.attemptsLeft, ...(r.retryAfter !== undefined ? { retryAfter: r.retryAfter } : {}), action, sev }, sev, true, 'wrong_pin');
     }
-    await ports.lockState.update(restaurantId, staff.staffId, () => ({ state: { wrongAt: [] } }));
+    await ports.pinState.update(restaurantId, staff.staffId, () => ({ state: { wrongAt: [] } }));
   }
 
   // The change and its audit row are one transaction (R4). Any failure: nothing applied, "try again".
@@ -118,10 +115,10 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
       }
       const before = await t.getLine(String(lineId));
       if (!before) throw new ApprovalError('not-found', 'line not found', { lineId });
-      const applied = applyToLine(before, { action: action as Action, amount: req.amount, pct, reason: reason as string, note, approverId: staff.staffId });
+      const applied = applyToLine(before, { action: action as Action, amount: amountPaise, pct, reason: reason as string, note, approverId: staff.staffId });
       if (!applied.ok) throw new ApprovalError(applied.code, applied.message);
       const auditId = `${lineId}_v${applied.line.v}`;
-      t.createAudit(auditId, auditRow({ ts, cid, action, staffId: staff.staffId, sev, amount: req.amount, pct, reason: reason as string, note, lineId: String(lineId), before, after: applied.line }));
+      t.createAudit(auditId, auditRow({ ts, cid, action, staffId: staff.staffId, sev, amount: amountPaise, pct, reason: reason as string, note, lineId: String(lineId), before, after: applied.line }));
       t.setLine(String(lineId), applied.line);
       return { line: applied.line, auditId } as ApplyResult;
     });
