@@ -116,6 +116,8 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
       }
       const before = await t.getLine(String(lineId));
       if (!before) throw new ApprovalError('not-found', 'line not found', { lineId });
+      // BL-S8: once a bill is issued its lines are frozen. The fix is cancel (BL-S9) or a credit note (BL-S11).
+      if ((before as { billId?: string | null }).billId) throw new ApprovalError('failed-precondition', 'bill already issued', { billId: (before as { billId?: string }).billId });
       // The line may have gone to the kitchen since the decision read. Decide again on the fresh doc:
       // a PIN that was not needed then, and was never verified, is needed now.
       const fresh = decide({ action: action as Action, role: staff.role as never, amount: amountPaise, listPrice: before.listPrice, lineSent: before.sent }, cfg);

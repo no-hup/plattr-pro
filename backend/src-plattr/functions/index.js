@@ -82,6 +82,14 @@ exports.approvals = {
   apply: require('./lib/api/approvals').applyHandler,
   config: require('./lib/api/approvals').configHandler,
 };
+exports.billing = {
+  preview: require('./lib/api/billing').previewHandler,
+  issue: require('./lib/api/billing').issueHandler,
+  cancel: require('./lib/api/billing').cancelHandler,
+  creditNote: require('./lib/api/billing').creditNoteHandler,
+  split: require('./lib/api/billing').splitHandler,
+  get: require('./lib/api/billing').getHandler,
+};
 
 exports.helloWorld = functions.https.onRequest((req, res) => {
   res.send("Hello from Firebase!");

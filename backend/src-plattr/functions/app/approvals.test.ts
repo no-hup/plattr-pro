@@ -287,3 +287,13 @@ describe('app/approvals apply()', () => {
     expect((await fails(reasons(p, { restaurantId: RID, sessionId: 'ghost' }))).code).toBe('unauthenticated');
   });
 });
+
+describe('BL-S8 a line on an issued bill is frozen', () => {
+  it('discount on a line with billId → failed-precondition "bill already issued", nothing written', async () => {
+    const p = fakePorts();
+    p.lines.set('line_pitcher', { ...p.lines.get('line_pitcher')!, billId: 'bill_0417' } as Line);
+    await expect(apply(p, discount({ amount: 100 }))).rejects.toMatchObject({ code: 'failed-precondition', message: 'bill already issued', details: { billId: 'bill_0417' } });
+    expect(p.audits.size).toBe(0);
+    expect(p.lines.get('line_pitcher')!.v).toBe(0);
+  });
+});
