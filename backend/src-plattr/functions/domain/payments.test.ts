@@ -2,11 +2,14 @@
 // Hand-computed throughout on BL-S1's bill 0417: pizza ₹500 + coke ₹80, taxable ₹580.00,
 // CGST ₹14.50, SGST ₹14.50, payable ₹609.00 = 60900 paise.
 // Tenders: cash (kind 'cash'), card and upi (kind 'external').
-import {
-  DEFAULTS, configFrom, outstanding, isSettled, paidTotalOf, changeFor, overpaidFor,
-  canTake, canRefund, canVoid, statusFor, tenderById, Bill, Row, Tender,
-} from './payments';
+// SKELETON: the import below is restored in phase 3 when the module lands. `it.todo` bodies
+// reference nothing, so commenting it keeps `make check` green while the list is reviewed.
+// import {
+//   DEFAULTS, configFrom, outstanding, isSettled, paidTotalOf, changeFor, overpaidFor,
+//   canTake, canRefund, canVoid, statusFor, tenderById, businessDateFor, Bill, Row, Tender,
+// } from './payments';
 
+/* fixtures, restored with the import in phase 3:
 const cfg = DEFAULTS;
 const PAYABLE = 60900;                       // ₹609.00
 const bill: Bill = { billId: '0417', payable: PAYABLE, status: 'issued' };
@@ -29,6 +32,7 @@ describe('domain/payments paidTotalOf(rows) — R2, net receipts over non-void r
   it.todo('R2 mixed: card 40000 + voided cash 20900 + cash 20900 → 60900, the void drops out');
   it.todo('overpaid is never counted against the bill: take amount 60900 overpaid 4100 → 60900, not 65000');
 });
+*/
 
 describe('domain/payments outstanding(bill, rows) — R2', () => {
   it.todo('PY-S1 payable 60900, no rows → 60900');
