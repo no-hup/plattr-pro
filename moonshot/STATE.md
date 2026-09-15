@@ -4,9 +4,9 @@ The one page a fresh session reads to continue. Updated at the end of every work
 Newest at the top of each list.
 
 ## In flight
-- PY · Payments, session `plattr-pro-8c`, 2026-09-15 evening. Plan page `reviews/2026-09-15-PY-plan.md`, waiting on Shaurya's yes. Today `paymentStatus` is one string with two writers, and `paid` is a side effect of `orderStatus → COMPLETED` (`updateOrderStatus.js:156`): no amount, no tender, no time, no refund, and it can move backwards. PY replaces it with an append-only ledger at `restaurants/{id}/payments/{paymentId}`; `order.paymentStatus` becomes a one-line mirror (TD-010). Phase plan (each a commit):
-  0. Plan page + this entry. Awaiting yes.
-  1. `SPEC_PY_payments.md`, draft → fan-out → decide.
+- PY · Payments, session `plattr-pro-8c`, 2026-09-15 evening. Plan page `reviews/2026-09-15-PY-plan.md`, Shaurya said go. Today `paymentStatus` is one string with two writers, and `paid` is a side effect of `orderStatus → COMPLETED` (`updateOrderStatus.js:156`): no amount, no tender, no time, no refund, and it can move backwards. PY replaces it with an append-only ledger at `restaurants/{id}/payments/{paymentId}`; `order.paymentStatus` becomes a one-line mirror (TD-010). Phase plan (each a commit):
+  0. DONE: plan page, Shaurya said go.
+  1. DONE (awaiting sign-off): `SPEC_PY_payments.md` draft v2. Fan-out merged (Grok, Gemini; Codex out of quota). Grok and Gemini independently found the same two holes: no idempotency key, so a retried tap is a second payment; and `paid` latched one-way, so voiding the row that settled a bill left it marked paid while owing the full amount. Both fixed (R13, R2). Also taken: `businessDate` frozen server-side, credit notes only on a fully paid bill (asked of BL), order mirror moved inside the transaction, integer minor units on the wire, no client writes to `payments/`. Reversed one of Shaurya's approved defaults (refunds are no longer cash-only) and flagged it as must-decide.
   2. Test skeleton, blind Opus + fan-out, merged. Shown to Shaurya.
   3. `domain/payments.ts` against a fake bill, so nothing waits on BL.
   4. `adapters/firestore/payments.ts` + `app/payments.ts`, fake adapters and fake clock.
