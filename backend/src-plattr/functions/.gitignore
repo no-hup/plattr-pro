@@ -33,3 +33,6 @@ test_output*.txt
 test/e2e/results/
 firebase.temp.json
 tests/.env.ports
+
+# tsc output of the TypeScript layers (domain/app/adapters/api)
+lib/
