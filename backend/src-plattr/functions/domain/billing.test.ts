@@ -355,12 +355,36 @@ describe('domain/billing — cases from Grok\'s list', () => {
     const z = line('pizza', 0); z.qty = 0;
     expect(preview([z], null, [], cfg)).toMatchObject({ ok: false, code: 'invalid-argument' });
   });
-  it('T55 a full credit of a rounded bill negates the block totals (−60950), not the rounded payable (−61000); original round-off stays', () => {
+  it('T55/donor-5 a note that credits the last unit of every line refunds what was paid: bill 61000 (raw 60950, roundOff +50) → note payable −61000 with roundOff −50; the original keeps its +50', () => {
     const bill = paid(ok(preview([line('x', 58048)], null, [], cfg)));
     expect(bill).toMatchObject({ payable: 61000, roundOff: 50 });
     const r = cn(bill, [{ lineId: 'x', qty: 1 }]); if (!r.ok) throw new Error(r.message);
-    expect(r.value.note).toMatchObject({ payable: -60950, roundOff: 0 });
+    expect(r.value.note).toMatchObject({ payable: -61000, roundOff: -50, subtotal: -58048, taxTotal: -2902 });
     expect(r.value.original).toMatchObject({ payable: 61000, roundOff: 50 });
+  });
+  it('donor-5 the other direction: bill 60900 (raw 60940, roundOff −40) fully credited → note payable −60900, roundOff +40', () => {
+    const bill = paid(ok(preview([line('x', 58038)], null, [], cfg)));
+    expect(bill).toMatchObject({ payable: 60900, roundOff: -40 });
+    const r = cn(bill, [{ lineId: 'x', qty: 1 }]); if (!r.ok) throw new Error(r.message);
+    expect(r.value.note).toMatchObject({ payable: -60900, roundOff: 40 });
+  });
+  it('donor-5 a partial note never touches the round-off: one of two lines credited → roundOff 0', () => {
+    const bill = paid(ok(preview([line('x', 58048), line('y', 10000)], null, [], cfg)));
+    const r = cn(bill, [{ lineId: 'x', qty: 1 }]); if (!r.ok) throw new Error(r.message);
+    expect(r.value.note.roundOff).toBe(0);
+  });
+  it('donor-1 error-diffused apportion: 100 over 30 equal lines → every share 3 or 4, sum exactly 100, none more than one minor unit under its true share', () => {
+    const lines = Array.from({ length: 30 }, (_, i) => line('l' + String(i).padStart(2, '0'), 10000));
+    const v = ok(preview(lines, bd(100), [], cfg));
+    const shares = v.lines.map(l => l.billDiscount);
+    expect(shares.reduce((a, b) => a + b, 0)).toBe(100);
+    expect(Math.max(...shares) - Math.min(...shares)).toBeLessThanOrEqual(1);
+    for (const sh of shares) expect(Math.abs(sh - 100 / 30)).toBeLessThan(1);
+  });
+  it('donor-2 "₹200 off" is 200 off the taxable value, so the payable falls by 210 on a food bill, not 200 (s.15(3)(a))', () => {
+    const before = ok(preview([line('pizza', 50000), line('coke', 8000)], null, [], cfg));
+    const after = ok(preview([line('pizza', 50000), line('coke', 8000)], bd(20000), [], cfg));
+    expect(before.payable - after.payable).toBe(21000);
   });
   it('I invariants on every success path: subtotal = Σ taxable, taxTotal = Σ parts = Σ line parts, payable = Σ totals + roundOff, |roundOff| < roundTo', () => {
     const cases = [

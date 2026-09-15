@@ -21,16 +21,13 @@ export interface BillBody {
 export type Fail = { ok: false; code: 'failed-precondition' | 'invalid-argument'; message: string; lineIds?: string[] };
 export type Result<T> = { ok: true; value: T } | Fail;
 
-/** R1: split `amount` over `weights` by share, floor, leftover on the last non-zero weight. Zero weights get zero. */
+/** R1: split `amount` over `weights` by share. Cumulative floor, so no share is more than one minor unit
+ *  under its true value and the parts always sum to `amount` (the same rule credit notes use). Zero weights get zero. */
 export function apportion(amount: number, weights: number[]): number[] {
   const sum = weights.reduce((a, w) => a + w, 0);
   if (sum <= 0) return weights.map(() => 0);
-  const out = weights.map(w => Math.floor(amount * w / sum));
-  const given = out.reduce((a, v) => a + v, 0);
-  let last = weights.length - 1;
-  while (last > 0 && weights[last] === 0) last--;
-  out[last] += amount - given;
-  return out;
+  let run = 0, given = 0;
+  return weights.map(w => { run += w; const upTo = Math.floor(amount * run / sum); const v = upTo - given; given = upTo; return v; });
 }
 
 const halfUp = (n: number, step: number) => (step > 0 ? Math.floor((n + step / 2) / step) * step : n);
@@ -178,10 +175,14 @@ export function creditNote(bill: Bill, credits: { lineId: string; qty: number }[
   }
   const list = [...blocks.values()];
   const subtotal = list.reduce((a, b) => a + b.taxable, 0);
-  const payable = list.reduce((a, b) => a + b.total, 0);
+  const sum = list.reduce((a, b) => a + b.total, 0);
+  // A note that credits the last remaining unit of every line refunds what the guest actually paid,
+  // so it carries the bill's round-off negated. A partial note never touches it.
+  const whole = updated.every(l => !l.countsTowardTotal || l.credited.qty === l.qty) && !bill.charges.length;
+  const roundOff = whole ? 0 - bill.roundOff : 0;
   const note: Bill = {
     ...meta, seller: { ...meta.seller }, status: 'issued', creditNotes: [], lines, blocks: list, charges: [], discount: null,
-    subtotal, taxTotal: payable - subtotal, roundOff: 0, payable,
+    subtotal, taxTotal: sum - subtotal, roundOff, payable: sum + roundOff,
     creditNoteOf: { billId: bill.billId, number: bill.number, issuedAt: bill.issuedAt },
   };
   const original: Bill = { ...bill, lines: updated, creditNotes: [...bill.creditNotes, { billId: meta.billId, number: meta.number, at: meta.issuedAt }] };

@@ -15,7 +15,7 @@ Disk on this machine is near full: sparse and shallow only, never a full clone.
 | URY (ERPNext restaurant) | `71b59ed` (2026-09-08) | `git clone --depth 1 https://github.com/ury-erp/ury.git` |
 | SambaPOS v3 | 5 files, no git | `Samba.Domain/Models/Tickets/{Ticket,Order,OrderMerger,OrderStateValue,TicketEntity}.cs` from `github.com/emreeren/SambaPOS-3` |
 | Dolibarr TakePOS | 3 files, no git | `htdocs/takepos/{invoice,floors,split}.php` from `github.com/Dolibarr/dolibarr` |
-| ERPNext core | not cloned | `git clone --depth 1 --filter=blob:none --sparse https://github.com/frappe/erpnext.git && git sparse-checkout set erpnext/controllers` for `taxes_and_totals.py` |
+| ERPNext core | `9be19e6` (2026-09-15) | `git clone --depth 1 --filter=blob:none --sparse https://github.com/frappe/erpnext.git && cd erpnext && git sparse-checkout set erpnext/controllers` for `taxes_and_totals.py` |
 | India Compliance | not cloned | `github.com/resilient-tech/india-compliance`, the audit-trail app. Verify the path after cloning |
 
 The folder also holds `_plan-artifact-rev4.html` (research digest, adopt-or-emulate table, lift list),
@@ -47,7 +47,7 @@ Paths are relative to the donor's clone. Line numbers are as of the pinned commi
 - SambaPOS `Order.cs`, `OrderStateValue.cs`. Per-line state values, the pattern behind item-level status.
 
 **Tax and totals**
-- ERPNext `erpnext/controllers/taxes_and_totals.py` (clone first). Discount-before-tax, inclusive decomposition, per-line tax split.
+- ERPNext `erpnext/controllers/taxes_and_totals.py`. Discount-before-tax `:901-955`, inclusive decomposition `:308-347`, per-item tax split `:677-715`, rounding `:717-732` and `:835-854`, discount on the grand total `:959-1000`, returns `:239-244` and `:868-882`. Reviewed blind for BL 2026-09-15; the merge is in the BL sheet's Decisions.
 - Nobody. Liquor VAT and GST on one bill is ours. Unbroken invoice series across offline is ours.
 
 **Offline and sync**
