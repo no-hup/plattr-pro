@@ -6,8 +6,8 @@ Newest at the top of each list.
 ## In flight
 - BL · Billing & tax, session `plattr-pro-9a`, 2026-09-15 evening. Shaurya said go; tax facts come from four consults (Grok and Gemini, one open pass and one source-guided pass each) and are marked "CA to confirm" until signed. Phase plan (each a commit):
   0. DONE: `SPEC_BL_billing_and_tax.md` draft v1 with the line snapshot (F/L fields) and tax config shape as Objects.
-  1. DONE: four tax consults and two blind sheet reviews merged into Decisions (`reviews/2026-09-15-BL-consults/`). Karnataka bar liquor carries no tax line since 2017 (HC judgment). Waiting on Shaurya: Review before sign-off (snapshot fields, service charge, CGST/SGST rounding, liquor no-tax default).
-  2. Golden fixture rows kind "bill": BL-S1..S6, S11, S12, S13, hand-computed minor units.
+  1. DONE: four tax consults and two blind sheet reviews merged into Decisions. Shaurya signed every Review row 2026-09-15 night.
+  2. DONE (proposed, fixture is Shaurya's): 21 rows at `reviews/2026-09-15-BL-golden-proposal.json`, every number re-derived by a throwaway script; two of my hand sums were wrong and are fixed. Critical-pieces diff at `reviews/2026-09-15-BL-critical-pieces-diff.md`. PY is a separate session (HANDOFF_PY_payments.md); it asks BL for bill fields via the inbox.
   3. `domain/line.ts`, `domain/billing.ts`, `domain/invoice.ts` green one scenario at a time; skeleton + blind Opus + fan-out lists first.
   4. Checkout hook writes line docs (characterization test on `createOrUpdateOrder.js` first). Closes TD-008.
   5. `app/billing.ts`, `adapters/firestore/billing.ts`, `api/billing.ts`, e2e suite. ST gains the "bill already issued" precondition (BL-S8).

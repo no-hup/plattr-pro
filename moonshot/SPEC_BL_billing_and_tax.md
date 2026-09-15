@@ -1,6 +1,6 @@
 # BL · Billing & tax
 
-Status: **draft v1, awaiting sign-off** (2026-09-15). Phase 0–1 of the BL plan (`reviews/2026-09-15-BL-plan.md`): the line snapshot and the tax config shape are the Objects block below; four tax consults and two sheet reviews are merged in Decisions. Shaurya signs the Review section before code.
+Status: **signed v1** (2026-09-15, Shaurya: "yes" to every Review row). The line snapshot and the tax config shape are the Objects block below; four tax consults and two sheet reviews are merged in Decisions (`reviews/2026-09-15-BL-consults/`). Golden rows proposed at `reviews/2026-09-15-BL-golden-proposal.json`; critical-pieces diff at `reviews/2026-09-15-BL-critical-pieces-diff.md`.
 
 **Job.** Turn a table's placed lines into a legal bill: one tax block per kind of tax on the same paper, bill-level discount spread across lines before tax, one round-off, an unbroken number handed out at the moment of issue, then frozen. Changes after issue are a cancel or a credit note, never an edit.
 
