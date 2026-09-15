@@ -213,8 +213,10 @@ export function canRefund(bill: Bill | null, rows: Row[], note: Note | null, tar
   if (!note) return no('failed-precondition', 'No such credit note');
   if (note.billId !== bill.billId) return no('failed-precondition', 'That credit note is for another bill');
   if (note.status === 'cancelled') return no('failed-precondition', 'That credit note is cancelled');
-  // PY-S25: BL owns the precondition, PY checks it too.
-  if (outstanding(bill, rows) > config.settleWithin) return no('failed-precondition', 'Bill is not fully paid');
+  // PY-S25: BL owns the precondition, PY checks it too. "Fully paid" is what the guest handed over (the takes);
+  // refunds already given never make a bill unpaid again for this purpose, or a note could never be refunded in parts.
+  const taken = live(rows).filter((r) => r.kind === 'take').reduce((n, r) => n + r.amount, 0);
+  if (bill.payable - taken > config.settleWithin) return no('failed-precondition', 'Bill is not fully paid');
   if (note.refundedTotal + req.amount > note.total) return no('failed-precondition', 'More than the credit note');
   return yes;
 }

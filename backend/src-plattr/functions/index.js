@@ -82,6 +82,12 @@ exports.approvals = {
   apply: require('./lib/api/approvals').applyHandler,
   config: require('./lib/api/approvals').configHandler,
 };
+exports.payments = {
+  take: require('./lib/api/payments').takeHandler,
+  refund: require('./lib/api/payments').refundHandler,
+  void: require('./lib/api/payments').voidHandler,
+  list: require('./lib/api/payments').listHandler,
+};
 exports.billing = {
   preview: require('./lib/api/billing').previewHandler,
   issue: require('./lib/api/billing').issueHandler,
