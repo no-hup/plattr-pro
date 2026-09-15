@@ -102,7 +102,7 @@ async function markCartAsServedHandler(data, context) {
                 errorHandler.badRequest(`Cart must be READY before it can be served (current: ${currentStatus})`, { currentStatus });
             }
 
-            const now = timestamp.serverTimestamp();
+            const now = timestamp.now(); // concrete: goes into statusHistory[] (arrays reject sentinels)
 
             // Update cart status
             cart.status = FULFILLMENT_STATUS.SERVED;

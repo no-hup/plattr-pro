@@ -10,6 +10,7 @@ const OrderInputValidation = require('./orderInputValidation');
 const timestamp = require('../utils/timestamp');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 const errorHandler = require('../singleton/ErrorHandler');
+const { isBillableItem } = require('../cart/calculateCartValue');
 
 /**
  * Unified order retrieval function that can:
@@ -24,7 +25,7 @@ const errorHandler = require('../singleton/ErrorHandler');
 const getOrder = functions.https.onCall(async (data, context) => {
   const requestData = data?.data || data || {};
   try {
-    console.log("poopoo Received order request:", JSON.stringify(requestData));
+    console.log("Received order request:", JSON.stringify(requestData));
     
     // TODO: Re-enable auth check when ready
     // if (!context.auth) {
@@ -66,7 +67,7 @@ const getOrder = functions.https.onCall(async (data, context) => {
 
     // CASE 1: Get a specific order by ID
     if (orderId) {
-      console.log(`poopoo Fetching order by orderId: ${orderId}`);
+      console.log(`Fetching order by orderId: ${orderId}`);
       const orderRef = db.collection("restaurants").doc(restaurantId)
         .collection("orders").doc(orderId);
 
@@ -89,7 +90,7 @@ const getOrder = functions.https.onCall(async (data, context) => {
       }
       const sanitizedOrder = sanitizeOrderData(orderDoc.id, orderData);
       
-      console.log(`poopoo Retrieved order ${orderDoc.id} successfully`);
+      console.log(`Retrieved order ${orderDoc.id} successfully`);
       
       return ResponseBuilder.success(
         sanitizedOrder,
@@ -146,7 +147,7 @@ const getOrder = functions.https.onCall(async (data, context) => {
           orders.push(sanitizedOrder);
         });
         
-        console.log(`poopoo Returning ${orders.length} orders for table ${tableId}`);
+        console.log(`Returning ${orders.length} orders for table ${tableId}`);
         
         return ResponseBuilder.success(
           orders,
@@ -184,7 +185,7 @@ const getOrder = functions.https.onCall(async (data, context) => {
         const orderData = orderDoc.data();
         const sanitizedOrder = sanitizeOrderData(orderDoc.id, orderData);
         
-        console.log(`poopoo Retrieved most recent active order ${orderDoc.id} for table ${tableId}`);
+        console.log(`Retrieved most recent active order ${orderDoc.id} for table ${tableId}`);
         
         return ResponseBuilder.success(
           sanitizedOrder,
@@ -226,7 +227,9 @@ function sanitizeOrderData(id, orderData) {
     priceInfo: orderData.priceInfo || null,
     offerDiscount: orderData.priceInfo?.offerDiscount || 0,
     appliedOffer: orderData.appliedOffer || null,
-    items: Array.isArray(orderData.items) ? orderData.items.map(item => ({
+    // Cancelled/returned lines are dropped: priceInfo already excludes them, so
+    // listing them made the bill's lines disagree with its total.
+    items: Array.isArray(orderData.items) ? orderData.items.filter(isBillableItem).map(item => ({
       menuItemId: item.menuItemId || '',
       name: item.name || (item.menuItem?.meta?.name || ''),
       quantity: item.quantity || 0,

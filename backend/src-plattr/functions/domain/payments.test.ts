@@ -95,7 +95,9 @@ describe('domain/payments canTake(bill, rows, req, config) — R6, R11, R13', ()
   it.todo('PY-S8 payable 0 → {ok: false}, there is nothing to collect');
   it.todo('PY-S5 card 70000 against outstanding 60900 → {ok: false, code: invalid-argument}, the terminal is still in hand');
   it.todo('PY-S6 second card 30000 against outstanding 20900 → {ok: false, code: invalid-argument}');
-  it.todo('PY-S28 upi 65000 against 60900 with overpayment allowed → {ok: true}, money already moved (distinguished from PY-S5 by a flag on the request, not by the tender)');
+  it.todo('PY-S28 upi 65000 against 60900 with captured:true → {ok: true}. The money already reached us; only captured separates this from PY-S5');
+  it.todo('PY-S5 the SAME request with captured:false → {ok: false}. One flag, two opposite answers, so it must be tested as a pair');
+  it.todo('NEW captured:true on a CASH tender → {ok: false}. Cash is never already-moved; it is in the cashier\'s hand');
   it.todo('PY-S6 boundary: external exactly equal to outstanding 20900 → {ok: true}');
   it.todo('PY-S6 boundary: external 20901 against outstanding 20900 → {ok: false}, off-by-one on the PY-S5 gate');
   it.todo('NEW bill.status draft → {ok: false, code: failed-precondition}. Only an issued bill takes money');
@@ -132,6 +134,11 @@ describe('domain/payments canRefund(bill, rows, note, req, config) — R7, R11',
   it.todo('NEW a refund row carries no change and no tendered even on cash: a refund is not a tender-and-change event');
   it.todo('NEW a refund on an external tender never produces overpaid');
   it.todo('PY-S25 defence in depth: refund while outstanding is 20900 → {ok: false}. BL owns the precondition; PY checks it too');
+  it.todo('PY-S32 refund with refundsPaymentId naming a row with overpaid 4100, amount 4100 → {ok: true}. No credit note needed: this money was never in paidTotal');
+  it.todo('PY-S32 refund with refundsPaymentId, amount 4101 against overpaid 4100 → {ok: false}');
+  it.todo('PY-S32 refund carrying BOTH creditNoteId and refundsPaymentId → {ok: false}. They are mutually exclusive');
+  it.todo('PY-S32 refund with refundsPaymentId naming a row whose overpaid is 0 → {ok: false}');
+  it.todo('NEW a refund row never carries tendered or change, even on cash. Handing money back is not a tender-and-change event');
 });
 
 describe('domain/payments canVoid(row, businessDateClosed) — R15', () => {
@@ -146,6 +153,15 @@ describe('domain/payments canVoid(row, businessDateClosed) — R15', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+describe('domain/payments businessDateFor(at, config) — R18, the day a payment belongs to', () => {
+  it.todo('R18 21:06 on 15 Sep with close 04:00 → 2026-09-15');
+  it.todo('R18 03:30 on 16 Sep with close 04:00 → 2026-09-15. Friday service does not leak into Saturday');
+  it.todo('R18 04:00 exactly on 16 Sep with close 04:00 → 2026-09-16. The boundary is decided here once');
+  it.todo('R18 04:01 on 16 Sep → 2026-09-16');
+  it.todo('R18 00:00 on 16 Sep with close 00:00 (no shift) → 2026-09-16');
+  it.todo('R18 pure: same instant and same config always give the same string, with no reference to the machine timezone');
+});
+
 describe('domain/payments tenderById + configFrom — R10, PY-S19, portability', () => {
   it.todo('PY-S19 a tender added to config is found by id and returns all four fields');
   it.todo('PY-S19 an id absent from config → undefined, the caller refuses (never a default to cash)');

@@ -33,7 +33,7 @@ async function getActiveOrdersForRestaurant(data, context) {
   try {
     setStage('parse-request');
     const requestData = data.data || data;
-    console.log("poopoo Received getActiveOrdersForRestaurant request:", JSON.stringify(requestData));
+    console.log("Received getActiveOrdersForRestaurant request:", JSON.stringify(requestData));
 
     setStage('input-validation');
     const { restaurantId, sessionId } = requestData;
