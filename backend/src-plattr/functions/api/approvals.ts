@@ -1,6 +1,6 @@
 // ST · onCall wrapper. Exported from index.js as `approvals-apply`. Parses the body, calls app, maps errors.
 // The PIN arrives once in the body and is handed straight to app; nothing here logs the body.
-import { apply, ApprovalError } from '../app/approvals';
+import { apply, reasons, ApprovalError } from '../app/approvals';
 import { ports } from '../adapters/firestore/approvals';
 
 /* eslint-disable @typescript-eslint/no-var-requires */
@@ -16,5 +16,16 @@ export const applyHandler = functions.https.onCall(async (request: { data?: Reco
   } catch (e) {
     if (e instanceof ApprovalError) errorHandler.throwError(e.code, e.message, e.details);
     errorHandler.handleError(e, 'approvals-apply');
+  }
+});
+
+export const configHandler = functions.https.onCall(async (request: { data?: Record<string, unknown> }) => {
+  const data = request?.data;
+  if (!data || typeof data !== 'object') errorHandler.badRequest('Invalid request format - missing data');
+  try {
+    return { status: 'success', message: 'Approvals config', data: await reasons(ports, data as never) };
+  } catch (e) {
+    if (e instanceof ApprovalError) errorHandler.throwError(e.code, e.message, e.details);
+    errorHandler.handleError(e, 'approvals-config');
   }
 });

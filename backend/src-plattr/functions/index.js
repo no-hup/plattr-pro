@@ -80,6 +80,7 @@ exports.order = {
 // Nested group, same reason as `admin`: the id `approvals-apply` maps to the module path `approvals.apply`.
 exports.approvals = {
   apply: require('./lib/api/approvals').applyHandler,
+  config: require('./lib/api/approvals').configHandler,
 };
 
 exports.helloWorld = functions.https.onRequest((req, res) => {

@@ -26,8 +26,10 @@ export async function call<T = unknown>(endpoint: string, body: Record<string, u
   if (res.ok && out.status !== 'error') return out as T
   const err = json.error ?? out
   const data = err.details?.data ?? err.data ?? {}
+  // Ask whenever the server asks, including after a wrong credential (ST-S3: "till asks again").
+  // The cashier can cancel; the server locks the account after too many wrong tries, so this cannot loop forever.
   const requires = data.requires as Requires | undefined
-  if (requires && !(requires in body)) {
+  if (requires) {
     const cred = await challenge(requires, data)
     if (cred !== null) return call<T>(endpoint, { ...body, [requires]: cred })
   }
