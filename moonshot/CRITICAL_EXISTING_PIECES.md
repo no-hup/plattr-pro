@@ -110,13 +110,16 @@ test run — provided its output lands correctly in the line snapshot.
 
 **What must be true.**
 - Discount is taken before tax. Always.
-- Bill-level discounts are apportioned onto lines in proportion to taxable value, *before* tax
-  is computed, and the apportioned share is stored on the line.
+- Bill-level discounts are apportioned onto lines in proportion to net price (list − offer −
+  line discount), *before* tax is computed, leftover minor unit on the last line, and the
+  apportioned share is stored on the line.
 - Inclusive prices decompose with one helper: `price × rate ÷ (100 + total rate)`, per
   component, with an explicit decimal count.
-- Tax components are computed from the summed rate, then split back by share, with the
-  residual paisa landed on the last component. CGST + SGST must equal the single-rate figure
-  by construction.
+- Tax parts are computed per component. Default `tax.partRounding: independent`: each part is
+  rounded half-up on its own, so CGST and SGST print equal (8.33 + 8.33 on ₹333) and may
+  exceed the single-rate figure by one minor unit. `residualLast` gives the single-rate figure
+  with the residual on the last part (8.32 + 8.33). A block is the sum of its lines, never a
+  second calculation.
 - Rounding happens once, on the payable total. Tax lines stay exact.
 - No figure is ever accepted from the client. Everything recomputes server-side.
 
