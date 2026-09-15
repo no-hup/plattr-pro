@@ -1,6 +1,6 @@
 const functions = require('firebase-functions');
 const { admin, db } = require('../admin/admin');
-const { ORDER_STATUS, PAYMENT_STATUS } = require('./orderConstants');
+const { ORDER_STATUS } = require('./orderConstants');
 const OrderInputValidation = require('./orderInputValidation');
 const { validateStaffSession } = require('../adminApp/auth');
 const { calculateCartValue, isBillableItem } = require('../cart/calculateCartValue');
@@ -25,7 +25,7 @@ const SEND_SERVER_NOTIFICATIONS = 'sendServerNotifications';
 /**
  * HTTPS Callable function to update an order's status:
  * - Optionally revalidates bill when completing
- * - Updates orderStatus (and paymentStatus if COMPLETE)
+ * - Updates orderStatus (paymentStatus is PY's: see app/payments.ts, TD-010)
  * - Notifies server when order is marked complete
  */
 async function notifyAssignedServer(restaurantId, orderId) {
@@ -54,8 +54,8 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
   // Validate inputs
   OrderInputValidation.validateUpdateOrderStatusFields(requestData);
   const { restaurantId, orderId, orderStatus, sessionId } = requestData;
-  // Staff only: this endpoint closes the bill (COMPLETED sets paymentStatus
-  // PAID). validateSessionId was optional-and-anonymous — unacceptable here.
+  // Staff only: this endpoint closes the order. (It used to set paymentStatus PAID too;
+  // that is PY's now, TD-010.) validateSessionId was optional-and-anonymous — unacceptable here.
   await validateStaffSession(restaurantId, sessionId);
   const chargesConfig = orderStatus === ORDER_STATUS.COMPLETED ? await loadChargesConfig(restaurantId) : [];
   try {
@@ -153,7 +153,8 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
           console.log(`Offers V2: offer "${order.appliedOffer.title}" no longer valid at COMPLETED for order ${orderId}`);
         }
 
-        updatePayload.paymentStatus = PAYMENT_STATUS.PAID;
+        // TD-010 (closed): payment is PY's axis. order.paymentStatus is mirrored by app/payments.ts
+        // inside the payment transaction; completing an order no longer claims the money was taken.
         updatePayload.priceInfo = recomputedPriceInfo;
         updatePayload.appliedOffer = appliedOffer; // may be null (clears previous)
       }

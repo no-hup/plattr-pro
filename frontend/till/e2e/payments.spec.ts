@@ -1,63 +1,224 @@
-// PY · Payments — till browser tests. Bill 0417: payable 60900 (₹609.00).
-//
-// SKELETON. Cases marked `todo: needs BL` wait on BL's finalise endpoint, because a
-// tender screen needs an issued bill to render. The parsing cases below it do NOT
-// wait: they are pure client-side and are the first thing to make green, because
-// R8 says a float must never reach the wire.
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test'
 
-const NEEDS_BL = 'todo: needs BL billing-finalise to put an issued bill on the screen';
+// PY in the browser. Needs the emulator (slot 0) with functions; seeds its own staff, order, bill and
+// credit note through Firestore REST in BL's committed bill shape. Bill = payable 60900 (₹609.00).
+const RID = 'res_e2e_all_on'
+const FS = `http://${process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080'}/v1/projects/rms-app-dd875/databases/(default)/documents/restaurants/${RID}`
+const H = { 'Content-Type': 'application/json', Authorization: 'Bearer owner' }
+const enc = (v: unknown): object =>
+  v === null ? { nullValue: null }
+    : typeof v === 'string' ? { stringValue: v }
+    : typeof v === 'boolean' ? { booleanValue: v }
+    : typeof v === 'number' ? { integerValue: String(v) }
+    : Array.isArray(v) ? { arrayValue: { values: v.map(enc) } }
+    : { mapValue: { fields: Object.fromEntries(Object.entries(v as object).map(([k, x]) => [k, enc(x)])) } }
+async function seed(path: string, obj: Record<string, unknown>) {
+  const r = await fetch(`${FS}/${path}`, { method: 'PATCH', headers: H, body: JSON.stringify({ fields: Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, enc(v)])) }) })
+  if (!r.ok) throw new Error(`seed ${path}: ${r.status}`)
+}
+const staff = (name: string, role: string, email: string) => ({ name, role, status: 'active', email, password: '1234' })
 
-// ── R8 at the keyboard. No bill needed; these can go green immediately. ──────
-test.describe('till amount pad — R8, typed text becomes integer minor units or nothing', () => {
-  test.fixme(true, 'skeleton');
-  test('PY-S31 "608.995" is refused at the pad; no request is issued', async () => {});
-  test('"608.99" sends exactly 60899, asserted as an integer', async () => {});
-  test('"8.49" sends 849, never 848. This is the float trap named in the Decisions', async () => {});
-  test('"609" sends 60900; "609." sends 60900; ".5" sends 50', async () => {});
-  test('"6 0 9", "6,09", "abc" and "" are all refused at the pad', async () => {});
-  test('"-609" is refused; a negative is never a payment', async () => {});
-  test('a very long run of digits is capped at the pad, not sent as MAX_SAFE_INTEGER', async () => {});
-});
+let BILL = ''
+let NOTE = ''
+test.beforeEach(async () => {
+  BILL = `pw_bill_${Date.now()}_${Math.floor(Math.random() * 1e6)}`   // a fresh bill per test: no shared state
+  NOTE = `pw_cn_${BILL}`
+  await seed('servers/till_manager', staff('Till Manager', 'MANAGER', 'till.manager@st.test'))
+  await seed('servers/till_captain', staff('Till Captain', 'SERVER', 'till.captain@st.test'))
+  await seed('orders/pw_order', { orderStatus: 'IN_PROGRESS', paymentStatus: 'unpaid' })
+  await seed(`bills/${BILL}`, { payable: 60900, status: 'issued', cid: `cid_${BILL}`, number: '0417', lines: [{ lineId: 'l1', orderId: 'pw_order', countsTowardTotal: true }] })
+  await seed(`bills/${NOTE}`, { payable: -8400, status: 'issued', cid: `cid_${BILL}`, number: 'CN-0007', creditNoteOf: { billId: BILL, number: '0417', issuedAt: 1 }, lines: [] })
+})
 
-test.describe('till — R13, the paymentId the server trusts', () => {
-  test.fixme(true, 'skeleton');
-  test('R13 each new tap generates a fresh paymentId', async () => {});
-  test('R13 a retry after a simulated network failure REUSES the same paymentId. This is the whole defence against PY-S23', async () => {});
-  test('R13 the id survives a page reload mid-tender, so a refresh is not a second payment', async () => {});
-});
+async function login(page: Page, bill: string, email: string) {
+  await page.goto(`/?r=${RID}&bill=${bill}`)
+  await page.getByTestId('email').fill(email)
+  await page.getByTestId('password').fill('1234')
+  await page.getByTestId('login').click()
+  await expect(page.getByTestId('outstanding')).toBeVisible()
+}
+const take = async (page: Page, tender: string, amount: string, ref?: string) => {
+  await page.getByTestId(`tender-${tender}`).click()
+  await page.getByTestId('amount').fill(amount)
+  if (ref !== undefined) await page.getByTestId('ref').fill(ref)
+  await page.getByTestId('take').click()
+}
+function bodiesOf(page: Page, endpoint: string) {
+  const bodies: Record<string, unknown>[] = []
+  page.on('request', r => { if (r.url().endsWith(`/${endpoint}`) && r.method() === 'POST') bodies.push(JSON.parse(r.postData() ?? '{}').data) })
+  return bodies
+}
 
-// ── everything below needs a bill on the screen ──────────────────────────────
-test.describe('till tender screen', () => {
-  test.fixme(true, 'skeleton');
-  test(`PY-S1 cash exact: outstanding shows ₹609.00, tender Cash, bill settles, drawer opens — ${NEEDS_BL}`, async () => {});
-  test(`PY-S2 cash with change: tendered ₹700 shows change ₹91.00 on screen before confirm — ${NEEDS_BL}`, async () => {});
-  test(`PY-S3 split: card ₹400 leaves ₹209.00 outstanding on screen and the bill is not settled — ${NEEDS_BL}`, async () => {});
-  test(`PY-S4 the second tender's change is computed on ₹109.00, not ₹609.00 — ${NEEDS_BL}`, async () => {});
-  test(`PY-S20 the card tender shows a reference field and will not confirm while it is empty — ${NEEDS_BL}`, async () => {});
-  test(`PY-S20 the cash tender shows no reference field — ${NEEDS_BL}`, async () => {});
-  test(`PY-S19 a tender added to config appears on the screen with no deploy — ${NEEDS_BL}`, async () => {});
-  test(`PY-S8 a comped ₹0 bill shows "nothing to collect" and offers no tender button — ${NEEDS_BL}`, async () => {});
-  test(`R10 a cash tender whose snapshot says opensDrawer fires the drawer signal — ${NEEDS_BL}`, async () => {});
-  test(`R10 a card tender with opensDrawer false fires NO drawer signal. The drawer is the one thing the guest can see open — ${NEEDS_BL}`, async () => {});
-  test(`PY-S28 a captured UPI of ₹650 against ₹609 shows ₹41.00 as an overpay on screen, not as change handed back — ${NEEDS_BL}`, async () => {});
-  test(`PY-S5 a card tender of ₹700 with the terminal in hand is refused at the till before any call — ${NEEDS_BL}`, async () => {});
-});
+// ── R8 at the keyboard: typed text → integer minor units, or nothing ──────────
+test('PY-S31 the pad: "8.49" → 849 never 848; "608.99" → 60899; "608.995", "6,09", "-609", "abc" refused and Take disabled', async ({ page }) => {
+  await login(page, BILL, 'till.manager@st.test')
+  await page.getByTestId('tender-cash').click()
+  for (const [typed, minor] of [['8.49', '849'], ['608.99', '60899'], ['609', '60900'], ['609.', '60900'], ['.5', '50']]) {
+    await page.getByTestId('amount').fill(typed)
+    await expect(page.getByTestId('minor')).toHaveText(minor)
+  }
+  for (const bad of ['608.995', '6,09', '6 0 9', '-609', 'abc']) {
+    await page.getByTestId('amount').fill(bad)
+    await expect(page.getByTestId('minor')).toHaveText('invalid')
+    await expect(page.getByTestId('take')).toBeDisabled()
+  }
+})
 
-test.describe('till — the PIN challenge is ST\'s one interceptor, never a local popup', () => {
-  test.fixme(true, 'skeleton');
-  test(`PY-S9 a refund answers permission-denied + {requires:'pin'}; the shared PIN box appears and the retry carries the pin — ${NEEDS_BL}`, async () => {});
-  test(`PY-S12 a SERVER-role session gets a plain 403 and NO PIN box. A 403 that looks like a challenge makes the till loop — ${NEEDS_BL}`, async () => {});
-  test(`arch-5: the challenge is answered at most 10 times, then "start again" — the cap ST added, reused here — ${NEEDS_BL}`, async () => {});
-});
+// ── R13: the id the server trusts ───────────────────────────────────────────
+test('R13 a retry after a lost response REUSES the same paymentId; the next tap mints a new one', async ({ page }) => {
+  const bodies = bodiesOf(page, 'payments-take')
+  let n = 0
+  await page.route('**/payments-take', route => { n++; if (n === 1) route.abort('failed'); else route.continue() })
+  await login(page, BILL, 'till.manager@st.test')
+  await take(page, 'cash', '400')
+  await expect(page.getByTestId('pay-msg')).not.toHaveText('')        // the failed call surfaced something
+  await page.getByTestId('take').click()                           // the cashier taps again
+  await expect(page.getByTestId('outstanding')).toHaveText('outstanding ₹209.00')
+  expect(bodies).toHaveLength(2)
+  expect(bodies[0].paymentId).toBe(bodies[1].paymentId)            // same tap, same id
+  await take(page, 'cash', '209')
+  await expect(page.getByTestId('outstanding')).toHaveText('settled')
+  expect(bodies).toHaveLength(3)
+  expect(bodies[2].paymentId).not.toBe(bodies[1].paymentId)        // new tap, new id
+  expect(typeof bodies[2].tendered).toBe('number')                 // R8: an integer on the wire, never a float string
+  expect(bodies[2].tendered).toBe(20900)
+})
 
-test.describe('till — the states a cashier must be able to see and get out of', () => {
-  test.fixme(true, 'skeleton');
-  test(`PY-S17 a failed take shows "try again" and leaves the outstanding unchanged on screen — ${NEEDS_BL}`, async () => {});
-  test(`PY-S24 a retry that the server answers with the original row shows SETTLED, not an error — ${NEEDS_BL}`, async () => {});
-  test(`PY-S27 voiding the row that settled the bill puts ₹609.00 back on the screen as outstanding — ${NEEDS_BL}`, async () => {});
-  test(`PY-S30 after a ₹84 refund the screen shows ₹84.00 outstanding and allows a new tender — ${NEEDS_BL}`, async () => {});
-  test(`PY-S7 the loser of a race sees "nothing outstanding" and the bill as settled, not a hard error — ${NEEDS_BL}`, async () => {});
-  test(`PY-S35 a void whose response is lost, retried by the same cashier with the same reason, shows done — not an error that invites a second correction — ${NEEDS_BL}`, async () => {});
-  test(`R15 a void never fires the drawer signal. Cashiers reach for void to hand money back; the screen must not reward that — ${NEEDS_BL}`, async () => {});
-});
+// ── the tender screen ───────────────────────────────────────────────────────
+test('PY-S1 cash ₹609 exact → settled, status [paid], drawer signal fires (R10)', async ({ page }) => {
+  await login(page, BILL, 'till.manager@st.test')
+  await expect(page.getByTestId('outstanding')).toHaveText('outstanding ₹609.00')
+  await take(page, 'cash', '609')
+  await expect(page.getByTestId('pay-msg')).toHaveText('Recorded')
+  await expect(page.getByTestId('outstanding')).toHaveText('settled')
+  await expect(page.getByTestId('status')).toHaveText('[paid]')
+  await expect(page.getByTestId('drawer')).toBeVisible()
+  await expect(page.getByTestId('nothing-to-collect')).toHaveText('Nothing to collect')
+})
+
+test('PY-S2 cash ₹700 → change ₹91.00 previewed before confirm and reported after', async ({ page }) => {
+  await login(page, BILL, 'till.manager@st.test')
+  await page.getByTestId('tender-cash').click()
+  await page.getByTestId('amount').fill('700')
+  await expect(page.getByTestId('change')).toHaveText(' change ₹91.00')
+  await page.getByTestId('take').click()
+  await expect(page.getByTestId('pay-msg')).toHaveText('Change ₹91.00')
+  await expect(page.getByTestId('outstanding')).toHaveText('settled')
+})
+
+test('PY-S3 / PY-S4 split: card ₹400 leaves ₹209.00 outstanding; cash ₹200 hands back ₹91.00 change on the remaining ₹109 — never on the payable', async ({ page }) => {
+  await login(page, BILL, 'till.manager@st.test')
+  await take(page, 'card', '400', 'slip-1')
+  await expect(page.getByTestId('outstanding')).toHaveText('outstanding ₹209.00')
+  await expect(page.getByTestId('status')).toHaveText('[issued]')
+  await expect(page.getByTestId('drawer')).toBeHidden()             // R10: a card opens nothing
+  await take(page, 'card', '100', 'slip-2')
+  await expect(page.getByTestId('outstanding')).toHaveText('outstanding ₹109.00')
+  await page.getByTestId('tender-cash').click()
+  await page.getByTestId('amount').fill('200')
+  await expect(page.getByTestId('change')).toHaveText(' change ₹91.00')
+  await page.getByTestId('take').click()
+  await expect(page.getByTestId('pay-msg')).toHaveText('Change ₹91.00')
+  await expect(page.getByTestId('outstanding')).toHaveText('settled')
+  await expect(page.getByTestId('rows').locator('li')).toHaveCount(3)
+})
+
+test('PY-S5 a card tender of ₹700 with the terminal in hand is refused by the server, nothing recorded', async ({ page }) => {
+  await login(page, BILL, 'till.manager@st.test')
+  await take(page, 'card', '700', 'slip-1')
+  await expect(page.getByTestId('pay-msg')).toHaveText('More than the bill outstanding')
+  await expect(page.getByTestId('outstanding')).toHaveText('outstanding ₹609.00')
+  await expect(page.getByTestId('rows').locator('li')).toHaveCount(0)
+})
+
+test('PY-S28 a captured UPI of ₹650 against ₹609 is recorded with ₹41.00 overpaid, not refused and not change', async ({ page }) => {
+  await login(page, BILL, 'till.manager@st.test')
+  await page.getByTestId('tender-upi').click()
+  await page.getByTestId('amount').fill('650')
+  await page.getByTestId('ref').fill('upi-9981')
+  await page.getByTestId('captured').check()
+  await expect(page.getByTestId('change')).toHaveCount(0)
+  await page.getByTestId('take').click()
+  await expect(page.getByTestId('pay-msg')).toHaveText('Overpaid ₹41.00, recorded')
+  await expect(page.getByTestId('outstanding')).toHaveText('settled')
+})
+
+test('PY-S20 the card tender shows a reference field and Take stays disabled while it is empty; cash shows none', async ({ page }) => {
+  await login(page, BILL, 'till.manager@st.test')
+  await page.getByTestId('tender-card').click()
+  await page.getByTestId('amount').fill('400')
+  await expect(page.getByTestId('ref')).toBeVisible()
+  await expect(page.getByTestId('take')).toBeDisabled()
+  await page.getByTestId('ref').fill('slip-1')
+  await expect(page.getByTestId('take')).toBeEnabled()
+  await page.getByTestId('tender-cash').click()
+  await expect(page.getByTestId('ref')).toHaveCount(0)
+})
+
+test('PY-S8 a comped ₹0 bill shows "Nothing to collect" and offers no tender button', async ({ page }) => {
+  await seed(`bills/${BILL}`, { payable: 0, status: 'paid', paidTotal: 0, cid: `cid_${BILL}`, number: '0419', lines: [{ lineId: 'l1', orderId: 'pw_order', countsTowardTotal: true }] })
+  await login(page, BILL, 'till.manager@st.test')
+  await expect(page.getByTestId('nothing-to-collect')).toHaveText('Nothing to collect')
+  await expect(page.getByTestId('tender-cash')).toHaveCount(0)
+})
+
+// ── the PIN challenge is ST's one interceptor ───────────────────────────────
+test('PY-S12 a SERVER-role session gets "Not allowed" and NO PIN box', async ({ page }) => {
+  await login(page, BILL, 'till.captain@st.test')
+  await take(page, 'cash', '609')
+  await expect(page.getByTestId('pay-msg')).toHaveText('Not allowed')
+  await expect(page.getByTestId('pin-prompt')).toHaveCount(0)
+  await expect(page.getByTestId('outstanding')).toHaveText('outstanding ₹609.00')
+})
+
+test('PY-S9 / PY-S30 refund ₹84 against the credit note → the shared PIN box → 1234 → refunded, ₹84.00 back outstanding', async ({ page }) => {
+  await login(page, BILL, 'till.manager@st.test')
+  await take(page, 'cash', '609')
+  await expect(page.getByTestId('outstanding')).toHaveText('settled')
+  await page.getByTestId('refund-note').fill(NOTE)
+  await page.getByTestId('refund-amount').fill('84')
+  await page.getByTestId('refund-tender').selectOption('cash')
+  await page.getByTestId('refund-reason').selectOption('complaint')
+  await page.getByTestId('refund').click()
+  await expect(page.getByTestId('pin-prompt')).toBeVisible()
+  await page.getByTestId('pin-input').fill('1234')
+  await page.getByTestId('pin-ok').click()
+  await expect(page.getByTestId('pay-msg')).toHaveText('Refunded')
+  await expect(page.getByTestId('outstanding')).toHaveText('outstanding ₹84.00')
+  await expect(page.getByTestId('status')).toHaveText('[issued]')
+  await expect(page.getByTestId('pin-prompt')).toHaveCount(0)
+})
+
+test('PY-S27 / R15 voiding the row that settled the bill puts ₹609.00 back and fires no drawer; a fresh UPI then settles it', async ({ page }) => {
+  const bodies = bodiesOf(page, 'payments-take')
+  await login(page, BILL, 'till.manager@st.test')
+  await take(page, 'cash', '609')
+  await expect(page.getByTestId('outstanding')).toHaveText('settled')
+  const id = String(bodies[0].paymentId)
+  await page.getByTestId(`void-${id}`).selectOption('other')
+  await expect(page.getByTestId('pin-prompt')).toBeVisible()
+  await page.getByTestId('pin-input').fill('1234')
+  await page.getByTestId('pin-ok').click()
+  await expect(page.getByTestId('pay-msg')).toHaveText('Voided')
+  await expect(page.getByTestId('outstanding')).toHaveText('outstanding ₹609.00')
+  await expect(page.getByTestId('status')).toHaveText('[issued]')
+  await expect(page.getByTestId('drawer')).toBeHidden()
+  await expect(page.getByTestId(`row-${id}`)).toHaveCSS('text-decoration-line', 'line-through')
+  await take(page, 'upi', '609', 'upi-1')
+  await expect(page.getByTestId('outstanding')).toHaveText('settled')
+})
+
+test('PY-S24 a retry the server answers with the original row shows "Already recorded", not an error', async ({ page }) => {
+  const bodies = bodiesOf(page, 'payments-take')
+  let n = 0
+  // Let the first call reach the server, then drop its RESPONSE: the till sees a failure the server did not.
+  await page.route('**/payments-take', async route => { n++; if (n === 1) { const r = await route.fetch(); await r.body(); route.abort('failed') } else route.continue() })
+  await login(page, BILL, 'till.manager@st.test')
+  await take(page, 'cash', '609')
+  await expect(page.getByTestId('pay-msg')).not.toHaveText('')
+  await page.getByTestId('take').click()
+  await expect(page.getByTestId('pay-msg')).toHaveText('Already recorded')
+  await expect(page.getByTestId('outstanding')).toHaveText('settled')
+  expect(bodies[0].paymentId).toBe(bodies[1].paymentId)
+  await expect(page.getByTestId('rows').locator('li')).toHaveCount(1)
+})

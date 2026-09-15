@@ -11,7 +11,8 @@ const errorHandler = require('../../singleton/ErrorHandler');
 type Body = Record<string, unknown>;
 
 // R14/R3: the server owns these. Present in a body, they are dropped before app sees them.
-const SERVER_OWNED = ['at', 'by', 'businessDate', 'status', 'paidTotal', 'paidAt', 'paidBy', 'change', 'overpaid', 'void', 'cid'];
+// businessDate is not here: the write ops already leave it out of KEEP, and for list it is the input (which day).
+const SERVER_OWNED = ['at', 'by', 'status', 'paidTotal', 'paidAt', 'paidBy', 'change', 'overpaid', 'void', 'cid'];
 const KEEP: Record<string, string[]> = {
   take: ['restaurantId', 'sessionId', 'billId', 'paymentId', 'tenderId', 'amount', 'tendered', 'captured', 'ref'],
   refund: ['restaurantId', 'sessionId', 'billId', 'paymentId', 'tenderId', 'amount', 'creditNoteId', 'refundsPaymentId', 'reason', 'note', 'pin'],
