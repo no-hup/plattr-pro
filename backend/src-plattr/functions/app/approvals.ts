@@ -109,23 +109,32 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
   try {
     const out = await ports.transact(restaurantId, async t => {
       if (!needsLine) {
-        const auditId = `${cid}_${action}_${ts}`;
+        // Two drawer opens in one millisecond must both leave a row: the suffix keeps the ids apart.
+        const auditId = `${cid}_${action}_${ts}_${Math.random().toString(36).slice(2, 8)}`;
         t.createAudit(auditId, auditRow({ ts, cid, action, staffId: staff.staffId, sev, reason: reason as string, note, lineId: null, before: null, after: null }));
         return { auditId } as ApplyResult;
       }
       const before = await t.getLine(String(lineId));
       if (!before) throw new ApprovalError('not-found', 'line not found', { lineId });
+      // The line may have gone to the kitchen since the decision read. Decide again on the fresh doc:
+      // a PIN that was not needed then, and was never verified, is needed now.
+      const fresh = decide({ action: action as Action, role: staff.role as never, amount: amountPaise, listPrice: before.listPrice, lineSent: before.sent }, cfg);
+      if (!fresh.ok) throw new ApprovalError(fresh.code, 'Not allowed for your role');
+      if (fresh.needsPin && !needsPin) throw new ApprovalError('permission-denied', 'PIN required', { requires: 'pin', action, sev: fresh.sev });
       const applied = applyToLine(before, { action: action as Action, amount: amountPaise, pct, reason: reason as string, note, approverId: staff.staffId });
       if (!applied.ok) throw new ApprovalError(applied.code, applied.message);
       const auditId = `${lineId}_v${applied.line.v}`;
-      t.createAudit(auditId, auditRow({ ts, cid, action, staffId: staff.staffId, sev, amount: amountPaise, pct, reason: reason as string, note, lineId: String(lineId), before, after: applied.line }));
+      t.createAudit(auditId, auditRow({ ts, cid, action, staffId: staff.staffId, sev: fresh.sev, amount: amountPaise, pct, reason: reason as string, note, lineId: String(lineId), before, after: applied.line }));
       t.setLine(String(lineId), applied.line);
       return { line: applied.line, auditId } as ApplyResult;
     });
     emit(sev, needsPin, 'applied');
     return out;
   } catch (e) {
-    if (e instanceof ApprovalError) { emit(sev, needsPin, 'invalid'); throw e; }
+    if (e instanceof ApprovalError) {
+      if (e.details.requires) emit(e.details.sev as Sev, true, 'needs_pin'); else emit(sev, needsPin, 'invalid');
+      throw e;
+    }
     fail('unavailable', 'Could not record the approval, try again', {}, sev, needsPin, 'try_again');
     throw e; // unreachable
   }
