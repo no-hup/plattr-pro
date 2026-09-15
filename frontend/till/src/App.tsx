@@ -2,12 +2,13 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { call } from './api/client'
 import { PinPrompt } from './features/approvals/PinPrompt'
 import { fetchReasons, useApproval, type LineSnapshot } from './features/approvals/useApproval'
+import { BillScreen } from './features/billing/BillScreen'
 
-// v1 screen: log in as staff, then discount one line named in the URL (?r=<restaurantId>&line=<lineId>).
-// Line lists arrive with BL; until then the line id is the only thing the till knows about a line (TD-004).
+// Screens are picked by the URL: ?r=<restaurantId>&line=<lineId> discounts one line (ST); ?r=&draft=<draftId> shows that draft's bill (BL).
 const q = new URLSearchParams(location.search)
 const RESTAURANT = q.get('r') ?? ''
 const LINE = q.get('line') ?? ''
+const DRAFT = q.get('draft') ?? ''
 
 export default function App() {
   const [session, setSession] = useState<{ sessionId: string; name: string } | null>(null)
@@ -53,6 +54,8 @@ export default function App() {
           <input name="email" placeholder="email" data-testid="email" /> <input name="password" type="password" placeholder="password" data-testid="password" />
           <button type="submit" data-testid="login">Log in</button>
         </form>
+      ) : DRAFT ? (
+        <BillScreen ctx={{ restaurantId: RESTAURANT, sessionId: session.sessionId, draftId: DRAFT }} reasons={reasons} />
       ) : (
         <>
           <p>Logged in as {session.name} · line <code>{LINE}</code>{line ? ` · v${line.v}` : ''}</p>
