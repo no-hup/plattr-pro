@@ -251,6 +251,11 @@ describe('domain/billing issue / cancel / creditNote', () => {
     expect(b.lines[0].listPrice).toBe(8000);   // coke sorts first
     expect(b.payable).toBe(60900);
   });
+  it('BL-S22 / PY-S8 a bill with payable 0 is issued as paid: numbered, nothing for PY to collect', () => {
+    const b = issued(ok(preview([line('pizza', 50000)], bd(50000), [], cfg)));
+    expect(b).toMatchObject({ number: '0417', payable: 0, status: 'paid' });
+    expect(issued().status).toBe('issued');
+  });
   it('D4 issue with nothing counted (empty or all voided) → failed-precondition', () => {
     expect(issue(ok(preview([], null, [], cfg)), meta('0417'))).toMatchObject({ ok: false, code: 'failed-precondition' });
     expect(issue(ok(preview([line('x', 100, { countsTowardTotal: false })], null, [], cfg)), meta('0417'))).toMatchObject({ ok: false });
@@ -321,6 +326,14 @@ describe('domain/billing issue / cancel / creditNote', () => {
     expect(cn(c, [{ lineId: 'coke', qty: 1 }])).toMatchObject({ ok: false });
     const note = (cn(paid(), [{ lineId: 'coke', qty: 1 }]) as { value: { note: Bill } }).value.note;
     expect(cancel(note, 1, 'm', 'r')).toMatchObject({ ok: false });
+  });
+  it('PY-S26 a credit note starts with refundedTotal 0; PY stamps it inside the refund transaction', () => {
+    const r = cn(paid(), [{ lineId: 'coke', qty: 1 }]); if (!r.ok) throw new Error(r.message);
+    expect(r.value.note.refundedTotal).toBe(0);
+    expect(r.value.original.refundedTotal).toBeUndefined();
+  });
+  it('PY-S25 a credit note needs status paid, which PY sets only when outstanding is 0: issued (even half-paid) is refused', () => {
+    expect(cn(issued(), [{ lineId: 'coke', qty: 1 }])).toMatchObject({ ok: false, code: 'failed-precondition', message: expect.stringContaining('paid') });
   });
   it('F8 nothing re-priced: the note reads the bill, so a config change between issue and note cannot reach it (no cfg argument exists)', () => {
     expect(creditNote.length).toBe(3);
