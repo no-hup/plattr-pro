@@ -1,5 +1,5 @@
 // ST app layer: apply() with fake adapters and a fake clock. No emulator.
-import { apply, ApprovalError, Ports, Tx, Staff } from './approvals';
+import { apply, reasons, ApprovalError, Ports, Tx, Staff } from './approvals';
 import { Line, LockState, AuditRow, DEFAULTS } from '../domain/approvals';
 
 const RID = 'r1';
@@ -225,5 +225,12 @@ describe('app/approvals apply()', () => {
     expect(p.audits.get('line_pitcher_v1')).toMatchObject({ sev: 'P0', amount: 1250, pct: 100 });
     const again = await fails(apply(p, discount({ action: 'void', reason: 'guest left', pin: '1234' })));
     expect(again.code).toBe('failed-precondition');
+  });
+
+  it('reasons(): staff session → config reasons; missing config → the 7 defaults; bad session → unauthenticated; never the limit', async () => {
+    const p = fakePorts({ config: { reasons: ['placard', 'other'], discountPinAbovePercent: 5 } });
+    expect(await reasons(p, { restaurantId: RID, sessionId: 's1' })).toEqual({ reasons: ['placard', 'other'] });
+    expect(await reasons(fakePorts(), { restaurantId: RID, sessionId: 's1' })).toEqual({ reasons: DEFAULTS.reasons });
+    expect((await fails(reasons(p, { restaurantId: RID, sessionId: 'ghost' }))).code).toBe('unauthenticated');
   });
 });

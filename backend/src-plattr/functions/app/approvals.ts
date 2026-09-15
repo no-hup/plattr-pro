@@ -133,3 +133,11 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
     throw e; // unreachable
   }
 }
+
+/** What the till may know about the config: the reasons list. Never the limit; the client does not compute needsPin. */
+export async function reasons(ports: Ports, req: { restaurantId: string; sessionId: string }): Promise<{ reasons: string[] }> {
+  if (typeof req.restaurantId !== 'string' || typeof req.sessionId !== 'string') throw new ApprovalError('invalid-argument', 'restaurantId and sessionId required');
+  await ports.staff.bySession(req.restaurantId, req.sessionId);
+  const cfg = await loadApprovalsConfig(ports.config.approvals, ports.warn, req.restaurantId);
+  return { reasons: cfg.reasons };
+}
