@@ -260,6 +260,26 @@ describe('app/approvals apply()', () => {
     expect(again.code).toBe('failed-precondition');
   });
 
+  it('arch-2 (ST-S5 race): line unsent at the decision read, sent by the write transaction → permission-denied requires:pin, nothing written', async () => {
+    const p = fakePorts();
+    p.lines.set('line_race', { listPrice: 45000, sent: false, v: 0, countsTowardTotal: true });
+    let reads = 0;
+    const real = p.transact;
+    p.transact = (rid, fn) => real(rid, t => fn({ ...t, getLine: async id => { const l = await t.getLine(id); if (id === 'line_race' && l && ++reads === 2) { const sent = { ...l, sent: true }; p.lines.set(id, sent); return sent; } return l; } }));
+    const e = await fails(apply(p, discount({ action: 'void', lineId: 'line_race', reason: 'guest left' })));
+    expect(e).toMatchObject({ code: 'permission-denied', details: { requires: 'pin', action: 'void', sev: 'P0' } });
+    expect(p.lines.get('line_race')).toMatchObject({ v: 0, sent: true, countsTowardTotal: true });
+    expect(p.audits.size).toBe(0);
+    expect(p.logs.at(-1)).toEqual({ cid: 'c1', action: 'void', sev: 'P0', needsPin: true, outcome: 'needs_pin' });
+  });
+  it('arch-4: two drawer opens in the same millisecond on one cid → two audit rows, ids distinct', async () => {
+    const p = fakePorts();
+    const open = () => apply(p, { restaurantId: RID, sessionId: 's1', action: 'drawer', cid: 'c1', reason: 'other', pin: '1234' });
+    const [a, b] = await Promise.all([open(), open()]);
+    expect(a.auditId).not.toBe(b.auditId);
+    expect([...p.audits.values()].filter(r => r.action === 'drawer')).toHaveLength(2);
+  });
+
   it('reasons(): staff session → config reasons; missing config → the 7 defaults; bad session → unauthenticated; never the limit', async () => {
     const p = fakePorts({ config: { reasons: ['placard', 'other'], discountPinAbovePercent: 5 } });
     expect(await reasons(p, { restaurantId: RID, sessionId: 's1' })).toEqual({ reasons: ['placard', 'other'] });

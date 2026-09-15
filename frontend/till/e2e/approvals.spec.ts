@@ -107,3 +107,22 @@ test('ST-S3 wrong PIN → "Wrong PIN, 4 left", box stays; 5th → "wait 1 s"; co
   await expect(page.getByTestId('msg')).toHaveText('Applied −₹251 (20.08 %)')
   await expect(page.getByTestId('pin-prompt')).toHaveCount(0)
 })
+
+test('arch-5: server keeps asking for a PIN → the till gives up after 10 tries, box closes, "Too many PIN attempts"', async ({ page }) => {
+  await login(page, LINE, 'till.manager@st.test')
+  // R7 never locks, so a stuck server (or a bug) could re-prompt forever. Fake one that always says "needs pin".
+  await page.route('**/approvals-apply', route => route.fulfill({
+    status: 403, contentType: 'application/json',
+    body: JSON.stringify({ error: { message: 'PIN required', status: 'PERMISSION_DENIED', details: { data: { code: 'permission-denied', requires: 'pin', action: 'discount', sev: 'P0' } } } }),
+  }))
+  const calls = countCalls(page)
+  await discount(page, '251', 'placard')
+  for (let i = 0; i < 10; i++) {
+    await expect(page.getByTestId('pin-prompt')).toBeVisible()
+    await page.getByTestId('pin-input').fill('1234')
+    await page.getByTestId('pin-ok').click()
+  }
+  await expect(page.getByTestId('msg')).toHaveText('Too many PIN attempts, start again')
+  await expect(page.getByTestId('pin-prompt')).toHaveCount(0)
+  expect(calls()).toBe(11)   // the first call plus ten answered challenges; the eleventh challenge is refused client-side
+})

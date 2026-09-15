@@ -15,7 +15,11 @@ export class ApiError extends Error {
   constructor(code: string, message: string, data: Record<string, unknown> = {}) { super(message); this.code = code; this.data = data }
 }
 
-export async function call<T = unknown>(endpoint: string, body: Record<string, unknown> = {}): Promise<T> {
+// R7 never locks an account, so a server that keeps answering `requires` would re-prompt forever. Ten answered
+// challenges per call is the ceiling; the cashier can also press Cancel at any time.
+const MAX_CHALLENGES = 10
+
+export async function call<T = unknown>(endpoint: string, body: Record<string, unknown> = {}, challenges = 0): Promise<T> {
   const res = await fetch(`${BASE}/${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -27,11 +31,11 @@ export async function call<T = unknown>(endpoint: string, body: Record<string, u
   const err = json.error ?? out
   const data = err.details?.data ?? err.data ?? {}
   // Ask whenever the server asks, including after a wrong credential (ST-S3: "till asks again").
-  // The cashier can cancel; the server locks the account after too many wrong tries, so this cannot loop forever.
   const requires = data.requires as Requires | undefined
   if (requires) {
+    if (challenges >= MAX_CHALLENGES) throw new ApiError('too-many-challenges', 'Too many PIN attempts, start again', {})
     const cred = await challenge(requires, data)
-    if (cred !== null) return call<T>(endpoint, { ...body, [requires]: cred })
+    if (cred !== null) return call<T>(endpoint, { ...body, [requires]: cred }, challenges + 1)
   }
   throw new ApiError(data.code ?? err.code ?? 'unknown', err.message ?? out.message ?? 'Request failed', data)
 }
