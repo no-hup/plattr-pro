@@ -25,12 +25,23 @@ async function loadTaxBlocks(restaurantId) {
 /** A cart item as domain/line.ts wants it: minor units, components split out, per-unit variant and addon prices. */
 function toCartItem(item) {
   const p = item.priceInfo || {};
-  const pick = (d) => ({
-    id: String(d.id || d.addonId || d.selected_variant_id || "x"),
-    name: d.selected_variant_name || d.name || "",
-    basePrice: minor(d.priceInfo?.basePrice),
-    finalPrice: minor(d.priceInfo?.finalPrice ?? d.priceInfo?.basePrice),
-  });
+  // TD-014: a variant or addon flagged `respectParentDiscount` is sold at the ITEM's discount, and
+  // `calculateItemPrice` applies that at cart time — but only into the cart's AGGREGATE totals. The
+  // component's own `priceInfo.finalPrice` never learns about it, so reading it here quietly billed
+  // the guest above the price their app quoted (₹736 quoted, ₹768 billed, on one Mutton Biryani).
+  // Same arithmetic as cart/calculateCartValue.js `applyDiscount`, done in minor units.
+  const parentDiscount = Number(p.discount) || 0;
+  const pick = (d) => {
+    const basePrice = minor(d.priceInfo?.basePrice);
+    return {
+      id: String(d.id || d.addonId || d.selected_variant_id || "x"),
+      name: d.selected_variant_name || d.name || "",
+      basePrice,
+      finalPrice: d.respectParentDiscount === true
+        ? Math.max(0, Math.round(basePrice * (1 - parentDiscount / 100)))
+        : minor(d.priceInfo?.finalPrice ?? d.priceInfo?.basePrice),
+    };
+  };
   return {
     menuItemId: item.menuItemId,
     name: item.menuItem?.meta?.name || item.name || "Unknown Item",
