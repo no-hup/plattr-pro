@@ -11,6 +11,7 @@ const { ORDER_STATUS } = require('../orders/orderConstants');
 const { mapOrderStatus } = require('../utils/statusUtils');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 const featureFlags = require('../singleton/FeatureFlags');
+const { resolveTableId } = require('../table/mergedTables');
 
 /**
  * Checkout Cart Cloud Function
@@ -34,7 +35,10 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
     // console.log("Received checkoutCart request:", JSON.stringify(requestPayload));
     validateCheckoutFields(requestPayload);
 
-    const { tableId, restaurantId, cartId, notes = '', sessionId } = requestPayload;
+    let { tableId, restaurantId, cartId, notes = '', sessionId, addedBy = null } = requestPayload;
+    // The order is created against the parent, so a merged party is one cart, one
+    // kitchen ticket and one bill.
+    tableId = await resolveTableId(restaurantId, tableId);
 
     // Validate session (now mandatory)
     await validateCheckoutSession(restaurantId, tableId, sessionId);
@@ -51,15 +55,18 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
       .doc(tableId);
 
     const cartDoc = await cartRef.get();
+    const cart = cartDoc.exists ? cartDoc.data() : null;
+    const hasItems = !!(cart && Array.isArray(cart.items) && cart.items.length > 0);
+    // OF R1: with a requestId the cart may already be gone because the first tap landed; the
+    // order transaction decides (retry → the existing order, else the same refusal as below).
+    const retryable = typeof requestPayload.requestId === 'string' && requestPayload.requestId !== '';
 
-    if (!cartDoc.exists) {
+    if (!cartDoc.exists && !retryable) {
       // Throw standard error if cart doesn't exist even with valid session
       errorHandler.preconditionFailed('No active cart found for this table.');
     }
 
-    const cart = cartDoc.data();
-
-    if (!cart || !cart.items || cart.items.length === 0) {
+    if (!hasItems && !retryable) {
       // Throw standard error for empty cart
       errorHandler.preconditionFailed('Cannot checkout an empty cart.');
     }
@@ -67,7 +74,7 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
     // console.log(`Processing checkout for table ${tableId} with ${cart.items.length} items`);
 
     // Validate cart price calculations before proceeding
-    if (!validateCart(cart)) {
+    if (hasItems && !validateCart(cart)) {
       console.error('Cart validation failed. Price calculations are inconsistent.');
       // Recalculate cart values to fix inconsistencies
       try {
@@ -82,7 +89,11 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
 
     // Verify stock availability for all items in the cart
     try {
-      const outOfStockItems = await validateMenuItemsStock(restaurantId, cart.items);
+      // Only the lines this diner is actually sending. The table shares one cart doc, so an
+      // unscoped check let Bhanu's sold-out Caesar Salad refuse Asha's Pasta — her round was
+      // blocked by food she never ordered. A caller without addedBy still checks the whole cart.
+      const sending = addedBy ? (cart?.items || []).filter(i => (i?.addedBy || null) === addedBy) : cart?.items;
+      const outOfStockItems = await validateMenuItemsStock(restaurantId, sending);
       if (outOfStockItems.length > 0) {
         const itemNames = outOfStockItems.map(item => item.name || item.menuItemId).join(', ');
         errorHandler.preconditionFailed(`Cannot checkout. The following items are out of stock: ${itemNames}`);
@@ -100,7 +111,9 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
         cart,
         userId,
         notes,
-        sessionId
+        sessionId,
+        requestPayload.requestId,  // OF R1: optional; a repeat of the same tap answers the same order
+        addedBy                    // optional; sends only this diner's lines off the shared table cart
       );
 
       // console.log(`Checkout completed successfully for table ${tableId}, order ID: ${order.id}`);
@@ -110,6 +123,7 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
       return ResponseBuilder.success(
         {
           orderId: order.id,
+          retry: order.retry === true,   // OF-S1: true when this answer is a repeat of a tap that already landed
           orderNumber: order.orderNumber || order.order_number || order.id,
           orderStatus: normalizedStatus,
           timestamp: timestamp.toISOString(order.updatedAt)

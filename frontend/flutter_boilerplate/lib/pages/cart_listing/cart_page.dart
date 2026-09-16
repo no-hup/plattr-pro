@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutterboilerplate/networking/device_id.dart';
 import 'package:flutterboilerplate/pages/cart_listing/cart_listing_state.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_item.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_price_info.dart';
@@ -194,6 +195,23 @@ class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
   }
 }
 
+/// Splits the table's shared cart into the rows this phone may edit and the rows it
+/// may only look at. An item with no owner was written before ownership existed or by
+/// an older app; it stays editable by everyone, which is how the whole cart behaved
+/// before. So does every item when this phone has no id yet.
+(List<CartItem>, List<CartItem>) splitByOwner(List<CartItem> items, String? me) {
+  final mine = <CartItem>[];
+  final theirs = <CartItem>[];
+  for (final item in items) {
+    if (me == null || item.addedBy == null || item.addedBy == me) {
+      mine.add(item);
+    } else {
+      theirs.add(item);
+    }
+  }
+  return (mine, theirs);
+}
+
 class CartItemsList extends StatelessWidget {
   const CartItemsList({
     required this.items,
@@ -208,20 +226,57 @@ class CartItemsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A table shares one cart, so a big table's list is everyone's list. Split it:
+    // you edit your own items and see, but cannot touch, what the rest of the table
+    // has added. Items with no owner (written before ownership, or by an older app)
+    // stay in the shared group everyone can still edit, exactly as before.
+    final (mine, theirs) = splitByOwner(items, DeviceId.value);
+
+    // Header rows and item rows in one flat list so the whole thing scrolls as one.
+    final rows = <Object>[
+      if (theirs.isNotEmpty && mine.isNotEmpty) const _Heading('Yours'),
+      ...mine,
+      if (theirs.isNotEmpty) const _Heading('Rest of the table'),
+      ...theirs,
+    ];
+
     return ListView.separated(
       padding: AppSpacing.pagePadding,
-      itemCount: items.length,
+      itemCount: rows.length,
       separatorBuilder: (context, index) => const Divider(),
       itemBuilder: (context, index) {
-        final item = items[index];
+        final row = rows[index];
+        if (row is _Heading) return row.build(context);
+        final item = row as CartItem;
         return CartItemTile(
           item: item,
           tableId: tableId,
           restaurantId: restaurantId,
+          editable: !theirs.contains(item),
         );
       },
     );
   }
+}
+
+/// A section label inside the cart list. Not a widget class of its own: it is a
+/// marker in the row list so one ListView still draws both groups.
+class _Heading {
+  const _Heading(this.text);
+
+  final String text;
+
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 8, bottom: 4),
+        child: Text(
+          text.toUpperCase(),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                letterSpacing: 1.2,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).hintColor,
+              ),
+        ),
+      );
 }
 
 class CartItemTile extends StatelessWidget {
@@ -229,12 +284,17 @@ class CartItemTile extends StatelessWidget {
     required this.item,
     required this.tableId,
     required this.restaurantId,
+    this.editable = true,
     super.key,
   });
 
   final CartItem item;
   final String tableId;
   final String restaurantId;
+
+  /// False for another diner's item. They can see it — so nobody orders the same
+  /// thing twice — but only the phone that added it can change or remove it.
+  final bool editable;
 
   @override
   Widget build(BuildContext context) {
@@ -437,7 +497,16 @@ class CartItemTile extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // Quantity Control
+          // Quantity Control — only on your own items.
+          if (!editable)
+            Text(
+              'Added by someone else at this table',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).hintColor,
+                    fontStyle: FontStyle.italic,
+                  ),
+            )
+          else
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -469,6 +538,7 @@ class CartItemTile extends StatelessWidget {
               ),
               // Quantity Control - using centralized QuantitySelector
               QuantitySelector(
+                identifierPrefix: 'cart-${item.cartItemId}',
                 quantity: item.quantity,
                 onDecrement: context.watch<CartListingState>().isUpdatingCart ||
                         item.quantity <= 1
@@ -647,7 +717,9 @@ class CartPriceSummary extends StatelessWidget {
 
             SizedBox(
               width: double.infinity,
-              child: PrimaryActionButton(
+              child: Semantics(
+                identifier: 'cart-checkout',
+                child: PrimaryActionButton(
                 label: 'PROCEED TO CHECKOUT',
                 isLoading: state.isUpdatingCart,
                 onPressed: state.isUpdatingCart || hasNoItems
@@ -700,7 +772,7 @@ class CartPriceSummary extends StatelessWidget {
                           }
                         }
                       },
-              ),
+              ),),
             ),
           ],
         ),

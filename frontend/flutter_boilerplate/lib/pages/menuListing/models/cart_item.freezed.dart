@@ -39,6 +39,10 @@ mixin _$CartItem {
   String? get image => throw _privateConstructorUsedError;
   String? get status => throw _privateConstructorUsedError;
   Timestamp? get statusUpdatedAt =>
+      throw _privateConstructorUsedError; // Which phone added this line to the table's shared cart. Null on carts written
+// before ownership existed, and on items added by an older app — those stay one
+// shared unowned pool, which is exactly how the whole table behaved before.
+  String? get addedBy =>
       throw _privateConstructorUsedError; // Legacy support fields for backward compatibility
   double? get itemPrice => throw _privateConstructorUsedError;
   double? get totalPrice => throw _privateConstructorUsedError;
@@ -71,6 +75,7 @@ abstract class $CartItemCopyWith<$Res> {
       String? image,
       String? status,
       Timestamp? statusUpdatedAt,
+      String? addedBy,
       double? itemPrice,
       double? totalPrice});
 
@@ -102,6 +107,7 @@ class _$CartItemCopyWithImpl<$Res, $Val extends CartItem>
     Object? image = freezed,
     Object? status = freezed,
     Object? statusUpdatedAt = freezed,
+    Object? addedBy = freezed,
     Object? itemPrice = freezed,
     Object? totalPrice = freezed,
   }) {
@@ -150,6 +156,10 @@ class _$CartItemCopyWithImpl<$Res, $Val extends CartItem>
           ? _value.statusUpdatedAt
           : statusUpdatedAt // ignore: cast_nullable_to_non_nullable
               as Timestamp?,
+      addedBy: freezed == addedBy
+          ? _value.addedBy
+          : addedBy // ignore: cast_nullable_to_non_nullable
+              as String?,
       itemPrice: freezed == itemPrice
           ? _value.itemPrice
           : itemPrice // ignore: cast_nullable_to_non_nullable
@@ -211,6 +221,7 @@ abstract class _$$CartItemImplCopyWith<$Res>
       String? image,
       String? status,
       Timestamp? statusUpdatedAt,
+      String? addedBy,
       double? itemPrice,
       double? totalPrice});
 
@@ -242,6 +253,7 @@ class __$$CartItemImplCopyWithImpl<$Res>
     Object? image = freezed,
     Object? status = freezed,
     Object? statusUpdatedAt = freezed,
+    Object? addedBy = freezed,
     Object? itemPrice = freezed,
     Object? totalPrice = freezed,
   }) {
@@ -290,6 +302,10 @@ class __$$CartItemImplCopyWithImpl<$Res>
           ? _value.statusUpdatedAt
           : statusUpdatedAt // ignore: cast_nullable_to_non_nullable
               as Timestamp?,
+      addedBy: freezed == addedBy
+          ? _value.addedBy
+          : addedBy // ignore: cast_nullable_to_non_nullable
+              as String?,
       itemPrice: freezed == itemPrice
           ? _value.itemPrice
           : itemPrice // ignore: cast_nullable_to_non_nullable
@@ -323,6 +339,7 @@ class _$CartItemImpl implements _CartItem {
       this.image,
       this.status,
       this.statusUpdatedAt,
+      this.addedBy,
       this.itemPrice,
       this.totalPrice})
       : _selectedVariants = selectedVariants,
@@ -373,6 +390,11 @@ class _$CartItemImpl implements _CartItem {
   final String? status;
   @override
   final Timestamp? statusUpdatedAt;
+// Which phone added this line to the table's shared cart. Null on carts written
+// before ownership existed, and on items added by an older app — those stay one
+// shared unowned pool, which is exactly how the whole table behaved before.
+  @override
+  final String? addedBy;
 // Legacy support fields for backward compatibility
   @override
   final double? itemPrice;
@@ -381,7 +403,7 @@ class _$CartItemImpl implements _CartItem {
 
   @override
   String toString() {
-    return 'CartItem(menuItemId: $menuItemId, cartItemId: $cartItemId, quantity: $quantity, priceInfo: $priceInfo, selectedVariants: $selectedVariants, selectedAddons: $selectedAddons, name: $name, description: $description, image: $image, status: $status, statusUpdatedAt: $statusUpdatedAt, itemPrice: $itemPrice, totalPrice: $totalPrice)';
+    return 'CartItem(menuItemId: $menuItemId, cartItemId: $cartItemId, quantity: $quantity, priceInfo: $priceInfo, selectedVariants: $selectedVariants, selectedAddons: $selectedAddons, name: $name, description: $description, image: $image, status: $status, statusUpdatedAt: $statusUpdatedAt, addedBy: $addedBy, itemPrice: $itemPrice, totalPrice: $totalPrice)';
   }
 
   @override
@@ -408,6 +430,7 @@ class _$CartItemImpl implements _CartItem {
             (identical(other.status, status) || other.status == status) &&
             (identical(other.statusUpdatedAt, statusUpdatedAt) ||
                 other.statusUpdatedAt == statusUpdatedAt) &&
+            (identical(other.addedBy, addedBy) || other.addedBy == addedBy) &&
             (identical(other.itemPrice, itemPrice) ||
                 other.itemPrice == itemPrice) &&
             (identical(other.totalPrice, totalPrice) ||
@@ -429,6 +452,7 @@ class _$CartItemImpl implements _CartItem {
       image,
       status,
       statusUpdatedAt,
+      addedBy,
       itemPrice,
       totalPrice);
 
@@ -464,6 +488,7 @@ abstract class _CartItem implements CartItem {
       final String? image,
       final String? status,
       final Timestamp? statusUpdatedAt,
+      final String? addedBy,
       final double? itemPrice,
       final double? totalPrice}) = _$CartItemImpl;
 
@@ -499,6 +524,10 @@ abstract class _CartItem implements CartItem {
   String? get status;
   @override
   Timestamp? get statusUpdatedAt;
+  @override // Which phone added this line to the table's shared cart. Null on carts written
+// before ownership existed, and on items added by an older app — those stay one
+// shared unowned pool, which is exactly how the whole table behaved before.
+  String? get addedBy;
   @override // Legacy support fields for backward compatibility
   double? get itemPrice;
   @override

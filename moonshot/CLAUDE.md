@@ -8,9 +8,46 @@ new POS work. The root `AGENTS.md` still governs the existing apps.
 ## Commands
 - Unit: `cd backend/src-plattr/functions && npx jest`
 - E2E (emulator): `cd backend/src-plattr/functions/test/e2e && bash run-tests.sh`
-- Emulator: `cd backend/src-plattr && npm run emulators`
+- Emulator: `cd backend/src-plattr && EMU_SLOT=<n> ./emu.sh` — **pick a free slot, see below**
 - Browser sanity: `npm run e2e:ui` in `frontend/till/` — TO BE CREATED, see STATE.md
 - `make check` = lint + typecheck + unit — TO BE CREATED. Must be green before any commit.
+
+## Emulator slots — you are not the only agent on this machine
+
+Several agents work this repo at once. Each one gets its own emulator. This is already built and
+needs no setup, so a port that is taken is never a reason to stop testing.
+
+```bash
+cd backend/src-plattr
+./emu.sh                                 # background shell; takes the first free slot and prints it
+eval "$(EMU_SLOT=3 ./emu.sh env)"        # the shell you test from, with the slot it just printed
+bash functions/test/e2e/run-tests.sh
+```
+
+`./emu.sh` with no `EMU_SLOT` picks the first free slot itself and announces it. Pass `EMU_SLOT=n`
+only when you want a particular one. `env` deliberately refuses to guess — pointing your tests at
+the wrong slot means testing against another agent's database — so give it the slot that was printed.
+
+There are four slots, 0 to 3. Not a budget decision: past slot 3 the port math overlaps (slot 5's UI
+port is slot 0's logging port) and Firebase's own emulator hub takes 4400 upward. If all four are
+busy, `emu.sh` refuses rather than quietly landing on slot 0 and wiping somebody's seed data.
+
+Ports are `base + slot × 100`, so slot 3 is firestore 8380, functions 5302, UI 4301. Each slot is a
+separate database — your seed data cannot be wiped by anyone else, and you cannot wipe theirs.
+`emu.sh` refuses to start on a slot someone already holds, so the guard is automatic.
+
+`npm run emulators` is slot 0. Never use it; it is the one slot everybody collides on.
+
+**Read this before you report an emulator as blocked.** Ports 8080 and 5002 being busy means slot 0
+is busy. It says nothing about slots 1 to 5. Run the loop above and take a free one. "The emulator
+is occupied by another session" is not a finding — it is a slot you did not look for.
+
+Two real limits, so you are not surprised:
+- Every slot runs the same source files. Another agent saving a half-finished function is hot-reloaded
+  into *your* emulator. A failure that makes no sense against your own diff is usually this. Re-run
+  before you debug it.
+- So do not deliberately break shared code to prove a test goes red while other slots are live: you
+  break their runs too. Prove it red at unit level, or wait until you are alone on the machine.
 
 ## Stack (locked)
 Backend: Firebase Cloud Functions (Node.js, TypeScript for new code) + Firestore. Emulator-first.

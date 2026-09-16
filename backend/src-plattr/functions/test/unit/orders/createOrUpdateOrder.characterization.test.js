@@ -150,7 +150,11 @@ describe('createOrUpdateOrder — BL line snapshots written in the same transact
         await createOrUpdateOrder('res_1', 't7', cart, 'guest_1', '', 'sess_1');
         const [pizza, beer] = lineWrites().map(w => w.data);
 
-        expect(pizza).toMatchObject({ name: 'Margherita', qty: 1, listPrice: 50000, offer: null, sent: false, v: 0, countsTowardTotal: true, billId: null });
+        // `sent` moved false → true on 2026-09-16, deliberately. Placing a round IS telling the
+        // kitchen, and the old hardcoded false made ST's whole lineSent branch unreachable (ST-S5
+        // never fired). It is false only behind the waiter-confirmation gate, where the waiter's
+        // confirm flips it — covered in test/unit/orders/waiterConfirmation.test.js.
+        expect(pizza).toMatchObject({ name: 'Margherita', qty: 1, listPrice: 50000, offer: null, sent: true, v: 0, countsTowardTotal: true, billId: null });
         expect(pizza.components).toEqual([{ id: '1_item', kind: 'item', name: 'Margherita', unitListPrice: 50000, taxBlockId: 'food', taxCode: '9963' }]);
         expect(pizza.taxBlocks).toEqual({ food });
         expect(beer).toMatchObject({ listPrice: 49900, taxBlocks: { liquor } });
@@ -205,5 +209,66 @@ describe('createOrUpdateOrder — BL line snapshots written in the same transact
         expect(lines).toHaveLength(2);
         expect(lines.every(w => w.data.orderId === first.id)).toBe(true);
         expect(lines.every(w => w.data.cartId !== firstCartId)).toBe(true);
+    });
+});
+
+// ── Added with cart ownership. A table shares one cart doc; `addedBy` records whose line
+// is whose so one diner's "Place order" sends their own round and leaves the rest of the
+// table's half-built list alone. Callers that send no addedBy behave exactly as above.
+describe('createOrUpdateOrder — one person places their own group', () => {
+    const shared = () => {
+        const c = JSON.parse(JSON.stringify(cart));
+        c.items[0].addedBy = 'dev_asha';   // pizza ₹500
+        c.items[1].addedBy = 'dev_bhanu';  // beer  ₹499
+        db._seed['restaurants/res_1/carts/t7'] = c;
+        return c;
+    };
+
+    test("sends only the placer's lines to the kitchen", async () => {
+        const c = shared();
+        await createOrUpdateOrder('res_1', 't7', c, 'guest_1', '', 'sess_1', null, 'dev_asha');
+        const [written] = writes.set.filter(w => w.path.includes('/orders/'));
+
+        expect(written.data.items.map(i => i.menuItemId)).toEqual(['mi_pizza']);
+        expect(written.data.priceInfo.finalPrice).toBe(500);
+    });
+
+    test("leaves the other diner's items in the cart instead of deleting it", async () => {
+        const c = shared();
+        await createOrUpdateOrder('res_1', 't7', c, 'guest_1', '', 'sess_1', null, 'dev_asha');
+
+        expect(writes.delete).toHaveLength(0);
+        const [left] = writes.update.filter(w => w.path === 'restaurants/res_1/carts/t7');
+        expect(left.data.items.map(i => i.menuItemId)).toEqual(['mi_beer']);
+        expect(left.data.priceInfo.finalPrice).toBe(499);
+    });
+
+    test('deletes the cart when the placer was the last one with items', async () => {
+        const c = JSON.parse(JSON.stringify(cart));
+        c.items.forEach(i => { i.addedBy = 'dev_asha'; });
+        db._seed['restaurants/res_1/carts/t7'] = c;
+
+        await createOrUpdateOrder('res_1', 't7', c, 'guest_1', '', 'sess_1', null, 'dev_asha');
+        expect(writes.delete).toEqual([{ path: 'restaurants/res_1/carts/t7' }]);
+    });
+
+    // Tapping Place order with nothing of your own on the list is the empty-cart refusal,
+    // not a silent send of everyone else's food.
+    test('refuses when the placer has nothing in the cart, and writes nothing', async () => {
+        const c = shared();
+        await expect(
+            createOrUpdateOrder('res_1', 't7', c, 'guest_1', '', 'sess_1', null, 'dev_chetan')
+        ).rejects.toThrow();
+        expect(writes.set).toHaveLength(0);
+        expect(writes.delete).toHaveLength(0);
+        expect(writes.update).toHaveLength(0);
+    });
+
+    test('no addedBy still sends the whole cart and deletes it, as it always has', async () => {
+        shared();
+        await createOrUpdateOrder('res_1', 't7', cart, 'guest_1', '', 'sess_1');
+        const [written] = writes.set.filter(w => w.path.includes('/orders/'));
+        expect(written.data.items.map(i => i.menuItemId)).toEqual(['mi_pizza', 'mi_beer']);
+        expect(writes.delete).toEqual([{ path: 'restaurants/res_1/carts/t7' }]);
     });
 });

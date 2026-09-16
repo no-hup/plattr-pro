@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutterboilerplate/auth/auth_prompt.dart';
+import 'package:flutterboilerplate/networking/device_id.dart';
 import 'package:flutterboilerplate/networking/response_guard_interceptor.dart';
 import 'package:flutterboilerplate/singletonGods/api_constants.dart'; // Assuming ApiConfig is here
 import 'package:flutterboilerplate/singletonGods/logger.dart'; // Assuming AppLogger is here
@@ -55,6 +56,7 @@ class DioClient {
     dioInstance.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
+          stampDeviceId(options);
           AppLogger.log('🌐 API Request: ${options.method} ${options.path}');
           AppLogger.log('📦 Request Data: ${options.data}');
           return handler.next(options);
@@ -99,6 +101,8 @@ class DioClient {
           } catch (_) {}
 
           // Show OTP prompt generically if required
+          // DEBT(TD-003): only 401 → table OTP. Backend-driven PIN/password challenge
+          // (`data.requires`) is not read here; see moonshot/TECH_DEBT.md.
           try {
             if (error.response?.extra['auth_required'] == true) {
               AuthPrompt.showIfNeeded(force: true);
@@ -164,4 +168,22 @@ class DioClient {
 
     return (errorCode, errorMessage);
   }
+}
+
+/// The table's cart is one shared document, so every write to it says which phone
+/// made it. One place, not three repositories — the backend reads `data.addedBy`
+/// on exactly these calls and ignores it everywhere else.
+@visibleForTesting
+void stampDeviceId(RequestOptions options) {
+  const cartEndpoints = {
+    ApiConfig.addItemToCartEndpoint,
+    ApiConfig.removeItemFromCartEndpoint,
+    ApiConfig.checkoutCartEndpoint,
+  };
+  final id = DeviceId.value;
+  if (id == null || !cartEndpoints.contains(options.path)) return;
+  final body = options.data;
+  if (body is! Map) return;
+  final inner = body['data'];
+  if (inner is Map<String, dynamic>) inner['addedBy'] = id;
 }

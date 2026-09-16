@@ -24,6 +24,7 @@ const {
   buildCartItemPriceInfoForQuantity,
   validateCartPriceInfo
 } = require('./addItemToCartBoilerplateHelper');
+const { resolveTableId } = require('../table/mergedTables');
 
 const addItemToCart = functions.https.onCall(async (data, context) => {
   // Load feature flag overrides from Firestore (for test environments)
@@ -37,7 +38,8 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
     quantity,
     selectedVariants = {},
     selectedAddons = [],
-    sessionId
+    sessionId,
+    addedBy = null
   } = data.data;
 
   // Additional validation for quantity
@@ -46,6 +48,9 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
   }
 
   try {
+    // A merged table shares the parent's cart, so resolve before we touch any doc.
+    tableId = await resolveTableId(restaurantId, tableId);
+
     // If sessionId is provided, validate it
     if (sessionId) {
       await validateSessionId(restaurantId, sessionId);
@@ -151,7 +156,8 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
         selectedAddonsDetails,
         quantity,
         itemPriceDetails,
-        getNextCartItemId(cart.items)
+        getNextCartItemId(cart.items),
+        addedBy
       );
 
       // Check if identical item (same variants + addons) already exists

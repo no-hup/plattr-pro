@@ -155,6 +155,11 @@ class CartItem with _$CartItem {
 
     String? status,
     Timestamp? statusUpdatedAt,
+
+    // Which phone added this line to the table's shared cart. Null on carts written
+    // before ownership existed, and on items added by an older app — those stay one
+    // shared unowned pool, which is exactly how the whole table behaved before.
+    String? addedBy,
     
     // Legacy support fields for backward compatibility
     double? itemPrice,

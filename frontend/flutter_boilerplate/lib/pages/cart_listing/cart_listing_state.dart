@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutterboilerplate/auth/auth_prompt.dart';
 import 'package:flutterboilerplate/pages/cart_listing/cart_helper.dart';
 import 'package:flutterboilerplate/pages/cart_listing/cart_listing_repository.dart';
+import 'package:flutterboilerplate/pages/checkout_order_flow/checkout_request_id.dart';
 import 'package:flutterboilerplate/pages/checkout_order_flow/models/checkout_models.dart';
 import 'package:flutterboilerplate/pages/menuListing/add_cart_response.dart'
     as legacy;
@@ -41,6 +42,7 @@ class CartListingState extends ChangeNotifier with OffersStateMixin {
 
   // Checkout state
   bool _isCheckingOut = false;
+  final _requestId = CheckoutRequestId();   // OF-S1
   bool get isCheckingOut => _isCheckingOut;
 
   CheckoutResponse? _checkoutResponse;
@@ -164,15 +166,11 @@ class CartListingState extends ChangeNotifier with OffersStateMixin {
                     '⚠️ CART: No matching menu item found for repair, using fallback',
                   );
                   // Create a basic repaired item
-                  final repairedItem = CartItem(
-                    menuItemId: item.menuItemId,
-                    quantity: item.quantity,
+                  // copyWith, not a rebuild: a rebuild drops addedBy and the item
+                  // stops belonging to the diner who ordered it.
+                  final repairedItem = item.copyWith(
                     name: item.name ?? 'Unknown Item',
-                    description: item.description,
-                    image: item.image,
                     priceInfo: const CartItemPriceInfo(),
-                    selectedVariants: item.selectedVariants,
-                    selectedAddons: item.selectedAddons,
                   );
 
                   repairedItems.add(repairedItem);
@@ -389,15 +387,10 @@ class CartListingState extends ChangeNotifier with OffersStateMixin {
                       '⚠️ CART: No menu item found for repair after update',
                     );
                     // Create a basic repaired item
-                    final repairedItem = CartItem(
-                      menuItemId: cartItem.menuItemId,
-                      quantity: cartItem.quantity,
+                    // copyWith, not a rebuild: see the same repair above.
+                    final repairedItem = cartItem.copyWith(
                       name: cartItem.name ?? 'Unknown Item',
-                      description: cartItem.description,
-                      image: cartItem.image,
                       priceInfo: const CartItemPriceInfo(),
-                      selectedVariants: cartItem.selectedVariants,
-                      selectedAddons: cartItem.selectedAddons,
                     );
 
                     repairedItems.add(repairedItem);
@@ -534,17 +527,24 @@ class CartListingState extends ChangeNotifier with OffersStateMixin {
       AppLogger.log('🛒 CART: Starting checkout process');
 
       // Check for active session
-      final sessionId = _sessionProvider.sessionId;
+      var sessionId = _sessionProvider.sessionId;
+
+      if (sessionId == null || sessionId.isEmpty) {
+        // No session yet (e.g. the page was reloaded mid-order). Prompt for OTP
+        // and pick up the session it establishes — awaiting it, because firing
+        // it and returning an error here latches an error screen that the
+        // successful re-auth never clears.
+        await AuthPrompt.showIfNeeded(
+          restaurantId: restaurantId,
+          tableId: tableId,
+        );
+        sessionId = _sessionProvider.sessionId;
+      }
 
       if (sessionId == null || sessionId.isEmpty) {
         _error = 'No active session found. Please scan the QR code again.';
         _isCheckingOut = false;
         notifyListeners();
-        // Proactively prompt OTP since no session exists (no network call will be made)
-        AuthPrompt.showIfNeeded(
-          restaurantId: restaurantId,
-          tableId: tableId,
-        );
         return false;
       }
 
@@ -554,11 +554,13 @@ class CartListingState extends ChangeNotifier with OffersStateMixin {
         tableId: tableId,
         sessionId: sessionId,
         notes: notes,
+        requestId: _requestId.current,   // OF-S1: kept while this tap is in flight
       );
 
       // Check if response is success or error
       return response.when(
         success: (data, message) {
+          _requestId.settled();
           _checkoutResponse = data;
           _isCheckingOut = false;
           notifyListeners();
@@ -574,6 +576,7 @@ class CartListingState extends ChangeNotifier with OffersStateMixin {
           return true;
         },
         error: (message, errorCode, errorDetails) {
+          if (!CheckoutRequestId.keepsId(errorCode)) _requestId.settled();   // the server answered: next tap is a new act
           _isCheckingOut = false;
           notifyListeners();
 
