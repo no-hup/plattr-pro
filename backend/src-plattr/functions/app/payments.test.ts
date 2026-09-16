@@ -16,10 +16,13 @@ type Fail = 'row' | 'bill' | 'mirror' | 'note' | 'audit' | 'config' | 'day' | 'v
 interface Opts { staff?: Partial<Staff>; config?: unknown; bill?: Partial<BillDoc> | null; note?: Partial<Note> | null; closed?: boolean | null; fail?: Fail; abortOnce?: boolean; hideFromQuery?: boolean; onTransact?: (n: number, p: Fake) => void; now?: number }
 type Fake = Ports & {
   rows: Map<string, StoredRow>; bills: Map<string, BillDoc>; notes: Map<string, Note>; orders: Map<string, Mirror>; audits: Map<string, AuditRow>;
-  logs: object[]; warnings: string[]; calls: string[]; tick(ms: number): void; sessions: Set<string>;
+  logs: object[]; warnings: string[]; calls: string[]; tick(ms: number): void; sessions: Set<string>; setClosed(v: boolean | null): void;
 };
 
 function fakePorts(opts: Opts = {}): Fake {
+  // DC writes restaurants/{id}/dayClose/{businessDate}; PY only ever asks. Mutable so a test can
+  // take money on an open day and then close it, which is the order it happens in real life.
+  let dayIsClosed: boolean | null = opts.closed === undefined ? false : opts.closed;
   const rows = new Map<string, StoredRow>();
   const bills = new Map<string, BillDoc>();
   if (opts.bill !== null) bills.set('0417', { payable: 60900, status: 'issued', cid: 'c417', orderId: 'o417', paidTotal: 0, paidAt: null, paidBy: null, ...opts.bill });
@@ -35,6 +38,7 @@ function fakePorts(opts: Opts = {}): Fake {
   const p: Fake = {
     rows, bills, notes, orders, audits, logs, warnings, calls, sessions: new Set([`${RID}/s1`]),
     tick: ms => { now += ms; },
+    setClosed: v => { dayIsClosed = v; },
     now: () => now,
     log: l => logs.push(l),
     warn: w => warnings.push(w),
@@ -53,7 +57,7 @@ function fakePorts(opts: Opts = {}): Fake {
           rowsForBill: async b => { calls.push('rowsForBill'); return opts.hideFromQuery ? [] : [...rows.values()].filter(r => r.billId === b); },
           readBill: async id => { calls.push('readBill'); const d = bills.get(id); return d ? { bill: { billId: id, payable: d.payable, status: d.status }, cid: d.cid, orderId: d.orderId, paidAt: d.paidAt, paidBy: d.paidBy } as BillRead : null; },
           readNote: async id => { calls.push('readNote'); return notes.get(id) ?? null; },
-          dayClosed: async () => { calls.push('dayClosed'); return opts.closed === undefined ? false : opts.closed; },
+          dayClosed: async () => { calls.push('dayClosed'); return dayIsClosed; },
           createRow: (id, row) => { if (opts.fail === 'row') throw new Error('firestore unavailable'); if (rows.has(id) || pr.has(id)) throw new Error('already exists'); pr.set(id, row); },
           setVoid: (id, v) => { if (opts.fail === 'void') throw new Error('firestore unavailable'); pv.set(id, v); },
           stampBill: (id, s) => { if (opts.fail === 'bill') throw new Error('firestore unavailable'); pb.set(id, s); },
@@ -553,10 +557,54 @@ describe('app/payments voidRow() — R15', () => {
     expect(q.rows.get('p1')?.void?.by).toBe('m1');
   });
   it('PY-S29 void a row whose businessDate DC has closed → failed-precondition', async () => {
-    const p = fakePorts({ closed: true });
-    await take(p, tk('p1', 60900));
+    const p = fakePorts();
+    await take(p, tk('p1', 60900));   // money taken while the day was still open
+    p.setClosed(true);                // DC counts the drawer and signs it off
     expect((await fails(voidRow(p, vd('p1')))).code).toBe('failed-precondition');
     expect(p.rows.get('p1')?.void).toBeNull();
+  });
+
+  // ── DC R6: the lid is real, not a slogan. PY refused a VOID on a closed day and happily
+  // accepted new cash onto it. The date that matters is the one on the row being written.
+  it('DC-S6 a take on a business date DC has closed → failed-precondition, and no row is written', async () => {
+    const p = fakePorts();
+    p.setClosed(true);
+    const e = await fails(take(p, tk('p1', 60900)));
+    expect(e.code).toBe('failed-precondition');
+    expect(e.message).toMatch(/closed and counted/);
+    expect(p.rows.size).toBe(0);
+    expect(p.bills.get('0417')?.paidTotal).toBe(0);
+  });
+  it('DC-S6 a refund on a closed business date → failed-precondition, and the note is untouched', async () => {
+    const p = fakePorts();
+    await take(p, tk('p1', 60900));
+    p.setClosed(true);
+    const e = await fails(refund(p, { restaurantId: RID, sessionId: 's1', billId: '0417', paymentId: 'p2', tenderId: 'cash', amount: 8400, creditNoteId: 'CN-0007', reason: 'wrong dish', pin: '1234' }));
+    expect(e.code).toBe('failed-precondition');
+    expect(p.notes.get('CN-0007')?.refundedTotal).toBe(0);
+  });
+  it('DC R1 a day state that cannot be read refuses the take: unknown is never open', async () => {
+    const p = fakePorts();
+    p.setClosed(null);
+    const e = await fails(take(p, tk('p1', 60900)));
+    expect(e.code).toBe('failed-precondition');
+    expect(e.message).toMatch(/Cannot tell whether/);
+    expect(p.rows.size).toBe(0);
+  });
+  it('DC R6 the gate can pass as well as fail: an open day still takes the money', async () => {
+    const p = fakePorts();
+    p.setClosed(false);
+    const r = await take(p, tk('p1', 60900));
+    expect(r.bill.status).toBe('paid');
+    expect(p.calls).toContain('dayClosed');
+  });
+  it('DC R6 a retry of a take made BEFORE the close still succeeds after it: the row already exists', async () => {
+    const p = fakePorts();
+    await take(p, tk('p1', 60900));
+    p.setClosed(true);
+    const again = await take(p, tk('p1', 60900));
+    expect(again.retry).toBe(true);
+    expect(p.rows.size).toBe(1);
   });
   it('R15 a void does NOT open the drawer and writes no cash-movement row: list() for the day shows the voided row excluded and no compensating entry', async () => {
     const p = fakePorts();

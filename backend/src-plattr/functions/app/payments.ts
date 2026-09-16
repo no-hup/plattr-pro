@@ -64,6 +64,23 @@ const state = (b: BillRead, rows: Row[], cfg: PaymentsConfig): BillState => {
   return { billId: b.bill.billId, payable: b.bill.payable, paidTotal, outstanding: b.bill.payable - paidTotal, status, mirror: mirrorFor(b.bill, paidTotal, cfg) };
 };
 
+
+/**
+ * R6 (DC): nothing may be written to a day whose drawer has been counted and signed off.
+ * The date that matters is the one on the ROW being written, not the one on the bill behind it —
+ * so last night's meal refunded at 12:30 today is fine (a new row, today's date), and only a void,
+ * which rewrites a row already counted, is judged on the original row's date (that is canVoid).
+ * Read INSIDE the write transaction on purpose: Firestore tracks a read of a document that does not
+ * exist, so this read is what makes DC's `create` and this payment contend instead of both winning.
+ */
+async function dayOpenOrThrow(t: Tx, businessDate: string): Promise<void> {
+  const closed = await t.dayClosed(businessDate);
+  if (closed === false) return;
+  throw new ApprovalError('failed-precondition', closed === null
+    ? `Cannot tell whether ${businessDate} has been closed, so no money can be taken on it`
+    : `${businessDate} has been closed and counted; money cannot be added to it`);
+}
+
 /** R2, R4: status follows the rows both ways; bill stamp and order mirror land with the row or not at all. */
 function stamp(t: Tx, b: BillRead, rows: Row[], at: number, by: string, cfg: PaymentsConfig): BillState {
   const s = state(b, rows, cfg);
@@ -116,6 +133,7 @@ export async function take(ports: Ports, req: TakeReq): Promise<WriteResult> {
         if (!b) throw new ApprovalError('failed-precondition', 'No bill');
         return { row: existing, bill: state(b, rows, cfg), retry: true, opensDrawer: false };
       }
+      await dayOpenOrThrow(t, businessDate);
       refuse(canTake(b?.bill ?? null, rows, { ...req, role: staff.role }, cfg));
       const bill = b as BillRead;
       cid = bill.cid;
@@ -180,6 +198,7 @@ export async function refund(ports: Ports, req: RefundReq): Promise<WriteResult>
         if (!b) throw new ApprovalError('failed-precondition', 'No bill');
         return { row: existing, bill: state(b, rows, cfg), retry: true, opensDrawer: false };
       }
+      await dayOpenOrThrow(t, businessDate);
       const noteId = str(req.creditNoteId) ? req.creditNoteId : null;
       const target = str(req.refundsPaymentId) ? rows.find(r => r.paymentId === req.refundsPaymentId) ?? null : null;
       const note = noteId ? await t.readNote(noteId) : null;   // R7: the note is read inside, never the collection queried for its total

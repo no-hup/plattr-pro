@@ -4,14 +4,16 @@ import { PinPrompt } from './features/approvals/PinPrompt'
 import { fetchReasons, useApproval, type LineSnapshot } from './features/approvals/useApproval'
 import { BillScreen } from './features/billing/BillScreen'
 import { TenderScreen } from './features/payments/TenderScreen'
+import { DayCloseScreen } from './features/dayclose/DayCloseScreen'
 
 // Screens are picked by the URL: ?r=<restaurantId>&line=<lineId> discounts one line (ST); ?r=&draft=<draftId> shows that draft's bill (BL);
-// ?r=&bill=<billId> takes money against an issued bill (PY).
+// ?r=&bill=<billId> takes money against an issued bill (PY); ?r=&day=1 (or &day=2026-09-16) counts the drawer and closes the day (DC).
 const q = new URLSearchParams(location.search)
 const RESTAURANT = q.get('r') ?? ''
 const LINE = q.get('line') ?? ''
 const DRAFT = q.get('draft') ?? ''
 const BILL = q.get('bill') ?? ''
+const DAY = q.get('day') ?? ''
 
 export default function App() {
   const [session, setSession] = useState<{ sessionId: string; name: string } | null>(null)
@@ -57,6 +59,8 @@ export default function App() {
           <input name="email" placeholder="email" data-testid="email" /> <input name="password" type="password" placeholder="password" data-testid="password" />
           <button type="submit" data-testid="login">Log in</button>
         </form>
+      ) : DAY ? (
+        <DayCloseScreen ctx={{ restaurantId: RESTAURANT, sessionId: session.sessionId, ...(DAY === '1' ? {} : { businessDate: DAY }) }} />
       ) : BILL ? (
         <TenderScreen ctx={{ restaurantId: RESTAURANT, sessionId: session.sessionId, billId: BILL }} reasons={reasons} />
       ) : DRAFT ? (

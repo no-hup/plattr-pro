@@ -88,6 +88,12 @@ exports.payments = {
   void: require('./lib/api/payments').voidHandler,
   list: require('./lib/api/payments').listHandler,
 };
+exports.dayClose = {
+  close: require('./lib/api/dayClose').closeHandler,
+  get: require('./lib/api/dayClose').getHandler,
+  move: require('./lib/api/dayClose').moveHandler,
+  voidMove: require('./lib/api/dayClose').voidMoveHandler,
+};
 exports.billing = {
   preview: require('./lib/api/billing').previewHandler,
   issue: require('./lib/api/billing').issueHandler,
