@@ -77,8 +77,18 @@ is context missing when the module is half built.
   Functions. The client sends item, quantity, note. Nothing else is trusted.
 - **Hacks are labelled.** Any shortcut, workaround or not-ideal call gets `// DEBT(TD-nnn): why`
   at the site and a row in `moonshot/TECH_DEBT.md`. No row, no merge.
-- **Logs are for the agent.** One JSON line per state change, one `cid` per bill/order carried
-  everywhere. No request dumps.
+- **Catch it, don't cage it.** We defend against the staff, not against the account holder: one
+  trusted login is assumed, and every act it takes is recorded. **Prevent** only what is unbounded,
+  irreversible, or filed with someone outside — client-sent money, a hard delete, a wrong tax rate,
+  a broken number series. **Record** everything else and let it be caught the next morning. A day's
+  theft found tomorrow is a cost of doing business; a night that reads clean because nothing was
+  written is the failure. Never a reason to skip a test, a check at a trust boundary, or an audit
+  row: detection is the higher bar, not the lower one.
+- **Logs and audit rows are one feature, not two.** One JSON line per state change, one `cid` per
+  bill, order or day carried everywhere, and one append-only audit row per act a person chose to
+  take, written in the same transaction as the act. No request dumps. They are read by an agent,
+  not a human: written to be judged without joining five collections, and a quiet day must be
+  distinguishable from a day whose logging broke.
 - **One door per cross-cutting thing.** Auth checks, the error shape, the credential challenge, config
   reads, logging, money maths: each has one shared place (table above) and every new call path goes
   through it. Before writing a handler, look for the door. Before adding a door, name the second
