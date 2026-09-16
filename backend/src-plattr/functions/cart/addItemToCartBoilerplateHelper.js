@@ -234,8 +234,15 @@ function findIdenticalItemInCart(cartItems, newItem, compareArraysIgnoringOrder)
     return -1;
   }
 
+  // Same dish, same config, DIFFERENT person = a different line. Asha and Bhanu both
+  // ordering a Margherita used to collapse into one line of qty 2, so Asha removing
+  // hers took Bhanu's with it. `addedBy` is absent on carts written before this and on
+  // clients that don't send it; those stay one shared unowned pool, exactly as before.
+  const owner = newItem.addedBy || null;
+
   return cartItems.findIndex(item => {
     if (item?.menuItemId !== menuItemId) return false;
+    if ((item?.addedBy || null) !== owner) return false;
 
     // Compare variants regardless of order
     const variantsMatch = compareArraysIgnoringOrder(
@@ -499,7 +506,7 @@ function buildCartItemPriceInfoForQuantity(menuItem, selectedVariantsDetails, se
   }).toObject();
 }
 
-function createCartItem(menuItemId, menuItem, selectedVariantsDetails, selectedAddonsDetails, quantity, priceDetails, cartItemId) {
+function createCartItem(menuItemId, menuItem, selectedVariantsDetails, selectedAddonsDetails, quantity, priceDetails, cartItemId, addedBy) {
   // priceDetails is kept in the signature for backward compatibility with the
   // one caller (addItemToCart.js), but we deliberately re-derive the priceInfo
   // from `menuItem` so createCartItem and the increment/decrement recalc paths
@@ -545,6 +552,9 @@ function createCartItem(menuItemId, menuItem, selectedVariantsDetails, selectedA
     quantity: sanitizeNumber(quantity, 1),
     priceInfo: standardizedPriceInfo,
     cartItemId,
+    // Who put this on the table's list. A device id from the guest app, not an account:
+    // it says "this phone", which is all a QR guest ever tells us. null = unowned/legacy.
+    addedBy: addedBy || null,
     status: FULFILLMENT_STATUS.PENDING
   };
 }

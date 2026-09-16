@@ -37,6 +37,7 @@ _$CartItemImpl _$$CartItemImplFromJson(Map json) {
         ? null
         : Timestamp.fromJson(
             Map<String, dynamic>.from(json['statusUpdatedAt'] as Map)),
+    addedBy: json['addedBy'] as String?,
     itemPrice: (json['itemPrice'] as num?)?.toDouble(),
     totalPrice: (json['totalPrice'] as num?)?.toDouble(),
   );
@@ -57,6 +58,7 @@ Map<String, dynamic> _$$CartItemImplToJson(_$CartItemImpl instance) =>
       'image': instance.image,
       'status': instance.status,
       'statusUpdatedAt': instance.statusUpdatedAt?.toJson(),
+      'addedBy': instance.addedBy,
       'itemPrice': instance.itemPrice,
       'totalPrice': instance.totalPrice,
     };

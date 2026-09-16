@@ -113,17 +113,16 @@ class CartHelper {
         discount: menuItem.priceInfo.discount ?? 0,
       );
       
-      // Create a repaired item
-      final repairedItem = CartItem(
-        menuItemId: item.menuItemId,
-        cartItemId: item.cartItemId,
-        quantity: item.quantity,
+      // Fill the gaps, keep everything else. Rebuilding this field by field is how
+      // `addedBy` (whose item it is) and `status` (where the kitchen has got to) went
+      // missing: a repair is supposed to supply what the wire left out, not quietly
+      // drop what it sent. copyWith means the next field added to CartItem survives
+      // this path without anyone remembering to come back here.
+      final repairedItem = item.copyWith(
         name: item.name ?? menuItem.meta.name,
         description: item.description ?? menuItem.meta.description,
         image: item.image ?? menuItem.meta.image,
         priceInfo: priceInfo,
-        selectedVariants: item.selectedVariants,
-        selectedAddons: item.selectedAddons,
         itemPrice: item.itemPrice ?? menuItem.priceInfo.basePrice.toDouble(),
         totalPrice: item.totalPrice ?? (menuItem.priceInfo.finalPrice.toDouble() ?? 0) * item.quantity,
       );

@@ -11,6 +11,7 @@ import 'package:get_it/get_it.dart';
 import 'app.dart';
 import 'env.dart';
 import 'firebase_options.dart';
+import 'networking/device_id.dart';
 import 'utils/http_client.dart';
 
 void main() async {
@@ -22,6 +23,10 @@ void main() async {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
+      // Whose item is whose on the table's shared cart. Awaited before the first
+      // request so no cart write ever goes out unowned.
+      await DeviceId.load();
+
       GetIt.instance.registerLazySingleton(
         () => HttpClient(baseOptions: BaseOptions(baseUrl: Env.serverUrl)),
       );

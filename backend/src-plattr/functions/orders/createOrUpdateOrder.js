@@ -28,10 +28,23 @@ const { writeLineSnapshots, loadTaxBlocks } = require('./lineSnapshots');
  * @param {string} [sessionId=null] - ID of the session (optional)
  * @returns {Object} The created or updated order
  */
-exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'system', notes = '', sessionId = null) => {
+// OF R1: `requestId` is the guest app's id for one "Place order" tap. A repeat with the same id in the
+// same session is the same act and answers the existing order with `retry: true`, writing nothing.
+// Absent (every caller before OF) means today's behaviour, unchanged.
+// `addedBy` is the device id of the diner tapping Place order. A table shares one cart doc, so
+// this sends that person's own lines as a round and leaves everyone else's half-built list where
+// it is. Absent (every caller before cart ownership) means the whole cart, unchanged.
+exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'system', notes = '', sessionId = null, requestId = null, addedBy = null) => {
+  if (typeof requestId !== 'string' || requestId === '') requestId = null;
   // Validate required parameters
   try {
-    OrderInputValidation.validateCreateOrUpdateOrderFields(restaurantId, tableId, cart);
+    // OF R1: with a requestId an empty or missing cart is not refused here; the transaction below
+    // answers the existing order for a retry and refuses everything else the same way as today.
+    if (requestId && !(cart && Array.isArray(cart.items) && cart.items.length > 0)) {
+      if (!restaurantId || !tableId) throw new Error('Restaurant ID and table ID are required');
+    } else {
+      OrderInputValidation.validateCreateOrUpdateOrderFields(restaurantId, tableId, cart);
+    }
     // Session validation is removed as it's already done in checkoutCart
     // This avoids duplicate validation and potential double errors
   } catch (error) {
@@ -51,6 +64,15 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
   // config, and never re-read at billing time (SPEC_BL R12).
   const taxBlocks = await loadTaxBlocks(restaurantId);
 
+  // Waiter confirmation gate: read out-of-band like the two configs above. Decides the
+  // fulfillment status a checked-out cart is BORN with, and nothing else.
+  const entryStatus = (await loadRequireWaiterConfirmation(restaurantId))
+    ? FULFILLMENT_STATUS.AWAITING_CONFIRMATION
+    : FULFILLMENT_STATUS.PENDING;
+  // A line is "sent" once the kitchen has been told. Without the gate that is the moment of
+  // checkout; with it, the waiter's confirm (cart/updateCartStatus → markLinesSent).
+  const linesAreSent = entryStatus === FULFILLMENT_STATUS.PENDING;
+
   // The cart is re-read INSIDE the transaction below. `cart` (the caller's
   // out-of-band read) was only used for pre-checks; the live doc is authoritative
   // so an addItemToCart that lands mid-checkout either retries this transaction
@@ -67,9 +89,12 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
       // 0. Read the live cart (locks it for the duration of the transaction)
       const liveCartDoc = await transaction.get(cartRef);
       const liveCart = liveCartDoc.exists ? liveCartDoc.data() : null;
-      if (!liveCart || !Array.isArray(liveCart.items) || liveCart.items.length === 0) {
-        errorHandler.preconditionFailed('Cannot process an empty cart', { restaurantId, tableId });
-      }
+
+      // Split the table's shared list into what this diner is placing and what stays behind.
+      // Done before the fingerprint below so a retry is judged against the same lines it sent.
+      const allItems = (liveCart && Array.isArray(liveCart.items)) ? liveCart.items : [];
+      const stayingItems = addedBy ? allItems.filter(i => (i && i.addedBy) !== addedBy) : [];
+      if (liveCart && addedBy) liveCart.items = allItems.filter(i => (i && i.addedBy) === addedBy);
 
       // 1. Read this sitting's existing orders.
       // Scoped by sessionId, not tableId: the only order we can append to is one
@@ -85,6 +110,31 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
           )
         : null;
 
+      // OF-S1 / OF-S2: a repeat of a tap that already landed. Judged BEFORE the empty-cart refusal,
+      // because the first transaction deleted the cart, and that is exactly what a retry looks like.
+      // Same shape as PY R13: same id and matching details → the existing thing, retry: true;
+      // a different cart under the same id → refused. Only the cart snapshot on the order carries
+      // the id, since the live cart it came from is gone.
+      if (requestId && orderSnapshot) {
+        // Nothing of ours left on the table's list reads the same as no cart at all: the first
+        // tap took it. Without this a partial checkout's retry would compare against the other
+        // diners' items and be refused as a different cart.
+        const liveFingerprint = (liveCart && liveCart.items.length) ? cartFingerprint(liveCart) : null;
+        for (const doc of orderSnapshot.docs) {
+          const prior = (doc.data().carts || []).find(c => c && c.requestId === requestId);
+          if (!prior) continue;
+          if (liveFingerprint !== null && liveFingerprint !== prior.fingerprint) {
+            errorHandler.preconditionFailed('requestId already used for a different cart', { restaurantId, tableId, requestId });
+          }
+          console.log(JSON.stringify({ mod: 'checkout', cid: doc.id, requestId, outcome: 'retry' }));
+          return { id: doc.id, ...doc.data(), retry: true };
+        }
+      }
+
+      if (!liveCart || !Array.isArray(liveCart.items) || liveCart.items.length === 0) {
+        errorHandler.preconditionFailed('Cannot process an empty cart', { restaurantId, tableId });
+      }
+
       // 2. Read table doc (needed for assignedServerId)
       const tableRef = db.collection('restaurants').doc(restaurantId)
         .collection('tables').doc(tableId);
@@ -97,6 +147,11 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
 
       // ── PROCESSING (no more reads after this point) ──────────────
 
+      // Priced here, in the processing phase: a transaction may not read after it writes.
+      const stayingPriceInfo = stayingItems.length
+        ? await calculateCartValue({ ...liveCart, items: stayingItems })
+        : null;
+
       if (!validateCart(liveCart)) {
         console.error('Cart validation failed inside checkout transaction; recalculating prices.');
         liveCart.priceInfo = await calculateCartValue(liveCart);
@@ -106,9 +161,10 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
       const cartSnapshot = {
         ...liveCart,
         cartId: `${restaurantId}_${tableId}_${uuidv4().substring(0, 8)}`, // Add a unique cartId with restaurant and table prefix
-        status: FULFILLMENT_STATUS.PENDING,
+        ...(requestId ? { requestId, fingerprint: cartFingerprint(liveCart) } : {}),   // OF R1
+        status: entryStatus,
         statusHistory: [{
-          status: FULFILLMENT_STATUS.PENDING,
+          status: entryStatus,
           timestamp: timestamp.now(), // concrete: a serverTimestamp sentinel is rejected inside an array (carts[])
           userId
         }],
@@ -181,10 +237,20 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
         placedBy: userId,
         blocks: taxBlocks,
         now: Date.now(),
+        sent: linesAreSent,
       });
 
-      // The cart becomes the order atomically — no window where both exist.
-      transaction.delete(cartRef);
+      // The cart becomes the order atomically — no window where both exist. When other diners
+      // still have unplaced items, only the placed lines leave; their list survives untouched.
+      if (stayingItems.length) {
+        transaction.update(cartRef, {
+          items: stayingItems,
+          priceInfo: stayingPriceInfo,
+          lastUpdated: timestamp.now(),
+        });
+      } else {
+        transaction.delete(cartRef);
+      }
 
       return orderResult;
     });
@@ -198,6 +264,24 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
     });
   }
 };
+
+/**
+ * OF R1: what "the same cart" means for a retry. Item, variants, add-ons and quantity, sorted so the
+ * order the app serialised them in does not matter. Prices are deliberately not part of it: the
+ * server re-prices anyway, and a menu edit between the tap and the retry must not turn one order into two.
+ */
+function cartFingerprint(cart) {
+  return (Array.isArray(cart?.items) ? cart.items : [])
+    .filter(i => i && i.menuItemId)
+    .map(i => [
+      i.menuItemId,
+      Object.entries(i.selectedVariants || {}).sort().map(([g, v]) => `${g}=${v}`).join(','),
+      (Array.isArray(i.selectedAddons) ? i.selectedAddons : []).map(a => (typeof a === 'string' ? a : a?.id ?? a?.addonId ?? '')).sort().join(','),
+      typeof i.quantity === 'number' && i.quantity > 0 ? i.quantity : 1,
+    ].join(':'))
+    .sort()
+    .join('|');
+}
 
 /**
  * Normalizes cart items into a standardized format suitable for order storage
@@ -250,7 +334,9 @@ function normalizeCartItemsForOrder(cart) {
       // before this field existed simply aren't cascaded to.
       ...(cart.cartId ? { cartId: cart.cartId } : {}),
       checkoutTime: timestamp.now(), // items[] is an array: no sentinels
-      status: FULFILLMENT_STATUS.PENDING,
+      // Mirror the cart this copy came from. Hardcoding PENDING here put the flat copy
+      // one step ahead of carts[] the moment the confirmation gate was switched on.
+      status: mapCartStatus(cart.status) || FULFILLMENT_STATUS.PENDING,
     };
   }).filter(Boolean); // Remove null items
 }
@@ -508,6 +594,26 @@ async function buildOrderPriceInfo(restaurantId, carts, sessionId, chargesConfig
     appliedOffer,
     offerDiscount
   };
+}
+
+/**
+ * Does this restaurant make a waiter confirm a guest-placed cart before the kitchen sees it?
+ *
+ * Lives in `restaurants/{id}/config/settings` under `ordering.requireWaiterConfirmation`
+ * (same doc as the tax blocks), NOT in the FeatureFlags singleton: that singleton is
+ * process-global and this has to be per-restaurant. Missing config means false, so every
+ * existing restaurant keeps the old straight-to-kitchen behaviour.
+ */
+async function loadRequireWaiterConfirmation(restaurantId) {
+  try {
+    const doc = await db.collection('restaurants').doc(restaurantId)
+      .collection('config').doc('settings').get();
+    return doc.exists && doc.data()?.ordering?.requireWaiterConfirmation === true;
+  } catch (e) {
+    // A config read that fails must not block a checkout. Fall back to the old behaviour.
+    console.warn(`createOrUpdateOrder: could not read ordering config for ${restaurantId}: ${e.message}`);
+    return false;
+  }
 }
 
 function isLiveCart(cart) {

@@ -1,5 +1,26 @@
 # E2E API Test Suite — Agent Instructions
 
+## Before anything: claim an emulator slot
+
+Other agents are testing on this machine right now. Each gets its own emulator, so a busy port
+is never a reason to stop. Find a free slot and take it:
+
+```bash
+cd ../../..                              # backend/src-plattr
+./emu.sh                                 # background shell; takes the first free slot and prints it
+eval "$(EMU_SLOT=3 ./emu.sh env)"        # THIS shell, with the slot it printed, before run-tests.sh
+```
+
+`./emu.sh` picks a free slot on its own. There are four (0-3); if all are busy it refuses rather
+than landing on slot 0 and wiping someone's data. `env` will not guess a slot for you.
+
+Slot N = firestore `8080+N*100`, functions `5002+N*100`. Separate databases, so nobody's seed data
+can wipe yours. `run-tests.sh` reads `PLATTR_BASE_URL` from that `eval`, so skipping it silently
+tests slot 0 — somebody else's data.
+
+8080 and 5002 busy means *slot 0* is busy, nothing more. Do not report the emulator as blocked
+without running the loop above.
+
 ## Quick Start
 
 ```bash
@@ -66,6 +87,7 @@ Each suite uses dedicated tables to avoid interference:
 | `table_clean_6` | order-lifecycle (cancel flow) |
 | `table_clean_7` | customer-journey (expanded) |
 | `table_clean_8` | coverage (checkout → server order detail / mark served) |
+| `table_clean_9` | waiter-confirmation (guest order held back from the kitchen) |
 
 ## Auth-gated endpoints (coverage suite)
 

@@ -408,4 +408,102 @@ describe('removeItemFromCart Tests (Phase 2.5 decrement pricing)', () => {
       ).rejects.toThrow();
     });
   });
+
+  /**
+   * Ownership. The table shares one cart doc, so until `addedBy` existed anyone
+   * could delete anyone's food and nobody could tell whose was whose.
+   * `addedBy` is a device id from the guest app, absent on legacy carts and on
+   * clients that never send it — those stay one shared unowned pool as before.
+   */
+  describe('ownership', () => {
+    const twoOwnersCart = () => ({
+      restaurantId: DEFAULT_RESTAURANT_ID,
+      tableId: DEFAULT_TABLE_ID,
+      items: [
+        {
+          cartItemId: 1,
+          menuItemId: 'item001',
+          quantity: 1,
+          addedBy: 'dev_asha',
+          priceInfo: priceInfoForQty(100, 100, 1),
+          selectedVariantsDetails: [],
+          selectedAddonsDetails: [],
+          status: FULFILLMENT_STATUS.PENDING,
+        },
+        {
+          cartItemId: 2,
+          menuItemId: 'item001',
+          quantity: 1,
+          addedBy: 'dev_bhanu',
+          priceInfo: priceInfoForQty(100, 100, 1),
+          selectedVariantsDetails: [],
+          selectedAddonsDetails: [],
+          status: FULFILLMENT_STATUS.PENDING,
+        },
+      ],
+      priceInfo: {
+        basePrice: 200, finalPrice: 200, totalDiscount: 0,
+        totalDiscountAmount: 0, totalVariantBasePrice: 0, totalAddonBasePrice: 0,
+      },
+      status: 'active',
+    });
+
+    beforeEach(() => {
+      setupMenuItem({
+        id: 'item001', name: 'Burger', isInStock: true, variants: [], addons: [],
+        priceInfo: { basePrice: 100, finalPrice: 100, discount: 0 },
+      });
+      setupCart(twoOwnersCart());
+    });
+
+    it("refuses to remove someone else's item", async () => {
+      await expect(
+        invoke({
+          restaurantId: DEFAULT_RESTAURANT_ID,
+          tableId: DEFAULT_TABLE_ID,
+          menuItemId: 'item001',
+          cartItemId: 2,
+          addedBy: 'dev_asha',
+        })
+      ).rejects.toThrow(/not yours/i);
+    });
+
+    it('removes your own item', async () => {
+      const cart = await invoke({
+        restaurantId: DEFAULT_RESTAURANT_ID,
+        tableId: DEFAULT_TABLE_ID,
+        menuItemId: 'item001',
+        cartItemId: 1,
+        addedBy: 'dev_asha',
+      });
+      const left = cart.data.cart.items;
+      expect(left).toHaveLength(1);
+      expect(left[0].addedBy).toBe('dev_bhanu');
+    });
+
+    // Without cartItemId the lookup falls back to menuItemId and used to hit the
+    // first Burger in the array — Asha tapping minus on her own row would have
+    // taken Bhanu's, whichever was added first.
+    it('the menuItemId fallback only ever finds your own line', async () => {
+      const cart = await invoke({
+        restaurantId: DEFAULT_RESTAURANT_ID,
+        tableId: DEFAULT_TABLE_ID,
+        menuItemId: 'item001',
+        addedBy: 'dev_bhanu',
+      });
+      const left = cart.data.cart.items;
+      expect(left).toHaveLength(1);
+      expect(left[0].addedBy).toBe('dev_asha');
+    });
+
+    it('a caller sending no addedBy still removes, as it always has', async () => {
+      const cart = await invoke({
+        restaurantId: DEFAULT_RESTAURANT_ID,
+        tableId: DEFAULT_TABLE_ID,
+        menuItemId: 'item001',
+        cartItemId: 1,
+      });
+      expect(cart.data.cart.items).toHaveLength(1);
+    });
+  });
 });

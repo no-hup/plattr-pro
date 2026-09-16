@@ -9,18 +9,22 @@ const {
   getMenuItemRef,
   buildCartItemPriceInfoForQuantity,
 } = require('./addItemToCartBoilerplateHelper');
+const { resolveTableId } = require('../table/mergedTables');
 
 /**
  * Simplified function to remove an item from cart
  */
 const removeItemFromCart = functions.https.onCall(async (data, context) => {
   // console.log("removeItemFromCart called with data:", JSON.stringify(data.data));
-  const { tableId, restaurantId, menuItemId, cartItemId } = data.data;
+  let { tableId, restaurantId, menuItemId, cartItemId, addedBy = null } = data.data;
 
   // Input validation
   validateRemoveItemFields(data.data);
 
   try {
+    // A merged table shares the parent's cart, so resolve before we touch any doc.
+    tableId = await resolveTableId(restaurantId, tableId);
+
     // Public restaurantId/tableId must not be enough to mutate a cart.
     await requireActiveTableSession(restaurantId, tableId);
 
@@ -44,17 +48,30 @@ const removeItemFromCart = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError("internal", "Cart data is corrupted.");
       }
 
-      // Find target item (prefer cartItemId when provided)
+      // Find target item (prefer cartItemId when provided).
+      // The menuItemId fallback is scoped to the caller's own lines: the table shares one
+      // cart, so an unscoped "first Burger in the array" let Asha's minus button take
+      // Bhanu's Burger whenever his was added first.
+      const mine = (it) => !addedBy || (it.addedBy || null) === addedBy;
       let targetIndex = -1;
       if (cartItemId !== undefined && cartItemId !== null) {
         targetIndex = cart.items.findIndex((it) => it.cartItemId === cartItemId);
       }
       if (targetIndex === -1) {
-        targetIndex = cart.items.findIndex((it) => it.menuItemId === menuItemId);
+        targetIndex = cart.items.findIndex((it) => it.menuItemId === menuItemId && mine(it));
       }
       if (targetIndex === -1) {
         console.error("Item not found in cart:", { menuItemId, cartItemId });
         throw new functions.https.HttpsError("not-found", "Item not found in cart.");
+      }
+
+      // Nobody deletes someone else's food. A caller that sends no addedBy is a legacy
+      // client and keeps the old free-for-all — this only binds once the app identifies itself.
+      if (!mine(cart.items[targetIndex])) {
+        throw new functions.https.HttpsError(
+          "permission-denied",
+          "That item is not yours to remove."
+        );
       }
 
       // Decrement quantity; if it reaches 0, remove the item entirely.
