@@ -100,8 +100,13 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
       // (safety net in case items were cancelled after checkout).
       if (orderStatus === ORDER_STATUS.COMPLETED) {
         // 1. Recompute base totals from all cart snapshots (item-level only)
+        // A cart cancelled or returned mid-meal already left the bill (cart/updateCartStatus
+        // rebuilds priceInfo without it). Without this filter COMPLETED silently put it back:
+        // any line in it that was already SERVED when the round was cancelled is still billable
+        // on its own status, so the guest was charged for a round staff had struck off.
+        // isBillableItem is a plain status check, so it reads a cart as happily as an item.
         let totalBase = 0, totalFinal = 0, totalItemDiscount = 0;
-        for (const cart of order.carts || []) {
+        for (const cart of (order.carts || []).filter(isBillableItem)) {
           const cartInfo = await calculateCartValue(cart);
           totalBase += cartInfo.basePrice || 0;
           totalFinal += cartInfo.finalPrice || 0;
@@ -112,6 +117,7 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
         //    Billable items only: a spend-threshold offer must not be unlocked by
         //    food that was cancelled or returned and is not on the bill.
         const allCartItems = (order.carts || [])
+          .filter(isBillableItem)
           .flatMap(c => Array.isArray(c.items) ? c.items : [])
           .filter(isBillableItem);
 
