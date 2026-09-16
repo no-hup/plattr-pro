@@ -5,6 +5,7 @@ import { Line, TaxBlock } from '../domain/line';
 import { Staff } from './approvals';
 
 const RID = 'r1';
+const REASONS = ['placard', 'regular', 'complaint', 'birthday', 'guest left', 'staff meal', 'other'];
 const FOOD: TaxBlock = { label: 'GST', mode: 'exclusive', collect: true, parts: [{ label: 'CGST', rateBps: 250 }, { label: 'SGST', rateBps: 250 }] };
 const line = (lineId: string, list: number, block: TaxBlock | null = FOOD, extra: Partial<Line> = {}): Line => ({
   lineId, cid: 'o1', orderId: 'o1', cartId: 'k1', cartItemId: '1', tableId: 't7', sessionId: 's1', placedAt: 1, placedBy: 'g',
@@ -35,9 +36,20 @@ function fakePorts(opts: { role?: string; offer?: { id: string; name: string; am
     approve: async req => {
       if (staff.role !== 'MANAGER' && staff.role !== 'ADMIN') throw new ApprovalError('permission-denied', 'Not allowed for your role');
       if (typeof req.reason !== 'string' || !req.reason) throw new ApprovalError('invalid-argument', 'reason required');
-      if (req.pin === undefined) throw new ApprovalError('permission-denied', 'PIN required', { requires: 'pin', action: req.action, sev: 'P0' });
-      if (req.pin !== '1234') throw new ApprovalError('permission-denied', 'Wrong PIN', { requires: 'pin', wrong: true });
-      const id = `${req.cid}_${req.action}_${ports.now()}`; audits.set(id, { action: req.action, sev: 'P0', reason: req.reason, note: req.note, staffId: staff.staffId }); return { auditId: id };
+      if (!REASONS.includes(req.reason)) throw new ApprovalError('invalid-argument', 'reason not on the list');
+      // ST decides. A bill discount follows the same rule as a line discount: over
+      // `discountPinAbovePercent` (10) it is a PIN and P0, under it is applied at once and P1.
+      // A bill-level reversal (cancel, credit note) is always a PIN.
+      const over = req.action === 'billDiscount'
+        ? Number(req.amountMinor ?? 0) * 100 > Number(req.baseMinor ?? 0) * 10
+        : true;
+      if (over) {
+        if (req.pin === undefined) throw new ApprovalError('permission-denied', 'PIN required', { requires: 'pin', action: req.action, sev: 'P0' });
+        if (req.pin !== '1234') throw new ApprovalError('permission-denied', 'Wrong PIN', { requires: 'pin', wrong: true });
+      }
+      const id = `${req.cid}_${req.action}_${ports.now()}`;
+      audits.set(id, { action: req.action, sev: over ? 'P0' : 'P1', reason: req.reason, note: req.note, staffId: staff.staffId, amountMinor: req.amountMinor });
+      return { auditId: id };
     },
     transact: async (_r, fn) => {
       const pl = new Map<string, Partial<Line>>(), pb = new Map<string, Bill>(), pu = new Map<string, Partial<Bill>>(), pc = new Map<string, { next: number }>(), pa = new Map<string, object>();
@@ -127,9 +139,73 @@ describe('app/billing issue', () => {
     const p = fakePorts(); p.lines.clear();
     expect(await code(issue(p, issueReq()))).toBe('failed-precondition');
   });
-  it('BL-S22 a 100 % bill discount still takes a number', async () => {
-    const b = await issue(fakePorts(), issueReq({ discount: { amount: 58000, pct: 100, source: { reason: 'comp', note: '', approverId: 'm1' } } }));
+  it('BL-S22 a 100 % bill discount still takes a number — with the PIN', async () => {
+    const comp = { amount: 58000, pct: 100, source: { reason: 'guest left', note: '', approverId: 'm1' } };
+    const b = await issue(fakePorts(), issueReq({ discount: comp, pin: '1234' }));
     expect(b).toMatchObject({ number: '0417', payable: 0, status: 'paid' });   // PY-S8
+  });
+
+  // ── TD-019. A bill-level discount is a person giving money away, and until 2026-09-16 it went
+  // onto the bill straight from the request body: no PIN, no audit row, and an approverId the
+  // caller typed. DC-S25 then pushed cashiers down exactly this path, because the fastest way past
+  // a close blocked by an unbilled table is a silent ₹0 bill.
+  describe('TD-019 a bill discount goes through ST`s one door', () => {
+    const comp = (over: Record<string, unknown> = {}) => ({ amount: 58000, pct: 100, source: { reason: 'guest left', note: '', approverId: 'm1' }, ...over });
+
+    it('a 100 % comp with no PIN is refused, and NOTHING is written: no bill, no number taken', async () => {
+      const p = fakePorts();
+      await expect(issue(p, issueReq({ discount: comp() }))).rejects.toMatchObject({ code: 'permission-denied', details: { requires: 'pin' } });
+      expect(p.bills.size).toBe(0);
+      expect(p.counters.get('A_2026-27')).toEqual({ next: 417 });   // the invoice number is not burned
+    });
+
+    it('a wrong PIN is refused the same way', async () => {
+      const p = fakePorts();
+      await expect(issue(p, issueReq({ discount: comp(), pin: '9999' }))).rejects.toMatchObject({ details: { wrong: true } });
+      expect(p.bills.size).toBe(0);
+    });
+
+    it('with the PIN it goes through and leaves a P0 audit row naming the amount and the reason', async () => {
+      const p = fakePorts();
+      await issue(p, issueReq({ discount: comp(), pin: '1234' }));
+      const row = [...p.audits.values()][0] as Record<string, unknown>;
+      expect(row).toMatchObject({ action: 'billDiscount', sev: 'P0', reason: 'guest left', staffId: 'm1', amountMinor: 58000 });
+    });
+
+    it('a SMALL discount needs no PIN but still writes an audit row — audit is never optional', async () => {
+      const p = fakePorts();
+      const b = await issue(p, issueReq({ discount: { amount: 2000, pct: 0, source: { reason: 'regular', note: '', approverId: 'm1' } } }));
+      expect(b.payable).toBe(58800);            // 58000 − 2000 = 56000 + 5 % tax 2800
+      expect([...p.audits.values()][0]).toMatchObject({ action: 'billDiscount', sev: 'P1', reason: 'regular' });
+    });
+
+    it('a reason that is not on the configured list is refused', async () => {
+      const p = fakePorts();
+      await expect(issue(p, issueReq({ discount: comp({ source: { reason: 'because', note: '', approverId: 'm1' } }), pin: '1234' })))
+        .rejects.toMatchObject({ code: 'invalid-argument' });
+      expect(p.bills.size).toBe(0);
+    });
+
+    it('BL-S24 the OFFER`s own discount is never gated: no PIN, no audit row, the guest just gets their offer', async () => {
+      const p = fakePorts({ offer: { id: 'happy', name: 'Happy hour', amount: 10000 } });
+      p.lines.delete('coke');
+      const b = await issue(p, issueReq());        // no discount in the body, no pin
+      expect(b).toMatchObject({ number: '0417', payable: 42000 });
+      expect(p.audits.size).toBe(0);
+    });
+
+    it('a bill with no discount at all is untouched by any of this: no PIN, no audit row', async () => {
+      const p = fakePorts();
+      const b = await issue(p, issueReq());
+      expect(b).toMatchObject({ number: '0417', payable: 60900 });
+      expect(p.audits.size).toBe(0);
+    });
+
+    it('a SERVER is refused on the role, before any PIN box is shown', async () => {
+      const p = fakePorts({ role: 'SERVER' });
+      await expect(issue(p, issueReq({ discount: comp(), pin: '1234' }))).rejects.toMatchObject({ code: 'permission-denied' });
+      expect(p.bills.size).toBe(0);
+    });
   });
 });
 

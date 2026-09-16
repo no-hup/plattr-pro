@@ -6,6 +6,7 @@ import {
   cancel as cancelBill, creditNote as noteOn, issue as issueBill, preview as previewBody,
 } from '../domain/billing';
 import { Counter, InvoiceConfig, INVOICE_DEFAULTS, counterKey, nextNumber } from '../domain/invoice';
+import { net } from '../domain/approvals';   // listPrice − offer − discount, the base a bill discount is judged against
 import { ApprovalError, ApplyRequest, ApplyResult, Staff } from './approvals';
 export { ApprovalError };
 
@@ -69,13 +70,32 @@ async function compute(ports: Ports, req: PreviewRequest, lines?: Line[]) {
   return { body: (r as { value: BillBody }).value, flagged: [] as string[], message: '', offer, cfg, open };
 }
 
-export interface IssueRequest extends PreviewRequest { cid: string; tableIds: string[]; expectedV: Record<string, number> }
+export interface IssueRequest extends PreviewRequest { pin?: unknown; cid: string; tableIds: string[]; expectedV: Record<string, number> }
 
 /** BL-S7: number, freeze, lines stamped, counter moved, all in one transaction. Recomputed from snapshots. */
 export async function issue(ports: Ports, req: IssueRequest): Promise<Bill> {
   const staff = await ports.staff.bySession(req.restaurantId, req.sessionId);
   if (!ISSUERS.includes(staff.role)) fail('permission-denied', 'Not allowed for your role');
   if (typeof req.cid !== 'string' || !req.cid) fail('invalid-argument', 'cid required');
+
+  // TD-019. A bill-level discount sent by a client is a person giving money away, so it goes
+  // through ST's one door before anything is written: reason from the configured list, an audit
+  // row ALWAYS, and a PIN above `approvals.discountPinAbovePercent` (BL-S3, BL-S22).
+  // The offer's own discount (BL-S24) is the system's, not a person's, and is never gated — it is
+  // the `??` branch in compute() and never reaches here.
+  // Gating `issue` and not `preview`: looking at what a comp would come to costs nothing and moves
+  // no money. Taking the invoice number is the act, so that is where the door goes — the same
+  // place, and the same order, `cancel` already puts it (role, then refusable checks, then PIN).
+  if (req.discount && Number(req.discount.amount) > 0) {
+    const draft = await ports.linesOfDraft(req.restaurantId, req.draftId);
+    const base = draft.filter(l => l.billId === null && l.countsTowardTotal).reduce((n, l) => n + net(l), 0);
+    await ports.approve({
+      restaurantId: req.restaurantId, sessionId: req.sessionId, action: 'billDiscount', cid: req.cid,
+      reason: req.discount.source?.reason, note: `${req.discount.source?.note ?? ''} bill discount ${req.discount.amount} of ${base}`.trim().slice(0, 200),
+      pin: req.pin, amountMinor: req.discount.amount, baseMinor: base,
+    });
+  }
+
   const now = ports.now();
   const bill = await ports.transact(req.restaurantId, async t => {
     const draft = await ports.linesOfDraft(req.restaurantId, req.draftId);

@@ -3,7 +3,7 @@ import { rupees, useBill, type Ctx } from './useBill'
 
 /** BL-S1..S10 on one screen: a table's draft, its blocks and totals, Generate bill, drop the service charge, Cancel. Print bytes are KT's. */
 export function BillScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
-  const { bill, busy, error, dropCharges, preview, issue, cancel, toggleCharge } = useBill(ctx)
+  const { bill, busy, error, dropCharges, preview, issue, comp, cancel, toggleCharge } = useBill(ctx)
   const [msg, setMsg] = useState('')
   useEffect(() => { preview() }, [dropCharges])   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (error) setMsg(error.code === 'permission-denied' && !error.data.requires ? 'Not allowed' : error.message) }, [error])
@@ -15,6 +15,13 @@ export function BillScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
     setMsg('')
     const r = await cancel(bill.billId, String(f.get('reason')), String(f.get('note') ?? ''))
     if (r) setMsg(`Bill ${r.number} cancelled`)
+  }
+  async function onComp(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const f = new FormData(e.currentTarget)
+    setMsg('')
+    const r = await comp(String(f.get('reason')), String(f.get('note') ?? ''))
+    if (r) setMsg(`Bill ${r.number} comped to ₹0.00`)
   }
   const issued = !!bill?.number
   return (
@@ -46,6 +53,18 @@ export function BillScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
                 </button>
               )}
             </p>
+          )}
+          {!issued && (
+            // DC-S25a: the guests left. Nothing to collect, and the day cannot close over food that
+            // is on no bill at all. This puts a numbered ₹0 document against it instead.
+            <form onSubmit={onComp} data-testid="comp-form">
+              <select name="reason" data-testid="comp-reason" required defaultValue="">
+                <option value="" disabled>reason</option>
+                {reasons.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+              <input name="note" placeholder="note" data-testid="comp-note" maxLength={120} />
+              <button type="submit" data-testid="comp" disabled={busy || reasons.length === 0}>Comp the whole bill</button>
+            </form>
           )}
           {issued && bill.status === 'issued' && (
             <form onSubmit={onCancel}>
