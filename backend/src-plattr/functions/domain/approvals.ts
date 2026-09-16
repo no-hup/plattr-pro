@@ -1,7 +1,7 @@
 // ST · Staff PIN & approvals — pure decisions. No firebase, no adapters, no clock: `now` is passed in.
 // Sheet: moonshot/SPEC_ST_staff_pin_and_approvals.md
 
-export type Action = 'discount' | 'removeOffer' | 'void' | 'reprint' | 'drawer' | 'cancelBill' | 'creditNote';
+export type Action = 'discount' | 'billDiscount' | 'removeOffer' | 'void' | 'reprint' | 'drawer' | 'cancelBill' | 'creditNote';
 export type Role = 'ADMIN' | 'MANAGER' | 'SERVER' | 'KITCHEN';
 export type Sev = 'P0' | 'P1';
 export type ErrorCode = 'permission-denied' | 'invalid-argument' | 'failed-precondition';
@@ -25,7 +25,7 @@ export const DEFAULTS: ApprovalsConfig = {
 };
 
 const NOTE_MAX = 200;
-const ACTIONS: Action[] = ['discount', 'removeOffer', 'void', 'reprint', 'drawer', 'cancelBill', 'creditNote'];
+const ACTIONS: Action[] = ['discount', 'billDiscount', 'removeOffer', 'void', 'reprint', 'drawer', 'cancelBill', 'creditNote'];
 
 /** Raw `approvals` block from the config doc → full config plus one warning per bad key. Never PIN-free on bad input. */
 export function configFrom(raw: unknown): { config: ApprovalsConfig; warnings: string[] } {
@@ -71,7 +71,10 @@ export function decide(input: DecideInput, cfg: ApprovalsConfig): Decision {
       : { ok: false, code: 'permission-denied' };
   }
   switch (action) {
-    case 'discount': {
+    // TD-019: a discount on the whole bill is the same act as a discount on one dish — a person
+    // giving money away — so it is judged by the same key, against the bill's net instead of the
+    // line's list price. One rule, one config value, no second threshold to keep in step.
+    case 'discount': case 'billDiscount': {
       const over = (input.amount ?? 0) * 100 > (input.listPrice ?? 0) * cfg.discountPinAbovePercent;
       return over ? { ok: true, needsPin: true, sev: 'P0' } : { ok: true, needsPin: false, sev: 'P1' };
     }

@@ -98,14 +98,24 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
 
   let pct = 0;
   let amountPaise: number | undefined;
+  let base = line?.listPrice;
   if (action === 'discount') {
     const bad = validateAmount(req.amount, line!.listPrice);
     if (bad) fail('invalid-argument', bad, {}, null, false, 'invalid');
     amountPaise = toPaise(req.amount as number);
     pct = percentOf(amountPaise, line!.listPrice);
+  } else if (action === 'billDiscount') {
+    // BL counts in minor units already (its R7), so these arrive as integers and are never
+    // multiplied by 100 here: `8.49 × 100` in binary floating point is not 849.
+    const amt = req.amountMinor, b = req.baseMinor;
+    if (!Number.isInteger(amt) || (amt as number) <= 0) fail('invalid-argument', 'amountMinor must be a positive integer in minor units', {}, null, false, 'invalid');
+    if (!Number.isInteger(b) || (b as number) <= 0) fail('invalid-argument', 'baseMinor must be a positive integer in minor units', {}, null, false, 'invalid');
+    amountPaise = amt as number;
+    base = b as number;
+    pct = percentOf(amountPaise, base);
   }
 
-  const decision = decide({ action: action as Action, role: staff.role as never, amount: amountPaise, listPrice: line?.listPrice, lineSent: line?.sent }, cfg);
+  const decision = decide({ action: action as Action, role: staff.role as never, amount: amountPaise, listPrice: base, lineSent: line?.sent }, cfg);
   if (!decision.ok) {
     fail(decision.code, decision.code === 'permission-denied' ? 'Not allowed for your role' : `unknown action ${action}`, {}, null, false, decision.code === 'permission-denied' ? 'forbidden' : 'invalid');
   }

@@ -158,5 +158,37 @@ export default async function billingSuite() {
     const stuck = await as(manager, 'split', { moves: [{ lineId: 'bl_beer', toDraftId: 'draft_bl' }] });
     check('BL-S12 an issued line cannot be moved', errData(stuck).code === 'failed-precondition', stuck);
   }
+  // ── TD-019: a bill-level discount goes through ST's door. Until 2026-09-16 `billing-issue`
+  // took it straight from the request body: no PIN, no audit row, an approverId the caller typed.
+  {
+    const D = 'draft_bl_comp';
+    await seed('lines/bl_comp', line('bl_comp', 'Walkout Biryani', 150000, 'food', D));
+    const comp = { amount: 150000, pct: 100, source: { reason: 'guest left', note: 'left at 23:10', approverId: 'manager_bl' } };
+    const as2 = (sessionId, fn, body) => call(`billing-${fn}`, { restaurantId: RID, sessionId, cid: 'cid_bl', draftId: D, tableIds: ['table_bl'], expectedV: {}, ...body });
+
+    const pre = await as2(manager, 'preview', { discount: comp });
+    check('TD-019 preview still shows what a comp would come to, with no PIN — looking costs nothing', pre.status === 'success' && pre.data?.payable === 0, pre);
+
+    const before = (await listCol('bills')).length;
+    const noPin = await as2(manager, 'issue', { discount: comp });
+    check('TD-019 issuing a 100 % comp with no PIN → permission-denied requires pin, and no bill is written',
+      errData(noPin).code === 'permission-denied' && errData(noPin).requires === 'pin' && (await listCol('bills')).length === before, noPin);
+
+    const wrong = await as2(manager, 'issue', { discount: comp, pin: '9999' });
+    check('TD-019 a wrong PIN is refused too', errData(wrong).wrong === true && (await listCol('bills')).length === before, wrong);
+
+    const bad = await as2(manager, 'issue', { discount: { ...comp, source: { ...comp.source, reason: 'because' } }, pin: '1234' });
+    check('TD-019 a reason that is not on the configured list → invalid-argument', errData(bad).code === 'invalid-argument', bad);
+
+    const ok = await as2(manager, 'issue', { discount: comp, pin: '1234' });
+    check('DC-S25a with the PIN the comp issues a numbered ₹0 bill that reads paid', ok.status === 'success' && ok.data?.payable === 0 && ok.data?.status === 'paid' && !!ok.data?.number, ok);
+    const row = (await listCol('audit')).find(a => a.action === 'billDiscount');
+    check('TD-019 and it leaves a P0 audit row naming who, why and how much — the audit is the point',
+      row?.sev === 'P0' && row?.reason === 'guest left' && row?.staffId === 'manager_bl', row);
+
+    await delDoc('lines/bl_comp');
+    if (ok.data?.billId) await delDoc(`bills/${ok.data.billId}`);
+  }
+
   return results;
 }

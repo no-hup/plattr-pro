@@ -30,8 +30,24 @@ export function useBill(ctx: Ctx) {
 
   const preview = () => run(async () => { const r = await call<{ data: Bill }>('billing-preview', body()); setBill(r.data); return r.data })
   const issue = () => run(async () => { const r = await call<{ data: Bill }>('billing-issue', body({ tableIds: [], expectedV: {} })); setBill(r.data); return r.data })
+
+  /**
+   * DC-S25a. Guests left without paying, so there is nothing to collect and the day close will not
+   * go over an unbilled table. Comping the bill to zero gives the food a numbered document instead
+   * of letting it vanish, and BL refuses it without a PIN (TD-019) — the one interceptor handles
+   * that, so there is no PIN box in this file.
+   * `net` is the same sum the server computes (listPrice − offer − discount over the live lines);
+   * it comes from the preview the server just sent us, and the server re-derives it anyway.
+   */
+  const comp = (reason: string, note = '') => run(async () => {
+    const live = (bill?.lines ?? []).filter(l => l.countsTowardTotal)
+    const net = live.reduce((n, l) => n + l.listPrice - (l.offer?.amount ?? 0) - (l.discount?.amount ?? 0), 0)
+    if (net <= 0) throw new ApiError('failed-precondition', 'Nothing to comp')
+    const r = await call<{ data: Bill }>('billing-issue', body({ tableIds: [], expectedV: {}, discount: { amount: net, pct: 100, source: { reason, note } } }))
+    setBill(r.data); return r.data
+  })
   const cancel = (billId: string, reason: string, note: string) =>
     run(async () => { const r = await call<{ data: Bill }>('billing-cancel', body({ billId, reason, note })); setBill(r.data); return r.data })
   const toggleCharge = (type: string) => setDropCharges(d => (d.includes(type) ? d.filter(t => t !== type) : [...d, type]))
-  return { bill, busy, error, dropCharges, preview, issue, cancel, toggleCharge }
+  return { bill, busy, error, dropCharges, preview, issue, comp, cancel, toggleCharge }
 }
