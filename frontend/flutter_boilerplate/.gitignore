@@ -47,7 +47,7 @@
 **/env.g.dart
 
 # Firebase related
-firebase_options.dart
+# firebase_options.dart is committed (as in the platter_* apps) so a fresh clone builds.
 firebase.json
 
 # iOS/macOS

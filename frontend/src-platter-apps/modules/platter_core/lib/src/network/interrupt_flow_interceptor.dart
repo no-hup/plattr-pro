@@ -8,6 +8,8 @@ typedef InterruptFlowHandler = Future<void> Function(
     BuildContext context, InterruptFlowType type, dynamic data);
 
 /// Types of interrupt flows that can be triggered by the backend
+// DEBT(TD-003): no credential challenge type (pin / password / otp + retry).
+// Add `challenge` here the first time a staff screen needs a PIN; see moonshot/TECH_DEBT.md.
 enum InterruptFlowType {
   /// App requires an update to continue
   forcedUpdate,

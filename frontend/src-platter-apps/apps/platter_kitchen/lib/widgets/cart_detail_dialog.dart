@@ -175,7 +175,9 @@ class _CartDetailDialogState extends State<CartDetailDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                FilledButton.icon(
+                Semantics(
+                  identifier: 'kitchen-mark-ready',
+                  child: FilledButton.icon(
                   onPressed: (_canMarkReady && !_isSubmitting) ? _markReady : null,
                   icon: _isSubmitting
                       ? const SizedBox(
@@ -185,7 +187,7 @@ class _CartDetailDialogState extends State<CartDetailDialog> {
                         )
                       : const Icon(Icons.check, size: 18),
                   label: Text(_canMarkReady ? 'Mark Ready' : 'Already ${_statusLabel(cart.status)}'),
-                ),
+                ),),
               ],
             ),
           ],

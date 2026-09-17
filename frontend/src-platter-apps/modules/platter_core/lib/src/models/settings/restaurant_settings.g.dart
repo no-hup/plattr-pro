@@ -10,12 +10,17 @@ RestaurantSettings _$RestaurantSettingsFromJson(Map<String, dynamic> json) =>
     RestaurantSettings(
       theme: ThemeConfig.fromJson(json['theme'] as Map<String, dynamic>),
       featureFlags: Map<String, bool>.from(json['featureFlags'] as Map),
+      ordering: (json['ordering'] as Map<String, dynamic>?)?.map(
+            (k, e) => MapEntry(k, e as bool),
+          ) ??
+          {},
     );
 
 Map<String, dynamic> _$RestaurantSettingsToJson(RestaurantSettings instance) =>
     <String, dynamic>{
       'theme': instance.theme,
       'featureFlags': instance.featureFlags,
+      'ordering': instance.ordering,
     };
 
 ThemeConfig _$ThemeConfigFromJson(Map<String, dynamic> json) => ThemeConfig(

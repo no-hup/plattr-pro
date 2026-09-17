@@ -31,6 +31,8 @@
 - Detail dialog: status change buttons, OTP display + refresh, quick link to active order
 - Rules: OTP only for vacant tables; show error if OTP refresh attempted when not vacant
 - Statuses: active, vacant, reserved, disabled, pending/otp_pending (from backend enum)
+- Reserved = staff-held: customers scanning it are told to ask staff (403). Set the table
+  to Vacant to seat a party. See PRD 16.1 and tables_home/README.md.
 - Suggestion: add table grouping by section/floor + search by tableId
 
 ## Menu Tab PRD

@@ -106,10 +106,13 @@ class _TablesHomeScreenState extends State<TablesHomeScreen> {
     widget.onAppBarConfigChanged?.call(
       ServerAppBarConfiguration(
         additionalActions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshTables,
-            tooltip: 'Refresh Tables',
+          Semantics(
+            identifier: 'tables-refresh',
+            child: IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _refreshTables,
+              tooltip: 'Refresh Tables',
+            ),
           ),
         ],
       ),
@@ -196,9 +199,12 @@ class _TablesHomeScreenState extends State<TablesHomeScreen> {
   }
 
   Widget _buildTableItem(TableModel table) {
-    return TableCard(
-      table: table,
-      onTap: () => _showTableDetails(table),
+    return Semantics(
+      identifier: 'table-${table.tableId}',
+      child: TableCard(
+        table: table,
+        onTap: () => _showTableDetails(table),
+      ),
     );
   }
 

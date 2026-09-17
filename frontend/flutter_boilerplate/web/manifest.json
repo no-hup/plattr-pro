@@ -1,11 +1,11 @@
 {
-    "name": "flutterboilerplate",
-    "short_name": "flutterboilerplate",
+    "name": "Plattr",
+    "short_name": "Plattr",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Scan, order, pay at your table.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

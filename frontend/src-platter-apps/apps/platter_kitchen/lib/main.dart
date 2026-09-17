@@ -41,6 +41,7 @@ class KitchenApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
       debugShowCheckedModeBanner: false,
+      builder: (_, child) => OfflineBanner(child: child!),   // OF-S5: this device's own line to the server
       initialRoute: '/',
       routes: {
         '/': (context) => const _AuthWrapper(),

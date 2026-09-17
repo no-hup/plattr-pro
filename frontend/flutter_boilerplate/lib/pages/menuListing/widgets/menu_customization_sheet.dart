@@ -421,6 +421,7 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
         child: Row(
           children: [
             QuantitySelector(
+              identifierPrefix: 'sheet',
               quantity: _quantity,
               onIncrement: () => setState(() => _quantity++),
               onDecrement: () {
@@ -429,14 +430,16 @@ class _MenuCustomizationSheetState extends State<MenuCustomizationSheet> {
             ),
             const SizedBox(width: AppDimensions.space16),
             Expanded(
-              child: PrimaryActionButton(
+              child: Semantics(
+                identifier: 'sheet-add',
+                child: PrimaryActionButton(
                 label: 'ADD ₹${_totalPrice.toStringAsFixed(0)}',
                 onPressed: () {
                   // Pass IDs and quantity to onConfirm for the API
                   widget.onConfirm(_selectedVariantIds, _selectedAddonIds, _quantity);
                   Navigator.pop(context);
                 },
-              ),
+              ),),
             ),
           ],
         ),

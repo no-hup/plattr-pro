@@ -93,6 +93,7 @@ class SettingsProvider extends ChangeNotifier {
   ) {
     // Build updated feature flags
     final updatedFlags = Map<String, bool>.from(current.featureFlags);
+    final updatedOrdering = Map<String, bool>.from(current.ordering);
     
     // Build updated theme (copy current values)
     var updatedTheme = current.theme;
@@ -112,6 +113,11 @@ class SettingsProvider extends ChangeNotifier {
         final flagKey = key.substring('featureFlags.'.length);
         if (value is bool) {
           updatedFlags[flagKey] = value;
+        }
+      } else if (key.startsWith('ordering.')) {
+        final orderingKey = key.substring('ordering.'.length);
+        if (value is bool) {
+          updatedOrdering[orderingKey] = value;
         }
       } else if (key.startsWith('theme.')) {
         final themeKey = key.substring('theme.'.length);
@@ -145,6 +151,7 @@ class SettingsProvider extends ChangeNotifier {
     
     return RestaurantSettings(
       featureFlags: updatedFlags,
+      ordering: updatedOrdering,
       theme: ThemeConfig(
         primaryColor: primaryColor,
         secondaryColor: secondaryColor,

@@ -173,7 +173,12 @@ class OrdersProvider extends ChangeNotifier {
       case OrderTab.pending:
         return allCartCards.where((card) {
           final status = StatusUtils.normalizeCartStatus(card.cartStatus);
-          return status == 'PENDING' || status == 'PREPARING';
+          // AWAITING_CONFIRMATION belongs here or nowhere: the waiter is the only
+          // person who can move it on, and this is the tab they work from. Leaving
+          // it out would hide guest orders from the one person who must confirm them.
+          return status == 'AWAITING_CONFIRMATION' ||
+              status == 'PENDING' ||
+              status == 'PREPARING';
         }).toList();
       case OrderTab.served:
         // Served tab uses the separate served carts endpoint
@@ -335,6 +340,35 @@ class OrdersProvider extends ChangeNotifier {
       return false;
     } catch (e) {
       debugPrint('Failed to mark cart as served: $e');
+      return false;
+    }
+  }
+
+  /// Waiter confirms a guest-placed cart: AWAITING_CONFIRMATION -> PENDING, which is
+  /// what puts it on the kitchen queue for the first time. Rejecting instead is an
+  /// ordinary cancel, so it has no method of its own.
+  Future<bool> confirmCart({
+    required String restaurantId,
+    required String orderId,
+    required int cartIndex,
+    required String sessionId,
+  }) async {
+    try {
+      final response = await _apiService.updateCartStatus(
+        restaurantId: restaurantId,
+        orderId: orderId,
+        cartIndex: cartIndex,
+        newStatus: 'PENDING',
+        sessionId: sessionId,
+      );
+
+      if (response.success) {
+        await refreshOrders(restaurantId: restaurantId, sessionId: sessionId);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Failed to confirm cart: $e');
       return false;
     }
   }

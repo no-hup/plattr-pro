@@ -4,6 +4,7 @@ import '../config/app_config.dart';
 import '../logging/app_logger.dart';
 import 'response_guard_interceptor.dart';
 import 'interrupt_flow_interceptor.dart';
+import 'offline_status.dart';
 
 /// Singleton Dio client for all API calls.
 /// Shared across all Platter apps.
@@ -55,6 +56,9 @@ class DioClient {
 
     // 3. Interrupt Flow interceptor for forced update, blocked user, etc.
     dio.interceptors.add(InterruptFlowInterceptor.instance);
+
+    // 4. OF-S5: every answer and every failure to reach the server feeds the offline banner.
+    dio.interceptors.add(OfflineStatusInterceptor());
   }
 
   /// Reset the singleton (useful for testing)

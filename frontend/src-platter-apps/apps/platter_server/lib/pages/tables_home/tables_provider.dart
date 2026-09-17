@@ -4,6 +4,15 @@ import 'repository/table_api_service.dart';
 import 'models/table_models.dart';
 
 
+/// The backend returns tables in Firestore document-id order, which puts
+/// table "10" before table "2". Sort numerically when the table numbers are.
+int _byTableNumber(TableModel a, TableModel b) {
+  final aNumber = int.tryParse(a.tableNumber);
+  final bNumber = int.tryParse(b.tableNumber);
+  if (aNumber != null && bNumber != null) return aNumber.compareTo(bNumber);
+  return a.tableNumber.compareTo(b.tableNumber);
+}
+
 class TablesProvider extends ChangeNotifier {
   final TableApiService _apiService;
 
@@ -40,7 +49,7 @@ class TablesProvider extends ChangeNotifier {
     );
 
     if (response.success && response.data != null) {
-      _tables = response.data!;
+      _tables = response.data!..sort(_byTableNumber);
       _state = DataState.loaded;
     } else {
       _errorMessage = response.message ?? 'Failed to load tables';
@@ -62,7 +71,7 @@ class TablesProvider extends ChangeNotifier {
     );
 
     if (response.success && response.data != null) {
-      _tables = response.data!;
+      _tables = response.data!..sort(_byTableNumber);
       _state = DataState.loaded;
       _errorMessage = null;
     } else {

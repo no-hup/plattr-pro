@@ -37,5 +37,5 @@ Map<String, dynamic> _$MenuCategoryToJson(MenuCategory instance) =>
       'image': instance.image,
       'order': instance.order,
       'subcategoryIds': instance.subcategoryIds,
-      'subcategories': instance.subcategories.map((e) => e.toJson()).toList(),
+      'subcategories': instance.subcategories,
     };

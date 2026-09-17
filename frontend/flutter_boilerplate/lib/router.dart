@@ -17,26 +17,6 @@ GoRouter appRouter() => GoRouter(
         AppLogger.e('🔴 ROUTER: Error page');
         return const HomePage();
       },
-      redirect: (context, state) {
-        // Get current path components
-        final isLoggingIn = state.matchedLocation.contains('/login');
-        final hasValidSession = _checkSession(); // Implement this method
-
-        // Handle authenticated routes
-        if (!hasValidSession && !isLoggingIn && state.matchedLocation != '/') {
-          // Store the attempted path to redirect back after login
-          final attempted = state.matchedLocation;
-          return '/r/${state.pathParameters['restaurantId']}/t/${state.pathParameters['tableId']}/login?from=$attempted';
-        }
-
-        // Prevent accessing login page if already logged in
-        if (hasValidSession && isLoggingIn) {
-          final from = state.uri.queryParameters['from'];
-          return from ?? '/';
-        }
-
-        return null; // No redirect needed
-      },
       routes: [
         // Home page
         GoRoute(
@@ -179,10 +159,3 @@ GoRouter appRouter() => GoRouter(
         ),
       ],
     );
-
-// Helper function to check session status
-bool _checkSession() {
-  // TODO: Implement actual session check
-  // This should check local storage or state management for valid session
-  return true;
-}

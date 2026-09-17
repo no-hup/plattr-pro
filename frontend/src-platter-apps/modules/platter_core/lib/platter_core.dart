@@ -10,6 +10,8 @@ export 'src/network/response_parser.dart';
 export 'src/network/dio_client.dart';
 export 'src/network/response_guard_interceptor.dart';
 export 'src/network/interrupt_flow_interceptor.dart';
+export 'src/network/offline_status.dart';
+export 'src/widgets/offline_banner.dart';
 
 // Auth
 export 'src/auth/session_storage.dart';

@@ -75,6 +75,18 @@
       }, 2000); // 2000 milliseconds = 2 seconds
     });
   </script>
-  <script src="flutter_bootstrap.js" async></script>
+    <!-- Agent hook: ?agent=1 turns on Flutter's accessibility tree so a browser
+       agent can see the CanvasKit UI. Inert without the query param. See
+       FRONTEND_AGENT_TESTING.md. -->
+  <script>
+    if (new URLSearchParams(location.search).get('agent') === '1') {
+      var _t = setInterval(function () {
+        if (document.querySelector('flt-semantics-host')) return clearInterval(_t);
+        var p = document.querySelector('flt-semantics-placeholder');
+        if (p) p.click();
+      }, 100);
+    }
+  </script>
+<script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
