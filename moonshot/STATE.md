@@ -44,15 +44,63 @@ Newest at the top of each list.
   6. Till `features/approvals/` + the `requires` interceptor in `api/client.ts`, Playwright ST-S2.
 
 ## Next
-1. `make check`: one command, lint + typecheck + unit, under 60 s, plus the boundary grep.
-2. Scaffold `frontend/till/` (Vite + React + TS) with Playwright and one smoke test against the emulator.
-3. ~~Golden module ST~~ done (see Done). Next for ST: RP report screen reads `summarise(rows, lines)`; BL/PO replace the staging line doc (TD-008).
-4. Write the line-snapshot field list (one page) and extend the golden fixture for it.
-5. ~~Spec sheet BL~~ done; ~~PY~~ done; ~~DC · Day close~~ done; ~~OF · Offline & sync~~ done; **~~KT, OR, UQ~~ specced and signed 2026-09-17**. Next sheet: RP · Reports (it reads DC's frozen close document, never recomputes one). Before building any of KT, OR or UQ: the donor review and the fan-out.
-6. **MN · Monitor** — the always-on agent that reads a restaurant's day from the logs and audit rows and names what looks wrong, false positives included. The "catch it, don't cage it" rule leans on it, so until it exists the trail is being written for a reader who is not there yet (TD-005). Its first real requirement is already known: a day must be able to say it was observed, not merely quiet.
-  Three rows added 2026-09-17 now lean on it: **TD-028** (money with no bill row, and nobody alerted),
-  **TD-032** (a print agent that dies unnoticed in a room we cannot see) and **UQ-5**'s manual payment
-  confirm, which is deliberately a detected rather than prevented theft vector.
+
+**The pickup list. Read this first after a break. Keep it under one screen — if it grows past
+that, the list is wrong, not too short.**
+
+Closing sessions on purpose, 2026-09-18. Shaurya's call: too many at once was drifting us off
+"simple and robust". Some tech debt is fine. Pick these up in a fresh session, in this order.
+
+### Before anything else — these two have a real deadline
+
+1. **TD-038 — a hand-entered menu is 100 % unbillable.** `taxBlockId` is read
+   (`orders/lineSnapshots.js:51`) and refused when null (`domain/line.ts:12`), and every writer in
+   the repo is a seed, a mock or a Playwright fixture. No admin screen, no endpoint. The fix is the
+   already-decided resolver: `tax.assign` category→block map, dish → category → refuse, no default,
+   plus the picker in the Flutter admin. **Nothing else matters until a bill can be issued.**
+2. **Delete `order.priceInfo`.** Float rupees persisted on every order, and four places compute
+   "is this billable" (TD-010, TD-014, TD-016). The deadline is not code growth — it is **the first
+   order document we have to keep**. Today it is a schema deletion and a re-seed. After launch it is
+   a year of orders whose stored totals disagree with their lines and can never be reconciled,
+   because re-deriving history needs menu prices and offer definitions that have since moved.
+   Goes ahead of OR, because OR is built on `addItemToCart` → `checkoutCart` → `createOrUpdateOrder`
+   and all three are in the blast radius.
+
+### Then, in order
+
+3. **The approval PIN — TD-041.** One job, not two: `pinHash` as its own field, and the plaintext
+   seed goes with it. **Do not "delete the dead plaintext branch" first** — MockData7 seeds
+   `password: "1234"` unhashed on all 25 staff documents, so `stored === pin` is the live comparison
+   path for every test in this repo. Same free-exactly-once window as item 2.
+4. **OR · till order entry.** A cashier cannot take a walk-in order today.
+5. **KT · print path.** A guest cannot be handed a printed invoice. Counter and bar at go-live, the
+   kitchen ticket a config line (KT-D1c). The every-minute reconciler ships in the same phase as the
+   agent, not after — with the kitchen tablet as the agent it is load-bearing, not a nicety.
+6. **RP · Reports**, then **CF · Config/onboarding**, then **UQ · UPI QR**.
+
+### Small, cheap, unblocked — take one when waiting on something else
+
+- Lift PY's `shape()` into a shared request-body wrapper for BL, ST and DC (arch review item 4).
+  Closes the optimistic-lock hole, client-chosen attribution and the audit-trail door together.
+  Was parked behind FL; FL has landed.
+- **TD-040** — the stale-line guard has never fired. Needs OF to decide what the offline replay sends,
+  so it is a decision before it is a patch.
+
+### Waiting on Shaurya, not on an agent
+
+- **`covers` on `table-openTable`: yes or no.** Two documents of the same date contradict each other.
+  TD-031 records it declined on 2026-09-17 and says a later session must not re-add it unasked. The
+  counter-argument is that a head count not taken at the sitting can never be backfilled, and
+  not-live makes that sharper. One optional field plus a number pad at Open.
+- **`stuff.md`** — accounts and infra pointers, still untracked. In git or local only.
+
+### The drift itself is an item
+
+21 spec documents (~570 KB) and 41 debt rows, for a product that cannot yet issue one bill. Before
+the next module gets a sheet, prune: `DECISIONS_2026-09-17.md`, `DECISIONS_WAITING_2026-09-17.md`
+and `PROPOSED_DIFFS_2026-09-17.md` are all dated working files whose contents have landed, and the
+four `HANDOFF_*.md` files are spent. Reviews are dated snapshots and can stay. **Writing more sheet
+is not progress; a restaurant issuing a bill is.**
 
 ## Done
 - 2026-09-18 · **Manager pass: four go-live decisions landed, FL's two calls checked against the code, the
