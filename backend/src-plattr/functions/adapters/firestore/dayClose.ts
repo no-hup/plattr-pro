@@ -2,7 +2,7 @@
 // Runtime note: this file runs from functions/lib/adapters/firestore/, so existing JS is three levels up.
 import { CloseDoc, Ports, StoredMovement, Tx } from '../../app/dayClose';
 import { Floor, IssuedBill, LedgerRow, UnbilledLine, VoidBlock, businessDateFor } from '../../domain/dayClose';
-import { PaymentsConfig, configFrom as paymentsConfigFrom } from '../../domain/payments';
+import { PaymentsConfig, businessDayWindow, configFrom as paymentsConfigFrom } from '../../domain/payments';
 import { AuditRow } from '../../domain/approvals';
 import { ports as st } from './approvals';   // ST's real ports: the session door and the PIN streak (one door)
 import type { CollectionReference, DocumentReference, Query, Transaction } from 'firebase-admin/firestore';
@@ -32,9 +32,18 @@ const asRow = (d: FirebaseFirestore.DocumentData): LedgerRow => d as LedgerRow;
 const rowsQuery = (rid: string, businessDate: string): Query => payments(rid).where('businessDate', '==', businessDate);
 const movesQuery = (rid: string, businessDate: string): Query => drawer(rid).where('businessDate', '==', businessDate);
 // R5: BL writes no draft bill document, so a table still eating shows up only as lines with no billId.
-// Neither collection carries a business date, so both are filtered through PY's businessDateFor.
-const issuedQuery = (rid: string): Query => bills(rid).where('status', '==', 'issued');
-const unbilledQuery = (rid: string): Query => lines(rid).where('billId', '==', null);
+// Neither collection carries a business date, so both are bounded by the `at` window that PY's
+// businessDateFor maps to that date. These used to be unbounded scans of two whole collections —
+// read inside the close transaction, filtered by date in memory. Nothing deletes a line, so that
+// grew forever against the one operation that cannot wait. See domain/payments.businessDayWindow.
+const issuedQuery = (rid: string, businessDate: string, cfg: PaymentsConfig): Query => {
+  const { start, end } = businessDayWindow(businessDate, cfg);
+  return bills(rid).where('status', '==', 'issued').where('issuedAt', '>=', start).where('issuedAt', '<', end);
+};
+const unbilledQuery = (rid: string, businessDate: string, cfg: PaymentsConfig): Query => {
+  const { start, end } = businessDayWindow(businessDate, cfg);
+  return lines(rid).where('billId', '==', null).where('placedAt', '>=', start).where('placedAt', '<', end);
+};
 
 function toFloor(cfg: PaymentsConfig, issuedDocs: FirebaseFirestore.QueryDocumentSnapshot[], lineDocs: FirebaseFirestore.QueryDocumentSnapshot[]): Floor {
   const issued: IssuedBill[] = issuedDocs.map(d => {
@@ -66,7 +75,7 @@ function tx(rid: string, cfg: PaymentsConfig, t: Transaction): Tx {
     // R6a: read inside the transaction so a payment committed while the cashier counted aborts one of the two.
     async rowsForDay(bd) { const q = await t.get(rowsQuery(rid, bd)); return q.docs.map(d => asRow(d.data())); },
     async movementsForDay(bd) { const q = await t.get(movesQuery(rid, bd)); return q.docs.map(d => asMovement(d.id, d.data())); },
-    async floorOn() { const [b, l] = await Promise.all([t.get(issuedQuery(rid)), t.get(unbilledQuery(rid))]); return toFloor(cfg, b.docs, l.docs); },
+    async floorOn(bd) { const [b, l] = await Promise.all([t.get(issuedQuery(rid, bd, cfg)), t.get(unbilledQuery(rid, bd, cfg))]); return toFloor(cfg, b.docs, l.docs); },
     async movementById(id) { const s = await t.get(drawer(rid).doc(id)); return s.exists ? asMovement(s.id, s.data() as FirebaseFirestore.DocumentData) : null; },
     createMovement(id, m: StoredMovement) { t.create(drawer(rid).doc(id), m); },
     setMovementVoid(id, v: VoidBlock) { t.update(drawer(rid).doc(id), { void: v }); },
@@ -88,8 +97,9 @@ export const ports: Ports = {
     async close(rid, bd) { const s = await dayClose(rid).doc(bd).get(); return s.exists ? asClose(s.data() as FirebaseFirestore.DocumentData) : null; },
     async rows(rid, bd) { const q = await rowsQuery(rid, bd).get(); return q.docs.map(d => asRow(d.data())); },
     async movements(rid, bd) { const q = await movesQuery(rid, bd).get(); return q.docs.map(d => asMovement(d.id, d.data())); },
-    async floor(rid) {
-      const [cfg, b, l] = await Promise.all([payConfig(rid), issuedQuery(rid).get(), unbilledQuery(rid).get()]);
+    async floor(rid, bd) {
+      const cfg = await payConfig(rid);   // the window depends on it, so it is read first, not in parallel
+      const [b, l] = await Promise.all([issuedQuery(rid, bd, cfg).get(), unbilledQuery(rid, bd, cfg).get()]);
       return toFloor(cfg, b.docs, l.docs);
     },
   },

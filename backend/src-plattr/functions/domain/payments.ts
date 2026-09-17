@@ -146,6 +146,25 @@ export function businessDateFor(at: number, config: PaymentsConfig): string {
   return new Date(localMs - closeMs).toISOString().slice(0, 10);
 }
 
+/**
+ * The exact inverse of `businessDateFor`: the half-open `at` window `[start, end)` whose
+ * instants all fall on `businessDate`.
+ *
+ * `businessDateFor` is a constant shift followed by a truncation to the day, so the set of
+ * instants mapping to one date is always a single contiguous 24h window. That makes it a
+ * range query instead of a full-collection scan — which is the point. Day close used to read
+ * every issued bill and every unbilled line ever written and filter by date in memory, inside
+ * a transaction, at 23:40.
+ *
+ * Round-trips with `businessDateFor` for every instant in the window; see the unit test.
+ */
+export function businessDayWindow(businessDate: string, config: PaymentsConfig): { start: number; end: number } {
+  const closeMs = (config.dayCloseHour * 60 + config.dayCloseMinute) * 60_000;
+  const shift = config.timezoneOffsetMinutes * 60_000 - closeMs;
+  const start = Date.parse(`${businessDate}T00:00:00.000Z`) - shift;
+  return { start, end: start + 86_400_000 };
+}
+
 // ── the gates ───────────────────────────────────────────────────────────────
 export interface TakeRequest { role?: string; tenderId?: unknown; amount?: unknown; tendered?: unknown; captured?: unknown; ref?: unknown; creditNoteId?: unknown }
 
