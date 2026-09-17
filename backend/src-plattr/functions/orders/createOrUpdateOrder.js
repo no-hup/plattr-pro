@@ -610,9 +610,15 @@ async function loadRequireWaiterConfirmation(restaurantId) {
       .collection('config').doc('settings').get();
     return doc.exists && doc.data()?.ordering?.requireWaiterConfirmation === true;
   } catch (e) {
-    // A config read that fails must not block a checkout. Fall back to the old behaviour.
-    console.warn(`createOrUpdateOrder: could not read ordering config for ${restaurantId}: ${e.message}`);
-    return false;
+    // Fail closed. A MISSING document still means false above — that is a fresh restaurant and it
+    // is the honest default. An UNREADABLE one is not: falling back to false sends a guest's round
+    // straight to the kitchen at a restaurant that has deliberately turned that off, and the waiter
+    // never gets the chance to refuse it. We cannot tell a fresh restaurant from a broken read, so
+    // we refuse rather than pick the permissive branch.
+    console.error(`createOrUpdateOrder: could not read ordering config for ${restaurantId}: ${e.message}`);
+    errorHandler.internalError('Could not read restaurant ordering configuration, order not placed', {
+      restaurantId, originalError: e.message,
+    });
   }
 }
 

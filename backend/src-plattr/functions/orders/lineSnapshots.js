@@ -4,6 +4,7 @@
 const { db } = require("../admin/admin");
 const { placeLine } = require("../lib/domain/line");
 const { applyToLine, auditRow } = require("../lib/domain/approvals");
+const errorHandler = require("../singleton/ErrorHandler");
 
 /** Old money is float rupees; every new field is integer minor units. */
 const minor = (rupees) => Math.round((Number(rupees) || 0) * 100);
@@ -18,8 +19,15 @@ async function loadTaxBlocks(restaurantId) {
     const blocks = doc.exists ? (doc.data()?.tax?.blocks || {}) : {};
     return typeof blocks === "object" && blocks !== null ? blocks : {};
   } catch (e) {
-    console.warn(`lineSnapshots: could not read tax blocks for ${restaurantId}: ${e.message}`);
-    return {};
+    // Fail closed. A MISSING settings document is a fresh restaurant and still means {} above —
+    // but an UNREADABLE one is a blip we cannot tell apart from a fresh restaurant, and the cost
+    // of guessing is asymmetric: lines get written with no snapshotted tax block, the kitchen
+    // cooks the food, and billing-preview refuses hours later with "no tax block: Butter Chicken"
+    // when the food is already on the table. Refusing the checkout is the cheap end of that.
+    console.error(`lineSnapshots: could not read tax blocks for ${restaurantId}: ${e.message}`);
+    errorHandler.internalError('Could not read restaurant tax configuration, order not placed', {
+      restaurantId, originalError: e.message,
+    });
   }
 }
 
