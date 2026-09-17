@@ -45,8 +45,9 @@ async function validateAdminSession(restaurantId, sessionId) {
 
     // Check if session is still valid. Seed/legacy sessions store expiresAt as an
     // ISO string; safeToDate handles Timestamp, Date, string and raw {_seconds}.
+    // Fail closed: an expiry we cannot read is not an expiry we can trust.
     const adminExpiry = timestamp.safeToDate(sessionData.expiresAt);
-    if (sessionData.expiresAt && adminExpiry && adminExpiry < new Date()) {
+    if (!adminExpiry || adminExpiry < new Date()) {
         errorHandler.unauthorized('Session has expired', { restaurantId, sessionId });
     }
 
@@ -111,9 +112,10 @@ async function validateStaffSession(restaurantId, sessionId) {
         errorHandler.unauthorized('Invalid or expired session', { restaurantId, sessionId });
     }
 
-    // safeToDate: seed/legacy sessions may store expiresAt as an ISO string
+    // Fail closed: a missing or unparseable expiry denies. This door is the only gate in
+    // front of billing, payments and day close, so an unreadable lock must not open it.
     const staffExpiry = timestamp.safeToDate(sessionData.expiresAt);
-    if (sessionData.expiresAt && staffExpiry && staffExpiry < new Date()) {
+    if (!staffExpiry || staffExpiry < new Date()) {
         errorHandler.unauthorized('Session has expired', { restaurantId, sessionId });
     }
 
