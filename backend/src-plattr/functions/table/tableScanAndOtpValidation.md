@@ -143,6 +143,30 @@ This response is returned when:
 }
 ```
 
+#### Error Response - Table Reserved (HTTP Status Code: 403 Forbidden)
+This response is returned when:
+- Table status is `reserved` — the table is held by staff and is not self-service joinable.
+  The waiter sets the table to `vacant` to seat the party, after which the normal scan →
+  OTP flow applies. `validateOTP` returns the same 403 for a reserved table.
+- Returned only if the caller does NOT already hold the table's active session: a party
+  already seated keeps access if staff flip the table to reserved mid-meal.
+
+```json
+{
+  "error": {
+    "code": "permission-denied",
+    "message": "This table is reserved. Please ask the staff to seat you.",
+    "details": {
+      "httpCode": 403,
+      "tableStatus": "reserved",
+      "restaurant": { "name": "The Gourmet Grove", "id": "rest001" },
+      "table": { "number": "T1", "id": "table001" },
+      "error": "Table is reserved"
+    }
+  }
+}
+```
+
 #### Error Response - Location Check Failed (HTTP Status Code: 412 Precondition Failed)
 This response is returned when:
 - User's location doesn't match the restaurant's location
