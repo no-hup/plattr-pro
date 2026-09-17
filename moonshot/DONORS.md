@@ -62,6 +62,14 @@ Paths are relative to the donor's clone. Line numbers are as of the pinned commi
 - Dolibarr `split.php:66-138` and URY `ury/ury/doctype/ury_order/ury_order.py:545-570`. Splitting by moving lines to a second bill, not by amount — the other half of BL-S12.
 - Nobody. A tender chosen at the till refused for overshoot while one already in the bank is recorded. `businessDate` frozen on the row. Status that downgrades. A void bounded by day close.
 
+**Tables, the floor, merge and move**
+- Odoo `addons/pos_restaurant/models/pos_restaurant.py`. Floor and table records: a table belongs to a floor, carries seats and a position, and is soft-deleted rather than removed. Also how an order is moved between tables and how two tables are merged.
+- Odoo `addons/pos_restaurant/models/pos_config.py`, `res_config_settings.py`. Table management is a per-shop config flag, not a build-time choice.
+- Odoo `addons/pos_restaurant/models/restaurant_order_course.py`. Courses on a sitting — the shape behind "what has this table actually had".
+- Dolibarr `htdocs/takepos/floors.php`. The whole floor screen in one file: how tiles are drawn, what a tile shows about an open ticket, and what a tap does.
+- `_edgecases_ordering_tables.md` and `_table-edge-cases-artifact.html` in the donors folder. 45 sourced table scenarios, gathered before this sheet existed. Read as a donor, not as ours.
+- Nobody. A merged child keeping its own QR code, so a guest who scans the absorbed table lands in the parent's session, is ours.
+
 **Day close, shifts, cash count**
 - Odoo `addons/point_of_sale/models/pos_session.py`. Open, count, close, difference posted against the cashier.
 - Odoo `addons/pos_hr/models/pos_session.py`, `single_employee_sales_report.py`. Per-employee split of one session.
