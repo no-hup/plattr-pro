@@ -47,6 +47,7 @@ export interface Tx {
   setOrderTable(orderId: string, tableId: string): void;
   setLineTable(lineId: string, tableId: string): void;
   setTable(tableId: string, patch: Partial<Table> & Record<string, unknown>): void;
+  endSession(sessionId: string): void;
   ordersOfSession(sessionId: string): Promise<Order[]>;
   createAudit(id: string, row: object): void;
 }
@@ -100,6 +101,10 @@ export async function getFloor(ports: Ports, req: FloorRequest): Promise<FloorRe
   for (const s of sittings) for (const t of s.tableIds) byTable.set(t, s);
 
   const numbers = new Map(tables.filter(t => t.number).map(t => [t.tableId, t.number as string]));
+  // mergedInto on the child is the only stored form of the relationship (see the note in
+  // adapters/firestore/floor.ts); the group is rebuilt from it on every read.
+  const kids = new Map<string, string[]>();
+  for (const t of tables) if (t.mergedInto) kids.set(t.mergedInto, [...(kids.get(t.mergedInto) ?? []), t.tableId]);
   const tiles: Tile[] = [];
   const drawn = new Set<string>();
   for (const t of tables) {
@@ -110,9 +115,10 @@ export async function getFloor(ports: Ports, req: FloorRequest): Promise<FloorRe
     // DISABLED on every child). A child WITH a sitting is drawn as part of its group's one
     // tile below, and `drawn` then keeps it from being drawn twice.
     if (!s && t.status === 'disabled') continue;
-    tiles.push(tile(s, t, now, numbers));
+    const group = kids.has(t.tableId) ? [t.tableId, ...(kids.get(t.tableId) as string[])] : undefined;
+    tiles.push(tile(s, t, now, numbers, group));
     if (s) for (const id of s.tableIds) drawn.add(id);
-    else drawn.add(t.tableId);
+    else for (const id of group ?? [t.tableId]) drawn.add(id);
   }
 
   // R17: a sitting whose table document was retired or deleted still needs a door to its bill.
@@ -315,6 +321,9 @@ export async function clearTable(ports: Ports, req: ClearRequest): Promise<{ fre
       fail('failed-precondition', 'this table still has money on it — bill it and settle it first');
     }
 
+    // The sitting ends with the table. Leaving the session active would keep painting the tile
+    // as settled forever, and a passer-by scanning the QR would join a paid party's tab (R18).
+    t.endSession(s.sessionId);
     for (const id of s.tableIds) t.setTable(id, { status: 'vacant', mergedInto: null, currentOTP: null });
     t.createAudit(`${req.cid}_clear`, {
       cid: req.cid, action: 'table.clear', sev: 'P2', at,
@@ -334,6 +343,7 @@ export async function releaseIfSettled(ports: Ports, restaurantId: string, table
   return ports.transact(restaurantId, async t => {
     const s = await t.getSitting(tableId);
     if (!s || !isReleasable(s, at, config.settledFreeAfterMinutes)) return [];
+    t.endSession(s.sessionId);
     for (const id of s.tableIds) t.setTable(id, { status: 'vacant', mergedInto: null, currentOTP: null });
     t.createAudit(`${cid}_release`, {
       cid, action: 'table.release', sev: 'P2', at, by: 'system',

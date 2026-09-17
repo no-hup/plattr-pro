@@ -63,6 +63,7 @@ function fake(over: Partial<World> = {}) {
     async getTable(id) { return tableOf(id); },
     async getSitting(id) { return sittingAt(id); },
     async childrenOf(id) { return w.tables.filter(x => x.mergedInto === id).map(x => x.tableId); },
+    endSession(sid) { writes.push(`session:${sid}=ended`); w.sittings = w.sittings.filter(s => s.sessionId !== sid); },
     setSessionTable(sid, tid) { writes.push(`session:${sid}=${tid}`); const h = w.sittings.find(s => s.sessionId === sid); if (h) h.tableIds = [tid]; },
     async moveCart(from, to) { writes.push(`cart:${from}->${to}`); w.carts[to] = w.carts[from] ?? []; delete w.carts[from]; },
     setOrderTable(oid, tid) { writes.push(`order:${oid}=${tid}`); },
@@ -162,14 +163,26 @@ describe('getFloor — one read that paints every tile (R1, R2, R3)', () => {
     expect(tiles[0].label).toBe('5+6');
   });
 
-  it('a merged child left pointing at a parent with no sitting paints no tile of its own', async () => {
-    // A stale `mergedInto` after a bad vacate. Without the guard the floor paints a second,
-    // empty tile for table 6 and the cashier seats a walk-in on a table that is not really free.
-    const orphan = fake({
-      tables: [table({ tableId: '5', status: 'vacant' }), table({ tableId: '6', status: 'disabled', mergedInto: '5' })],
+  it('FL-S7 tables merged BEFORE anyone sits still read as one group, not as table 5 alone', async () => {
+    // The scene in the sheet: the party of eight is at the door, the cashier pushes 5 and 6
+    // together, and they sit afterwards. If the tile read "5" until the first order, table 6
+    // would vanish from the floor and the cashier could not see what she had just done.
+    const ready = fake({
+      tables: [table({ tableId: '5', number: '5', status: 'vacant' }), table({ tableId: '6', number: '6', status: 'disabled', mergedInto: '5' })],
     });
-    const { tiles } = await getFloor(orphan, REQ);
-    expect(tiles.map(t => t.label)).toEqual(['5']);
+    const { tiles } = await getFloor(ready, REQ);
+    expect(tiles).toHaveLength(1);
+    expect(tiles[0].label).toBe('5+6');
+    expect(tiles[0].tableIds).toEqual(['5', '6']);
+    expect(tiles[0].word).toBe('free');
+  });
+
+  it('a merged child never gets a tile of its own, so no walk-in is seated onto a group', async () => {
+    const ready = fake({
+      tables: [table({ tableId: '6', number: '6', status: 'disabled', mergedInto: '5' }), table({ tableId: '5', number: '5', status: 'vacant' })],
+    });
+    const { tiles } = await getFloor(ready, REQ);
+    expect(tiles.filter(t => t.tableIds.length === 1)).toHaveLength(0);
   });
 
   it('a tile is labelled by the number a person reads, not the document id', async () => {
