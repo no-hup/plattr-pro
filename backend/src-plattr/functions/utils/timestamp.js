@@ -120,9 +120,13 @@ const timestamp = {
       // If it's already a JavaScript Date
       if (timestamp instanceof Date) return timestamp;
 
-      // Handle raw Firestore timestamp with _seconds and _nanoseconds
-      if (timestamp._seconds !== undefined && typeof timestamp._seconds === 'number') {
+      // Handle raw Firestore timestamp. Admin SDK exposes `seconds`; a JSON round-trip of a
+      // Timestamp gives `_seconds`. Both shapes reach here, so accept both.
+      if (typeof timestamp._seconds === 'number') {
         return new Date(timestamp._seconds * 1000);
+      }
+      if (typeof timestamp.seconds === 'number') {
+        return new Date(timestamp.seconds * 1000);
       }
 
       // If it's a Firestore Timestamp with toDate method
