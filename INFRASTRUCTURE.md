@@ -4,6 +4,11 @@ Single reference for what is deployed, what it costs, and how to touch it.
 Verified 2026-09-13. Deploy *procedure* lives in [GO_LIVE_PLAN.md](GO_LIVE_PLAN.md); this is
 the config and cost reference.
 
+> **Deployed is not the same as live.** This project is deployed and it costs money, but no
+> restaurant is trading on it. Kaanchipuram Kaapi was a test production run — a rehearsal of the
+> deploy path, not a paying customer. Treat the data in it as disposable: no migrations, no
+> backward compatibility, re-seed freely. The cost and quota notes below still apply.
+
 ---
 
 ## 1. Identity — get this right first

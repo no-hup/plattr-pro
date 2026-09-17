@@ -5,6 +5,34 @@ Petpooja. Guest QR ordering, kitchen, captain and admin apps already exist in Fl
 New staff screens (till, day close, reports, config) are a React web app. This file governs all
 new POS work. The root `AGENTS.md` still governs the existing apps.
 
+## We are NOT live. There is no production data to protect.
+
+No restaurant depends on this system. Kaanchipuram Kaapi was a **test production run** — a
+rehearsal of the deploy, not a customer. Nobody is billing a guest on this code.
+
+So the following are **not** concerns, and no agent should spend a sentence on them:
+
+- **Backward compatibility.** Change any schema, field name, enum, endpoint shape or response
+  body outright. Do not add a field alongside the old one "for safety".
+- **Migrations.** There is no data worth migrating. Re-seed instead (`MockData7`).
+- **Deprecation paths.** No dual-read, no dual-write, no shims, no legacy-shape tolerance.
+- **Locking someone out.** No real staff account exists. A stricter auth or validation rule
+  costs nothing, so take it.
+
+And one rule that follows from all of it:
+
+- **Fail closed, always.** Where a lenient branch exists only so old or malformed data keeps
+  working, delete the lenient branch. An unparseable expiry denies. An unmapped tax block
+  refuses. An unknown status throws. Correct beats compatible, every time.
+
+The root `CLAUDE.md` says existing production documents will not have new fields and that code
+must handle missing fields gracefully. **That does not apply to this work.** It was written for
+the older Flutter apps. For anything under this contract, a missing field is a bug to fix at the
+source, not a case to tolerate.
+
+When this changes — when a real restaurant is actually taking orders on it — this section gets
+deleted and replaced, and that is the moment compatibility starts to matter. Not before.
+
 ## Commands
 - Unit: `cd backend/src-plattr/functions && npx jest`
 - E2E (emulator): `cd backend/src-plattr/functions/test/e2e && bash run-tests.sh`

@@ -3,6 +3,12 @@
 > **New POS work (till, billing, day close, offline, reports, config) is governed by
 > [`moonshot/CLAUDE.md`](moonshot/CLAUDE.md). Read it first. This file still governs the existing apps.**
 
+> **Not live.** No restaurant is trading on this system. Kaanchipuram Kaapi was a test
+> production run, not a customer. No backward compatibility, no migrations, no deprecation
+> paths anywhere in this repo — change the shape and re-seed. Fail closed by default.
+> Full statement in [`moonshot/CLAUDE.md`](moonshot/CLAUDE.md).
+
+
 ## Project Overview
 Restaurant management platform with 4 apps: Consumer (QR scan → menu → order), Kitchen (order management), Server (table/order management), Admin (restaurant settings). Backend is Firebase Cloud Functions + Firestore.
 
@@ -11,7 +17,7 @@ Restaurant management platform with 4 apps: Consumer (QR scan → menu → order
 **Before changing any backend API or Cloud Function:**
 1. Grep for `featureFlags.isEnabled` in the code path — read `backend/src-plattr/functions/singleton/FeatureFlags.js` for the full flag list and flow-impact map. Verify your change works for **both `true` and `false`** values of every flag in that path.
 2. Identify **all frontend apps** that consume the API you're changing. Grep the endpoint name across Consumer, Kitchen, Server, and Admin apps. Verify behavior change is handled in every consuming app.
-3. If your change alters the Firestore document schema (adding/removing/renaming fields), check all code that reads those documents — backend functions AND frontend apps. Existing documents in production won't have new fields; code must handle missing fields gracefully.
+3. If your change alters the Firestore document schema (adding/removing/renaming fields), check all code that reads those documents — backend functions AND frontend apps. There are no production documents to protect, so change the shape outright and re-seed rather than tolerating both shapes.
 
 **Feature flags are per-restaurant overridable** via Firestore doc `_system/featureFlagOverrides` (emulator) or restaurant-level config. Never assume a flag has a single value across all restaurants.
 
@@ -55,7 +61,7 @@ Rules:
 ## Data Defensiveness Rules
 
 - Always null-guard array fields from Firestore before calling `.includes()`, `.length`, `.map()`, etc. Use `(field || [])` pattern
-- Session documents may have been created by older code versions — never assume all fields exist
+- Session documents from older code versions exist only in dev seeds — re-seed rather than writing a compatibility branch
 - Table documents may be in unexpected states (e.g., `OTP_PENDING` with expired OTP) — handle gracefully
 
 ## Testing
