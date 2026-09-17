@@ -117,7 +117,7 @@ I'm sharing photos of the menu from [RESTAURANT_NAME]. Analyze every image caref
 - ID convention: `item_[lowercase_short_name]`
 - **Prices are in the smallest currency unit displayed on the menu** (if menu says 350, use 350)
 - `discount` = percentage (0-100). `finalPrice` = `basePrice * (1 - discount/100)`
-- `variants` = array of variant IDs (strings) if customizable
+- `variants` = array of `{ "id": "var_x", "name": "Size" }` objects (NOT bare id strings — `menu/menuHelpers.js` reads `variant.id`/`variant.name`; a string makes the variant silently vanish from fetchMenu). `addons` stays an array of id strings.
 - `addons` = array of addon IDs (strings) if customizable
 - `isCustomizable` = `true` only if the item has variants OR addons
 - `image` = `""` (empty string — we don't have images at onboarding)
@@ -322,3 +322,9 @@ For each restaurant, output:
 2. A summary table: category count, subcategory count, item count, variant count, addon count
 3. Any assumptions made (things not clear from the photos)
 4. Questions for the restaurant owner (ambiguities that need human clarification)
+
+> **`menuItems[].nutritionalInfo` is REQUIRED.** platter_core's `MenuItem` model lists it in
+> `requiredKeys`, so the kitchen/server/admin apps refuse to render the menu without it and show
+> "Required keys are missing: nutritionalInfo". Emit `{calories:0, protein:0, carbs:0, fat:0}`
+> when the real values are unknown — all four default to 0 and the admin dish editor can fill
+> them in later. (Missed on the first prod seed, 2026-09-09.)
