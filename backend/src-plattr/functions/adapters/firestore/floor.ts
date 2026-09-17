@@ -99,29 +99,53 @@ export const ports: Ports = {
   },
 
   /**
-   * R14, R17: every session that is still active, whatever its table now says. A sitting whose
-   * table was retired, or whose captain marked the order COMPLETED, still has money on it and
-   * still needs a tile. A merged group is one sitting spanning several tableIds.
+   * R14, R17: **money outranks the session.** The floor finds a sitting two ways — the session is
+   * still active, OR open money names it — and takes the union.
+   *
+   * The second half is not belt and braces. `orders/updateOrderStatus.js:181` vacates the table on
+   * COMPLETED, which runs `endTableSessions` and flips the session to `ended`. A captain who marks
+   * the food out at 20:44 with ₹2,340 never billed therefore ends the sitting, and reading only
+   * active sessions would drop that ₹2,340 off the floor entirely — the exact thing FL-S16 and R14
+   * exist to prevent. Open money is what the floor is a picture of, so open money is what it looks
+   * for; the query is bounded by real unbilled lines and real unpaid bills, not by time.
    */
   async sittingsOf(rid) {
-    const [snap, tableSnap] = await Promise.all([
+    const [live, openLines, openBills, tableSnap] = await Promise.all([
       sessions(rid).where('status', '==', 'active').get(),
+      lines(rid).where('billId', '==', null).get(),
+      bills(rid).where('status', '==', 'issued').get(),
       tables(rid).get(),
     ]);
+
+    const needed = new Set<string>(live.docs.map(d => d.id));
+    for (const d of openLines.docs) {
+      const x = d.data();
+      if (x.countsTowardTotal !== false && x.sessionId) needed.add(String(x.sessionId));
+    }
+    for (const d of openBills.docs) {
+      const x = d.data();
+      if (x.sessionId && (Number(x.paidTotal) || 0) < (Number(x.payable) || 0)) needed.add(String(x.sessionId));
+    }
+
+    const known = new Map(live.docs.map(d => [d.id, d.data()]));
+    const missing = [...needed].filter(id => !known.has(id));
+    for (const part of chunk(missing, 30)) {
+      const snap = await sessions(rid).where('__name__', 'in', part.map(id => sessions(rid).doc(id))).get();
+      for (const d of snap.docs) known.set(d.id, d.data());
+    }
+
     const children = new Map<string, string[]>();
     for (const d of tableSnap.docs) {
       const p = d.data().mergedInto;
       if (p) children.set(String(p), [...(children.get(String(p)) ?? []), d.id]);
     }
-    return snap.docs.map((d): SittingHead => {
-      const x = d.data();
+
+    return [...known.entries()].map(([sessionId, x]): SittingHead => {
       const parent = String(x.tableId ?? '');
       return {
-        sessionId: d.id,
+        sessionId,
         tableIds: [parent, ...(children.get(parent) ?? [])],
         openedAt: millis(x.createdAt),
-        cleared: !!x.cleared,
-        settledAt: x.settledAt ? millis(x.settledAt) : null,
       };
     });
   },
@@ -163,6 +187,9 @@ export const ports: Ports = {
         },
 
         async getSitting(tableId) {
+          // Clear acts on what is at the table now, so it asks for the live session. A sitting
+          // the captain already ended is not Clear's to free; its money shows on the floor until
+          // it is billed, and it leaves the floor when the money does.
           const snap = await t.get(sessions(rid).where('tableId', '==', tableId).where('status', '==', 'active').limit(1));
           if (snap.empty) return null;
           const d = snap.docs[0];
@@ -177,8 +204,6 @@ export const ports: Ports = {
             sessionId: d.id,
             tableIds: ids,
             openedAt: millis(x.createdAt),
-            cleared: !!x.cleared,
-            settledAt: x.settledAt ? millis(x.settledAt) : null,
             lines: ls.docs.map(l => l.data() as Line),
             bills: bs.docs.map(toBill),
           };

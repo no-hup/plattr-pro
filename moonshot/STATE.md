@@ -93,6 +93,10 @@ Closing sessions on purpose, 2026-09-18. Shaurya's call: too many at once was dr
   counter-argument is that a head count not taken at the sitting can never be backfilled, and
   not-live makes that sharper. One optional field plus a number pad at Open.
 - **`stuff.md`** — accounts and infra pointers, still untracked. In git or local only.
+- **The timer half of FL-Q1 is not built.** A settled table now frees only when a cashier taps Clear;
+  it no longer frees itself after 30 minutes, because `releaseIfSettled` ran from the payment path and
+  that path was corrected to write nothing to the table. Either the timer returns driven by the floor
+  read or a sweep, or the signed row is amended to say Clear is enough. Recorded in the FL sheet.
 
 ### The drift itself is an item
 

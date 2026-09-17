@@ -15,7 +15,7 @@ import {
 import { ApprovalError, Staff } from './approvals';
 export { ApprovalError };
 
-export interface FloorConfig { pollSeconds: number; staleAfterSeconds: number; settledFreeAfterMinutes: number }
+export interface FloorConfig { pollSeconds: number; staleAfterSeconds: number }
 
 export function floorConfigFrom(doc: unknown): FloorConfig {
   const f = (doc as { floor?: Partial<FloorConfig> } | undefined)?.floor ?? {};
@@ -23,7 +23,6 @@ export function floorConfigFrom(doc: unknown): FloorConfig {
   return {
     pollSeconds: num(f.pollSeconds, DEFAULTS.pollSeconds),
     staleAfterSeconds: num(f.staleAfterSeconds, DEFAULTS.staleAfterSeconds),
-    settledFreeAfterMinutes: num(f.settledFreeAfterMinutes, DEFAULTS.settledFreeAfterMinutes),
   };
 }
 
@@ -32,8 +31,6 @@ export interface SittingHead {
   sessionId: string;
   tableIds: string[];
   openedAt: number;
-  cleared?: boolean;
-  settledAt?: number | null;
 }
 
 export interface Order { orderId: string; state: OrderState }
@@ -317,7 +314,7 @@ export async function clearTable(ports: Ports, req: ClearRequest): Promise<{ fre
     if (!table) fail('not-found', `table ${req.tableId} does not exist`);
     const s = await t.getSitting(req.tableId);
     if (!s) return { freed: [] };                                     // already free; nothing to do
-    if (!isReleasable({ ...s, cleared: true }, at)) {
+    if (!isReleasable(s)) {
       fail('failed-precondition', 'this table still has money on it — bill it and settle it first');
     }
 
@@ -331,26 +328,6 @@ export async function clearTable(ports: Ports, req: ClearRequest): Promise<{ fre
     });
     ports.log({ evt: 'table.clear', cid: req.cid, tableIds: s.tableIds, by: staff.staffId });
     return { freed: s.tableIds };
-  });
-}
-
-/**
- * The timer half of FL-Q1, called from the payment path rather than the screen. Returns the tables
- * it freed, so the caller can log them; a table that is not releasable is simply left alone.
- */
-export async function releaseIfSettled(ports: Ports, restaurantId: string, tableId: string, cid: string): Promise<string[]> {
-  const [config, at] = [await ports.config.floor(restaurantId), ports.now()];
-  return ports.transact(restaurantId, async t => {
-    const s = await t.getSitting(tableId);
-    if (!s || !isReleasable(s, at, config.settledFreeAfterMinutes)) return [];
-    t.endSession(s.sessionId);
-    for (const id of s.tableIds) t.setTable(id, { status: 'vacant', mergedInto: null, currentOTP: null });
-    t.createAudit(`${cid}_release`, {
-      cid, action: 'table.release', sev: 'P2', at, by: 'system',
-      sessionId: s.sessionId, tableIds: s.tableIds, after: `${config.settledFreeAfterMinutes}m settled`,
-    });
-    ports.log({ evt: 'table.release', cid, tableIds: s.tableIds });
-    return s.tableIds;
   });
 }
 
