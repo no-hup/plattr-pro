@@ -69,7 +69,7 @@ exports.generateTableOTP = functions.https.onCall(async (data, context) => {
         }
 
         // Generate OTP
-        console.log(`poopoo Generating OTP for table ${tableId} in restaurant ${restaurantId}`);
+        console.log(`Generating OTP for table ${tableId} in restaurant ${restaurantId}`);
         const otpObject = otpService.createOTPObject();
         
         try {
@@ -81,7 +81,7 @@ exports.generateTableOTP = functions.https.onCall(async (data, context) => {
                 lastActivity: timestamp.serverTimestamp()
             });
             
-            console.log(`poopoo Table ${tableId} status updated to OTP_PENDING with new OTP`);
+            console.log(`Table ${tableId} status updated to OTP_PENDING with new OTP`);
             
             // Return success response with OTP details
             return {

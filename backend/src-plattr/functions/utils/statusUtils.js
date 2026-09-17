@@ -40,6 +40,9 @@ function mapCartStatus(value) {
   const normalized = normalizeStatusString(value);
 
   switch (normalized) {
+    case FULFILLMENT_STATUS.AWAITING_CONFIRMATION:
+      return FULFILLMENT_STATUS.AWAITING_CONFIRMATION;
+
     case FULFILLMENT_STATUS.PENDING:
     case 'ORDERED':
       return FULFILLMENT_STATUS.PENDING;
@@ -72,6 +75,9 @@ function mapCartStatus(value) {
 // Single source of truth for cart / cart-item fulfillment transitions.
 // Every endpoint that writes a fulfillment status must go through this.
 const CART_STATUS_TRANSITIONS = {
+  // The waiter's confirm is the only way forward: a guest-placed cart cannot skip
+  // the gate into PREPARING/READY. Rejecting it is a straight CANCELLED.
+  [FULFILLMENT_STATUS.AWAITING_CONFIRMATION]: [FULFILLMENT_STATUS.PENDING, FULFILLMENT_STATUS.CANCELLED],
   [FULFILLMENT_STATUS.PENDING]: [FULFILLMENT_STATUS.PREPARING, FULFILLMENT_STATUS.READY, FULFILLMENT_STATUS.CANCELLED],
   [FULFILLMENT_STATUS.PREPARING]: [FULFILLMENT_STATUS.READY, FULFILLMENT_STATUS.CANCELLED],
   [FULFILLMENT_STATUS.READY]: [FULFILLMENT_STATUS.SERVED, FULFILLMENT_STATUS.CANCELLED],

@@ -24,7 +24,7 @@ class ErrorHandler {
    * @throws {functions.https.HttpsError} Firebase HttpsError
    */
   throwError(code, message, details = null) {
-    console.log(`poopoo ErrorHandler.throwError - Code: ${code}, Message: ${message}`);
+    console.log(`ErrorHandler.throwError - Code: ${code}, Message: ${message}`);
 
     const errorResponse = {
       status: "error",
@@ -38,10 +38,10 @@ class ErrorHandler {
     if (details) {
       // Add any additional details to the data object
       Object.assign(errorResponse.data, details);
-      console.log(`poopoo ErrorHandler.throwError - Details: ${JSON.stringify(details)}`);
+      console.log(`ErrorHandler.throwError - Details: ${JSON.stringify(details)}`);
     }
 
-    console.log(`poopoo ErrorHandler.throwError - Throwing error with code: ${code}`);
+    console.log(`ErrorHandler.throwError - Throwing error with code: ${code}`);
     throw new functions.https.HttpsError(code, message, errorResponse);
   }
 
@@ -52,7 +52,7 @@ class ErrorHandler {
    * @throws {functions.https.HttpsError} Firebase HttpsError with invalid-argument code
    */
   badRequest(message = errorMessages.get('INVALID_INPUT'), details = null) {
-    console.log(`poopoo ErrorHandler.badRequest - Message: ${message}`);
+    console.log(`ErrorHandler.badRequest - Message: ${message}`);
     this.throwError('invalid-argument', message, details);
   }
 
@@ -63,7 +63,7 @@ class ErrorHandler {
    * @throws {functions.https.HttpsError} Firebase HttpsError with unauthenticated code
    */
   unauthorized(message = 'Authentication required', details = null) {
-    console.log(`poopoo ErrorHandler.unauthorized - Message: ${message}`);
+    console.log(`ErrorHandler.unauthorized - Message: ${message}`);
     this.throwError('unauthenticated', message, details);
   }
 
@@ -74,7 +74,7 @@ class ErrorHandler {
    * @throws {functions.https.HttpsError} Firebase HttpsError with permission-denied code
    */
   forbidden(message = 'Access denied', details = null) {
-    console.log(`poopoo ErrorHandler.forbidden - Message: ${message}`);
+    console.log(`ErrorHandler.forbidden - Message: ${message}`);
     this.throwError('permission-denied', message, details);
   }
 
@@ -85,7 +85,7 @@ class ErrorHandler {
    * @throws {functions.https.HttpsError} Firebase HttpsError with not-found code
    */
   notFound(message = 'Resource not found', details = null) {
-    console.log(`poopoo ErrorHandler.notFound - Message: ${message}`);
+    console.log(`ErrorHandler.notFound - Message: ${message}`);
     this.throwError('not-found', message, details);
   }
 
@@ -96,7 +96,7 @@ class ErrorHandler {
    * @throws {functions.https.HttpsError} Firebase HttpsError with failed-precondition code
    */
   preconditionFailed(message = 'Precondition failed', details = null) {
-    console.log(`poopoo ErrorHandler.preconditionFailed - Message: ${message}`);
+    console.log(`ErrorHandler.preconditionFailed - Message: ${message}`);
     this.throwError('failed-precondition', message, details);
   }
 
@@ -117,7 +117,7 @@ class ErrorHandler {
    * @throws {functions.https.HttpsError} Firebase HttpsError with internal code
    */
   internalError(message = errorMessages.get('UNEXPECTED_ERROR'), details = null) {
-    console.log(`poopoo ErrorHandler.internalError - Message: ${message}`);
+    console.log(`ErrorHandler.internalError - Message: ${message}`);
     this.throwError('internal', message, details);
   }
 
@@ -134,7 +134,7 @@ class ErrorHandler {
 
     // If already a Firebase HttpsError, ensure it follows the standardized format
     if (error instanceof functions.https.HttpsError) {
-      console.log(`poopoo ErrorHandler.handleError - Handling Firebase HttpsError with code: ${error.code}`);
+      console.log(`ErrorHandler.handleError - Handling Firebase HttpsError with code: ${error.code}`);
 
       // Check if the error details are already in the standardized format
       if (error.details && error.details.status === 'error' && error.details.data) {
@@ -168,23 +168,23 @@ class ErrorHandler {
 
     // Handle specific error types with standardized structure
     if (error.name === 'ValidationError') {
-      console.log(`poopoo ErrorHandler.handleError - Handling ValidationError: ${error.message}`);
+      console.log(`ErrorHandler.handleError - Handling ValidationError: ${error.message}`);
       this.badRequest(error.message, context);
     } else if (error.name === 'AuthenticationError') {
-      console.log(`poopoo ErrorHandler.handleError - Handling AuthenticationError: ${error.message}`);
+      console.log(`ErrorHandler.handleError - Handling AuthenticationError: ${error.message}`);
       this.unauthorized(error.message, context);
     } else if (error.name === 'NotFoundError') {
-      console.log(`poopoo ErrorHandler.handleError - Handling NotFoundError: ${error.message}`);
+      console.log(`ErrorHandler.handleError - Handling NotFoundError: ${error.message}`);
       this.notFound(error.message, context);
     } else if (error.name === 'PreconditionFailedError') {
-      console.log(`poopoo ErrorHandler.handleError - Handling PreconditionFailedError: ${error.message}`);
+      console.log(`ErrorHandler.handleError - Handling PreconditionFailedError: ${error.message}`);
       this.preconditionFailed(error.message, context);
     } else if (error.name === 'ForbiddenError') {
-      console.log(`poopoo ErrorHandler.handleError - Handling ForbiddenError: ${error.message}`);
+      console.log(`ErrorHandler.handleError - Handling ForbiddenError: ${error.message}`);
       this.forbidden(error.message, context);
     } else {
       // Default to internal server error
-      console.log(`poopoo ErrorHandler.handleError - Handling unknown error type: ${error.name || 'Unnamed'}`);
+      console.log(`ErrorHandler.handleError - Handling unknown error type: ${error.name || 'Unnamed'}`);
       this.internalError('An unexpected error occurred', {
         originalError: error.message,
         ...context

@@ -41,7 +41,19 @@ function createSeedKit() {
       menus: {}, categories: {}, subcategories: {}, menuItems: {},
       variants: {}, addons: {}, kitchens: {}, servers: {}, tables: {},
       sessions: {}, carts: {}, orders: {}, offers: {},
-      config: charges ? { settings: { billing: { charges } } } : undefined,
+      config: { settings: {
+        ...(charges ? { billing: { charges } } : {}),
+        tax: { blocks: {
+          food: { label: 'GST', mode: 'exclusive', collect: true, parts: [{ label: 'CGST', rateBps: 250 }, { label: 'SGST', rateBps: 250 }], defaultCode: '996331' },
+          liquor: { label: 'Liquor', mode: 'inclusive', collect: true, parts: [], defaultCode: '' },
+        } },
+        tenders: [
+          { id: 'cash', label: 'Cash', kind: 'cash', opensDrawer: true, needsRef: false },
+          { id: 'card', label: 'Card', kind: 'external', opensDrawer: false, needsRef: true },
+          { id: 'upi', label: 'UPI', kind: 'external', opensDrawer: false, needsRef: true },
+        ],
+        seller: { name: info.name, taxId: 'GSTIN_' + id.replace('res_', '').toUpperCase() },
+      } },
     };
   }
 
@@ -97,6 +109,7 @@ function createSeedKit() {
       cat, sub, subs, disc = 0, diet = 'VEG', spice = 0, vegan = false,
       stock = true, cust = null, variants = [], addons = [], img = '',
       allergens = [], desc = '', nutri = null, categoryName = '',
+      taxBlockId = 'food', taxCode = '996331',
     } = opts;
     const subcategoryIds = subs || (sub ? [sub] : []);
     const isCustomizable = cust === null ? (variants.length > 0 || addons.length > 0) : cust;
@@ -120,6 +133,8 @@ function createSeedKit() {
       isCustomizable,
       nutritionalInfo: nutri || estimateNutrition(base, vegan ? 'VEGAN' : diet),
       allergenTags: allergens,
+      taxBlockId,
+      taxCode,
       restaurantId: R.id,
       lastUpdated: ts(-DAY),
       order: _itemSeq++,

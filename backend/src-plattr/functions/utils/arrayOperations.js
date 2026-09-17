@@ -23,7 +23,7 @@ const safeArrayUnion = (...elements) => {
 
   // Return a function that receives the current array and adds elements
   // This will be used for manual array updates in the client code
-  console.log('poopoo Using fallback implementation for arrayUnion');
+  console.log('Using fallback implementation for arrayUnion');
   return (currentArray) => {
     const array = Array.isArray(currentArray) ? [...currentArray] : [];
     elements.forEach(element => {
@@ -52,7 +52,7 @@ const safeArrayRemove = (...elements) => {
   }
 
   // Return a function that receives the current array and removes elements
-  console.log('poopoo Using fallback implementation for arrayRemove');
+  console.log('Using fallback implementation for arrayRemove');
   return (currentArray) => {
     if (!Array.isArray(currentArray)) return [];
     return currentArray.filter(item => !elements.includes(item));

@@ -19,6 +19,7 @@ const errorHandler = require('../singleton/ErrorHandler');
 const timestamp = require('../utils/timestamp');
 const { validateOfferApplication } = require('./offerEngine');
 const { isOffersEnabled } = require('./offerFeatureGuard');
+const { resolveTableId } = require('../table/mergedTables');
 
 /**
  * Evaluates if an offer's conditions are met
@@ -95,12 +96,15 @@ const getApplicableOffers = functions.https.onCall(async (data, context) => {
     try {
         console.log('📢 OFFERS: getApplicableOffers request received:', JSON.stringify(data.data));
 
-        const { restaurantId, tableId, sessionId, cart: providedCart } = data.data || {};
+        let { restaurantId, tableId, sessionId, cart: providedCart } = data.data || {};
 
         // Validate required fields
         if (!restaurantId) {
             errorHandler.badRequest('Restaurant ID is required');
         }
+
+        // A merged table shares the parent's cart, so offers must be judged on it.
+        tableId = await resolveTableId(restaurantId, tableId);
 
         // Check if offers are enabled for this restaurant (killswitch)
         const offersEnabled = await isOffersEnabled(restaurantId);

@@ -13,7 +13,7 @@ const { safeArrayUnion, safeArrayRemove, applyArrayOperation } = require('../uti
  */
 exports.createOrUpdateCustomerProfile = functions.https.onCall(async (request, context) => {
   try {
-    console.log("poopoo createOrUpdateCustomerProfile called with:", JSON.stringify(request.data));
+    console.log("createOrUpdateCustomerProfile called with:", JSON.stringify(request.data));
     
     if (!request?.data) {
       throw new functions.https.HttpsError('invalid-argument', 'Missing request data');
@@ -33,7 +33,7 @@ exports.createOrUpdateCustomerProfile = functions.https.onCall(async (request, c
     
     if (!customerDoc.exists) {
       // Create new customer profile
-      console.log(`poopoo Creating new customer profile for ${phoneNumber}`);
+      console.log(`Creating new customer profile for ${phoneNumber}`);
       const customerData = {
         phoneNumber,
         name: name || '',
@@ -43,11 +43,11 @@ exports.createOrUpdateCustomerProfile = functions.https.onCall(async (request, c
       };
       
       await customerRef.set(customerData);
-      console.log(`poopoo New customer profile created for ${phoneNumber}`);
+      console.log(`New customer profile created for ${phoneNumber}`);
       return { ...customerData, id: phoneNumber };
     } else {
       // Update existing customer profile
-      console.log(`poopoo Updating existing customer profile for ${phoneNumber}`);
+      console.log(`Updating existing customer profile for ${phoneNumber}`);
       const updateData = {
         updatedAt: now
       };
@@ -58,7 +58,7 @@ exports.createOrUpdateCustomerProfile = functions.https.onCall(async (request, c
       }
       
       await customerRef.update(updateData);
-      console.log(`poopoo Customer profile updated for ${phoneNumber}`);
+      console.log(`Customer profile updated for ${phoneNumber}`);
       
       const updatedDoc = await customerRef.get();
       return { ...updatedDoc.data(), id: phoneNumber };
@@ -115,7 +115,7 @@ exports.updateCustomerVisit = functions.https.onCall(async (data, context) => {
         const newVisit = {
             restaurantId: restaurantId,
             tableId: tableId,
-            startTime: timestamp.serverTimestamp()
+            startTime: timestamp.now() // concrete: this object is arrayUnion-ed into visits[]
         };
 
         // Get current customer data for applying array operations
@@ -162,7 +162,7 @@ exports.endCustomerVisit = functions.https.onCall(async (data, context) => {
 
         const endedVisit = {
             ...customerData.currentVisit,
-            endTime: timestamp.serverTimestamp()
+            endTime: timestamp.now() // concrete: arrayUnion-ed into visits[]
         };
 
         const updateData = {
