@@ -118,6 +118,11 @@ forces it. The first live restaurant is reachable without a supply chain.
   permission. None of that is exotic; all of it is unverified on the actual tablet — see the
   hardware-in-the-room list.
 - Agent changes ship at Play Store speed, not at our speed.
+- **A restaurant with no kitchen tablet has no printing at all.** Raised by the parity review on the
+  18th and it is the sharpest objection to this decision. It is fine for customer one, who has one;
+  it is not a thing to discover at customer five. It is also the strongest argument for keeping the
+  bridge as implementation #2 rather than quietly dropping it — the protocol is what makes that
+  cheap, so the protocol must not grow a dependency on Flutter.
 
 **What makes it safe is the reconciler, and it is now load-bearing rather than a nicety.** URY runs a
 cron every minute that finds orders with no ticket, prints a duplicate, tags it `Duplicate` and logs
@@ -408,6 +413,8 @@ document to print; a draft on paper is the estimate, and that is OF's, gated on 
 | 2026-09-18 | **The first print agent is the Flutter kitchen app, not a bridge box** (KT-D1c, delegated) | The restaurant pays ₹0 and gets no setup visit; we ship and support no hardware. The bridge is demoted to the second implementation behind the identical protocol, so it drops in later with no rework |
 | 2026-09-18 | **The server encodes to bytes; the job document carries bytes, not rows** | This is what makes the agent thirty lines in any language, so the encoder stays one TypeScript implementation with one jest test instead of being rewritten per agent. Draft v1 put it in the till only because the till was the print station |
 | 2026-09-18 | URY's `websocket_print` browser-tab spooler is rejected | It addresses no printer — paper comes out of that tab's default. The job is three printers in three places, and it marks the invoice printed with no subscriber listening |
+| 2026-09-18 | **The bar ticket is a go-live item; the kitchen ticket is not** | There is no bar surface in the product at all — `live_orders_screen.dart:36` is a client-side category dropdown and no device can be bound to a station. Screen-only means a bartender watching the whole kitchen behind a filter someone must remember to keep set. Drinks are the margin. A kitchen, unlike a bar, genuinely runs on a screen — KDS is a real product |
+| 2026-09-18 | KT-a's scope is a routing table, not a phase boundary | `counter` and `bar` at go-live, `kitchen` a config line the chef switches on the same afternoon. Once the agent holds a socket and a job loop for the bill, another station is a routing rule and one ticket layout — it stopped being a second implementation in a second language |
 | 2026-09-18 | The every-minute reconciler is built in the same phase as the agent, not after | With a box it is a nicety. With a tablet as the agent it is what turns "asleep for four minutes" into a late, labelled ticket instead of food nobody cooks |
 | 2026-09-17 | `window.print()` is not used anywhere, including for the estimate | OF's current `EstimateScreen` shows a printable `<div>`. It becomes a ticket through the same encoder, so there is one path to paper and one thing to test. A browser print dialog is not a receipt path |
 | 2026-09-17 | Reprinting a KOT is recorded on the job, not in ST's audit trail; reprinting a **bill** stays an ST audit row | A kitchen ticket is not money. A second bill copy is, and ST already has the `reprint` action with `amount = payable` |
