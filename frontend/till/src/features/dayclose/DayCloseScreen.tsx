@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { fmt, toMinor, useDayClose, type Ctx } from './useDayClose'
+import { getConfig, openEstimates } from '../offline/cache'
 
 /**
  * DC on one screen: what the day took by tender, the drawer movements, and the count.
@@ -36,6 +37,9 @@ export function DayCloseScreen({ ctx }: { ctx: Ctx }) {
 
   if (!day) return <section data-testid="dayclose"><p data-testid="day-msg">{msg || 'Loading…'}</p></section>
   const blocked = day.floor.issuedBills + day.floor.unbilledItems
+  // OF R6 / OF-S10: an estimate still open on this till means cash the server has not seen. The server's own
+  // gate (unbilled lines, DC R5) holds regardless; this one is the till's, and offline.reconcileBeforeClose turns it off.
+  const estimates = getConfig().reconcileBeforeClose ? openEstimates().length : 0
 
   return (
     <section data-testid="dayclose">
@@ -83,12 +87,13 @@ export function DayCloseScreen({ ctx }: { ctx: Ctx }) {
             <button type="submit" data-testid="move" disabled={busy}>Record drawer movement</button>
           </form>
 
-          <form onSubmit={onClose} data-testid="day-close-form">
+          {estimates > 0 && <p data-testid="day-estimates">reconcile {estimates} estimate{estimates === 1 ? '' : 's'} first</p>}
+          {estimates === 0 && <form onSubmit={onClose} data-testid="day-close-form">
             <input name="counted" data-testid="counted" inputMode="decimal" placeholder="₹ counted in the drawer" required />
             <input name="left" data-testid="left" inputMode="decimal" placeholder="₹ left for the morning" />
             <input name="note" data-testid="close-note" placeholder="note" maxLength={200} />
             <button type="submit" data-testid="close-day" disabled={busy}>Close the day</button>
-          </form>
+          </form>}
         </>
       )}
 

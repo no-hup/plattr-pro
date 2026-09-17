@@ -10,6 +10,10 @@ import { net } from '../domain/approvals';   // listPrice − offer − discount
 import { ApprovalError, ApplyRequest, ApplyResult, Staff } from './approvals';
 export { ApprovalError };
 
+/** BL-S24 / TD-016. `targets` is the offer's own per-cart-item breakdown in minor units; absent on an
+  * ORDER-scoped offer, which by design discounts the whole bill and ships no itemised breakdown. */
+export interface OrderOffer { id: string; name: string; amount: number; targets?: Record<string, number> }
+
 export interface BillingSettings {
   billing: BillingConfig & { charges: ChargeIn[] };
   invoice: InvoiceConfig;
@@ -33,7 +37,7 @@ export interface Ports {
   staff: { bySession(restaurantId: string, sessionId: string): Promise<Staff> };
   config: { billing(restaurantId: string): Promise<BillingSettings> };     // throws when the doc cannot be read (R12)
   linesOfDraft(restaurantId: string, draftId: string): Promise<Line[]>;
-  orderOffer(restaurantId: string, orderId: string): Promise<{ id: string; name: string; amount: number } | null>;   // BL-S24: as evaluated at placement
+  orderOffer(restaurantId: string, orderId: string): Promise<OrderOffer | null>;   // BL-S24: as evaluated at placement
   getBill(restaurantId: string, billId: string): Promise<Bill | null>;
   approve(req: ApplyRequest): Promise<ApplyResult>;   // ST's one door: role, reason, PIN, P0 audit row. Throws permission-denied {requires:'pin'} until the PIN arrives
   transact<T>(restaurantId: string, fn: (t: Tx) => Promise<T>): Promise<T>;
@@ -43,7 +47,7 @@ const ISSUERS = ['MANAGER', 'ADMIN'];
 const fail = (code: string, message: string, details: Record<string, unknown> = {}): never => { throw new ApprovalError(code, message, details); };
 
 export interface PreviewRequest { restaurantId: string; sessionId: string; draftId: string; dropCharges?: string[]; discount?: BillDiscount | null; customer?: { name: string; taxId: string } | null }
-export interface PreviewResult extends BillBody { flagged: string[]; offer: { id: string; name: string; amount: number } | null }
+export interface PreviewResult extends BillBody { flagged: string[]; offer: OrderOffer | null }
 
 /** BL-S1..S6, S14, S21..S24. Computed, never written. `flagged` names lines that cannot be issued. */
 export async function preview(ports: Ports, req: PreviewRequest): Promise<PreviewResult> {
@@ -60,7 +64,9 @@ async function compute(ports: Ports, req: PreviewRequest, lines?: Line[]) {
   const orderId = open[0]?.orderId;
   // BL-S24: the order offer as evaluated when the round was placed becomes the bill discount, apportioned by R1.
   const offer = orderId ? await ports.orderOffer(req.restaurantId, orderId) : null;
-  const discount: BillDiscount | null = req.discount ?? (offer && offer.amount > 0 ? { amount: offer.amount, pct: 0, source: { reason: offer.name, note: offer.id, approverId: 'offer' } } : null);
+  const discount: BillDiscount | null = req.discount ?? (offer && offer.amount > 0
+    ? { amount: offer.amount, pct: 0, source: { reason: offer.name, note: offer.id, approverId: 'offer' }, ...(offer.targets ? { targets: offer.targets } : {}) }
+    : null);
   const charges = cfg.billing.charges.filter(c => !(req.dropCharges ?? []).includes(c.type));
   const r = previewBody(open, discount, charges, cfg.billing);
   if (!r.ok) {

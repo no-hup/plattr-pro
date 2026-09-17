@@ -1,9 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { rupees, useBill, type Ctx } from './useBill'
+import { EstimateScreen } from '../offline/EstimateScreen'
+import { useOnline } from '../offline/useOnline'
 
 /** BL-S1..S10 on one screen: a table's draft, its blocks and totals, Generate bill, drop the service charge, Cancel. Print bytes are KT's. */
 export function BillScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
-  const { bill, busy, error, dropCharges, preview, issue, comp, cancel, toggleCharge } = useBill(ctx)
+  const { bill, busy, error, dropCharges, asOf, preview, issue, comp, cancel, toggleCharge } = useBill(ctx)
+  const { offline } = useOnline()
   const [msg, setMsg] = useState('')
   useEffect(() => { preview() }, [dropCharges])   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (error) setMsg(error.code === 'permission-denied' && !error.data.requires ? 'Not allowed' : error.message) }, [error])
@@ -42,7 +45,10 @@ export function BillScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
           ))}
           {bill.charges.map(c => <p key={c.type} data-testid={`charge-${c.type}`}>{c.type} {c.pctBps / 100}%: {rupees(c.amount)}</p>)}
           {bill.roundOff !== 0 && <p data-testid="roundoff">Round off {bill.roundOff > 0 ? '+' : ''}{rupees(bill.roundOff)}</p>}
-          <p><strong data-testid="payable">Payable {rupees(bill.payable)}</strong></p>
+          <p><strong data-testid="payable">Payable {rupees(bill.payable)}</strong>{asOf !== null && <span data-testid="as-of"> as of {new Date(asOf).toTimeString().slice(0, 5)}</span>}{' '}
+            <button data-testid="preview" onClick={() => preview()} disabled={busy}>Preview</button></p>
+          {/* OF-S16: the emergency path opens only after a failed call, never a slow one, and only for a draft */}
+          {offline && !issued && asOf !== null && <EstimateScreen draftId={ctx.draftId} amountMinor={bill.payable} previewAt={asOf} />}
           {!issued && (
             <p>
               <button data-testid="issue" onClick={() => issue().then(b => b && setMsg(`Bill ${b.number} issued`))} disabled={busy}>Generate bill</button>

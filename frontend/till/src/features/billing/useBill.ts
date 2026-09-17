@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { call, ApiError } from '../../api/client'
+import { getPreview, putPreview } from '../offline/cache'
 
 // Money on the wire is integer minor units (R8). The screen formats; nothing here does arithmetic.
 export interface Part { label: string; rateBps: number; amount: number }
@@ -21,6 +22,7 @@ export function useBill(ctx: Ctx) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<ApiError | null>(null)
   const [dropCharges, setDropCharges] = useState<string[]>([])
+  const [asOf, setAsOf] = useState<number | null>(null)   // OF-S6: set when the figures on screen are the cached ones
 
   async function run<T>(fn: () => Promise<T>): Promise<T | null> {
     setBusy(true); setError(null)
@@ -28,7 +30,11 @@ export function useBill(ctx: Ctx) {
   }
   const body = (extra: Record<string, unknown> = {}) => ({ ...ctx, cid: `till_${ctx.draftId}`, dropCharges, ...extra })
 
-  const preview = () => run(async () => { const r = await call<{ data: Bill }>('billing-preview', body()); setBill(r.data); return r.data })
+  // OF R7: a preview that answers is cached; one that fails leaves the last answer on screen, labelled with its time (OF-S6).
+  const preview = () => run(async () => {
+    try { const r = await call<{ data: Bill }>('billing-preview', body()); setBill(r.data); setAsOf(null); putPreview(ctx.draftId, r.data); return r.data }
+    catch (e) { const c = getPreview(ctx.draftId); if (c && !bill) setBill(c.bill); if (c) setAsOf(c.at); throw e }
+  })
   const issue = () => run(async () => { const r = await call<{ data: Bill }>('billing-issue', body({ tableIds: [], expectedV: {} })); setBill(r.data); return r.data })
 
   /**
@@ -49,5 +55,5 @@ export function useBill(ctx: Ctx) {
   const cancel = (billId: string, reason: string, note: string) =>
     run(async () => { const r = await call<{ data: Bill }>('billing-cancel', body({ billId, reason, note })); setBill(r.data); return r.data })
   const toggleCharge = (type: string) => setDropCharges(d => (d.includes(type) ? d.filter(t => t !== type) : [...d, type]))
-  return { bill, busy, error, dropCharges, preview, issue, comp, cancel, toggleCharge }
+  return { bill, busy, error, dropCharges, asOf, preview, issue, comp, cancel, toggleCharge }
 }

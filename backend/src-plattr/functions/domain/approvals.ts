@@ -1,7 +1,7 @@
 // ST · Staff PIN & approvals — pure decisions. No firebase, no adapters, no clock: `now` is passed in.
 // Sheet: moonshot/SPEC_ST_staff_pin_and_approvals.md
 
-export type Action = 'discount' | 'billDiscount' | 'removeOffer' | 'void' | 'reprint' | 'drawer' | 'cancelBill' | 'creditNote';
+export type Action = 'discount' | 'billDiscount' | 'removeOffer' | 'void' | 'reprint' | 'drawer' | 'cancelBill' | 'creditNote' | 'estimate';
 export type Role = 'ADMIN' | 'MANAGER' | 'SERVER' | 'KITCHEN';
 export type Sev = 'P0' | 'P1';
 export type ErrorCode = 'permission-denied' | 'invalid-argument' | 'failed-precondition';
@@ -25,7 +25,7 @@ export const DEFAULTS: ApprovalsConfig = {
 };
 
 const NOTE_MAX = 200;
-const ACTIONS: Action[] = ['discount', 'billDiscount', 'removeOffer', 'void', 'reprint', 'drawer', 'cancelBill', 'creditNote'];
+const ACTIONS: Action[] = ['discount', 'billDiscount', 'removeOffer', 'void', 'reprint', 'drawer', 'cancelBill', 'creditNote', 'estimate'];
 
 /** Raw `approvals` block from the config doc → full config plus one warning per bad key. Never PIN-free on bad input. */
 export function configFrom(raw: unknown): { config: ApprovalsConfig; warnings: string[] } {
@@ -87,6 +87,9 @@ export function decide(input: DecideInput, cfg: ApprovalsConfig): Decision {
     case 'drawer': return { ok: true, needsPin: true, sev: 'P0' };
     // BL-S9 / BL-S11: a bill-level reversal is always a PIN and always P0. BL calls this door before it moves a bill.
     case 'cancelBill': case 'creditNote': return { ok: true, needsPin: true, sev: 'P0' };
+    // OF-S20: an emergency estimate printed with no server is a fact to record, not a change to a bill.
+    // Audit only, no PIN: the money moves later through billing-issue and payments-take.
+    case 'estimate': return { ok: true, needsPin: false, sev: 'P1' };
   }
 }
 
@@ -187,7 +190,7 @@ export function auditRow(i: AuditInput): AuditRow {
   return { ts: i.ts, cid: i.cid, action: i.action, staffId: i.staffId, sev: i.sev, amount, pct, reason: i.reason, note: i.note, lineId: i.lineId, before: i.before, after: i.after };
 }
 
-export type Outcome = 'applied' | 'needs_pin' | 'wrong_pin' | 'too_soon' | 'forbidden' | 'invalid' | 'try_again';
+export type Outcome = 'applied' | 'retry' | 'needs_pin' | 'wrong_pin' | 'too_soon' | 'forbidden' | 'invalid' | 'try_again';
 export interface LogLine { cid: string; action: string; sev: Sev | null; needsPin: boolean; outcome: Outcome }
 export function logLine(i: LogLine): LogLine {
   return { cid: i.cid, action: i.action, sev: i.sev, needsPin: i.needsPin, outcome: i.outcome };
@@ -199,6 +202,9 @@ export function summarise(rows: AuditRow[], lines: Line[]): Record<string, Staff
   const out: Record<string, StaffSummary & { counts: Record<string, number> }> = {};
   const bucket = (id: string) => (out[id] ??= { p0: 0, p1: 0, rupees: 0, topReasons: [], counts: {} });
   for (const r of rows) {
+    // OF-S20: an estimate row is an offline bill syncing, not a person doing something that needs
+    // a look. Thirty of them must not bury the real P1s (Shaurya 2026-09-16). RP can opt in later.
+    if (r.action === 'estimate') continue;
     const s = bucket(r.staffId);
     if (r.sev === 'P0') s.p0++; else s.p1++;
     s.counts[r.reason] = (s.counts[r.reason] ?? 0) + 1;

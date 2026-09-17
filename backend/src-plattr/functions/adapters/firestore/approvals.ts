@@ -42,6 +42,10 @@ export const ports: Ports = {
       const snap = await rest(rid).collection('config').doc('settings').get();
       return snap.exists ? snap.data()?.approvals : undefined;
     },
+    async offline(rid) {
+      const snap = await rest(rid).collection('config').doc('settings').get();
+      return snap.exists ? snap.data()?.offline : undefined;
+    },
   },
 
   // R7: the streak lives on the staff doc as pinWrongAt[] and pinRetryAfter. Additive fields; nothing else reads them.
@@ -68,6 +72,7 @@ export const ports: Ports = {
       getLine: async id => { const ref: DocumentReference = lines(rid).doc(id); const s = await t.get(ref); return s.exists ? (s.data() as Line) : null; },
       setLine: (id, line: Line) => { t.set(lines(rid).doc(id), line); },
       createAudit: (id, row: AuditRow) => { t.create(audit(rid).doc(id), row); },
+      getAudit: async id => { const s = await t.get(audit(rid).doc(id)); return s.exists ? (s.data() as AuditRow) : null; },
     }));
   },
 };

@@ -4,12 +4,14 @@ import {
   percentOf, recordWrongPin, toPaise, validateAmount, validateReason,
 } from '../domain/approvals';
 import { loadApprovalsConfig } from './config';
+import { offlineFrom, OfflineConfig } from '../domain/offline';
 
 export interface Staff { staffId: string; role: string; status: string; password?: string }
 export interface Tx {
   getLine(lineId: string): Promise<Line | null>;
   setLine(lineId: string, line: Line): void;
   createAudit(id: string, row: AuditRow): void;   // must fail if the id exists
+  getAudit(id: string): Promise<AuditRow | null>;
 }
 export interface Ports {
   now(): number;
@@ -17,7 +19,7 @@ export interface Ports {
   warn(msg: string): void;
   staff: { bySession(restaurantId: string, sessionId: string): Promise<Staff> };  // throws unauthenticated
   pin: { verify(pin: string, stored: string | undefined): Promise<boolean> };
-  config: { approvals(restaurantId: string): Promise<unknown> };
+  config: { approvals(restaurantId: string): Promise<unknown>; offline?(restaurantId: string): Promise<unknown> };
   pinState: {   // wrong-PIN streak on the staff doc (R7): pinWrongAt[], pinRetryAfter
     get(restaurantId: string, staffId: string): Promise<PinState>;
     update(restaurantId: string, staffId: string, fn: (s: PinState) => { state: PinState; audit?: AuditRow }): Promise<PinState>;
@@ -30,7 +32,7 @@ export interface ApplyRequest {
   lineId?: string; amount?: number /* rupees as typed at the till; stored as paise */; reason?: string; note?: string; pin?: unknown;
   [extra: string]: unknown;
 }
-export interface ApplyResult { line?: Line; auditId: string }
+export interface ApplyResult { line?: Line; auditId: string; retry?: boolean }
 
 export class ApprovalError extends Error {
   constructor(public code: string, message: string, public details: Record<string, unknown> = {}) { super(message); }
@@ -113,6 +115,10 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
     amountPaise = amt as number;
     base = b as number;
     pct = percentOf(amountPaise, base);
+  } else if (action === 'estimate') {
+    const amt = req.amountMinor;
+    if (!Number.isInteger(amt) || (amt as number) <= 0) fail('invalid-argument', 'amountMinor must be a positive integer in minor units', {}, null, false, 'invalid');
+    amountPaise = amt as number;
   }
 
   const decision = decide({ action: action as Action, role: staff.role as never, amount: amountPaise, listPrice: base, lineSent: line?.sent }, cfg);
@@ -121,9 +127,10 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
   }
   const { needsPin, sev } = decision as { needsPin: boolean; sev: Sev };
 
-  const reason = action === 'reprint' ? (typeof req.reason === 'string' ? req.reason : '') : req.reason;
+  // reprint and estimate carry no reason from the list; the note (≤200 chars) still applies.
+  const reason = action === 'reprint' ? (typeof req.reason === 'string' ? req.reason : '') : action === 'estimate' ? 'estimate' : req.reason;
   if (action !== 'reprint') {
-    const bad = validateReason(reason, req.note, cfg);
+    const bad = validateReason(reason, req.note, { ...cfg, reasons: action === 'estimate' ? ['estimate'] : cfg.reasons });
     if (bad) fail('invalid-argument', bad, {}, sev, needsPin, 'invalid');
   }
   const note = typeof req.note === 'string' ? req.note : '';
@@ -138,6 +145,18 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
   try {
     const out = await ports.transact(restaurantId, async t => {
       if (!needsLine) {
+        if (action === 'estimate') {
+          // OF-S20: the till resends on every reconnect, so the id is the cid alone and a repeat
+          // answers the row it already wrote. Same cid, different amount: a different act, refused.
+          const auditId = `${cid}_estimate`;
+          const prior = await t.getAudit(auditId);
+          if (prior) {
+            if (prior.amount !== amountPaise) throw new ApprovalError('failed-precondition', 'estimate already recorded with a different amount', { auditId, amount: prior.amount });
+            return { auditId, retry: true } as ApplyResult;
+          }
+          t.createAudit(auditId, auditRow({ ts, cid, action, staffId: staff.staffId, sev, amount: amountPaise, pct: 0, reason: reason as string, note, lineId: null, before: null, after: null }));
+          return { auditId } as ApplyResult;
+        }
         // Two drawer opens in one millisecond must both leave a row: the suffix keeps the ids apart.
         const auditId = `${cid}_${action}_${ts}_${Math.random().toString(36).slice(2, 8)}`;
         t.createAudit(auditId, auditRow({ ts, cid, action, staffId: staff.staffId, sev, reason: reason as string, note, lineId: null, before: null, after: null }));
@@ -159,7 +178,7 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
       t.setLine(String(lineId), applied.line);
       return { line: applied.line, auditId } as ApplyResult;
     });
-    emit(sev, needsPin, 'applied');
+    emit(sev, needsPin, out.retry ? 'retry' : 'applied');
     return out;
   } catch (e) {
     if (e instanceof ApprovalError) {
@@ -172,9 +191,10 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
 }
 
 /** What the till may know about the config: the reasons list. Never the limit; the client does not compute needsPin. */
-export async function reasons(ports: Ports, req: { restaurantId: string; sessionId: string }): Promise<{ reasons: string[] }> {
+export async function reasons(ports: Ports, req: { restaurantId: string; sessionId: string }): Promise<{ reasons: string[]; offline: OfflineConfig }> {
   if (typeof req.restaurantId !== 'string' || typeof req.sessionId !== 'string') throw new ApprovalError('invalid-argument', 'restaurantId and sessionId required');
   await ports.staff.bySession(req.restaurantId, req.sessionId);
   const cfg = await loadApprovalsConfig(ports.config.approvals, ports.warn, req.restaurantId);
-  return { reasons: cfg.reasons };
+  // OF: the till's offline keys ride the same read; it already fetches this once at login.
+  return { reasons: cfg.reasons, offline: offlineFrom(await ports.config.offline?.(req.restaurantId)) };
 }

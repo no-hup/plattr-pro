@@ -36,6 +36,14 @@ export interface CartItem {
 export interface PlaceContext {
   cid: string; orderId: string; cartId: string; tableId: string; sessionId: string; draftId: string;
   placedAt: number; placedBy: string; blocks: Record<string, TaxBlock>;
+  /**
+   * Has the kitchen been told about this line yet? Normally true — placing a round IS telling
+   * the kitchen. False only where the restaurant makes a waiter confirm a guest-placed round
+   * first; those lines are marked sent when the waiter confirms.
+   *
+   * ST reads this: voiding an unsent line is free, voiding a sent one is a PIN (ST-S5, R8).
+   */
+  sent: boolean;
 }
 
 /** Split `amount` over `weights` by cumulative floor: shares sum exactly and none is more than one minor unit low. */
@@ -70,7 +78,7 @@ export function placeLine(item: CartItem, ctx: PlaceContext, lineId: string): Li
     lineId, cid: ctx.cid, orderId: ctx.orderId, cartId: ctx.cartId, cartItemId: item.cartItemId,
     tableId: ctx.tableId, sessionId: ctx.sessionId, placedAt: ctx.placedAt, placedBy: ctx.placedBy,
     menuItemId: item.menuItemId, name: item.name, qty, components, taxBlocks,
-    listPrice, sent: false, v: 0, countsTowardTotal: true, draftId: ctx.draftId, billId: null,
+    listPrice, sent: ctx.sent, v: 0, countsTowardTotal: true, draftId: ctx.draftId, billId: null,
     offer: cut > 0 ? { id: 'menu', amount: cut } : null,
   };
 }

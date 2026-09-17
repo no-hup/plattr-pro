@@ -39,10 +39,21 @@ export const ports: Ports = {
     return snap.docs.map(d => d.data() as Line);
   },
   // BL-S24: the offer as Offers V2 evaluated it when the round was placed. Old money is float rupees.
+  // TD-016: `appliedItems` is the offer's own record of WHICH cart items it discounted and by how much.
+  // Carrying it through is what keeps an ITEM- or CATEGORY-scoped offer off the lines it never targeted.
+  // An ORDER-scoped offer ships an empty list by design (FlatStrategy/PercentageStrategy: "no itemized
+  // breakdown for ORDER scope"), so it arrives with no targets and still spreads across the whole bill.
   async orderOffer(rid, orderId) {
     const snap = await rest(rid).collection('orders').doc(orderId).get();
     const o = snap.exists ? snap.data()?.appliedOffer : null;
-    return o && typeof o === 'object' ? { id: String(o.id ?? ''), name: String(o.title ?? o.name ?? 'Offer'), amount: minor(o.discountAmount) } : null;
+    if (!o || typeof o !== 'object') return null;
+    const targets: Record<string, number> = {};
+    for (const it of Array.isArray(o.appliedItems) ? o.appliedItems : []) {
+      const key = String(it?.cartItemId ?? '');
+      const amount = minor(it?.discountAmount);
+      if (key && amount > 0) targets[key] = (targets[key] ?? 0) + amount;
+    }
+    return { id: String(o.id ?? ''), name: String(o.title ?? o.name ?? 'Offer'), amount: minor(o.discountAmount), ...(Object.keys(targets).length ? { targets } : {}) };
   },
   async getBill(rid, id) { const s = await bills(rid).doc(id).get(); return s.exists ? (s.data() as Bill) : null; },
   approve: req => approve(approvalPorts, req),

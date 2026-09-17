@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { call, ApiError } from '../../api/client'
+import { getBill, putBill } from '../offline/cache'
 
 // PY · the till side of payments. Money is integer minor units on the wire (R8); the PIN
 // challenge for refunds and voids lives in api/client.ts, not here.
@@ -49,11 +50,18 @@ export function useTender(ctx: Ctx) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<ApiError | null>(null)
   const [last, setLast] = useState<WriteResult | null>(null)
+  const [asOf, setAsOf] = useState<number | null>(null)   // OF-S17: the outstanding on screen is the cached one
 
   const refresh = useCallback(async () => {
-    const r = await call<{ data: BillState }>('payments-list', { restaurantId: ctx.restaurantId, sessionId: ctx.sessionId, billId: ctx.billId })
-    setBill(r.data)
-    return r.data
+    try {
+      const r = await call<{ data: BillState }>('payments-list', { restaurantId: ctx.restaurantId, sessionId: ctx.sessionId, billId: ctx.billId })
+      setBill(r.data); setAsOf(null); putBill(ctx.billId, r.data)
+      return r.data
+    } catch (e) {
+      const c = getBill(ctx.billId)
+      if (c) { setBill(b => b ?? c.bill); setAsOf(c.at) }
+      throw e
+    }
   }, [ctx.restaurantId, ctx.sessionId, ctx.billId])
 
   useEffect(() => { refresh().catch(e => setError(e instanceof ApiError ? e : new ApiError('unknown', String(e)))) }, [refresh])
@@ -84,5 +92,5 @@ export function useTender(ctx: Ctx) {
   const voidRow = (paymentId: string, reason: string, note = '') =>
     write('payments-void', { paymentId, reason, note })
 
-  return { bill, busy, error, last, take, refund, voidRow, refresh }
+  return { bill, busy, error, last, asOf, take, refund, voidRow, refresh }
 }
