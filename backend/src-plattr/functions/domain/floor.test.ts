@@ -1,4 +1,4 @@
-// FL · skeleton. One it() per scenario in SPEC_FL_floor_and_moves.md, plus the production
+// FL · the floor, pure. One it() per scenario in SPEC_FL_floor_and_moves.md, plus the production
 // cases the sheet forgot. Every expected value is hand-computed and written in the name, so a
 // wrong implementation cannot quietly redefine what the test was for.
 //
@@ -6,98 +6,522 @@
 // review, and Grok's late pass. Each extra has a Decisions line in the sheet. Grok's pass
 // invalidated six expected values that were already written here; those are corrected, not added.
 
+import {
+  onTable, unpaid, draftCount, tile, tileWord, mayAct,
+  canMerge, canUnmerge, canReceive, canMove, isReleasable, acceptsNewGuests, moveWriteSet,
+  Bill, Table, Sitting, Role, OrderState,
+} from './floor';
+import { Line } from './line';
+
+const MIN = 60_000;
+const NOW = 1_700_000_000_000;
+
+function line(over: Partial<Line> & { lineId: string; listPrice: number }): Line {
+  return {
+    cid: 'cid_fl', orderId: 'order_fl', cartId: 'cart_fl', cartItemId: 'ci_fl',
+    tableId: 'table_12', sessionId: 'sess_12', placedAt: NOW - 40 * MIN, placedBy: 'guest_1',
+    menuItemId: 'mi', name: 'Item', qty: 1, components: [], taxBlocks: {},
+    draftId: 'sess_12', billId: null,
+    sent: true, v: 0, countsTowardTotal: true,
+    ...over,
+  } as Line;
+}
+
+// The sheet's own table 12: paneer tikka ₹320.00, a ₹1,250.00 pitcher with ₹100.00 off,
+// and a ₹450.00 biryani that was voided. 32000 + 115000 = 147000p = ₹1,470.00.
+const tikka = line({ lineId: 'l_tikka', listPrice: 32000 });
+const pitcher = line({ lineId: 'l_pitcher', listPrice: 125000, offer: { id: 'happy_hour', amount: 10000 } as Line['offer'] });
+const biryani = line({ lineId: 'l_biryani', listPrice: 45000, countsTowardTotal: false });
+const TABLE_12 = [tikka, pitcher, biryani];
+
+const bill = (over: Partial<Bill> & { billId: string }): Bill =>
+  ({ status: 'issued', payable: 0, paid: 0, ...over });
+
+const table = (over: Partial<Table> & { tableId: string }): Table =>
+  ({ status: 'vacant', ...over });
+
+const sitting = (over: Partial<Sitting> = {}): Sitting => ({
+  sessionId: 'sess_12', tableIds: ['12'], openedAt: NOW - 48 * MIN,
+  lines: [], bills: [], ...over,
+});
+
 describe('onTable — what is on the table, unbilled (R2)', () => {
-  // Paneer tikka ₹320.00 (32000p) + pitcher ₹1,250.00 (125000p) less ₹100.00 (10000p)
-  // + biryani ₹450.00 voided. 32000 + 115000 = 147000p = ₹1,470.00.
-  it.todo('FL-S19 sums net() over unbilled counting lines: 32000 + 115000 = 147000p');
-  it.todo('FL-S19 a voided line (countsTowardTotal false) adds nothing: the ₹450 biryani is not in the 147000');
-  it.todo('FL-S19 stops before charges: 147000p on the tile, service charge and round-off belong to the bill');
-  it.todo('a line already stamped with a billId is not on the tile: billed 125000 leaves 22000p');
-  it.todo('an empty sitting is 0p, never null and never NaN');
-  it.todo('a line whose offer exceeds its list price can never push the tile below 0p');
-  it.todo('a discount and an offer on the same line are both cut once: 32000 − 6400 − 4000 = 21600p');
-  it.todo('lines from two rounds of the same sitting add: 47000 + 100000 = 147000p');
+  it('FL-S19 sums net() over unbilled counting lines: 32000 + 115000 = 147000p', () => {
+    expect(onTable(TABLE_12)).toBe(147000);
+  });
+
+  it('FL-S19 a voided line (countsTowardTotal false) adds nothing: the ₹450 biryani is not in the 147000', () => {
+    expect(onTable([biryani])).toBe(0);
+    expect(onTable(TABLE_12)).toBe(onTable([tikka, pitcher]));
+  });
+
+  it('FL-S19 stops before charges: 147000p on the tile, service charge and round-off belong to the bill', () => {
+    // 147000 + 10 % service = 161700, + round-off would be 161700. The tile is the smaller number.
+    expect(onTable(TABLE_12)).toBe(147000);
+    expect(onTable(TABLE_12)).not.toBe(161700);
+  });
+
+  it('a line already stamped with a billId is not on the tile: billed 125000 leaves 22000p', () => {
+    const billed = [line({ lineId: 'l_a', listPrice: 125000, billId: 'bill_1' }), line({ lineId: 'l_b', listPrice: 22000 })];
+    expect(onTable(billed)).toBe(22000);
+  });
+
+  it('an empty sitting is 0p, never null and never NaN', () => {
+    expect(onTable([])).toBe(0);
+  });
+
+  it('a line whose offer exceeds its list price can never push the tile below 0p', () => {
+    const upside = line({ lineId: 'l_bad', listPrice: 32000, offer: { id: 'x', amount: 50000 } as Line['offer'] });
+    expect(onTable([upside])).toBe(0);
+    expect(onTable([upside, tikka])).toBe(32000);
+  });
+
+  it('a discount and an offer on the same line are both cut once: 32000 − 6400 − 4000 = 21600p', () => {
+    const both = line({
+      lineId: 'l_both', listPrice: 32000,
+      offer: { id: 'happy_hour', amount: 6400 } as Line['offer'],
+      discount: { amount: 4000, pct: 0, source: { reason: 'goodwill', note: 'spilled', approverId: 'manager_1' } },
+    });
+    expect(onTable([both])).toBe(21600);
+  });
+
+  it('lines from two rounds of the same sitting add: 47000 + 100000 = 147000p', () => {
+    const round1 = line({ lineId: 'r1', listPrice: 47000, orderId: 'order_1' });
+    const round2 = line({ lineId: 'r2', listPrice: 100000, orderId: 'order_2' });
+    expect(onTable([round1, round2])).toBe(147000);
+  });
 
   // R2, corrected by the fan-out: split rewrites draftId, sessionId is frozen
-  it.todo('R2 lines are found by the frozen sessionId, not draftId: a 300000p sitting split three ways still reads 300000p');
+  it('R2 lines are found by the frozen sessionId, not draftId: a 300000p sitting split three ways still reads 300000p', () => {
+    const split = [
+      line({ lineId: 's1', listPrice: 100000, draftId: 'draft_a' }),
+      line({ lineId: 's2', listPrice: 100000, draftId: 'draft_b' }),
+      line({ lineId: 's3', listPrice: 100000, draftId: 'draft_c' }),
+    ];
+    expect(split.every(l => l.sessionId === 'sess_12')).toBe(true);
+    expect(onTable(split)).toBe(300000);
+  });
 });
 
 describe('unpaid — what is still owed across every bill (R12)', () => {
-  it.todo('FL-S22 a ₹1,000 bill with ₹400 taken is 60000p unpaid, never 0 and never 100000');
-  it.todo('FL-S21 three bills of ₹1,000 with one paid is 200000p unpaid across 2 open bills');
-  it.todo('a cancelled bill owes nothing: 100000p issued then cancelled is 0p unpaid');
-  it.todo('an overpaid bill is 0p unpaid, never negative');
+  it('FL-S22 a ₹1,000 bill with ₹400 taken is 60000p unpaid, never 0 and never 100000', () => {
+    expect(unpaid([bill({ billId: 'b1', payable: 100000, paid: 40000 })])).toBe(60000);
+  });
+
+  it('FL-S21 three bills of ₹1,000 with one paid is 200000p unpaid across 2 open bills', () => {
+    const three = [
+      bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' }),
+      bill({ billId: 'b2', payable: 100000 }),
+      bill({ billId: 'b3', payable: 100000 }),
+    ];
+    expect(unpaid(three)).toBe(200000);
+  });
+
+  it('a cancelled bill owes nothing: 100000p issued then cancelled is 0p unpaid', () => {
+    expect(unpaid([bill({ billId: 'b1', payable: 100000, status: 'cancelled' })])).toBe(0);
+  });
+
+  it('an overpaid bill is 0p unpaid, never negative', () => {
+    expect(unpaid([bill({ billId: 'b1', payable: 100000, paid: 120000 })])).toBe(0);
+  });
 });
 
 describe('the word on the tile — derived, never stored (R11, R14)', () => {
-  it.todo('FL-S1 no session and no open money → free');
-  it.todo('FL-S16 no session but 234000p of unbilled lines → NOT free; the captain tapping Complete does not free money');
-  it.todo('FL-S16 no session but an unpaid issued bill → NOT free');
-  it.todo('FL-S34 an expired session with 184000p unbilled → still shows the money, never free');
-  it.todo('FL-S5 session open, nothing placed → seated');
-  it.todo('FL-S2 147000p on the table, no bill → shows the money, not a status word');
-  it.todo('FL-S3 a bill issued and nothing taken → shows what is due');
-  it.todo('FL-S14 nothing on the table, nothing owed, not cleared → settled');
-  it.todo('FL-S17 a bill issued then cancelled → back to money on the table, and billable again');
-  it.todo('FL-S17 cancelled, but a second issued bill of the same sitting is still open → still shows that bill');
-  it.todo('FL-S21 a sitting with three drafts reports three, and a tap has no single answer');
-  it.todo('FL-S35 a bill comped to 0p and settled → settled, exactly like a paid one');
-  it.todo('FL-S20 billed AND eating: ₹2,000 due and ₹300 new are both shown; neither hides the other');
-  it.todo('FL-S20 a tile with anything owed or anything on the table is never settled');
-  it.todo('a session past its expiry that still has unbilled lines → shows the money, never free');
+  const word = (o: Partial<Parameters<typeof tileWord>[0]>) =>
+    tileWord({ onTable: 0, unpaid: 0, hasSession: false, settled: false, ...o });
+
+  it('FL-S1 no session and no open money → free', () => {
+    expect(word({})).toBe('free');
+  });
+
+  it('FL-S16 no session but 234000p of unbilled lines → NOT free; the captain tapping Complete does not free money', () => {
+    expect(word({ onTable: 234000, hasSession: false })).toBe('ordered');
+  });
+
+  it('FL-S16 no session but an unpaid issued bill → NOT free', () => {
+    expect(word({ unpaid: 234000, hasSession: false })).toBe('billed');
+  });
+
+  it('FL-S34 an expired session with 184000p unbilled → still shows the money, never free', () => {
+    const long = sitting({ openedAt: NOW - 245 * MIN, lines: [line({ lineId: 'l', listPrice: 184000 })] });
+    const t = tile(long, table({ tableId: '7', status: 'active' }), NOW);
+    expect(t.onTable).toBe(184000);
+    expect(t.word).toBe('ordered');
+    expect(t.minutes).toBe(245);
+  });
+
+  it('FL-S5 session open, nothing placed → seated', () => {
+    expect(word({ hasSession: true })).toBe('seated');
+  });
+
+  it('FL-S2 147000p on the table, no bill → shows the money, not a status word', () => {
+    const t = tile(sitting({ lines: TABLE_12 }), table({ tableId: '12', status: 'active' }), NOW);
+    expect(t.onTable).toBe(147000);
+    expect(t.unpaid).toBe(0);
+    expect(t.word).toBe('ordered');
+  });
+
+  it('FL-S3 a bill issued and nothing taken → shows what is due', () => {
+    const t = tile(sitting({ bills: [bill({ billId: 'b1', payable: 86000 })] }), table({ tableId: '7', status: 'active' }), NOW);
+    expect(t.unpaid).toBe(86000);
+    expect(t.word).toBe('billed');
+  });
+
+  it('FL-S14 nothing on the table, nothing owed, not cleared → settled', () => {
+    const paid = sitting({ bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })] });
+    expect(tile(paid, table({ tableId: '7', status: 'active' }), NOW).word).toBe('settled');
+  });
+
+  it('FL-S17 a bill issued then cancelled → back to money on the table, and billable again', () => {
+    // cancel clears billId on the lines in the same transaction, so they count again.
+    const after = sitting({ lines: TABLE_12, bills: [bill({ billId: 'b1', payable: 161700, status: 'cancelled' })] });
+    const t = tile(after, table({ tableId: '12', status: 'active' }), NOW);
+    expect(t.onTable).toBe(147000);
+    expect(t.unpaid).toBe(0);
+    expect(t.word).toBe('ordered');
+  });
+
+  it('FL-S17 cancelled, but a second issued bill of the same sitting is still open → still shows that bill', () => {
+    const mixed = sitting({
+      bills: [bill({ billId: 'b1', payable: 161700, status: 'cancelled' }), bill({ billId: 'b2', payable: 90000 })],
+    });
+    const t = tile(mixed, table({ tableId: '12', status: 'active' }), NOW);
+    expect(t.unpaid).toBe(90000);
+    expect(t.word).toBe('billed');
+  });
+
+  it('FL-S21 a sitting with three drafts reports three, and a tap has no single answer', () => {
+    const split = [
+      line({ lineId: 's1', listPrice: 100000, draftId: 'draft_a' }),
+      line({ lineId: 's2', listPrice: 100000, draftId: 'draft_b' }),
+      line({ lineId: 's3', listPrice: 100000, draftId: 'draft_c' }),
+    ];
+    expect(draftCount(split)).toBe(3);
+    expect(tile(sitting({ lines: split }), table({ tableId: '4', status: 'active' }), NOW).drafts).toBe(3);
+  });
+
+  it('FL-S35 a bill comped to 0p and settled → settled, exactly like a paid one', () => {
+    const comped = sitting({ bills: [bill({ billId: 'b1', payable: 0, paid: 0, status: 'paid' })] });
+    expect(tile(comped, table({ tableId: '7', status: 'active' }), NOW).word).toBe('settled');
+  });
+
+  it('FL-S20 billed AND eating: ₹2,000 due and ₹300 new are both shown; neither hides the other', () => {
+    const dessert = sitting({
+      lines: [line({ lineId: 'l_billed', listPrice: 200000, billId: 'b1' }), line({ lineId: 'l_jamun', listPrice: 30000 })],
+      bills: [bill({ billId: 'b1', payable: 200000 })],
+    });
+    const t = tile(dessert, table({ tableId: '12', status: 'active' }), NOW);
+    expect(t.unpaid).toBe(200000);
+    expect(t.onTable).toBe(30000);
+  });
+
+  it('FL-S20 a tile with anything owed or anything on the table is never settled', () => {
+    expect(word({ unpaid: 1, settled: true })).not.toBe('settled');
+    expect(word({ onTable: 1, settled: true })).not.toBe('settled');
+  });
+
+  it('a session past its expiry that still has unbilled lines → shows the money, never free', () => {
+    const stale = sitting({ openedAt: NOW - 300 * MIN, lines: TABLE_12 });
+    expect(tile(stale, table({ tableId: '12', status: 'active' }), NOW).word).toBe('ordered');
+  });
 });
 
 describe('canMerge (R6)', () => {
-  it.todo('FL-S7 a vacant child merges into an occupied parent');
-  it.todo('FL-S9 a child with its own party is refused, and the refusal names the table number');
-  it.todo('FL-S26 a child already inside another group is refused');
-  it.todo('a child that is out of service is refused');
-  it.todo('a parent that is itself merged into a third table is refused (one level, always)');
-  it.todo('a child that already has tables merged into it is refused');
-  it.todo('merging a table into itself is refused');
+  const parent = table({ tableId: '5', status: 'active', hasSession: true });
+  const child = table({ tableId: '6', status: 'vacant' });
+
+  it('FL-S7 a vacant child merges into an occupied parent', () => {
+    expect(canMerge(parent, child, 'MANAGER')).toEqual({ ok: true });
+  });
+
+  it('FL-S9 a child with its own party is refused, and the refusal names the table number', () => {
+    const busy = table({ tableId: '8', status: 'active', hasSession: true });
+    const r = canMerge(parent, busy, 'MANAGER');
+    expect(r.ok).toBe(false);
+    expect(r.ok === false && r.message).toMatch(/table 8/);
+  });
+
+  it('FL-S26 a child already inside another group is refused', () => {
+    const inGroup = table({ tableId: '6', status: 'disabled', mergedInto: '5' });
+    expect(canMerge(table({ tableId: '8', status: 'active' }), inGroup, 'MANAGER').ok).toBe(false);
+  });
+
+  it('a child that is out of service is refused', () => {
+    expect(canMerge(parent, table({ tableId: '6', status: 'disabled' }), 'MANAGER').ok).toBe(false);
+  });
+
+  it('a parent that is itself merged into a third table is refused (one level, always)', () => {
+    const merged = table({ tableId: '5', status: 'disabled', mergedInto: '4' });
+    expect(canMerge(merged, child, 'MANAGER').ok).toBe(false);
+  });
+
+  it('a child that already has tables merged into it is refused', () => {
+    expect(canMerge(parent, table({ tableId: '6', status: 'vacant', isParent: true }), 'MANAGER').ok).toBe(false);
+  });
+
+  it('merging a table into itself is refused', () => {
+    const r = canMerge(table({ tableId: '5', status: 'active' }), table({ tableId: '5' }), 'MANAGER');
+    expect(r.ok === false && r.code).toBe('invalid-argument');
+  });
 });
 
 describe('canUnmerge — never over open money; releases the whole group (R14, OR-5a)', () => {
-  it.todo('FL-S8 a 5+6+7 group holding 640000p is refused before anything is released');
-  it.todo('FL-S8 a group with nothing placed releases all three children at once');
-  it.todo('FL-S27 a group holding 298000p unbilled is refused, and says to bill or move it first');
-  it.todo('FL-S27 a group whose bill is issued and unpaid is refused');
-  it.todo('a group whose only bill is fully paid releases');
-  it.todo('a group whose only bill was cancelled and has no lines releases');
+  it('FL-S8 a 5+6+7 group holding 640000p is refused before anything is released', () => {
+    const big = sitting({ tableIds: ['5', '6', '7'], lines: [line({ lineId: 'l', listPrice: 640000 })] });
+    const r = canUnmerge(big, 'MANAGER');
+    expect(r.ok).toBe(false);
+    expect(r.ok === false && r.message).toMatch(/bill it or move it first/);
+  });
+
+  it('FL-S8 a group with nothing placed releases all three children at once', () => {
+    expect(canUnmerge(sitting({ tableIds: ['5', '6', '7'] }), 'MANAGER')).toEqual({ ok: true });
+  });
+
+  it('FL-S27 a group holding 298000p unbilled is refused, and says to bill or move it first', () => {
+    const open = sitting({ tableIds: ['5', '6'], lines: [line({ lineId: 'l', listPrice: 298000 })] });
+    const r = canUnmerge(open, 'MANAGER');
+    expect(r.ok === false && r.message).toMatch(/bill it or move it first/);
+  });
+
+  it('FL-S27 a group whose bill is issued and unpaid is refused', () => {
+    const owing = sitting({ bills: [bill({ billId: 'b1', payable: 298000 })] });
+    const r = canUnmerge(owing, 'MANAGER');
+    expect(r.ok).toBe(false);
+    expect(r.ok === false && r.message).toMatch(/settle it or move it first/);
+  });
+
+  it('a group whose only bill is fully paid releases', () => {
+    const done = sitting({ bills: [bill({ billId: 'b1', payable: 298000, paid: 298000, status: 'paid' })] });
+    expect(canUnmerge(done, 'MANAGER')).toEqual({ ok: true });
+  });
+
+  it('a group whose only bill was cancelled and has no lines releases', () => {
+    const voided = sitting({ bills: [bill({ billId: 'b1', payable: 298000, status: 'cancelled' })] });
+    expect(canUnmerge(voided, 'MANAGER')).toEqual({ ok: true });
+  });
 });
 
 describe('canMove (R5, R6, R16)', () => {
-  it.todo('FL-S10 a sitting moves onto a vacant table');
-  it.todo('FL-S11 moving onto an occupied table is refused');
-  it.todo('FL-S12 moving a merged parent is refused, and says to release the merge first');
-  it.todo('FL-S24 a sitting with any line carrying a billId is refused: an issued bill freezes its tableIds');
-  it.todo('FL-S33 a destination that is disabled with mergedInto set, and holds no session, is still refused');
-  it.todo('FL-S33 a destination with an OTP in flight is refused');
-  it.todo('FL-S33 a destination that is a parent of a merged child is refused');
-  it.todo('FL-S29 a SERVER role is refused 403; MANAGER and ADMIN may move');
-  it.todo('moving a table that has no sitting is refused');
-  it.todo('moving onto an out-of-service table is refused');
-  it.todo('moving a sitting onto its own table is refused');
+  const from = table({ tableId: '4', status: 'active', hasSession: true });
+  const dest = table({ tableId: '9', status: 'vacant' });
+  const party = sitting({ sessionId: 'sess_4', tableIds: ['4'], lines: [line({ lineId: 'l', listPrice: 168000 })] });
+
+  it('FL-S10 a sitting moves onto a vacant table', () => {
+    expect(canMove(from, dest, party, 'MANAGER')).toEqual({ ok: true });
+  });
+
+  it('FL-S11 moving onto an occupied table is refused', () => {
+    const busy = table({ tableId: '11', status: 'active', hasSession: true });
+    expect(canMove(from, busy, party, 'MANAGER').ok).toBe(false);
+  });
+
+  it('FL-S12 moving a merged parent is refused, and says to release the merge first', () => {
+    const group = sitting({ tableIds: ['5', '6'] });
+    const r = canMove(table({ tableId: '5', status: 'active', isParent: true }), dest, group, 'MANAGER');
+    expect(r.ok === false && r.message).toMatch(/release the merge first/);
+  });
+
+  it('FL-S24 a sitting with any line carrying a billId is refused: an issued bill freezes its tableIds', () => {
+    const printed = sitting({ lines: [line({ lineId: 'l', listPrice: 168000, billId: 'bill_1' })] });
+    const r = canMove(from, dest, printed, 'MANAGER');
+    expect(r.ok === false && r.message).toMatch(/printed bill/);
+  });
+
+  it('FL-S33 a destination that is disabled with mergedInto set, and holds no session, is still refused', () => {
+    const childOf10 = table({ tableId: '9', status: 'disabled', mergedInto: '10' });
+    expect(childOf10.hasSession).toBeUndefined();
+    expect(canMove(from, childOf10, party, 'MANAGER').ok).toBe(false);
+  });
+
+  it('FL-S33 a destination with an OTP in flight is refused', () => {
+    expect(canMove(from, table({ tableId: '9', status: 'pending', currentOTP: '123456' }), party, 'MANAGER').ok).toBe(false);
+  });
+
+  it('FL-S33 a destination that is a parent of a merged child is refused', () => {
+    expect(canMove(from, table({ tableId: '9', status: 'vacant', isParent: true }), party, 'MANAGER').ok).toBe(false);
+  });
+
+  it('FL-S29 a SERVER role is refused 403; MANAGER and ADMIN may move', () => {
+    const r = canMove(from, dest, party, 'SERVER');
+    expect(r.ok === false && r.code).toBe('permission-denied');
+    expect(canMove(from, dest, party, 'ADMIN')).toEqual({ ok: true });
+    expect(canMove(from, dest, party, 'MANAGER')).toEqual({ ok: true });
+  });
+
+  it('moving a table that has no sitting is refused', () => {
+    const r = canMove(table({ tableId: '4', status: 'vacant' }), dest, null, 'MANAGER');
+    expect(r.ok === false && r.message).toMatch(/no party to move/);
+  });
+
+  it('moving onto an out-of-service table is refused', () => {
+    expect(canMove(from, table({ tableId: '9', status: 'disabled' }), party, 'MANAGER').ok).toBe(false);
+  });
+
+  it('moving a sitting onto its own table is refused', () => {
+    const r = canMove(from, table({ tableId: '4', status: 'active' }), party, 'MANAGER');
+    expect(r.ok === false && r.code).toBe('invalid-argument');
+  });
+
+  it('a reserved destination is refused: five counts, and "not vacant" is the fifth', () => {
+    expect(canReceive(table({ tableId: '9', status: 'reserved' })).ok).toBe(false);
+  });
 });
 
 describe('isReleasable — when a paid table frees itself (FL-Q1, R14)', () => {
-  it.todo('last bill fully paid and nothing unbilled → releasable');
-  it.todo('last bill fully paid but 30000p of dessert unbilled → not releasable');
-  it.todo('one of two split bills still owing 100000p → not releasable');
-  it.todo('a merged group is judged across every table in it, not just the parent');
+  const settledAt = NOW - 31 * MIN;
+
+  it('last bill fully paid and nothing unbilled → releasable', () => {
+    const done = sitting({ bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })], settledAt });
+    expect(isReleasable(done, NOW)).toBe(true);
+  });
+
+  it('last bill fully paid but 30000p of dessert unbilled → not releasable', () => {
+    const dessert = sitting({
+      lines: [line({ lineId: 'l_jamun', listPrice: 30000 })],
+      bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })], settledAt,
+    });
+    expect(isReleasable(dessert, NOW)).toBe(false);
+  });
+
+  it('one of two split bills still owing 100000p → not releasable', () => {
+    const half = sitting({
+      bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' }), bill({ billId: 'b2', payable: 100000 })],
+      settledAt,
+    });
+    expect(isReleasable(half, NOW)).toBe(false);
+  });
+
+  it('a merged group is judged across every table in it, not just the parent', () => {
+    const group = sitting({
+      tableIds: ['5', '6'],
+      lines: [line({ lineId: 'l6', listPrice: 40000, tableId: '6' })],
+      bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })], settledAt,
+    });
+    expect(isReleasable(group, NOW)).toBe(false);
+  });
+
+  it('FL-Q1 settled 10 minutes ago and nobody tapped Clear → holds its tile, so the coffee party is not sat on', () => {
+    const recent = sitting({ bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })], settledAt: NOW - 10 * MIN });
+    expect(isReleasable(recent, NOW)).toBe(false);
+  });
+
+  it('FL-Q1 Clear frees it immediately, whatever the timer says', () => {
+    const cleared = sitting({ bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })], settledAt: NOW - MIN, cleared: true });
+    expect(isReleasable(cleared, NOW)).toBe(true);
+  });
+
+  it('FL-Q1 the 30-minute default is config: a restaurant on 5 frees at 6 minutes', () => {
+    const s = sitting({ bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })], settledAt: NOW - 6 * MIN });
+    expect(isReleasable(s, NOW)).toBe(false);
+    expect(isReleasable(s, NOW, 5)).toBe(true);
+  });
 });
 
-describe('the floor is a picture (R1, R17, R19, R20)', () => {
-  it.todo('FL-S30 a sitting whose table was retired still has a tile under its old number');
-  it.todo('FL-S32 two merges of the same child cannot both win: the loser is refused, not overwritten');
-  it.todo('FL-S14 once every bill of the group is settled the sitting refuses a new user');
-  it.todo('FL-S14 once every bill of the group is settled the sitting refuses a new checkout');
-  it.todo('R20 lines that cannot be read fail the floor; they never render an occupied tile as 0p');
+describe('the floor is a picture (R1, R17, R19)', () => {
+  it('FL-S30 a sitting whose table was retired still has a tile under its old number', () => {
+    const retired = table({ tableId: '12', status: 'disabled' });
+    const t = tile(sitting({ lines: TABLE_12 }), retired, NOW);
+    expect(t.label).toBe('12');
+    expect(t.onTable).toBe(147000);
+  });
+
+  it('FL-S6 a merged group is ONE tile labelled 5+6, never two greyed ones (R9)', () => {
+    const group = sitting({ tableIds: ['5', '6'], lines: [line({ lineId: 'l', listPrice: 412000 })] });
+    const t = tile(group, table({ tableId: '5', status: 'active', isParent: true }), NOW);
+    expect(t.label).toBe('5+6');
+    expect(t.tableIds).toEqual(['5', '6']);
+    expect(t.onTable).toBe(412000);
+  });
+
+  it('FL-S32 two merges of the same child cannot both win: the loser is refused, not overwritten', () => {
+    const child = table({ tableId: '6', status: 'vacant' });
+    expect(canMerge(table({ tableId: '5', status: 'active' }), child, 'MANAGER').ok).toBe(true);
+    // the winner's write lands: the child is now disabled and points at 5
+    const afterWin = table({ tableId: '6', status: 'disabled', mergedInto: '5' });
+    expect(canMerge(table({ tableId: '8', status: 'active' }), afterWin, 'MANAGER').ok).toBe(false);
+  });
+
+  it('FL-S14 once every bill of the group is settled the sitting refuses a new user', () => {
+    const done = sitting({ bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })] });
+    expect(acceptsNewGuests(done)).toBe(false);
+  });
+
+  it('FL-S14 once every bill of the group is settled the sitting refuses a new checkout', () => {
+    const done = sitting({ bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })] });
+    expect(acceptsNewGuests(done)).toBe(false);
+    // still eating after the bill: the door stays open, because ordering does not stop at issue
+    const eating = sitting({ lines: [line({ lineId: 'l', listPrice: 30000 })], bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })] });
+    expect(acceptsNewGuests(eating)).toBe(true);
+  });
+
+  it('a sitting that has never been billed accepts guests', () => {
+    expect(acceptsNewGuests(sitting())).toBe(true);
+  });
+
+  it('R19 lines that cannot be read fail the floor; they never render an occupied tile as 0p', () => {
+    const unreadable = line({ lineId: 'l_bad', listPrice: NaN });
+    expect(() => onTable([unreadable])).toThrow(/l_bad cannot be read/);
+  });
+
+  it('R19 one unreadable line fails the whole tile rather than quietly dropping 147000p', () => {
+    expect(() => onTable([...TABLE_12, line({ lineId: 'l_bad', listPrice: NaN })])).toThrow();
+  });
 });
 
 describe('the move write set (R5, R15, FL-S28)', () => {
-  it.todo('FL-S28 a move names session.tableId, the cart doc, the open order and every unbilled line');
-  it.todo('FL-S28 a billed line is never in the write set, and its presence refuses the whole move');
-  it.todo('FL-S10 no price field is in the write set: tableId is routing, not money');
-  it.todo('FL-S10 draftId is not in the write set, so the bill in progress follows the party');
+  const orders: { orderId: string; state: OrderState }[] = [
+    { orderId: 'o_cooking', state: 'PREPARING' },
+    { orderId: 'o_served', state: 'SERVED' },
+    { orderId: 'o_done', state: 'COMPLETED' },
+    { orderId: 'o_void', state: 'CANCELLED' },
+  ];
+  const party = sitting({
+    sessionId: 'sess_4', tableIds: ['4'],
+    lines: [line({ lineId: 'l_biryani', listPrice: 168000, tableId: '4' }), line({ lineId: 'l_billed', listPrice: 50000, tableId: '4', billId: 'bill_1' })],
+  });
+
+  it('FL-S28 a move names session.tableId, the cart doc, the open order and every unbilled line', () => {
+    const w = moveWriteSet(party, '4', '9', orders);
+    expect(w.sessionId).toBe('sess_4');
+    expect(w.toTableId).toBe('9');
+    expect(w.cartFrom).toBe('4');
+    expect(w.cartTo).toBe('9');
+    expect(w.orderIds).toContain('o_cooking');
+    expect(w.lineIds).toEqual(['l_biryani']);
+  });
+
+  it('FL-Q2 a SERVED-but-unpaid order moves too; a CANCELLED or COMPLETED one is left alone', () => {
+    const w = moveWriteSet(party, '4', '9', orders);
+    expect(w.orderIds).toEqual(['o_cooking', 'o_served']);
+  });
+
+  it('FL-S28 a billed line is never in the write set, and its presence refuses the whole move', () => {
+    const w = moveWriteSet(party, '4', '9', orders);
+    expect(w.lineIds).not.toContain('l_billed');
+    const r = canMove(table({ tableId: '4', status: 'active', hasSession: true }), table({ tableId: '9' }), party, 'MANAGER');
+    expect(r.ok).toBe(false);
+  });
+
+  it('FL-S10 no price field is in the write set: tableId is routing, not money', () => {
+    const w = moveWriteSet(party, '4', '9', orders);
+    const keys = Object.keys(w).join(',');
+    expect(keys).not.toMatch(/price|offer|discount|tax|payable|amount/i);
+  });
+
+  it('FL-S10 draftId is not in the write set, so the bill in progress follows the party', () => {
+    const w = moveWriteSet(party, '4', '9', orders) as unknown as Record<string, unknown>;
+    expect(w.draftId).toBeUndefined();
+    expect(Object.keys(w)).not.toContain('draftId');
+  });
+});
+
+describe('who may act (R16)', () => {
+  it('ADMIN and MANAGER may; SERVER and CAPTAIN may not, and get 403 rather than a PIN box', () => {
+    expect(mayAct('ADMIN')).toEqual({ ok: true });
+    expect(mayAct('MANAGER')).toEqual({ ok: true });
+    for (const role of ['SERVER', 'CAPTAIN'] as Role[]) {
+      const r = mayAct(role);
+      expect(r.ok === false && r.code).toBe('permission-denied');
+    }
+  });
 });
