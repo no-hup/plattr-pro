@@ -1,0 +1,109 @@
+<title>Plattr Table QR Sheet</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono&display=swap">
+<style>
+  :root {
+    --paper: #ffffff; --ink: #171a21; --slate: #5c6478; --rule: #d9dce3;
+    --panel: #f3f4f7; --accent: #1f7a4d; --accent-ink: #ffffff;
+    --card-bg: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #14161b; --ink: #eceef2; --slate: #a3aabb; --rule: #2d313b;
+      --panel: #1d2027; --accent: #3fb47a; --accent-ink: #0d1a12; --card-bg: #1a1d24;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #14161b; --ink: #eceef2; --slate: #a3aabb; --rule: #2d313b;
+    --panel: #1d2027; --accent: #3fb47a; --accent-ink: #0d1a12; --card-bg: #1a1d24;
+  }
+  body { background: var(--paper); color: var(--ink); font: 15px/1.5 "IBM Plex Sans", system-ui, sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 28px 24px 48px; }
+  h1 { font: 700 26px/1.2 "IBM Plex Sans", system-ui, sans-serif; margin: 0 0 4px; text-wrap: balance; }
+  .lede { color: var(--slate); margin: 0 0 20px; max-width: 65ch; }
+  .controls { background: var(--panel); border-radius: 10px; padding: 16px 18px; display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px 16px; margin-bottom: 24px; }
+  .controls label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; letter-spacing: .04em;
+    text-transform: uppercase; color: var(--slate); font-weight: 600; }
+  .controls input { font: 14px "IBM Plex Mono", ui-monospace, monospace; padding: 8px 10px; border: 1px solid var(--rule);
+    border-radius: 6px; background: var(--card-bg); color: var(--ink); }
+  .controls input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .controls .full { grid-column: 1 / -1; }
+  .actions { display: flex; gap: 10px; align-items: center; grid-column: 1 / -1; flex-wrap: wrap; }
+  button { font: 600 14px "IBM Plex Sans", system-ui, sans-serif; padding: 9px 16px; border-radius: 6px; border: 0;
+    background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .hint { color: var(--slate); font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .card { border: 1.5px solid var(--rule); border-radius: 12px; padding: 18px 16px 14px; background: var(--card-bg);
+    display: grid; grid-template-rows: auto auto auto auto; justify-items: center; text-align: center; gap: 8px;
+    break-inside: avoid; page-break-inside: avoid; }
+  .num { font: 400 64px/1 "Archivo Black", "IBM Plex Sans", system-ui, sans-serif; letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums; }
+  .num small { display: block; font: 600 12px/1 "IBM Plex Sans", system-ui, sans-serif; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--slate); margin-bottom: 8px; }
+  .qr { width: 168px; height: 168px; background: #fff; padding: 8px; border-radius: 8px; }
+  .qr img, .qr canvas { display: block; width: 152px; height: 152px; }
+  .cta { font-weight: 600; font-size: 15px; }
+  .cta span { color: var(--accent); }
+  .rest { color: var(--slate); font-size: 13px; }
+  .url { font: 10.5px/1.35 "IBM Plex Mono", ui-monospace, monospace; color: var(--slate); word-break: break-all; max-width: 100%; }
+  @media (max-width: 720px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 460px) { .grid { grid-template-columns: 1fr; } }
+  @media print {
+    :root { --paper: #fff; --ink: #000; --slate: #444; --rule: #bbb; --card-bg: #fff; --accent: #1f7a4d; }
+    .controls, h1, .lede { display: none; }
+    .wrap { padding: 0; max-width: none; }
+    .grid { gap: 10mm; }
+    .card { border-width: 1px; }
+    @page { margin: 12mm; }
+  }
+</style>
+<div class="wrap">
+  <h1>Table QR codes</h1>
+  <p class="lede">Each code opens the ordering site for one table. Change the fields, then print (⌘P) — the settings bar is not printed. Print at 100% scale on A4; one code per card.</p>
+  <div class="controls">
+    <label class="full">Ordering site<input id="base" value="https://plattrpro.web.app"></label>
+    <label>Restaurant ID<input id="rid" value="res_kaanchipuram_kaapi_hsr"></label>
+    <label>Restaurant name<input id="rname" value="Kaanchipuram Kaapi"></label>
+    <label>Table ID prefix<input id="prefix" value="tbl_"></label>
+    <label>Number of tables<input id="count" type="number" min="1" max="200" value="10"></label>
+    <div class="actions">
+      <button id="print" type="button">Print sheet</button>
+      <span class="hint">URL pattern: <code>{site}/#/r/{restaurant}/t/{prefix}{n}</code> (the <code>#</code> is REQUIRED — the consumer app uses hash routing; without it every scan lands on the dev restaurant picker and errors). Table numbers on the cards match <code>{prefix}{n}</code>.</span>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(function () {
+  var ids = ['base', 'rid', 'rname', 'prefix', 'count'];
+  var el = {}; ids.forEach(function (k) { el[k] = document.getElementById(k); });
+  try {
+    var saved = JSON.parse(localStorage.getItem('plattr-qr-sheet') || 'null');
+    if (saved) ids.forEach(function (k) { if (saved[k] != null) el[k].value = saved[k]; });
+  } catch (e) {}
+  function render() {
+    var base = el.base.value.replace(/\/+$/, ''), rid = el.rid.value.trim(), prefix = el.prefix.value,
+        n = Math.max(1, Math.min(200, parseInt(el.count.value, 10) || 1)), name = el.rname.value.trim();
+    try { localStorage.setItem('plattr-qr-sheet', JSON.stringify({ base: base, rid: rid, rname: name, prefix: prefix, count: n })); } catch (e) {}
+    var grid = document.getElementById('grid'); grid.textContent = '';
+    for (var i = 1; i <= n; i++) {
+      var url = base + '/#/r/' + encodeURIComponent(rid) + '/t/' + encodeURIComponent(prefix + i);
+      var card = document.createElement('div'); card.className = 'card';
+      var num = document.createElement('div'); num.className = 'num';
+      var small = document.createElement('small'); small.textContent = 'Table'; num.appendChild(small);
+      num.appendChild(document.createTextNode(String(i)));
+      var qr = document.createElement('div'); qr.className = 'qr';
+      var cta = document.createElement('div'); cta.className = 'cta'; cta.innerHTML = 'Scan to <span>view menu &amp; order</span>';
+      var rest = document.createElement('div'); rest.className = 'rest'; rest.textContent = name;
+      var u = document.createElement('div'); u.className = 'url'; u.textContent = url;
+      card.append(num, qr, cta, rest, u); grid.appendChild(card);
+      new QRCode(qr, { text: url, width: 152, height: 152, correctLevel: QRCode.CorrectLevel.M, colorDark: '#000000', colorLight: '#ffffff' });
+    }
+  }
+  ids.forEach(function (k) { el[k].addEventListener('input', render); });
+  document.getElementById('print').addEventListener('click', function () { window.print(); });
+  render();
+})();
+</script>

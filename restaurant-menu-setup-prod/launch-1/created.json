@@ -1,0 +1,288 @@
+{
+  "restaurantId": "res_kaanchipuram_kaapi_hsr",
+  "tableId": "tbl_1",
+  "customerPhones": [
+    "9000000001"
+  ],
+  "sessionIds": [
+    "NBBPSf3A6IaUlNXskDMF",
+    "MaC4IaVwrBS2YDlwu4tn",
+    "VT4xXdFWAIhHSrgpTuTa",
+    "BLXfV4qT48NxzqHg9e4g",
+    "qHpfMBOMnL3UdciX05Ya"
+  ],
+  "staffSessionIds": [
+    "npVHAWjv4R9Zpkqer78j",
+    "tNcCBA8wbz3FXua2eVj7",
+    "xjK29zPLbo0h4lqdtYjz",
+    "kLuIReKr4T7kMFebGvd9",
+    "RLzJvrcGboTcfEnILoDn",
+    "2ySdKGuFnAdhr6MV9GYu",
+    "WEgNGmbqxQm1lc9SF3Le",
+    "NdJMwWG0YmCBxvduLqel",
+    "MYXir5pNUWk3YMwYq5us",
+    "Q3gDqxTlQccOFh8xS1hU"
+  ],
+  "orderIds": [
+    "1FuVWkX5CBRGbWq9Gnqm",
+    "VrIgqAFk91oZ7PHTB57Y",
+    "gJArtNBZpNakIQJpUoKe"
+  ],
+  "cartDocIds": [
+    "tbl_1"
+  ],
+  "runs": [
+    {
+      "startedAt": "2026-09-08T14:04:24.730Z",
+      "orderId": "VrIgqAFk91oZ7PHTB57Y",
+      "sessionId": "BLXfV4qT48NxzqHg9e4g",
+      "calls": 23,
+      "p50": 1431,
+      "p95": 2723,
+      "max": 3635,
+      "timings": [
+        {
+          "endpoint": "table-checkTableStatus",
+          "ms": 1534,
+          "status": 200
+        },
+        {
+          "endpoint": "table-validateTableAndLocation",
+          "ms": 1253,
+          "status": 401
+        },
+        {
+          "endpoint": "server-serverLogin",
+          "ms": 1746,
+          "status": 200
+        },
+        {
+          "endpoint": "server-serverLogin",
+          "ms": 1431,
+          "status": 200
+        },
+        {
+          "endpoint": "table-generateTableOTP",
+          "ms": 1812,
+          "status": 200
+        },
+        {
+          "endpoint": "table-validateOTP",
+          "ms": 1398,
+          "status": 200
+        },
+        {
+          "endpoint": "table-validateTableAndLocation",
+          "ms": 1611,
+          "status": 200
+        },
+        {
+          "endpoint": "menu-fetchMenu-fetchMenu",
+          "ms": 883,
+          "status": 200
+        },
+        {
+          "endpoint": "cart-addItemToCart",
+          "ms": 1242,
+          "status": 200
+        },
+        {
+          "endpoint": "cart-addItemToCart",
+          "ms": 1204,
+          "status": 200
+        },
+        {
+          "endpoint": "cart-getCart",
+          "ms": 1273,
+          "status": 200
+        },
+        {
+          "endpoint": "cart-checkoutCart",
+          "ms": 2181,
+          "status": 200
+        },
+        {
+          "endpoint": "order-getOrder",
+          "ms": 512,
+          "status": 200
+        },
+        {
+          "endpoint": "order-getActiveCartsForKitchen",
+          "ms": 1149,
+          "status": 200
+        },
+        {
+          "endpoint": "cart-updateCartStatus",
+          "ms": 1667,
+          "status": 200
+        },
+        {
+          "endpoint": "cart-updateCartStatus",
+          "ms": 1651,
+          "status": 200
+        },
+        {
+          "endpoint": "order-getActiveOrdersForRestaurant",
+          "ms": 1995,
+          "status": 200
+        },
+        {
+          "endpoint": "server-getOrderDetails",
+          "ms": 3635,
+          "status": 200
+        },
+        {
+          "endpoint": "order-markCartAsServed",
+          "ms": 1561,
+          "status": 200
+        },
+        {
+          "endpoint": "order-updateOrderStatus",
+          "ms": 2723,
+          "status": 200
+        },
+        {
+          "endpoint": "table-checkTableStatus",
+          "ms": 928,
+          "status": 200
+        },
+        {
+          "endpoint": "table-validateTableAndLocation",
+          "ms": 1089,
+          "status": 401
+        },
+        {
+          "endpoint": "cart-addItemToCart",
+          "ms": 427,
+          "status": 400
+        }
+      ]
+    },
+    {
+      "startedAt": "2026-09-08T14:05:23.007Z",
+      "orderId": "gJArtNBZpNakIQJpUoKe",
+      "sessionId": "qHpfMBOMnL3UdciX05Ya",
+      "calls": 23,
+      "p50": 1168,
+      "p95": 2094,
+      "max": 2163,
+      "timings": [
+        {
+          "endpoint": "table-checkTableStatus",
+          "ms": 1503,
+          "status": 200
+        },
+        {
+          "endpoint": "table-validateTableAndLocation",
+          "ms": 1110,
+          "status": 401
+        },
+        {
+          "endpoint": "server-serverLogin",
+          "ms": 1481,
+          "status": 200
+        },
+        {
+          "endpoint": "server-serverLogin",
+          "ms": 1153,
+          "status": 200
+        },
+        {
+          "endpoint": "table-generateTableOTP",
+          "ms": 911,
+          "status": 200
+        },
+        {
+          "endpoint": "table-validateOTP",
+          "ms": 1331,
+          "status": 200
+        },
+        {
+          "endpoint": "table-validateTableAndLocation",
+          "ms": 1589,
+          "status": 200
+        },
+        {
+          "endpoint": "menu-fetchMenu-fetchMenu",
+          "ms": 1008,
+          "status": 200
+        },
+        {
+          "endpoint": "cart-addItemToCart",
+          "ms": 1633,
+          "status": 200
+        },
+        {
+          "endpoint": "cart-addItemToCart",
+          "ms": 1096,
+          "status": 200
+        },
+        {
+          "endpoint": "cart-getCart",
+          "ms": 1181,
+          "status": 200
+        },
+        {
+          "endpoint": "cart-checkoutCart",
+          "ms": 2163,
+          "status": 200
+        },
+        {
+          "endpoint": "order-getOrder",
+          "ms": 433,
+          "status": 200
+        },
+        {
+          "endpoint": "order-getActiveCartsForKitchen",
+          "ms": 1248,
+          "status": 200
+        },
+        {
+          "endpoint": "cart-updateCartStatus",
+          "ms": 2094,
+          "status": 200
+        },
+        {
+          "endpoint": "cart-updateCartStatus",
+          "ms": 1798,
+          "status": 200
+        },
+        {
+          "endpoint": "order-getActiveOrdersForRestaurant",
+          "ms": 1078,
+          "status": 200
+        },
+        {
+          "endpoint": "server-getOrderDetails",
+          "ms": 1168,
+          "status": 200
+        },
+        {
+          "endpoint": "order-markCartAsServed",
+          "ms": 810,
+          "status": 200
+        },
+        {
+          "endpoint": "order-updateOrderStatus",
+          "ms": 1719,
+          "status": 200
+        },
+        {
+          "endpoint": "table-checkTableStatus",
+          "ms": 921,
+          "status": 200
+        },
+        {
+          "endpoint": "table-validateTableAndLocation",
+          "ms": 1089,
+          "status": 401
+        },
+        {
+          "endpoint": "cart-addItemToCart",
+          "ms": 459,
+          "status": 400
+        }
+      ]
+    }
+  ]
+}

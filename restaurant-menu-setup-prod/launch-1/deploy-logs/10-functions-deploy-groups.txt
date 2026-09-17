@@ -1,0 +1,38 @@
+Ran all test suites.
+=== deploying functions:cart ===
+Error: An unexpected error has occurred.
+=== deploying functions:order ===
+✔  artifactregistry: required API artifactregistry.googleapis.com is enabled
+✔  functions: required API cloudbuild.googleapis.com is enabled
+✔  functions: required API cloudfunctions.googleapis.com is enabled
+✔  extensions: required API firebaseextensions.googleapis.com is enabled
+✔  functions: required API run.googleapis.com is enabled
+✔  functions: required API storage.googleapis.com is enabled
+✔  functions: required API eventarc.googleapis.com is enabled
+✔  functions: required API pubsub.googleapis.com is enabled
+✔  functions: functions folder uploaded successfully
+✔  functions[order-getOrder(us-central1)] Successful update operation.
+✔  functions[order-markCartAsServed(us-central1)] Successful update operation.
+✔  functions[order-getActiveCartsForKitchen(us-central1)] Successful update operation.
+✔  functions[order-updateOrderStatus(us-central1)] Successful update operation.
+✔  functions[order-getActiveOrdersForRestaurant(us-central1)] Successful update operation.
+✔  functions[order-getServedCartsForServer(us-central1)] Successful update operation.
+✔  Deploy complete!
+=== deploying functions:customer ===
+✔  functions: required API cloudbuild.googleapis.com is enabled
+✔  functions: required API cloudfunctions.googleapis.com is enabled
+✔  artifactregistry: required API artifactregistry.googleapis.com is enabled
+✔  extensions: required API firebaseextensions.googleapis.com is enabled
+✔  functions: required API storage.googleapis.com is enabled
+✔  functions: required API eventarc.googleapis.com is enabled
+✔  functions: required API pubsub.googleapis.com is enabled
+✔  functions: required API run.googleapis.com is enabled
+✔  functions: functions folder uploaded successfully
+✔  functions[customer-updateCustomerVisit(us-central1)] Successful update operation.
+✔  functions[customer-createOrUpdateCustomerProfile(us-central1)] Successful update operation.
+✔  functions[customer-getOrCreateCustomerProfile(us-central1)] Successful update operation.
+✔  functions[customer-endCustomerVisit(us-central1)] Successful update operation.
+✔  Deploy complete!
+=== ensuring allUsers invoker on every function (idempotent) ===
+=== inventory ===
+nodejs22 62

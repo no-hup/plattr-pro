@@ -4,7 +4,7 @@
 # Creates log directory, truncates log file, and filters output
 
 # Define absolute paths
-PROJECT_ROOT="/Users/shauryajaiswal/Desktop/dev/plattr-pro"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LOG_DIR="$PROJECT_ROOT/backend/firebase-debug-logs"
 LOG_FILE="$LOG_DIR/emulator.log"
 BACKEND_DIR="$PROJECT_ROOT/backend/src-plattr"

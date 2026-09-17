@@ -1,0 +1,37 @@
+# prod-smoke 2026-09-08T13:01:23.130Z  base=https://us-central1-rms-app-dd875.cloudfunctions.net  restaurant=res_kaanchipuram_kaapi_hsr  table=tbl_1
+#   ms  http  endpoint  result
+  6884ms  200  table-checkTableStatus  status=vacant hasOTP=false
+        PASS  A0 tbl_1 is not mid-meal at start
+  4706ms  401  table-validateTableAndLocation  UNAUTHENTICATED otpRequired=true
+        PASS  A1 scan before OTP → HTTP 401
+        PASS  A1b scan response says otpRequired
+        PASS  A1c flags: phone + username mandatory
+  3710ms  200  server-serverLogin  KITCHEN srv_kitchen
+        PASS  A2 kitchen login
+  1795ms  200  server-serverLogin  SERVER srv_server
+        PASS  A3 server login
+  5477ms  200  table-generateTableOTP  otp=****** expires=2026-09-08T13:06:45.000Z
+        PASS  A4 waiter mints a 6-digit table OTP
+  4823ms  200  table-validateOTP  session=NBBPSf3A6IaUlNXskDMF primary=true
+        PASS  A5 validateOTP creates a session
+  1747ms  200  table-validateTableAndLocation  tableStatus=active session=NBBPSf3A6IaUlNXskDMF
+        PASS  A6 re-scan with session → granted
+        PASS  A6b same session returned
+        PASS  A6c table is active
+  3053ms  200  menu-fetchMenu-fetchMenu  items=30 cats=6 menu=menu_main
+        PASS  A7 menu has 30 items
+        PASS  A7b menu has 6 categories
+  4629ms  200  cart-addItemToCart  cartTotal=35
+        PASS  A8 add Methu Vada
+  3256ms  200  cart-addItemToCart  cartTotal=55
+        PASS  A9 add Filter Coffee
+  3630ms  200  cart-getCart  items=2 total=55
+        PASS  A10 cart has 2 lines
+        PASS  A11 cart total is 55
+  4746ms  500  cart-checkoutCart  Error processing order for table tbl_1
+        FAIL  A12 checkout creates an order  ← {"error":{"details":{"status":"error","message":"Error processing order for table tbl_1","data":{"code":"internal","httpCode":500,"originalError":"Value for argument \"data\" is not a valid Firestore document. FieldValue.serverTimestamp() cannot be used inside of an array (found in field \"carts.`0`.statusHistory.`0`.timestamp\").","tableId":"tbl_1","restaurantId":"res_kaanchipuram_kaapi_hsr","ses
+
+# ── run 1 (COLD) latency summary ────────────────────────────────────────────
+# calls=12  p50=3710ms  p95=6884ms  max=6884ms  total=48456ms
+# slowest 3: table-checkTableStatus 6884ms · table-generateTableOTP 5477ms · table-validateOTP 4823ms
+# assertions: 17 passed, 1 failed (A12 checkout), 18 not reached

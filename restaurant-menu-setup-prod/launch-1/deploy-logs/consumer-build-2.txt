@@ -1,0 +1,388 @@
+[INFO] Generating build script...
+[INFO] Generating build script completed, took 179ms
+
+[INFO] Precompiling build script......
+[INFO] Precompiling build script... completed, took 2.2s
+
+[INFO] Initializing inputs
+[INFO] Building new asset graph...
+[INFO] Building new asset graph completed, took 1.1s
+
+[INFO] Checking for unexpected pre-existing outputs....
+[INFO] Deleting 42 declared outputs which already existed on disk.
+[INFO] Checking for unexpected pre-existing outputs. completed, took 4ms
+
+[INFO] Running build...
+[WARNING] freezed on test/backend_flow_with_models_test.dart:
+Your current `analyzer` version may not fully support your current SDK version.
+
+Analyzer language version: 3.4.0
+SDK language version: 3.13.0
+
+Please update to the latest `analyzer` version (14.3.0) by running
+`flutter packages upgrade`.
+
+If you are not getting the latest version by running the above command, you
+can try adding a constraint like the following to your pubspec to start
+diagnosing why you can't get the latest version:
+
+dev_dependencies:
+  analyzer: ^14.3.0
+
+[INFO] 1.6s elapsed, 55/73 actions completed.
+[INFO] 2.8s elapsed, 84/102 actions completed.
+[INFO] 3.8s elapsed, 149/151 actions completed.
+[INFO] 9.4s elapsed, 173/174 actions completed.
+[WARNING] json_serializable on lib/utils/UnifiedResponseParser.dart:
+The version constraint "^4.8.1" on json_annotation allows versions before 4.9.0 which is not allowed.
+[INFO] 12.1s elapsed, 232/252 actions completed.
+[INFO] 13.2s elapsed, 287/304 actions completed.
+[INFO] 15.4s elapsed, 346/349 actions completed.
+[INFO] Running build completed, took 15.6s
+
+[INFO] Caching finalized dependency graph...
+[INFO] Caching finalized dependency graph completed, took 61ms
+
+[INFO] Succeeded after 15.7s with 153 outputs (740 actions)
+
+Compiling lib/main.dart for the Web...                          
+Wasm dry run failed:
+Found incompatibilities with WebAssembly.
+
+package:package_info_plus/src/package_info_plus_web.dart 2:1 - dart:html unsupported (0)
+package:flutterboilerplate/session/services/session_storage_service.dart 2:1 - dart:html unsupported (0)
+package:ffi/src/allocation.dart 5:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:ffi/src/arena.dart 8:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:ffi/src/utf16.dart 5:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:ffi/src/utf8.dart 6:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/bstr.dart 3:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/callbacks.dart 5:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/constants.dart 6:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/constants_nodoc.dart 19:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/dispatcher.dart 1:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/exceptions.dart 3:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/functions.dart 3:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/guid.dart 18:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/inline.dart 5:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/macros.dart 5:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/propertykey.dart 12:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/structs.dart 3:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/structs.g.dart 10:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/types.dart 15:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/utils.dart 5:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/variant.dart 6:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/winrt_helpers.dart 3:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/extensions/dialogs.dart 3:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/extensions/filetime.dart 1:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/extensions/list_to_blob.dart 3:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/extensions/set_ansi.dart 1:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/extensions/set_string.dart 3:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/extensions/set_string_array.dart 1:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/extensions/unpack_utf16.dart 4:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/advapi32.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/bluetoothapis.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/bthprops.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/comctl32.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/comdlg32.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/crypt32.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/dbghelp.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/dwmapi.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/dxva2.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/gdi32.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/iphlpapi.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/kernel32.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/magnification.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/netapi32.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/ntdll.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/ole32.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/oleaut32.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/powrprof.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/propsys.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/rometadata.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/scarddlg.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/setupapi.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/shell32.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/shlwapi.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/user32.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/uxtheme.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/version.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/wevtapi.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/winmm.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/winscard.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/winspool.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/wlanapi.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/wtsapi32.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/xinput1_4.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/api_ms_win_core_apiquery_l2_1_0.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/api_ms_win_core_comm_l1_1_1.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/api_ms_win_core_comm_l1_1_2.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/api_ms_win_core_handle_l1_1_0.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/api_ms_win_core_path_l1_1_0.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/api_ms_win_core_sysinfo_l1_2_3.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/api_ms_win_core_winrt_l1_1_0.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/api_ms_win_core_winrt_error_l1_1_0.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/api_ms_win_core_winrt_string_l1_1_0.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/api_ms_win_ro_typeresolution_l1_1_0.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/api_ms_win_ro_typeresolution_l1_1_1.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/api_ms_win_shcore_scaling_l1_1_1.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/win32/api_ms_win_wsl_api_l1_1_0.g.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/combase.dart 3:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iagileobject.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iapplicationactivationmanager.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxfactory.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxfile.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxfilesenumerator.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxmanifestapplication.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxmanifestapplicationsenumerator.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxmanifestospackagedependency.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxmanifestpackagedependenciesenumerator.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxmanifestpackagedependency.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxmanifestpackageid.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxmanifestproperties.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxmanifestreader.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxmanifestreader2.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxmanifestreader3.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxmanifestreader4.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxmanifestreader5.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxmanifestreader6.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxmanifestreader7.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iappxpackagereader.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iaudiocaptureclient.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iaudioclient.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iaudioclient2.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iaudioclient3.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iaudioclientduckingcontrol.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iaudioclock.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iaudioclock2.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iaudioclockadjustment.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iaudiorenderclient.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iaudiosessioncontrol.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iaudiosessioncontrol2.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iaudiosessionenumerator.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iaudiosessionmanager.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iaudiosessionmanager2.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iaudiostreamvolume.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ibindctx.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ichannelaudiovolume.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iclassfactory.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iconnectionpoint.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iconnectionpointcontainer.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/idesktopwallpaper.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/idispatch.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ienumidlist.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ienummoniker.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ienumnetworkconnections.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ienumnetworks.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ienumresources.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ienumspellingerror.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ienumstring.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ienumvariant.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ienumwbemclassobject.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ierrorinfo.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ifiledialog.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ifiledialog2.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ifiledialogcustomize.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ifileisinuse.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ifileopendialog.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ifilesavedialog.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iinitializewithwindow.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iinspectable.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iknownfolder.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iknownfoldermanager.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/imetadataassemblyimport.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/imetadatadispenser.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/imetadatadispenserex.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/imetadataimport.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/imetadataimport2.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/imetadatatables.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/imetadatatables2.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/immdevice.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/immdevicecollection.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/immdeviceenumerator.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/immendpoint.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/immnotificationclient.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/imodalwindow.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/imoniker.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/inetwork.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/inetworkconnection.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/inetworklistmanager.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/inetworklistmanagerevents.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ipersist.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ipersistfile.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ipersistmemory.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ipersiststream.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ipropertystore.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iprovideclassinfo.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/irestrictederrorinfo.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/irunningobjecttable.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/isensor.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/isensorcollection.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/isensordatareport.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/isensormanager.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/isequentialstream.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ishellfolder.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ishellitem.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ishellitem2.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ishellitemarray.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ishellitemfilter.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ishellitemimagefactory.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ishellitemresources.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ishelllink.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ishelllinkdatalist.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ishelllinkdual.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ishellservice.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/isimpleaudiovolume.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ispeechaudioformat.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ispeechbasestream.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ispeechobjecttoken.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ispeechobjecttokens.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ispeechvoice.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ispeechvoicestatus.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ispeechwaveformatex.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ispellchecker.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ispellchecker2.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ispellcheckerchangedeventhandler.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ispellcheckerfactory.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ispellingerror.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ispeventsource.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ispnotifysource.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ispvoice.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/istream.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/isupporterrorinfo.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/itypeinfo.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomation.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomation2.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomation3.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomation4.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomation5.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomation6.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationandcondition.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationannotationpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationboolcondition.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationcacherequest.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationcondition.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationcustomnavigationpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationdockpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationdragpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationdroptargetpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationelement.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationelement2.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationelement3.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationelement4.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationelement5.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationelement6.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationelement7.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationelement8.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationelement9.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationelementarray.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationexpandcollapsepattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationgriditempattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationgridpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationinvokepattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationitemcontainerpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationlegacyiaccessiblepattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationmultipleviewpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationnotcondition.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationobjectmodelpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationorcondition.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationpropertycondition.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationproxyfactory.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationproxyfactoryentry.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationproxyfactorymapping.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationrangevaluepattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationscrollitempattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationscrollpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationselectionitempattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationselectionpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationselectionpattern2.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationspreadsheetitempattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationspreadsheetpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationstylespattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationsynchronizedinputpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationtableitempattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationtablepattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationtextchildpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationtexteditpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationtextpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationtextpattern2.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationtextrange.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationtextrange2.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationtextrange3.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationtextrangearray.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationtogglepattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationtransformpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationtransformpattern2.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationtreewalker.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationvaluepattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationvirtualizeditempattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuiautomationwindowpattern.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iunknown.dart 5:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iuri.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/ivirtualdesktopmanager.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iwbemclassobject.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iwbemconfigurerefresher.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iwbemcontext.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iwbemhiperfenum.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iwbemlocator.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iwbemobjectaccess.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iwbemrefresher.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iwbemservices.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iwebauthenticationcoremanagerinterop.dart 9:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/com/iwinhttprequest.dart 7:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+package:win32/src/extensions/_internal.dart 1:1 - dart:ffi unsupported without --enable-experimental-ffi (16)
+
+'record-use' is now enabled by default; this flag is no longer required.
+'record-use' is now enabled by default; this flag is no longer required.
+'record-use' is now enabled by default; this flag is no longer required.
+
+Use --no-wasm-dry-run to disable these warnings.
+Expected to find fonts for (MaterialIcons, packages/cupertino_icons/CupertinoIcons), but found (MaterialIcons). This usually means you are referring to font families in an IconData class but not including them in the assets section of your pubspec.yaml, are missing the package that would include them, or are missing "uses-material-design: true".
+Font asset "MaterialIcons-Regular.otf" was tree-shaken, reducing it from 1645184 to 11280 bytes (99.3% reduction). Tree-shaking can be disabled by providing the --no-tree-shake-icons flag when building your app.
+Compiling lib/main.dart for the Web...                             32.0s
+✓ Built build/web
+[INFO] Generating build script...
+[INFO] Generating build script completed, took 128ms
+
+[INFO] Precompiling build script......
+[INFO] Precompiling build script... completed, took 1.7s
+
+[INFO] Initializing inputs
+[INFO] Building new asset graph...
+[INFO] Building new asset graph completed, took 769ms
+
+[INFO] Checking for unexpected pre-existing outputs....
+[INFO] Deleting 42 declared outputs which already existed on disk.
+[INFO] Checking for unexpected pre-existing outputs. completed, took 2ms
+
+[INFO] Running build...
+[WARNING] freezed on test/backend_flow_with_models_test.dart:
+Your current `analyzer` version may not fully support your current SDK version.
+
+Analyzer language version: 3.4.0
+SDK language version: 3.13.0
+
+Please update to the latest `analyzer` version (14.3.0) by running
+`flutter packages upgrade`.
+
+If you are not getting the latest version by running the above command, you
+can try adding a constraint like the following to your pubspec to start
+diagnosing why you can't get the latest version:
+
+dev_dependencies:
+  analyzer: ^14.3.0
+
+[INFO] 1.5s elapsed, 67/85 actions completed.
+[INFO] 2.6s elapsed, 162/166 actions completed.
+[INFO] 6.7s elapsed, 173/174 actions completed.
+[WARNING] json_serializable on lib/utils/UnifiedResponseParser.dart:
+The version constraint "^4.8.1" on json_annotation allows versions before 4.9.0 which is not allowed.
+[INFO] 8.5s elapsed, 212/237 actions completed.
+[INFO] 9.5s elapsed, 296/314 actions completed.
+[INFO] 10.8s elapsed, 346/349 actions completed.
+[INFO] Running build completed, took 11.0s
+
+[INFO] Caching finalized dependency graph...
+[INFO] Caching finalized dependency graph completed, took 44ms
+
+[INFO] Succeeded after 11.0s with 153 outputs (740 actions)
+
