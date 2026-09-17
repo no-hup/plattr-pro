@@ -1,276 +1,165 @@
 /**
- * Suite: offers
+ * Suite: offers — Offers V2, end to end, through a real checkout.
  *
- * Offer eligibility, apply, remove, BOGO, percentage, flat.
- * Tests offer lifecycle and interaction with cart checkout.
+ * There is no `applyOffer` endpoint any more. An offer is chosen by the server at checkout:
+ * `createOrUpdateOrder` → `buildOrderPriceInfo` → `evaluateAndPickBestOffer`, and the winner is
+ * written onto the order as `appliedOffer` (id, title, type, scope, discountAmount, appliedItems).
+ * So the only honest way to test an offer is to order food and read the order back.
+ *
+ * The old `offers` and `offer-pricing` suites called the removed endpoint and had been gutted to
+ * empty braces; they reported a fake pass each. This file replaces both.
+ *
+ * Runs on `res_e2e_offer_configs`, which carries all nine seeded offers, and on tables
+ * `table_clean_1,2,3,5,6,7` (4 is seeded `disabled` on purpose) — no other suite touches that restaurant, so each scenario gets its own
+ * session, its own cart and its own order.
+ *
+ * ── Offer selection, which is what makes the expected values below computable ──
+ * Every active offer is evaluated against the whole order. The highest discount wins; a tie falls
+ * back to `offer.priority`, and no seeded offer sets one (TD-020). So each cart below is chosen to
+ * have exactly ONE winner, by a clear margin.
+ *
+ * Two arithmetic facts that are easy to get wrong:
+ *   - ORDER-scope offers take their percentage off the cart's BASE price (pre item-discount);
+ *     CATEGORY and ITEM scope take it off each eligible line's FINAL price.
+ *   - An offer lands before charges. `priceInfo.finalPrice` is the post-offer total; the 7.5 %
+ *     service charge and the −5 % global discount are computed on that and reported separately.
+ *
+ * ── Seeded menu (res_e2e_offer_configs) ──
+ *   Burger  cat_food/sub_burger   base 200, 10 % off → 180   (Regular variant adds 0)
+ *   Pizza   cat_food/sub_pizza    base 500, 10 % off → 450   (Medium + Thin add 0)
+ *   Tiramisu cat_food/sub_dessert base 200, no discount → 200
+ *   Whiskey cat_bar/sub_whiskey   base 500, no discount → 500
+ *   Beer is seeded OUT OF STOCK, so no scenario can use it.
  */
 import { call } from '../lib/api.js';
-import { assertSuccess, assertError, assertFieldExists } from '../lib/assert.js';
 import { customerLogin } from '../lib/auth.js';
-import { narrator } from '../lib/narrator.js';
 import config from '../lib/config.js';
 
-const { RESTAURANT_ID, TABLE_CLEAN_3, TABLE_OTP, ITEMS, VARIANTS, OFFERS } = config;
+const { RESTAURANT_OFFER_CONFIGS: RID, TABLE_OTP, ITEMS, VARIANTS, OFFERS } = config;
+
+const REG   = { [VARIANTS.BURGER_SIZE.id]: VARIANTS.BURGER_SIZE.options.REGULAR.id };
+const PLAIN = {
+  [VARIANTS.PIZZA_SIZE.id]:  VARIANTS.PIZZA_SIZE.options.MEDIUM.id,
+  [VARIANTS.PIZZA_CRUST.id]: VARIANTS.PIZZA_CRUST.options.THIN.id,
+};
 
 export default async function offersSuite() {
   const results = { name: 'offers', pass: 0, fail: 0, tests: [] };
+  const check = (pass, message, actual) => {
+    results.tests.push({ pass, message, actual: pass ? undefined : actual });
+    pass ? results.pass++ : results.fail++;
+  };
 
-  function record(a) { results.tests.push(a); a.pass ? results.pass++ : results.fail++; }
-
-  // Offers V2: applyOffer was removed (auto-apply at checkout).
-  // This suite needs rewriting to verify offer behaviour via checkout flow.
-  const applyProbe = await call('offers-applyOffer', { restaurantId: RESTAURANT_ID, tableId: TABLE_CLEAN_3, offerId: 'probe' });
-  if (applyProbe._httpStatus === 404) {
-    record({ pass: true, message: 'SKIP: offers-applyOffer removed in Offers V2 (auto-apply at checkout). 7 tests need rewrite to verify offers via checkout flow.' });
-    return results;
+  /**
+   * One scenario: fresh session on its own table, add every line, check out, read the order back.
+   * Returns { appliedOffer, priceInfo } or throws with a message naming the step that failed.
+   */
+  async function orderOn(tableId, lines) {
+    const sessionId = await customerLogin(RID, tableId, TABLE_OTP, config.CUSTOMER_PHONE, config.CUSTOMER_NAME);
+    for (const l of lines) {
+      const add = await call('cart-addItemToCart', {
+        restaurantId: RID, tableId, sessionId,
+        menuItemId: l.id, quantity: l.qty,
+        ...(l.variants ? { selectedVariants: l.variants } : {}),
+      });
+      if (add.status !== 'success') throw new Error(`addItemToCart(${l.id}) → ${add.message || JSON.stringify(add)}`);
+    }
+    const co = await call('cart-checkoutCart', { restaurantId: RID, tableId, sessionId });
+    if (co.status !== 'success') throw new Error(`checkoutCart → ${co.message || JSON.stringify(co)}`);
+    const orderId = co.data?.orderId;
+    if (!orderId) throw new Error(`checkoutCart returned no orderId: ${JSON.stringify(co)}`);
+    const got = await call('order-getOrder', { restaurantId: RID, orderId, sessionId });
+    if (got.status !== 'success') throw new Error(`getOrder → ${got.message || JSON.stringify(got)}`);
+    return { offer: got.data?.appliedOffer, price: got.data?.priceInfo, orderId };
   }
 
-  // Setup: get a session and populate cart
-  let sessionId;
-  try {
-    sessionId = await customerLogin(RESTAURANT_ID, TABLE_CLEAN_3, TABLE_OTP, '5553001001', 'Offer Tester');
-  } catch (e) {
-    record({ pass: false, message: `Setup: customerLogin failed: ${e.message}` });
-    return results;
+  async function scenario(label, tableId, lines, assertions) {
+    try {
+      assertions(await orderOn(tableId, lines));
+    } catch (e) {
+      check(false, `${label}: setup failed — ${e.message}`);
+    }
   }
 
-  const cartBase = { restaurantId: RESTAURANT_ID, tableId: TABLE_CLEAN_3 };
-
-  // ── 1. Get applicable offers (empty cart) ──────────────────────
-  {
-    const resp = await call('offers-getApplicableOffers', {
-      restaurantId: RESTAURANT_ID,
-      tableId: TABLE_CLEAN_3,
-    });
-    // May succeed with empty list or error if no cart
-    const ok = resp.status === 'success' || resp._httpStatus === 200;
-    record({ pass: ok, message: `1. Get offers (empty cart) → ${ok ? 'success' : `error: ${resp.message}`}`, actual: ok ? undefined : resp });
-  }
-
-  // Add items to cart for offer testing
-  await call('cart-addItemToCart', {
-    ...cartBase,
-    menuItemId: ITEMS.TIRAMISU.id,
-    quantity: 2,
-    sessionId,
+  // ── OF-1 · BOGO, ITEM scope · two burgers, the second one free ──────────────────────
+  // base 200×2 = 400, final 180×2 = 360. Unit price 360/2 = 180, buy 1 get 1 → 180 off.
+  // Rivals: 15 % food = 54; complex 25 % of 400 = 100; cap offer = 100; first-time 20 % = 80.
+  await scenario('OF-1', config.TABLE_CLEAN_1, [{ id: ITEMS.BURGER.id, qty: 2, variants: REG }], ({ offer, price }) => {
+    check(offer?.id === OFFERS.BOGO_BURGER.id, 'OF-1 two burgers → BOGO wins over every percentage offer', offer);
+    check(offer?.discountAmount === 180 && price?.offerDiscount === 180,
+      'OF-1 the free burger is worth its post-discount unit price, ₹180 — not its ₹200 menu price', { offer, price });
+    check(price?.finalPrice === 180, 'OF-1 pay ₹360 − ₹180 = ₹180', price);
+    const it = offer?.appliedItems?.[0];
+    check(offer?.appliedItems?.length === 1 && it?.menuItemId === ITEMS.BURGER.id && !!it?.cartItemId
+      && it?.discountAmount === 180 && it?.discountedPrice === 0,
+      'OF-1 BOGO names the cart item it freed — this breakdown is what TD-016 bills against', offer?.appliedItems);
+    check(price?.chargesTotal === 4.5,
+      'OF-1 charges land on the post-offer ₹180: 7.5 % service ₹13.50 − 5 % global ₹9 = ₹4.50', price);
   });
-  await call('cart-addItemToCart', {
-    ...cartBase,
-    menuItemId: ITEMS.WHISKEY.id,
-    quantity: 1,
-    sessionId,
+
+  // ── OF-2 · PERCENTAGE, CATEGORY scope, capped · ten tiramisu ────────────────────────
+  // 50 % of ₹2000 = ₹1000, but the offer caps at ₹500, and the cap scales the line breakdown too.
+  // Rivals: 15 % food = 300 (its own cap); first-time 20 % of 2000 = 400 → capped 200; cap offer 100.
+  await scenario('OF-2', config.TABLE_CLEAN_2, [{ id: ITEMS.TIRAMISU.id, qty: 10 }], ({ offer, price }) => {
+    check(offer?.id === OFFERS.DESSERT_50.id, 'OF-2 ten desserts → the dessert offer wins', offer);
+    check(offer?.discountAmount === 500 && price?.offerDiscount === 500,
+      'OF-2 50 % of ₹2000 is ₹1000, and maxDiscount holds it to ₹500', { offer, price });
+    check(price?.finalPrice === 1500, 'OF-2 pay ₹2000 − ₹500 = ₹1500', price);
+    check(offer?.appliedItems?.[0]?.discountAmount === 500 && offer?.appliedItems?.[0]?.discountedPrice === 1500,
+      'OF-2 the cap scales the line breakdown down with it, so the parts still sum to the whole', offer?.appliedItems);
   });
 
-  // ── 2. Get applicable offers (cart with items) ─────────────────
-  let offerId;
-  {
-    const resp = await call('offers-getApplicableOffers', {
-      restaurantId: RESTAURANT_ID,
-      tableId: TABLE_CLEAN_3,
-    });
-    record(assertSuccess(resp, '2. Get offers (cart with items)'));
-    if (resp.status === 'success') {
-      const offers = resp.data?.offers || [];
-      if (offers.length > 0) {
-        offerId = offers.find(o => o.isApplicable)?.id || offers[0]?.id;
-        record({ pass: true, message: `2a. Found ${offers.length} offer(s), first applicable: ${offerId || 'none'}` });
-      } else {
-        record({ pass: true, message: '2a. No offers configured (OK — offer testing depends on mock data)' });
-      }
-    }
-  }
+  // ── OF-3 · PERCENTAGE, ORDER scope · one burger ─────────────────────────────────────
+  // base 200, final 180. Cap offer: 50 % of 200 = 100, capped at 100 → ₹100, and the discount is
+  // then held to the bill (min(100, 180)). Rivals: complex 25 % of 200 = 50; 15 % food = 27.
+  // The bar's flat ₹100 needs a bar item, and there is none.
+  await scenario('OF-3', config.TABLE_CLEAN_3, [{ id: ITEMS.BURGER.id, qty: 1, variants: REG }], ({ offer, price }) => {
+    check(offer?.id === OFFERS.MAXDISCOUNT_CAP.id, 'OF-3 one burger → the ₹100-capped order offer wins', offer);
+    check(offer?.discountAmount === 100 && price?.finalPrice === 80, 'OF-3 pay ₹180 − ₹100 = ₹80', { offer, price });
+    check(offer?.scope === 'ORDER' && Array.isArray(offer?.appliedItems) && offer.appliedItems.length === 0,
+      'OF-3 an ORDER offer ships NO itemised breakdown by design — TD-016 reads that as "spread across the bill"', offer);
+  });
 
-  // ── 3. Apply offer (if available and applicable) ────────────────
-  if (offerId) {
-    const resp = await call('offers-applyOffer', {
-      ...cartBase,
-      offerId,
-      sessionId,
-    });
-    const ok = resp.status === 'success' || resp._httpStatus === 200;
-    record({
-      pass: ok,
-      message: ok ? '3. Apply offer → success' : `3. Apply offer → ${resp.message || 'error'} (offer may not meet conditions)`,
-      actual: ok ? undefined : resp,
-    });
+  // ── OF-4 · conditions.requiredItems · burger + tiramisu + whiskey ───────────────────
+  // base 200+200+500 = 900, final 180+200+500 = 880. The complex offer needs a burger in the cart:
+  // 25 % of base 900 = ₹225, cap 500. Rivals: first-time 20 % of 900 = 180; dessert 100; bar flat 100.
+  const FOUR = [
+    { id: ITEMS.BURGER.id, qty: 1, variants: REG },
+    { id: ITEMS.TIRAMISU.id, qty: 1 },
+    { id: ITEMS.WHISKEY.id, qty: 1 },
+  ];
+  await scenario('OF-4', config.TABLE_CLEAN_7, FOUR, ({ offer, price }) => {
+    check(offer?.id === OFFERS.COMPLEX.id, 'OF-4 the burger the offer requires is in the cart, so it qualifies', offer);
+    check(offer?.discountAmount === 225 && price?.finalPrice === 655,
+      'OF-4 an ORDER percentage is taken off the ₹900 BASE, not the ₹880 discounted total: ₹225 off → ₹655', { offer, price });
+  });
 
-    // ── 4. Apply second offer → should fail (one at a time) ──────
-    {
-      const resp2 = await call('offers-applyOffer', {
-        ...cartBase,
-        offerId: 'different_offer_id',
-        sessionId,
-      });
-      const isError = resp2.status === 'error' || resp2._httpStatus >= 400;
-      record({ pass: isError, message: `4. Apply second offer → ${isError ? 'rejected (one at a time)' : 'unexpectedly succeeded'}`, actual: isError ? undefined : resp2 });
-    }
+  // ── OF-5 · the same cart minus the required burger ──────────────────────────────────
+  // base 700, final 700. Complex drops out. First-time 20 % of 700 = ₹140 (cap 200) wins over
+  // dessert 100, bar flat 100 and the ₹100 cap offer. The expired 30 % would have been ₹210.
+  await scenario('OF-5', config.TABLE_CLEAN_5, FOUR.slice(1), ({ offer, price }) => {
+    check(offer?.id !== OFFERS.COMPLEX.id,
+      'OF-5 take the burger away and requiredItems locks the offer out — the gate is real', offer);
+    check(offer?.id !== OFFERS.EXPIRED.id && offer?.discountAmount !== 210,
+      'OF-5 the expired offer would have beaten every rival at ₹210, and it never fires', offer);
+    check(offer?.id === OFFERS.FIRST_TIME_20.id && offer?.discountAmount === 140 && price?.finalPrice === 560,
+      'OF-5 20 % of ₹700 = ₹140 wins → pay ₹560', { offer, price });
+  });
 
-    // ── 5. Remove offer ──────────────────────────────────────────
-    {
-      const resp3 = await call('offers-removeOffer', {
-        ...cartBase,
-        sessionId,
-      });
-      record(assertSuccess(resp3, '5. Remove offer'));
-    }
-  } else {
-    record({ pass: true, message: '3. Apply offer → SKIP (no offers in mock data)' });
-    record({ pass: true, message: '4. Second offer → SKIP' });
-    record({ pass: true, message: '5. Remove offer → SKIP' });
-  }
-
-  // ── 6. Remove offer when none applied → still success ─────────
-  {
-    const resp = await call('offers-removeOffer', {
-      ...cartBase,
-      sessionId,
-    });
-    // Should succeed with "no offer to remove" message
-    const ok = resp.status === 'success' || resp._httpStatus === 200;
-    record({ pass: ok, message: `6. Remove when none applied → ${ok ? 'success' : `error: ${resp.message}`}`, actual: ok ? undefined : resp });
-  }
-
-  // ── 7. Apply offer with invalid offerId → error ────────────────
-  {
-    const resp = await call('offers-applyOffer', {
-      ...cartBase,
-      offerId: 'nonexistent_offer_xyz',
-      sessionId,
-    });
-    const isError = resp.status === 'error' || resp._httpStatus >= 400;
-    record({ pass: isError, message: `7. Invalid offerId → ${isError ? 'error' : 'unexpectedly succeeded'}`, actual: isError ? undefined : resp });
-  }
-
-  // ── 8. Missing restaurantId → error ────────────────────────────
-  {
-    const resp = await call('offers-getApplicableOffers', {
-      tableId: TABLE_CLEAN_3,
-    });
-    const isError = resp.status === 'error' || resp._httpStatus >= 400;
-    record({ pass: isError, message: `8. Missing restaurantId → ${isError ? 'error' : 'unexpectedly succeeded'}`, actual: isError ? undefined : resp });
-  }
-
-  // ══════════════════════════════════════════════════════════════
-  // Extended offer tests
-  // ══════════════════════════════════════════════════════════════
-
-  // ── 9. Applicable offers list includes isApplicable field ─────
-  {
-    const resp = await call('offers-getApplicableOffers', {
-      restaurantId: RESTAURANT_ID, tableId: TABLE_CLEAN_3,
-    });
-    if (resp.status === 'success') {
-      const offers = resp.data?.offers || [];
-      const allHaveApplicable = offers.every(o => typeof o.isApplicable === 'boolean');
-      record({
-        pass: allHaveApplicable || offers.length === 0,
-        message: `9. All offers have isApplicable field: ${allHaveApplicable ? 'yes' : 'no'}`,
-        actual: allHaveApplicable || offers.length === 0 ? undefined : resp,
-      });
-    } else {
-      record({ pass: false, message: '9. Could not get offers', actual: resp });
-    }
-  }
-
-  // ── 10. Apply PERCENTAGE offer → verify cart priceInfo changes ─
-  {
-    // Clear and add tiramisu for dessert offer
-    await call('cart-clearCart', cartBase);
-    await call('cart-addItemToCart', { ...cartBase, menuItemId: ITEMS.TIRAMISU.id, quantity: 1, sessionId });
-    const applyResp = await call('offers-applyOffer', {
-      ...cartBase, offerId: 'offer_dessert_50', sessionId,
-    });
-    const ok = applyResp.status === 'success' || applyResp._httpStatus === 200;
-    record({
-      pass: ok,
-      message: `10. Apply PERCENTAGE (dessert 50%) → ${ok ? 'success' : applyResp.message || 'error'}`,
-      actual: ok ? undefined : applyResp,
-    });
-    if (ok) narrator.offerApplied('50% Off Desserts', 'CATEGORY', 100, 100);
-  }
-
-  // ── 11. Apply FLAT offer → verify cart priceInfo ──────────────
-  {
-    await call('cart-clearCart', cartBase);
-    await call('cart-addItemToCart', { ...cartBase, menuItemId: ITEMS.WHISKEY.id, quantity: 1, sessionId });
-    const applyResp = await call('offers-applyOffer', {
-      ...cartBase, offerId: 'offer_flat_100', sessionId,
-    });
-    const ok = applyResp.status === 'success' || applyResp._httpStatus === 200;
-    record({
-      pass: ok,
-      message: `11. Apply FLAT (₹100 off bar) → ${ok ? 'success' : applyResp.message || 'error'}`,
-      actual: ok ? undefined : applyResp,
-    });
-    if (ok) narrator.offerApplied('₹100 Off Bar', 'CATEGORY', 100, 400);
-  }
-
-  // ── 12. Apply offer then add item → offer recalculates ────────
-  {
-    // Keep whiskey + flat_100 from test 11, add tiramisu
-    await call('cart-addItemToCart', { ...cartBase, menuItemId: ITEMS.TIRAMISU.id, quantity: 1, sessionId });
-    const cartResp = await call('cart-getCart', cartBase);
-    record(assertSuccess(cartResp, '12. Cart after adding item with offer applied'));
-    narrator.info('Added item with offer already applied — checking if offer persists');
-  }
-
-  // ── 13. Apply offer not meeting conditions → error ────────────
-  {
-    await call('cart-clearCart', cartBase);
-    await call('cart-addItemToCart', { ...cartBase, menuItemId: ITEMS.TIRAMISU.id, quantity: 1, sessionId });
-    // flat_100 requires minOrderValue 500, tiramisu is only 200
-    const applyResp = await call('offers-applyOffer', {
-      ...cartBase, offerId: 'offer_flat_100', sessionId,
-    });
-    const isError = applyResp.status === 'error' || applyResp._httpStatus >= 400;
-    record({
-      pass: isError,
-      message: `13. Offer not meeting conditions → ${isError ? 'rejected' : 'unexpectedly applied'}`,
-      actual: isError ? undefined : applyResp,
-    });
-    if (isError) narrator.offerRejected('₹100 Off Bar', 'cart below ₹500 minimum');
-  }
-
-  // ── 14. BOGO offer application ────────────────────────────────
-  {
-    await call('cart-clearCart', cartBase);
-    await call('cart-addItemToCart', {
-      ...cartBase, menuItemId: ITEMS.BURGER.id, quantity: 2, sessionId,
-      selectedVariants: { [VARIANTS.BURGER_SIZE.id]: VARIANTS.BURGER_SIZE.options.REGULAR.id },
-    });
-    const applyResp = await call('offers-applyOffer', {
-      ...cartBase, offerId: 'offer_bogo_burger', sessionId,
-    });
-    const ok = applyResp.status === 'success' || applyResp._httpStatus === 200;
-    record({
-      pass: ok,
-      message: `14. BOGO burger → ${ok ? 'applied' : applyResp.message || 'error'}`,
-      actual: ok ? undefined : applyResp,
-    });
-    if (ok) narrator.offerApplied('BOGO Burger', 'ITEM', 180, 180);
-  }
-
-  // ── 15. Remove offer → price restores ─────────────────────────
-  {
-    // Get cart price with offer
-    const cartBefore = await call('cart-getCart', cartBase);
-    const priceWithOffer = cartBefore.data?.cart?.priceInfo?.finalPrice || cartBefore.data?.priceInfo?.finalPrice;
-
-    // Remove offer
-    await call('offers-removeOffer', { ...cartBase, sessionId });
-
-    // Get cart price without offer
-    const cartAfter = await call('cart-getCart', cartBase);
-    const priceWithoutOffer = cartAfter.data?.cart?.priceInfo?.finalPrice || cartAfter.data?.priceInfo?.finalPrice;
-
-    const restored = priceWithoutOffer !== undefined && priceWithOffer !== undefined && priceWithoutOffer > priceWithOffer;
-    record({
-      pass: restored || priceWithOffer === undefined,
-      message: `15. Remove offer → price restored: ${priceWithOffer} → ${priceWithoutOffer}`,
-      actual: restored || priceWithOffer === undefined ? undefined : cartAfter,
-    });
-    narrator.info(`Price restoration: ${priceWithOffer} → ${priceWithoutOffer}`);
-  }
+  // ── OF-6 · PERCENTAGE, CATEGORY scope across two lines · four pizzas + a tiramisu ────
+  // base 4×500 + 200 = 2200, final 4×450 + 200 = 2000. Food 15 %: 15 % of 1800 = 270 on the pizza
+  // line, 15 % of 200 = 30 on the dessert, ₹300 total — exactly its cap, so nothing is scaled.
+  // Rivals: first-time 20 % of 2200 = 440 → capped 200; dessert 100; pizza flat 50; cap offer 100.
+  const SIX = [{ id: ITEMS.PIZZA.id, qty: 4, variants: PLAIN }, { id: ITEMS.TIRAMISU.id, qty: 1 }];
+  await scenario('OF-6', config.TABLE_CLEAN_6, SIX, ({ offer, price }) => {
+    check(offer?.id === OFFERS.PCT_FOOD_15.id, 'OF-6 a food-category offer wins on a food-only cart', offer);
+    check(offer?.discountAmount === 300 && price?.finalPrice === 1700, 'OF-6 ₹2000 − ₹300 = ₹1700', { offer, price });
+    const by = Object.fromEntries((offer?.appliedItems || []).map(i => [i.menuItemId, i.discountAmount]));
+    check(offer?.appliedItems?.length === 2 && by[ITEMS.PIZZA.id] === 270 && by[ITEMS.TIRAMISU.id] === 30,
+      'OF-6 the breakdown splits per line — ₹270 pizza, ₹30 dessert — and the parts sum to the ₹300 whole', offer?.appliedItems);
+    check((offer?.appliedItems || []).every(i => !!i.cartItemId),
+      'OF-6 every line in the breakdown names its cartItemId, which is the only handle TD-016 has to bill it', offer?.appliedItems);
+  });
 
   return results;
 }

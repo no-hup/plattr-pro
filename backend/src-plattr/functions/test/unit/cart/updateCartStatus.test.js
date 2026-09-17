@@ -31,8 +31,18 @@ describe('updateCartStatus item cascade', () => {
     jest.doMock('../../../admin/initializeAdmin', () => ({
       firestore: () => mockFirestoreDb(mockData),
     }));
+    // orders/lineSnapshots.js (line snapshots + the void on cancel) reaches Firestore through
+    // admin/admin, not initializeAdmin. Same store, so its writes land where the test can see them.
+    jest.doMock('../../../admin/admin', () => ({
+      db: mockFirestoreDb(mockData),
+      admin: { firestore: () => mockFirestoreDb(mockData) },
+      Timestamp: { now: jest.fn(), fromDate: jest.fn() },
+      FieldValue: { serverTimestamp: jest.fn(), delete: jest.fn(), increment: jest.fn() },
+    }));
+    // The real validateStaffSession returns the acting staff; the void on cancel puts that
+    // id on the audit row (ST R5), so the stub has to be truthful about it.
     jest.doMock('../../../adminApp/auth', () => ({
-      validateStaffSession: jest.fn().mockResolvedValue(undefined),
+      validateStaffSession: jest.fn().mockResolvedValue({ serverId: 'srv_1', serverData: { role: 'MANAGER' } }),
     }));
     jest.doMock('../../../utils/timestamp', () => ({ now: () => 'NOW' }));
     // Bill recompute on CANCELLED/RETURNED is covered by the order-level code;

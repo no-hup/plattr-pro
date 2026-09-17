@@ -31,10 +31,11 @@ step "B · golden values vs real backend code (offline)"
 node mock/verifyGolden.js 2>&1 | tail -3 || FAILED+=("verifyGolden")
 
 # Everything below needs the emulator.
-if ! curl -s -o /dev/null -X POST http://127.0.0.1:5002/rms-app-dd875/us-central1/dev-listRestaurants \
+BASE_URL="${PLATTR_BASE_URL:-http://127.0.0.1:5002/rms-app-dd875/us-central1}"
+if ! curl -s -o /dev/null -X POST "$BASE_URL/dev-listRestaurants" \
       -H 'Content-Type: application/json' -d '{"data":{}}' 2>/dev/null; then
-  note "Emulator not reachable on 127.0.0.1:5002 — skipping the live layers."
-  note "Start it from backend/src-plattr with the firebase emulators:start command in AGENTS/README."
+  note "Emulator not reachable at $BASE_URL — skipping the live layers."
+  note "Start it from backend/src-plattr with ./emu.sh (see AGENT_TESTING_STARTUP_GUIDELINE.md)."
   exit 1
 fi
 
@@ -43,7 +44,7 @@ step "C · goal-line (golden scenarios against the live backend)"
 # strings, which --refresh-timestamps does not rewrite, so an old seed silently
 # turns "future offer" negative cases into live offers.
 node mock/buildMockData7.js >/dev/null 2>&1
-FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node mock/importMockData5.js \
+FIRESTORE_EMULATOR_HOST="${FIRESTORE_EMULATOR_HOST:-127.0.0.1:8080}" node mock/importMockData5.js \
   --file=mock/MockData7ProductionMenus.json --clean --refresh-timestamps >/dev/null 2>&1
 ( cd test/e2e && node goalline.mjs 2>&1 | tail -4 ) || FAILED+=("goalline")
 

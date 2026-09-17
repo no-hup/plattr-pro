@@ -26,6 +26,7 @@ assert_success() {
   RESPONSE="$response" python3 - <<'PY'
 import json
 import os
+import sys
 
 data = json.loads(os.environ["RESPONSE"])
 result = data.get("result") or {}

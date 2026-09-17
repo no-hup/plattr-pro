@@ -123,8 +123,10 @@ export default async function coverageSuite() {
 
   // ── 4. Checkout on dedicated table → server-getOrderDetails + markItemServed ──
   let orderId = null;
+  let customerSessionId = null;
   try {
     const sessionId = await customerLogin(RESTAURANT_ID, TABLE, TABLE_OTP);
+    customerSessionId = sessionId;
     const base = { restaurantId: RESTAURANT_ID, tableId: TABLE, sessionId };
     await call('cart-clearCart', base);
     const add = await call('cart-addItemToCart', { ...base, menuItemId: config.ITEMS.TIRAMISU.id, quantity: 1 });
@@ -181,13 +183,45 @@ export default async function coverageSuite() {
     }
   }
 
-  // ── 5. table-updateTableStatus smoke (also restores the table) ──
+  // ── 4b. Session resume is caller-scoped: a guessed sessionId must not hand
+  //        back the table's live session (that id is the checkout credential) ──
+  if (customerSessionId) {
+    const scanBase = { restaurantId: RESTAURANT_ID, tableId: TABLE, userLocation: { latitude: 0, longitude: 0 } };
+    const bogus = await call('table-validateTableAndLocation', { ...scanBase, sessionId: 'not-the-real-one' });
+    const bogusOk = bogus?.status !== 'success';
+    record(bogusOk, "validateTableAndLocation ignores a sessionId that is not the table's",
+      bogusOk ? '' : `→ handed out ${bogus?.data?.session?.sessionId}`);
+    const real = await call('table-validateTableAndLocation', { ...scanBase, sessionId: customerSessionId });
+    const realOk = real?.status === 'success' && real?.data?.session?.sessionId === customerSessionId;
+    record(realOk, "validateTableAndLocation resumes the caller's own session",
+      realOk ? '' : `→ ${real?.message || JSON.stringify(real).slice(0, 200)}`);
+  }
+
+  // ── 5. table-updateTableStatus: reserved blocks self-service; vacant restores the table ──
   {
     const staffSessionId = await serverLogin();
-    const resp = await call('table-updateTableStatus', {
-      restaurantId: RESTAURANT_ID, tableId: TABLE, status: 'vacant',
-      sessionId: staffSessionId,
+    const setStatus = (status) => call('table-updateTableStatus', {
+      restaurantId: RESTAURANT_ID, tableId: TABLE, status, sessionId: staffSessionId,
     });
+
+    const reserved = await setStatus('reserved');
+    record(reserved?.status === 'success', 'table-updateTableStatus sets table reserved',
+      reserved?.status === 'success' ? '' : `→ ${reserved?.message}`);
+    const scan = await call('table-validateTableAndLocation', {
+      restaurantId: RESTAURANT_ID, tableId: TABLE, userLocation: { latitude: 0, longitude: 0 },
+    });
+    const scanOk = scan?._httpStatus === 403;
+    record(scanOk, 'reserved table: scan → 403 ask staff',
+      scanOk ? '' : `→ HTTP ${scan?._httpStatus} ${scan?.message}`);
+    const otp = await call('table-validateOTP', {
+      restaurantId: RESTAURANT_ID, tableId: TABLE, otp: TABLE_OTP,
+      phoneNumber: CUSTOMER_PHONE, name: CUSTOMER_NAME,
+    });
+    const otpOk = otp?._httpStatus === 403;
+    record(otpOk, 'reserved table: validateOTP → 403 (was 500)',
+      otpOk ? '' : `→ HTTP ${otp?._httpStatus} ${otp?.message}`);
+
+    const resp = await setStatus('vacant');
     const ok = resp?.status === 'success';
     record(ok, 'table-updateTableStatus sets table vacant',
       ok ? '' : `→ ${resp?.message || JSON.stringify(resp).slice(0, 200)}`);

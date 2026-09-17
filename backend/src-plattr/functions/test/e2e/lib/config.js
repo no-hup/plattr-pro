@@ -3,8 +3,10 @@
  * All IDs and expected prices come from MockData5EndToEndTesting.json.
  */
 
-const BASE_URL = 'http://127.0.0.1:5002/rms-app-dd875/us-central1';
-const FIRESTORE_HOST = '127.0.0.1:8080';
+// Ports come from the emulator slot this session started (see ../../../../emu.sh);
+// unset = slot 0 = the historical 5002/8080.
+const BASE_URL = process.env.PLATTR_BASE_URL || 'http://127.0.0.1:5002/rms-app-dd875/us-central1';
+const FIRESTORE_HOST = process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080';
 const PROJECT_ID = 'rms-app-dd875';
 
 // ── Restaurants (7 configs) ──────────────────────────────────────
@@ -28,7 +30,7 @@ const TABLE_CLEAN_1 = 'table_clean_1'; // for customer-journey, order-lifecycle
 const TABLE_CLEAN_2 = 'table_clean_2'; // for cart suite
 const TABLE_CLEAN_3 = 'table_clean_3'; // for pricing suite
 const TABLE_CLEAN_4 = 'table_clean_4'; // disabled table (for error tests)
-const TABLE_CLEAN_5 = 'table_clean_5'; // for offer-pricing suite
+const TABLE_CLEAN_5 = 'table_clean_5'; // for offers suite (res_e2e_offer_configs)
 const TABLE_CLEAN_6 = 'table_clean_6'; // for order-lifecycle cancel flow
 const TABLE_CLEAN_7 = 'table_clean_7'; // for customer-journey expanded
 const TABLE_OTP = '123456';

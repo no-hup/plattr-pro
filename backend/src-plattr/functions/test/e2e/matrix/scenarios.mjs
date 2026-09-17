@@ -681,9 +681,12 @@ async function staffLoad(ctx) {
   await Promise.all(customers.map(c => c.addItem(menu.simple, 'load')));
 
   // Checkouts and staff polls, all in flight together, the way a real service looks.
+  // These polls race the checkouts by design, so what they return is timing-dependent
+  // — they are asserted on below but never captured as goldens ('_' prefix). The
+  // golden captures are the post-settle polls at the end of the scenario.
   const pollers = [
-    kitchen.activeCarts('load_kitchen'), waiter.activeOrders('load_server'),
-    waiter2.activeOrders('load_server2'), kitchen.activeCarts('load_kitchen2'),
+    kitchen.activeCarts('_load_race'), waiter.activeOrders('_load_race'),
+    waiter2.activeOrders('_load_race'), kitchen.activeCarts('_load_race'),
   ];
   const [checkouts, polls] = await Promise.all([
     Promise.all(customers.map(c => c.checkout('load'))),
@@ -707,6 +710,7 @@ async function staffLoad(ctx) {
 
   // After the dust settles every checkout must be visible to staff.
   const finalPoll = await waiter.activeOrders('load_final');
+  await kitchen.activeCarts('load_kitchen');   // golden: kitchen view once everything landed
   const visible = new Set((finalPoll?.data?.orders || []).map(o => o.orderId));
   const placed = checkouts.filter(ok).map(orderIdOf).filter(Boolean);
   const missing = placed.filter(id => !visible.has(id));

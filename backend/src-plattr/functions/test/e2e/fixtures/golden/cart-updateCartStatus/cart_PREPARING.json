@@ -199,7 +199,7 @@
           },
           {
             "status": "PREPARING",
-            "timestamp": 1788802969193,
+            "timestamp": 1788824846773,
             "userId": "system",
             "notes": ""
           }
@@ -301,7 +301,7 @@
       "_seconds": 1780000000,
       "_nanoseconds": 0
     },
-    "updatedAt": 1788802969193,
+    "updatedAt": 1788824846773,
     "isActive": true,
     "assignedServer": null,
     "notes": "",

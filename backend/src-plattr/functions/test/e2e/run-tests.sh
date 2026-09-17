@@ -15,13 +15,13 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # ── 1. Check emulator health ────────────────────────────────────
-EMULATOR_URL="http://127.0.0.1:5002"
+EMULATOR_URL="${PLATTR_BASE_URL:-http://127.0.0.1:5002}"
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$EMULATOR_URL" 2>/dev/null || echo "000")
 
 if [ "$HTTP_CODE" = "000" ]; then
   echo "[run-tests] ERROR: Firebase emulator not reachable at $EMULATOR_URL"
   echo "[run-tests] Start it with:"
-  echo "  cd backend/src-plattr && npm run emulators"
+  echo "  cd backend/src-plattr && ./emu.sh   # or EMU_SLOT=1 ./emu.sh for a private one"
   exit 1
 fi
 echo "[run-tests] Emulator: OK"
