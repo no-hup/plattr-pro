@@ -1,4 +1,9 @@
 // BL · invoice numbering. Pure. A number is handed out only at issue (R3); the caller runs this inside the transaction.
+// `timezone` is an IANA zone and is the SECOND time representation in this system; PY's
+// `timezoneOffsetMinutes` is a fixed offset and is the first. That is deliberate, not drift: a
+// fiscal year is a label, so a zone is fine here. PY's is load-bearing for day-close query
+// completeness and must stay a fixed offset — see the invariant on `businessDayWindow`. If these
+// are ever unified it is onto the offset, and this file changes.
 export interface InvoiceConfig { series: string; creditNoteSeries: string; fiscalYearStartMonth: number; width: number; timezone: string }
 export const INVOICE_DEFAULTS: InvoiceConfig = { series: 'A', creditNoteSeries: 'CN', fiscalYearStartMonth: 4, width: 4, timezone: 'Asia/Kolkata' };
 export interface Counter { next: number }
