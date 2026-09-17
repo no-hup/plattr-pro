@@ -278,3 +278,45 @@ cost, so only one ships. If the tablet cannot see the printer, or the link dies 
 | 2026-09-17 | **Tax editing lives in the Flutter admin app**, as a named exception to "Flutter apps untouched" | The menu and the owner are already there. A second menu editor in the till is how a dish and its tax get edited in two places |
 | 2026-09-17 | **`table-openTable` exists, with `openedBy` and `covers`** | A cashier cannot take a phone order against a guest's OTP. `covers` is the number every report wants first and no migration can invent |
 | 2026-09-17 | **KT ships one counter printer for go-live; kitchen and bar are week two** | The chef already sees every round on the kitchen tablet. A guest with no printed invoice is not a restaurant |
+
+---
+
+## Amendment, 2026-09-18 — KT-D1 and KT-D1c supersede D4; the KOT split is withdrawn
+
+**Superseded above:** "Bluetooth first, bridge in reserve" and "what printer the first restaurant owns".
+KT-D1 (signed 17th) rejected Bluetooth — it means replacing every printer, the common Indian units are
+58 mm portables, and Chrome 148 is recent enough that an old tablet would not print at all. KT-D1c
+(18th) makes the **Flutter kitchen app the first print agent**: it is Dart, so it can open TCP 9100,
+and it is already on a tablet in the kitchen. The encoder moved server-side, so the job document
+carries bytes rather than rows and an agent is ~30 lines in any language. The bridge box is
+implementation #2 behind the same protocol. Any LAN 9100 printer works; no hardware is ours.
+
+**My flag 2, answered: the week-one / week-two split is withdrawn.**
+
+The split rested on two costs and both are gone. Buying a second and third printer is now the price of a
+printer and nothing else, and KOT is no longer a second print implementation in a second language —
+once the agent exists for the bill it is already holding a socket and a job loop, so another station is
+a routing rule and one ticket layout.
+
+What replaces it, on merits rather than on cost:
+
+- **The bar ticket is a go-live item.** The first customer serves alcohol and **there is no bar surface
+  in the product**. `platter_kitchen/lib/pages/live/live_orders_screen.dart:36` is a client-side category
+  dropdown a human selects; no device can be bound to a station. Screen-only therefore means a bartender
+  watching the whole kitchen's work behind a filter someone must remember to keep set, or a captain
+  calling drinks across the room. It needs **no new frozen field**: `print.routeByTaxBlock: {liquor:'bar'}`
+  is already the sheet's fallback and `taxBlockId` is on every line today.
+- **The kitchen ticket is desirable, not blocking.** A screen genuinely runs a kitchen — KDS is a real
+  product. Paper wins because it is a divisible work queue and because a touchscreen and oily hands do
+  not mix, so ship it; do not hold go-live for it.
+- **So KT-a's scope becomes a routing table, not a phase boundary:** `counter` and `bar` at go-live,
+  `kitchen` a config line the chef can switch on the same afternoon. KT-D2 (`categoryId` frozen on the
+  line) is still worth taking now but is no longer needed for go-live — it buys sub-stations like a
+  tandoor, which `taxBlockId` cannot express.
+
+**Two consequences for `plattr-pro-41`:**
+1. **KT-D3 is answered differently than the sheet recommends.** The print responsibility sits on the
+   kitchen tablet, not the till, so the sleeping-device failure moves to a tablet that is plugged in and
+   watched through service — better. The loud-queue half of recommendation C should survive the move.
+2. **A restaurant with no kitchen tablet has no printing at all.** Fine for customer one, worth naming
+   before customer five, and an argument for keeping the bridge as implementation #2 rather than dropping it.
