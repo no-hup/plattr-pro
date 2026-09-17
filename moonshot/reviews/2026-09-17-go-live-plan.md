@@ -320,3 +320,96 @@ What replaces it, on merits rather than on cost:
    watched through service — better. The loud-queue half of recommendation C should survive the move.
 2. **A restaurant with no kitchen tablet has no printing at all.** Fine for customer one, worth naming
    before customer five, and an argument for keeping the bridge as implementation #2 rather than dropping it.
+
+---
+
+# Manager pass, 2026-09-18 — decisions landed
+
+Read before deciding: `SPEC_FL_floor_and_moves.md` v3, `reviews/2026-09-17-donor-FL.md`,
+`donor-KT.md` and `donor-OR.md` ranked lists, `reviews/2026-09-17-arch-3-day-review.md` items 3 and 5,
+`TECH_DEBT.md` TD-026/027/030/032, and the live code at `table/vacateTable.js`,
+`table/mergedTables.js:34`, `orders/updateOrderStatus.js:181`.
+
+## The four tax rows — final, with two corrected before landing
+
+**Row 1 (tax resolution) — amended.** Dish → category (`tax.assign`) → **refuse**. No default.
+`taxSource: 'item' | 'category'` and `categoryId` freeze onto the line. **Correction:** the earlier
+wording said existing line documents with no `categoryId` "route to the default (tested)". That is a
+fail-open compatibility branch and the repo rule is now *not live, no migrations, fail closed*. A line
+with no resolvable bucket refuses; seeds get re-run. The branch is not written.
+
+**Row 2 (tax editing in the Flutter admin) — stands**, as a named exception to "Flutter untouched",
+for the item editor only.
+
+**Row 3 (`table-openTable` with `openedBy` and `covers`) — stands, and is now stronger.** There is no
+migration path by policy, so a number not collected at the sitting is gone for good.
+
+**Row 4 (printing) — rewritten; the original is stale.** Superseded by KT-D1 (bridge over Bluetooth)
+and KT-D1c (the Flutter kitchen app is the first print agent, encoder server-side). The row now reads:
+**KT ships a routing table — `counter` and `bar` at go-live, `kitchen` a config line.** No hardware is
+ours, no phase boundary, and the bar half is not optional: there is no bar surface in the product
+(`platter_kitchen/lib/pages/live/live_orders_screen.dart:36` is a client-side dropdown, no device can
+be bound to a station) and the first customer serves alcohol.
+
+## Build order, re-confirmed against the donor reviews and KT's new shape
+
+1. **Tax tagging** + **arch item 5 (PIN)** — one window, both nearly free now, a third of item 5 is deleting the plaintext branch at `adapters/firestore/approvals.ts:36` (no legacy staff docs exist).
+2. **Arch item 3 — `order.priceInfo`.** Moved **ahead of OR**, which is the one real change to the order I set on the 17th. OR is built on `cart-addItemToCart` → `cart-checkoutCart` → `createOrUpdateOrder`, and all three are in item 3's blast radius. Building OR first means writing its scenarios and tests against a shape scheduled for deletion, then writing them again.
+3. **FL** — in flight, unaffected by item 3 (R2 reads line snapshots, not `order.priceInfo`). Runs in parallel.
+4. **OR.**
+5. **KT** — counter and bar, **with URY's every-minute reconciler in the same phase, not after** (donor-KT rank 4, `ury_kot_validation.py:12-36`). With a box it was a nicety; with a tablet as the agent it is what turns "asleep for four minutes" into a late labelled ticket instead of food nobody cooks.
+6. **RP** → 7. **CF** → 8. **UQ.** `KT-b` is struck: it was a phase boundary drawn around a hardware buy that no longer exists.
+
+**Shared dependency, build once:** donor-KT rank 1 and donor-OR rank 2 are the same field — a snapshot
+of what the kitchen was last told, with a server-side staleness check. OR needs it to edit a sent round;
+KT needs it to diff a ticket. It belongs to KT, and OR reads it. `line.sent` already supplies the
+per-line lock half (donor-OR rank 4), so the missing piece is only "what was on the last ticket".
+
+## FL · Q1 reviewed against the code — the intent is right, the route is wrong
+
+FL-Q1 ("a paid sitting frees its own table, from the payment path") is signed. Routing it through the
+existing release path breaks three of FL's own rules, because `table/vacateTable.js` does three things
+at once: marks vacant, **unmerges every child**, and **ends the session**.
+
+1. **Paying would auto-unmerge a group with people still in it.** `mergedTables.js:34 unmergeChildren`
+   releases every child to `vacant`. The party of ten at 5+6+7 pays at 22:00 and stays for coffee;
+   tables 6 and 7 read free and the next walk-in is seated into them.
+2. **The paid tile falls through `settled` to `free`.** The sheet's own table defines `settled` as
+   "no open money, **session not yet ended**" — and `vacateTable` ends the session, so FL-S14 and
+   FL-S35 cannot hold. R19's "stop accepting new users and checkouts" is a soft close; this is a hard one.
+3. **The unmerge is unaudited and swallowed.** R7 requires one audit row in the same transaction as the
+   act. `unmergeChildren` commits a bare batch with no row, and `vacateTable` catches its own failure —
+   leaving a vacant parent with children still merged, silently. That is the `except: pass` scar the
+   donor review flagged at URY `ury_order.py:2156-2175`.
+
+**Recommendation to the FL session: the payment path writes nothing to the table.** The tile word is
+already derived (R2, R14), so a fully-paid sitting reads `settled` with zero writes, and the table
+returns to `free` when the session actually ends — the waiter's Vacant, or expiry. It is less code than
+FL-Q1 as signed, it removes the contradiction, and it keeps the property the donor review praised:
+ours derives every tile, URY stored a flag and had to build a reconciler because it drifted
+(`ury_order.py:1585-1593` vs `:306-330`).
+
+## TD-030 · un-merge — closed, won't fix
+
+Keeping the decline. R14 (unmerge refused while the group holds open money) removes the cost the debt
+row was written against: the only unmerge that can now happen is on a group that owes nothing, and
+releasing the children of a group that owes nothing is free to redo. URY's drift scar does not transfer —
+it drifted because the merged list was *stored*; ours is derived on every read. Reversible in six lines
+(`childTableIds` on the existing endpoint) the day a large group that owes nothing makes it worth it.
+A resolved disagreement is not debt, and leaving it open is noise in a list that must stay readable.
+
+## Two findings still with no row — `TECH_DEBT.md` is at TD-037
+
+Both were verified twice and neither has ever been logged. "No row, no merge" applies.
+- **TD-038 · P0 ·** `taxBlockId` is read and never written outside seeds, mocks and two Playwright
+  specs (`orders/lineSnapshots.js:51`, `domain/line.ts:12`). A hand-entered menu is 100% unbillable.
+- **TD-039 · P1 ·** `adminApp/settings.js:63` deep-merges unvalidated client JSON into the document
+  that now holds tax rates, the invoice series, PIN thresholds and tenders. No write validation, no
+  audit row. (The numbers TD-026/TD-027 proposed on the 17th were taken by UQ in the meantime.)
+
+## Go-live checklist item, not a build item
+
+The composite indexes — `bills(status, issuedAt)` and `lines(billId, placedAt)` — are the first gate in
+this repo that **cannot be proven red locally**: the emulator does not enforce indexes, so a missing one
+passes every test and fails only in prod. Deploy them ahead of the query and confirm **READY**, not
+BUILDING, before the first day close.

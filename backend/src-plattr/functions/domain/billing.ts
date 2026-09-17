@@ -113,6 +113,14 @@ export function preview(lines: Line[], discount: BillDiscount | null, charges: C
   const voided = lines.filter(l => !l.countsTowardTotal).map(l => ({ ...l, billDiscount: 0, tax: {}, credited: { qty: 0 } }));
 
   // Charges: base is the net of the lines in the charge's own block (BL-S21), taxed in that block.
+  //
+  // `def` comes off a line rather than out of config, which reads like a charge could be levied
+  // with no definition and land untaxed. It cannot, and the reason is worth writing down because
+  // it is not local: `base` sums ONLY components whose block is the charge's, and the R10 check
+  // above refuses any line whose component block is missing from its own snapshot. So no line in
+  // the block ⟹ base 0 ⟹ amount 0, and the `: { taxable: amount, parts: [] }` arm below is only
+  // ever reached with amount 0. Widening `base` past the charge's own block breaks that and
+  // resurrects a silently untaxed charge — `C6b` goes red if you try.
   const out: Charge[] = charges.map(ch => {
     const def = live.map(l => blockOf(l, ch.taxBlockId)).find(Boolean);
     const base = billed.reduce((a, l) => a + Object.entries(l.tax).reduce((s, [cid, t]) => s + (l.components.find(c => c.id === cid)!.taxBlockId === ch.taxBlockId ? t.taxable : 0), 0), 0);

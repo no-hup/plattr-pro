@@ -83,6 +83,15 @@ export async function issue(ports: Ports, req: IssueRequest): Promise<Bill> {
   const staff = await ports.staff.bySession(req.restaurantId, req.sessionId);
   if (!ISSUERS.includes(staff.role)) fail('permission-denied', 'Not allowed for your role');
   if (typeof req.cid !== 'string' || !req.cid) fail('invalid-argument', 'cid required');
+  // The stale-line guard below indexes this. Absent, it threw a TypeError inside the transaction
+  // and came back as a bare `internal`, which reads like our bug rather than a malformed request.
+  //
+  // It does NOT make the guard work. `expectedV` only checks the lines it names, and every real
+  // caller sends `{}` — useBill.ts twice, ReconcileScreen.tsx once — so "line changed, preview
+  // again" has never fired outside a unit test. Wiring it means the till sending the `v` it
+  // previewed at, and the offline replay having no preview to send one from. That is a decision,
+  // not a patch; this only stops a missing field looking like a crash.
+  if (!req.expectedV || typeof req.expectedV !== 'object') fail('invalid-argument', 'expectedV required: the line versions the preview was taken at, {} for none');
 
   // TD-019. A bill-level discount sent by a client is a person giving money away, so it goes
   // through ST's one door before anything is written: reason from the configured list, an audit

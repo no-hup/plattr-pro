@@ -217,3 +217,86 @@ Worth naming so it survives the next module.
    cheap now and a migration later.
 3. Lift PY's `shape()` into a shared wrapper for the other three APIs (item 4). Closes the
    optimistic-lock hole, the client-chosen attribution and the audit-trail door together.
+
+---
+
+# Follow-up · 2026-09-18 · two retractions and what I changed
+
+## Item 6 was wrong. There is no untaxed charge.
+
+I wrote that a charge whose tax block no line carries "is billed untaxed and nothing complains".
+It is not. `base` is summed **only** over components whose block is the charge's own, and the R10
+check above it refuses any line whose component block is missing from its snapshot. So no line in
+the block ⟹ `base` 0 ⟹ `amount` 0. The `{ taxable: amount, parts: [] }` arm is only ever reached
+with amount 0.
+
+Reproduced: bar-only bill, 10% service charge configured on `food` →
+`{base: 0, amount: 0, tax: {taxable: 0, parts: []}}`, payable unchanged at 49900.
+
+Test `C6` already documented exactly this ("row with base 0, amount 0, no tax, payable
+unchanged"). I read past it and reasoned from the shape of the code instead. The session that
+pushed back priced the fix correctly and did not catch that there was nothing to fix either.
+
+What is left is a smell, not a bug: the definition is taken off a line rather than read from
+config, which is what made it readable as a money leak. Rather than refactor around a non-bug,
+the coupling that makes it safe is now pinned:
+
+- `domain/billing.ts` — a comment stating the implication chain and naming the test that guards it.
+- `domain/billing.test.ts` `C6b` — asserts `amount ≠ 0 ⟹ the charge's block is on the bill`,
+  across three shapes (bar-only, kitchen-only, unknown block id). Proven red by widening `base`
+  past the charge's own block (5 failures, C6b among them), green on restore. Widening `base` is
+  the one edit that would turn this into the bug I claimed, and it can no longer be made quietly.
+
+**The real question underneath is unchanged and still worth a decision:** a charge's *rate* is
+read from live config at preview and again at issue, so it can move between the bill a guest was
+shown and the bill they are handed. Charges are the only part of a bill that is a reference rather
+than a snapshot. That is worth deciding on purpose.
+
+## Item 5: the plaintext branch is not dead code
+
+I said the plaintext PIN fallback at `adapters/firestore/approvals.ts:36` serves legacy documents,
+that the not-live rule means there are none, and that it could be deleted today in one line.
+
+MockData7 seeds `password: "1234"`, in the clear, on every server document. The fallback is not
+legacy tolerance — it is the live comparison path for every test, every emulator run and the
+Playwright specs. Deleting it breaks every PIN in the repo.
+
+That makes item 5 worse than I described, not smaller. The approval PIN is not merely the login
+password: in the only data that exists it is **stored and compared as clear text**. And the
+deletion I called free is not separable from the `pinHash` schema change — they are one change.
+Still the biggest item left, still in the free-exactly-once window, and now entirely Shaurya's
+call, because it is a schema change plus a re-seed.
+
+## Changed today
+
+Both gates proven red before green. `make check`: boundary clean, typecheck clean across the whole
+tree including FL's in-flight files, 1008 unit tests pass.
+
+- `domain/billing.ts`, `domain/billing.test.ts` — the charge invariant above (`C6b`).
+- `app/billing.ts`, `app/billing.test.ts` — `billing-issue` now refuses a missing or non-object
+  `expectedV` with `invalid-argument` instead of throwing a TypeError inside the transaction and
+  surfacing as a bare `internal`. No behaviour change for any existing caller: all three send `{}`.
+
+Nothing else. Items 3, 5 and 10 are schema changes and are Shaurya's; item 4 is parked behind FL by
+agreement; item 2, item 7 and the two fail-open config reads were fixed by the module sessions in
+`0c6c824`, `ed909c9`, `44b3d0b` and `3d72e03`. The composite-index checklist line is already in the
+go-live plan.
+
+## Two rows I am proposing, not writing
+
+`TECH_DEBT.md` is open in FL's working tree; these want the next free ids.
+
+**· P1 · The stale-line guard on `billing-issue` has never fired.** `expectedV` only checks the
+lines it names, and all three real callers send `{}` — `useBill.ts` twice, `ReconcileScreen.tsx`
+once. The money is not at risk: `issue` recomputes from the fresh line documents inside the
+transaction. The cashier is. They press Issue on a preview reading ₹1,240 and the printed bill
+comes out at ₹1,190 because a line was voided in between, with no "preview again" in the way.
+Fixing it means the till sending the `v` it previewed at — and the offline replay has no preview to
+take one from, so OF has to decide what it sends. A decision, not a patch.
+
+**· P1 · Approval PINs are seeded and compared in clear text.**
+`adapters/firestore/approvals.ts:36` compares `stored === pin` whenever the stored value is not a
+bcrypt hash, and MockData7 seeds `1234` unhashed on every server. Same secret as the login
+password, so shoulder-surfing a PIN at the till hands over the account. Removing the comparison
+requires the seed to store hashes, which is the same change as splitting `pinHash` off `password` —
+one change, cheap exactly once, before any real staff account exists.
