@@ -111,11 +111,14 @@ export function tileWord(s: { onTable: number; unpaid: number; hasSession: boole
   return 'free';                          // R14: no open money anywhere
 }
 
-export function tile(sitting: Sitting | null, table: Table, now: number, numbers?: Map<string, string>): Tile {
+export function tile(sitting: Sitting | null, table: Table, now: number, numbers?: Map<string, string>, groupIds?: string[]): Tile {
   const money = sitting ? onTable(sitting.lines) : 0;
   const owed = sitting ? unpaid(sitting.bills) : 0;
   const settled = !!sitting && sitting.bills.some(b => b.status !== 'cancelled') && money === 0 && owed === 0;
-  const ids = sitting ? sitting.tableIds : [table.tableId];
+  // FL-S7: tables are pushed together BEFORE the party sits down, so a merged group with nobody
+  // at it is still one tile reading "5+6". Without `groupIds` it would read "5" and table 6
+  // would vanish from the floor until someone ordered.
+  const ids = sitting ? sitting.tableIds : (groupIds ?? [table.tableId]);
   // The label is what a person reads. A table whose number was never set falls back to its id,
   // which is ugly but findable — better than a blank tile the cashier cannot name on the phone.
   const nameOf = (id: string) => numbers?.get(id) ?? (id === table.tableId ? table.number : undefined) ?? id;

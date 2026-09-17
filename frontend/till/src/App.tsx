@@ -6,11 +6,13 @@ import { BillScreen } from './features/billing/BillScreen'
 import { TenderScreen } from './features/payments/TenderScreen'
 import { DayCloseScreen } from './features/dayclose/DayCloseScreen'
 import { ReconcileScreen } from './features/offline/ReconcileScreen'
+import { FloorScreen } from './features/floor/FloorScreen'
 import { useOnline } from './features/offline/useOnline'
 import { startSync } from './features/offline/sync'
 
 // Screens are picked by the URL: ?r=<restaurantId>&line=<lineId> discounts one line (ST); ?r=&draft=<draftId> shows that draft's bill (BL);
 // ?r=&bill=<billId> takes money against an issued bill (PY); ?r=&day=1 (or &day=2026-09-16) counts the drawer and closes the day (DC);
+// ?r= alone lands on the floor (FL) — the home screen, since a cashier should not have to type a table number to reach a bill.
 // ?r=&reconcile=1 works through the estimates printed while the server was gone (OF).
 const q = new URLSearchParams(location.search)
 const RESTAURANT = q.get('r') ?? ''
@@ -21,7 +23,9 @@ const DAY = q.get('day') ?? ''
 const RECONCILE = q.get('reconcile') ?? ''
 
 export default function App() {
-  const [session, setSession] = useState<{ sessionId: string; name: string } | null>(null)
+  // FL-S29: the role comes back with the login, so the floor can leave Merge and Move off the
+  // screen for a SERVER instead of offering a button that always answers 403.
+  const [session, setSession] = useState<{ sessionId: string; name: string; role?: string } | null>(null)
   const [msg, setMsg] = useState('')
   const [reasons, setReasons] = useState<string[]>([])
   const [line, setLine] = useState<LineSnapshot | null>(null)
@@ -40,7 +44,7 @@ export default function App() {
     e.preventDefault()
     const f = new FormData(e.currentTarget)
     try {
-      const r = await call<{ data: { sessionId: string; name: string } }>('server-serverLogin', { restaurantId: RESTAURANT, username: f.get('email'), password: f.get('password') })
+      const r = await call<{ data: { sessionId: string; name: string; role?: string } }>('server-serverLogin', { restaurantId: RESTAURANT, username: f.get('email'), password: f.get('password') })
       setSession(r.data)
     } catch (err) { setMsg(`Login failed: ${(err as Error).message}`) }
   }
@@ -76,7 +80,7 @@ export default function App() {
         <TenderScreen ctx={{ restaurantId: RESTAURANT, sessionId: session.sessionId, billId: BILL }} reasons={reasons} />
       ) : DRAFT ? (
         <BillScreen ctx={{ restaurantId: RESTAURANT, sessionId: session.sessionId, draftId: DRAFT }} reasons={reasons} />
-      ) : (
+      ) : LINE ? (
         <>
           <p>Logged in as {session.name} · line <code>{LINE}</code>{line ? ` · v${line.v}` : ''}</p>
           <form onSubmit={discount}>
@@ -89,6 +93,8 @@ export default function App() {
             <button type="submit" data-testid="apply" disabled={busy || reasons.length === 0}>Apply</button>
           </form>
         </>
+      ) : (
+        <FloorScreen ctx={{ restaurantId: RESTAURANT, sessionId: session.sessionId }} role={session.role ?? ''} />
       )}
       <p data-testid="msg">{msg}</p>
       <PinPrompt />

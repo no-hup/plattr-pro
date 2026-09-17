@@ -139,14 +139,20 @@ export const ports: Ports = {
           const d = await t.get(tables(rid).doc(id));
           if (!d.exists) return null;
           const x = d.data() as Record<string, unknown>;
-          const kids = await t.get(tables(rid).where('mergedInto', '==', id).limit(1));
+          // FL-S33: whether a party is at this table is answered by the SESSIONS collection, not
+          // by a flag on the table. `activeSessionId` and `occupiedBy` are written by the older
+          // table module and drift; the session is the thing the guest's cart actually hangs off.
+          const [kids, live] = await Promise.all([
+            t.get(tables(rid).where('mergedInto', '==', id).limit(1)),
+            t.get(sessions(rid).where('tableId', '==', id).where('status', '==', 'active').limit(1)),
+          ]);
           return {
             tableId: id,
             number: x.number ? String(x.number) : undefined,
             status: String(x.status ?? 'vacant').toLowerCase() as Table['status'],
             mergedInto: (x.mergedInto as string) ?? null,
             currentOTP: (x.currentOTP as string) ?? null,
-            hasSession: !!x.activeSessionId || (Array.isArray(x.occupiedBy) && x.occupiedBy.length > 0),
+            hasSession: !live.empty,
             isParent: !kids.empty,
           };
         },
@@ -203,6 +209,9 @@ export const ports: Ports = {
         },
         setLineTable(lineId, tableId) {
           t.update(lines(rid).doc(lineId), { tableId });
+        },
+        endSession(sessionId) {
+          t.update(sessions(rid).doc(sessionId), { status: 'ended', endedAt: timestamp.serverTimestamp(), updatedAt: timestamp.serverTimestamp() });
         },
         setTable(tableId, patch) {
           t.update(tables(rid).doc(tableId), { ...patch, lastUpdated: timestamp.serverTimestamp() });
