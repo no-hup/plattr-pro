@@ -52,7 +52,8 @@ Two real limits, so you are not surprised:
 ## Stack (locked)
 Backend: Firebase Cloud Functions (Node.js, TypeScript for new code) + Firestore. Emulator-first.
 Staff web: Vite + React + TypeScript, PWA on Chrome for Android. Playwright for browser tests.
-Printing: LAN (TCP 9100) first, Web Serial over Bluetooth second, native wrapper never unless both fail.
+Printing: a print agent on the restaurant's LAN pulls jobs and speaks TCP 9100. No browser is ever on
+the print path — a page cannot open a TCP socket, and Web Serial over Bluetooth was rejected (KT-D1).
 Bans: no new dependency without asking. No Next.js, Redux, CSS-in-JS, component library. No second
 HTTP client. No ORM. No Firestore call outside `adapters/`.
 

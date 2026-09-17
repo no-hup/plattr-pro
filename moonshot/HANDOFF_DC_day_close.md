@@ -53,7 +53,7 @@ against the cashier) and `pos_hr` for the per-employee split. Merge before Defin
   cashier who is ₹50 short simply never closes, and you lose the signal you built the module for.
 - Existing dirs untouched except the `index.js` export. Characterization test first if you must
   touch one.
-- Any shortcut: `// DEBT(TD-nnn)` + a row in `TECH_DEBT.md`. **Next free id is TD-017** — check the
+- Any shortcut: `// DEBT(TD-nnn)` + a row in `TECH_DEBT.md`. **Next free id is TD-022** — check the
   table first, it has had two ID collisions already.
 - Reply style: summary line first, short bullets. Long output on a page.
 
