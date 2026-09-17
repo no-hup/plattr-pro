@@ -35,7 +35,7 @@ The feature flag `shouldUpdateFoodStatusAtItemLevelORAtOrderLevel` is defined in
 | `backend/src-plattr/functions/singleton/FeatureFlags.js` | Remove `shouldUpdateFoodStatusAtItemLevelORAtOrderLevel` from defaults, JSDoc header comments, and flow-impact map |
 | `backend/src-plattr/functions/mock/MockData5EndToEndTesting.json` | Remove flag from any restaurant's `featureFlags` overrides |
 | `backend/src-plattr/functions/session/setFeatureFlags.js` | Remove from validation allow-list if referenced |
-| `backend/claude-api-testing-workflow/` | Grep for flag name, remove any test references |
+| `backend/src-plattr/functions/test/e2e/` | Grep for flag name, remove any test references |
 
 ---
 

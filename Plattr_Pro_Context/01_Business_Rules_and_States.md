@@ -51,7 +51,14 @@ const TABLE_STATUS = {
          └─────────────┘       Admin can restore to VACANT
 ```
 
-> **Doc vs. Code Conflict:** The PRD (Section 10.1) mentions a `reserved` state. This does **NOT** exist in the backend code. The server app overview confirms only 4 statuses. If `reserved` is ever needed, it must be added to `TABLE_STATUS` in `table.js`.
+> **`reserved` (added 2026-09-08).** `TABLE_STATUS` in `table/table.js` now carries
+> `RESERVED: 'reserved'` alongside the four original values. It is a staff-held state
+> outside the self-service lifecycle: scanning or entering an OTP on a reserved table
+> returns 403, and the waiter sets the table to Vacant to seat a party. The guard sits
+> after the valid-session check, so a party already seated is not evicted. Reserved is
+> deliberately not auto-vacated by the inactivity cleanup. See PRD §16.1.
+>
+> *(This note previously said `reserved` did not exist in the backend. It does now.)*
 
 ### Table OTP Rules (Verified)
 - 6-digit numeric code
@@ -106,6 +113,7 @@ An order auto-completes (`COMPLETED`) when **all** its carts reach a terminal st
 
 ```javascript
 exports.FULFILLMENT_STATUS = {
+    AWAITING_CONFIRMATION: 'AWAITING_CONFIRMATION',  // only when the gate is on, see below
     PENDING: 'PENDING',
     PREPARING: 'PREPARING',
     READY: 'READY',
@@ -117,14 +125,17 @@ exports.FULFILLMENT_STATUS = {
 
 **Frontend Dart Enum:** `platter_core/lib/src/converters/status_utils.dart`
 ```dart
-enum CartStatus { pending, preparing, ready, served, returned, cancelled, unknown }
+enum CartStatus { awaitingConfirmation, pending, preparing, ready, served, returned, cancelled, unknown }
 ```
 
 ### Valid Transitions (Backend + Frontend AGREE)
 
-**File:** `backend/src-plattr/functions/cart/updateCartStatus.js` (lines 11-18)
+**File:** `backend/src-plattr/functions/utils/statusUtils.js` (`CART_STATUS_TRANSITIONS`) —
+the single source of truth every write path goes through, mirrored by hand in
+`platter_core/lib/src/converters/status_utils.dart` `_validTransitions`.
 
 ```
+AWAITING_CONFIRMATION → [PENDING, CANCELLED]        (only reachable when the gate is on)
 PENDING    → [PREPARING, READY, CANCELLED]
 PREPARING  → [READY, CANCELLED]
 READY      → [SERVED, CANCELLED]
@@ -134,22 +145,33 @@ CANCELLED  → []  (terminal)
 ```
 
 **Visual State Machine:**
+
+The dashed state only exists for restaurants with the waiter-confirmation gate switched on
+(`ordering.requireWaiterConfirmation`). Everywhere else a checkout begins at PENDING,
+exactly as before.
+
 ```
-┌─────────┐     ┌───────────┐     ┌─────────┐     ┌────────┐
-│ PENDING  │────►│ PREPARING │────►│  READY  │────►│ SERVED │
-└────┬────┘     └─────┬─────┘     └────┬────┘     └───┬────┘
-     │                │                │               │
-     │  (skip prep)   │                │               │
-     ├────────────────►├───────────────►│               │
-     │                │                │               ▼
-     │                │                │          ┌──────────┐
-     │                │                │          │ RETURNED │
-     │                │                │          └──────────┘
-     │                │                │             (terminal)
-     ▼                ▼                ▼
-┌──────────────────────────────────────────┐
-│              CANCELLED (terminal)         │
-└──────────────────────────────────────────┘
+   ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+     AWAITING_CONFIRMATION       guest placed it; the kitchen cannot see it
+   └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+                │
+                │ waiter confirms
+                ▼
+        ┌─────────┐     ┌───────────┐     ┌─────────┐     ┌────────┐
+        │ PENDING │────►│ PREPARING │────►│  READY  │────►│ SERVED │
+        └────┬────┘     └─────┬─────┘     └────┬────┘     └───┬────┘
+             │                │                │             │
+             │   (skip prep)  │                │             ▼
+             └────────────────┴───────────────►│        ┌──────────┐
+                                               │        │ RETURNED │
+                                               │        └──────────┘
+                                               │         (terminal)
+             ▼                ▼                ▼
+   ┌──────────────────────────────────────────────────┐
+   │              CANCELLED (terminal)                │
+   └──────────────────────────────────────────────────┘
+     ▲
+     └── a waiter rejecting an unconfirmed cart lands here too
 ```
 
 **Key Rule:** PENDING can skip directly to READY (allows kitchen to mark items ready immediately for cold items like drinks). This is verified in both backend and frontend transition maps.
@@ -158,6 +180,7 @@ CANCELLED  → []  (terminal)
 
 | Status | Hex | Color |
 |--------|-----|-------|
+| AWAITING_CONFIRMATION | `#607D8B` | Blue grey (deliberately NOT the `#9E9E9E` an unrecognised status falls back to) |
 | PENDING | `#FFC107` | Yellow |
 | PREPARING | `#FFC107` | Yellow |
 | READY | `#4CAF50` | Green |
@@ -181,7 +204,17 @@ enum ActiveCartStatus { pending, cooking, ready, served, cancelled }
 > - `preparing` / `cooking` / `in_progress` → `ActiveCartStatus.cooking`
 > - `cancelled` / `canceled` / `returned` → `ActiveCartStatus.cancelled`
 
-This means the Kitchen Display System shows 5 states (not 6), which is intentional for a simpler kitchen workflow.
+This means the Kitchen Display System shows 5 states, which is intentional for a simpler kitchen workflow.
+
+> **`AWAITING_CONFIRMATION` is absent on purpose.** Where a restaurant requires waiter
+> confirmation, `order-getActiveCartsForKitchen` filters those carts out server-side, so
+> the kitchen app never receives the value and needs no enum entry for it.
+>
+> ⚠️ If that filter is ever relaxed so unconfirmed carts are SHOWN here greyed out, fix
+> these two first: `_parseStatus` in `models/active_order_models.dart` (`orElse`) and
+> `_mapStatus` in `core/kitchen_repository.dart` (`default`). Both fall through to
+> `.pending`, so an unconfirmed ticket would silently render as ordinary cookable work —
+> the exact thing the gate exists to prevent. Neither throws.
 
 ### Kitchen-Specific Models (Freezed)
 - `ActiveKitchenCart` — One ticket/round: cartId, orderId, orderNumber, tableNumber, submittedAt, status, items
@@ -299,7 +332,7 @@ exports.PAYMENT_STATUS = {
 };
 ```
 
-Payments are **out of scope** per PRD, but the constants exist for future use.
+~~Payments are **out of scope** per PRD, but the constants exist for future use.~~ **Superseded Sep 2026:** payments, GST invoicing and day close are now in scope (see the direction-change note at the top of `PLATTR_PRO_PRD.md`). The constants are the starting point, not a placeholder.
 
 ---
 

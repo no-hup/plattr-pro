@@ -3,6 +3,21 @@
 Status: Living Document
 Audience: Product, Ops, Engineering
 
+> **Direction change, Sep 2026.** Plattr Pro is now being built to *replace* the restaurant's
+> POS (Petpooja-class), not sit beside it. Two statements below are superseded:
+> - §3 "Out of scope: Payments and invoicing" — **now in scope** (cashier till, GST bill, liquor
+>   VAT block, UPI, card terminal, day close).
+> - §12.4 "Table status conflicts: resolve using most recent update" — **superseded.** Last write
+>   wins is the bug, not the fix; writes carry a version and conflicts are rejected.
+>
+> Source of truth for the new scope lives in three living artifacts (comment there, not here):
+> Build Map · Spec Sheets · Table Edge Cases. Links in `~/.claude` memory
+> `petpooja-replacement-strategy`. The rest of this PRD still describes what exists and remains valid.
+>
+> **Where that build has reached is §17**, added 2026-09-17: the eight go-live blocks with six built,
+> and three product positions that changed — UPI's new fee, printing needing hardware on site, and
+> takeaway not being separately reportable in v1.
+
 ## 1. Vision
 Plattr Pro digitizes in-restaurant dining by connecting customers, servers, kitchen staff, and managers in a single real-time workflow. The system reduces table wait time, prevents order mistakes, and keeps staff aligned on the true state of each table and order.
 
@@ -67,7 +82,8 @@ The backend maintains shared data objects (restaurants, tables, sessions, menus,
 ### 7.3 Checkout to Order
 1. Customer confirms cart and checks out.
 2. A cart snapshot is attached to an active order.
-3. Order becomes visible to kitchen and server apps.
+3. Order becomes visible to the server app, and to the kitchen app unless the restaurant
+   requires waiter confirmation first (see 9.4).
 4. Cart is cleared for future rounds at the same table.
 
 ### 7.4 Fulfillment to Completion
@@ -102,6 +118,7 @@ The backend maintains shared data objects (restaurants, tables, sessions, menus,
 - Menu availability toggles.
 - Session-based staff login with expiry handling.
 - Notifications for READY items and new orders.
+- Confirm or reject a guest-placed order, where the restaurant requires it (see 9.4).
 
 **Should have**
 - Assignment filtering (“my tables”).
@@ -110,7 +127,9 @@ The backend maintains shared data objects (restaurants, tables, sessions, menus,
 
 ### 8.3 Kitchen App
 **Must have**
-- Active orders queue sorted by recency and priority.
+- Active orders queue sorted by recency and priority. Where waiter confirmation is
+  required, unconfirmed rounds are absent from this queue entirely — they are not shown
+  as pending work (see 9.4).
 - Status updates across the preparation pipeline.
 - Clear visibility into item-level notes and modifications.
 
@@ -144,12 +163,34 @@ Orders behave like a shared table tab. Each checkout creates a cart snapshot tha
 - Multi-user sessions may be enabled or disabled.
 - Session validity is time-bound and ends on inactivity or order closeout.
 
+### 9.4 Waiter-Confirmed Ordering (optional, per restaurant)
+
+**Confirm before kitchen.** A table of four at a busy Friday dinner adds a Mutton Biryani
+₹380, two Butter Naan and a Coke, then argues for five minutes and drops the biryani. With
+open QR ordering the kitchen has already started it. With this on, the order sits at the
+table's card on the waiter's phone instead; the waiter walks over, reads it back, and taps
+**Send to kitchen** — that tap is the first time the kitchen sees it. If the table has
+changed its mind, the waiter rejects it and nothing was ever cooked. Without this, a
+restaurant that has been burned by cancelled QR orders turns QR ordering off completely
+and goes back to a waiter with a paper pad — which is exactly what the restaurant that
+asked for this had already done.
+
+**Off by default.** A restaurant that is happy with unattended QR ordering sets nothing and
+nothing changes for them.
+
+**The order is still the guest's.** The bill, the totals and the offers are the same
+whether the gate is on or off; confirmation controls only when the kitchen is told.
+
 ## 10. State Models
 
 ### 10.1 Table State
 - Vacant → OTP Pending → Active → Vacant
 - Disabled is an admin override state
-- Reserved is supported in UI; operational policy must be finalized
+- Reserved is a staff-held state, set and cleared by the waiter (decided 2026-09-08,
+  see 16.1). It is outside the self-service lifecycle: a customer scanning a reserved
+  table gets 403 "This table is reserved. Please ask the staff to seat you." The waiter
+  seats the party by setting the table to Vacant, after which the normal
+  Vacant → OTP Pending → Active flow applies.
 
 ### 10.2 Session State
 - Active
@@ -162,12 +203,20 @@ Orders behave like a shared table tab. Each checkout creates a cart snapshot tha
 - Cancelled
 
 ### 10.4 Fulfillment State (Cart/Item)
-- Pending → Preparing → Ready → Served
+- Awaiting Confirmation → Pending → Preparing → Ready → Served
+- Awaiting Confirmation only exists where the restaurant requires waiter confirmation
+  (see 9.4); everywhere else a checkout begins at Pending
+- An unconfirmed cart has exactly two moves: the waiter confirms it, or it is cancelled
 - Cancelled and Returned are terminal outcomes
 
 ## 11. Notifications and Real-Time Updates
 - READY items notify servers.
 - New order assignment should notify the responsible server.
+- **Gap:** where waiter confirmation is required, nothing yet pushes "a table is waiting to
+  be confirmed" to the waiter — they have to be looking at the Pending tab. Server push
+  exists but sits behind `sendServerNotifications` (default off) and has no wording for
+  this event. Food does not start cooking until someone taps, so this is the failure mode
+  to watch in the first restaurant that runs it.
 - Optional future alerts: table assistance, low stock, or out-of-stock events.
 
 ## 12. Edge Cases and Scenarios
@@ -208,12 +257,98 @@ Orders behave like a shared table tab. Each checkout creates a cart snapshot tha
 
 ## 15. Risks and Gaps
 - Location validation may be simplified or disabled in some deployments.
+- Cart writes (add/remove/clear/get) authorize on the table having an active session,
+  not on the caller holding it, so anyone with the QR values can edit an occupied
+  table's cart. Checkout is caller-scoped and unaffected. Open as of 2026-09-08.
 - Historical order reporting may be limited in early releases.
 - Notification reliability depends on device token integrity.
 - Final naming alignment of statuses must be confirmed.
 
 ## 16. Open Decisions
-- Final policy for reserved tables and how it interacts with OTP.
 - Exact session timeout and inactivity thresholds.
+
+### 16.1 Decided
+- **Reserved tables and OTP (decided 2026-09-08).** Reserved means the table is held by
+  staff — a physical reserved card sits on it. A customer who scans it anyway is told to
+  ask staff, and the waiter either re-seats them or sets the table to Vacant to seat them
+  there. Rationale: it matches what already happens on the floor, needs no new UI, and
+  keeps the OTP lifecycle untouched. Reserved is deliberately NOT auto-vacated by the
+  inactivity cleanup, because a held table has no activity to measure.
+  Implementation: `TABLE_STATUS.RESERVED` guards in `validateTableAndLocation` and
+  `validateOTP` (403); the guard sits after the valid-session check, so a party already
+  seated keeps access if staff flip the table to reserved mid-meal.
 - SLA targets for kitchen and server performance.
 
+
+---
+
+## 17. POS replacement — where the build stands (2026-09-17)
+
+The direction note at the top of this document says Plattr Pro now replaces the restaurant's POS
+rather than sitting beside it. This section says how far that is, so a reader does not have to open
+three spec sheets to find out. Engineering detail lives in `moonshot/`; this is the product view.
+
+### 17.1 Go-live blocks
+
+Eight capabilities stand between the current apps and a restaurant that can open its doors on
+Plattr Pro alone. Six are built and tested; two are specified and not yet started.
+
+**Built**
+
+- **Staff PIN & approvals.** A captain tries to void a ₹1,250 pitcher; the screen asks for the
+  manager's PIN and records who approved it. *Without this, anyone can void anything and there is no
+  name on it.*
+- **GST bill & numbering.** Pizza ₹500 at 20% off prints as ₹400 taxable, ₹10 CGST, ₹10 SGST, on
+  invoice 0417 in an unbroken run. *Without this the accountant rebuilds the month by hand, and then
+  vetoes us.*
+- **Liquor block.** A Kingfisher at ₹499 sits in its own block on the same bill, outside GST, never
+  mixed with the food lines. *Without this every pub and brewery in Bangalore is off the table.*
+- **Payments & tender capture.** Cash, card and UPI recorded against the bill, with refunds, voids
+  and round-off. *Without this the money that came in is a guess.*
+- **Day close & cash count.** 23:30, the cashier counts ₹42,100 against an expected ₹42,300; the
+  ₹200 gap is logged against her shift and the day still closes. *Without this there is no handover
+  and no daily number the owner trusts.*
+- **Offline mode.** The internet drops at 20:40; the till still shows the bill, takes the tender and
+  prints an estimate from cache, and reconciles when it returns. *Without this the first outage on a
+  busy night is the last night they use us.*
+
+**Specified, not built**
+
+- **Print path.** Table 7's pizza ticket prints in the kitchen, the beer ticket at the bar, the bill
+  at the counter. *Without this the kitchen works off a screen nobody looks at and the guest gets no
+  paper.* See §17.2 — it needs hardware.
+- **Till order entry.** Two walk-ins at 21:00 with no phone; the cashier punches their order, and it
+  lands on the same bill as anything the table ordered by QR. *Without this every walk-in and phone
+  order happens on paper and Plattr never sees that money.*
+
+### 17.2 Three positions a reader of this PRD needs
+
+**UPI is no longer free to accept.** From 15 October 2026 a UPI payment above ₹2,000 costs the
+restaurant 0.4%, capped at ₹300, and the fee cannot be passed to the guest. A ₹2,151 bill costs
+₹8.60; a ₹1,999 bill costs nothing. Roughly ₹1,200 a month for a restaurant taking ₹9 lakh on UPI.
+Two consequences are decided and not negotiable inside the product:
+
+- The pitch changes from "UPI costs nothing" to "UPI is still the cheapest tender you have" — a card
+  terminal is 1.5–2%.
+- **We do not split a bill into sub-₹2,000 QRs to avoid the fee**, although it is about five lines of
+  code. Fee avoidance designed into the product is very hard to remove once a restaurant depends on
+  it. Recorded in `moonshot/SPEC_UQ_upi_dynamic_qr.md` Out of scope.
+
+**Printing needs hardware in the restaurant.** A browser cannot open a TCP socket, so the staff till
+cannot talk to a network printer directly. The chosen answer is a small box on the restaurant's own
+network that pulls print jobs from us and drives the existing printers. That means a piece of
+hardware per restaurant and an install step in onboarding — the first thing in this product that is
+not "open a browser". The upside is that the printers a restaurant already owns keep working, and no
+tablet has to stay awake for the kitchen to get its tickets.
+
+**Takeaway works but is not separately reportable.** Phone and counter orders run as ordinary tables
+named as counter tickets, so they bill, settle and close exactly like table 7 with no special cases.
+What the owner cannot yet ask is "how much of last month was takeaway". That becomes one field and a
+report query when the split is worth having; until then no report separates them.
+
+### 17.3 After go-live
+
+The order the first month is expected to need: owner report pack, a readable audit trail, table floor
+tools (move, merge), and a Petpooja menu-and-history import so switching does not mean retyping the
+menu. Swiggy and Zomato orders, a card terminal, basic inventory and a Tally export are priced
+separately and are not go-live blockers.

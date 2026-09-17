@@ -24,7 +24,7 @@ On docs: the corpus is large (~110 markdown files) and **mostly healthy and acti
 | Home | What | Status |
 |------|------|--------|
 | `backend/src-plattr/functions/test/unit/` | Jest unit tests — cart, pricing, models (~934 LOC, 5 files) | ✅ Active, recent |
-| `backend/claude-api-testing-workflow/` | E2E API suite — 12 suites, ~167 tests vs emulator | ✅ Active, heavily maintained |
+| `backend/src-plattr/functions/test/e2e/` | E2E API suite — 12 suites, ~167 tests vs emulator | ✅ Active, heavily maintained |
 
 ### 1.2 Legit scattered tests (keep — these are real app tests, not "scatter")
 
@@ -129,3 +129,94 @@ Documented in `CLAUDE.md` + suite source. These are **known gaps**, not dead cod
 - This is a static read-only audit. "Duplicate" / "orphaned" calls are based on content + reference scan; confirm runtime usage before deleting borderline items (Tier-3/4).
 - ✅ RESOLVED: `frontend/flutter_boilerplate` is the live consumer app. `consumer/` is dead → delete (T4).
 - Nothing here was modified. All deletions/archives are **recommendations only**.
+
+---
+
+# Part 4 — Second pass, 2026-09-08
+
+Full re-audit of all 113 markdown files, every claim verified against HEAD source rather
+than against other docs. Five parallel readers covered the table/API specs, the contract
+and schema docs, the suspected-superseded set, the architecture set and the consumer app
+docs; root-level files were checked directly.
+
+## 4.1 Corrections to Parts 1–3 above
+
+| Item | Correction |
+|---|---|
+| **T6 — "archive/delete `backend/src-plattr/contract-tests/`"** | **Do not act on this.** The directory is live: `contract_test_config.sh` is *sourced* by `.agent/skills/comprehensive-unit-test/tools/import_mock_data.sh`, and `run_customer_server_order_flow.sh` is invoked by `tools/run_backend_flow.sh`. `TEST_STRATEGY.md` §5 also carries an explicit "Do NOT delete" on it. |
+| **Tier 2 — `CLOUD_FUNCTIONS_MIGRATION_GUIDE.md` "flat→namespaced migration is complete"** | Wrong on both counts. It documents an **onCall→onRequest** migration, and it was **abandoned, not completed**: `onCall` still appears 82× and no `*Http.js` files exist. Its objective was met another way — clients POST at the onCall endpoints with a `{data:…}` envelope. |
+| **Tier 4 — `PROPOSAL_MULTI_MENU_HIERARCHY.md` "likely already implemented → archive"** | Implemented in full, but it is the **only** schema documentation for `menus`, `subcategories`, `primarySubcategoryId`, `viewType` and `defaultExpanded`. `DATABASE_SCHEMA.md` covers none of them. Archiving as-is loses the schema. |
+| **Tier 3 — "`API_RESPONSE_CONTRACTS.md` vs `mock/apiContracts.md` — pick one source of truth"** | Misreads the pair; they overlap almost nowhere. The real duplication axes are `API_RESPONSE_CONTRACTS.md` ↔ `02_Backend_and_Database.md`, and `server_app_consumed_apis.md` ↔ `App_Platter_Server.md`. |
+
+## 4.2 The headline finding: wrong docs, not redundant ones
+
+Across 113 files there is **very little true duplication**. Only two files are a strict
+subset of another (`GEMINI.md` inside `AGENTS.md`, and `SCROLL_SYNC_STRATEGY.md` inside
+`MENU_MIGRATION_STRATEGY.md`). The real problem is a different one: **several
+actively-maintained docs give instructions that are now false**, and an agent following
+them would write wrong code. Those were fixed in this pass rather than deleted.
+
+Note `CLAUDE.md` is already a symlink to `AGENTS.md` (git mode 120000) — they are one file,
+not two, and were never a duplication problem.
+
+### Fixed in this pass
+
+| File | Was | Now |
+|---|---|---|
+| `AGENTS.md` (= `CLAUDE.md`) | Shared core at `packages/platter_core/` | `modules/platter_core/` — the `packages/` path does not exist |
+| `AGENTS.md` | "`checkTableStatus` returns INTERNAL — needs investigation" | Marked fixed, with the root cause and the covering tests |
+| `Plattr_Pro_Context/App_Platter_Kitchen.md` | "**Currently returns MOCK DATA**", "Network integration **MOCK ONLY**", "Cart status updates **Not implemented**" | Corrected. The kitchen app is fully wired to `order-getActiveCartsForKitchen` and `cart-updateCartStatus`; zero mock references remain in `kitchen_repository.dart`. This was the highest-risk doc in the repo — an agent trusting it would rebuild working code. |
+| `Plattr_Pro_Context/01_Business_Rules_and_States.md` | "The PRD mentions a `reserved` state. This does **NOT** exist in the backend code." | Replaced with the real `RESERVED` semantics and a pointer to PRD §16.1 |
+| `warp/ENHANCED_CONSUMER_APP_ANALYSIS.md` | Feature-flag section lists 7 flags (code has 4) with every default inverted, plus 3 flags that do not exist | Warning banner added at the top pointing readers at `FeatureFlags.js`. Content left intact. |
+| 6 docs referencing `backend/claude-api-testing-workflow/` | Path deleted when the suite moved | Repointed to `backend/src-plattr/functions/test/e2e/` (13 occurrences) |
+| `run_emulator.sh`, `run_consumer.sh`, `run_server.sh` | Hardcoded `/Users/shauryajaiswal/...`, unrunnable on this machine | Derive the project root from their own location |
+| `contract-tests/run_customer_server_order_flow.sh` | `assert_success()` used `sys.stderr` without `import sys`, so any failure died with `NameError` instead of printing the diagnostic | Import added; failure path verified |
+
+### Code bugs found while verifying docs (both fixed, both proven)
+
+- **`checkTableStatus` always returned 500.** The handler was `onCall(async (data, context))` and
+  destructured the callable *request wrapper*, so `restaurantId`/`tableId` were always undefined.
+  Every sibling in `table.js` reads `request.data`. Fixed; the endpoint now returns 200, and the
+  e2e table suite went from 18 pass / 2 fail to **20 pass / 0 fail**. The consumer app has a live
+  call path to this endpoint.
+- **Inverted error message in `validateOTP`.** The guard requires a phone number when multi-user
+  support is **enabled**, but the message said "or when multi-user support is disabled". Two docs
+  had copied the wrong text out of the code. Message corrected at the source.
+
+## 4.3 Still open — needs a decision, not a cleanup
+
+Nothing below was touched. Every one of these files holds at least one fact that exists
+nowhere else, so none is safe to delete outright.
+
+**Merge, then delete (4 files).** Each has a small unique core worth moving first:
+`server_app_consumed_apis.md` → `App_Platter_Server.md` (keep the per-screen endpoint
+grouping, both serverLogin request bodies, the "last 3 orders" fact; drop its malformed cart
+state machine). `network_layer_guide.md` → `server_app_code_guideline.md` (keep the
+`dataExtractor` recipe; drop its three wrong claims). `SCROLL_SYNC_STRATEGY.md` →
+`MENU_MIGRATION_STRATEGY.md` (nothing unique survives). `plattr-changes.md` → the table docs
+(it is the last copy of a deleted `allPossibleResponses.md`, and the only home of the OTP
+dialog UI contract, including the rule that a `false` multi-user flag forces the phone field).
+
+**Archive with a banner (7 files).** Completed plans and superseded specs whose rationale is
+still worth having: `MOBILE_UI_OPTIMIZATION_STRATEGY.md`, `ULTRA_PLAN_Kitchen_API_and_Password_Hashing.md`,
+`order_details_feature_spec.md`, `DATABASE_SCHEMA.md`, `E2E_TEST_SCENARIOS.md`,
+`README_BACKEND_FLOW_TESTS.md`, `CLOUD_FUNCTIONS_MIGRATION_GUIDE.md`.
+
+**Unfinished work hiding inside "historical" docs.** These are the two things most likely to
+be lost by a naive cull, because both look like completed plans:
+- `MENU_MIGRATION_STRATEGY.md` holds the backend `tableContext` spec. `tableContext` appears
+  **0 times** in the backend, so the consumer menu header, restaurant name, table number and
+  OTP badge are dead code today. That is a backend ticket, not history.
+- `README_BACKEND_FLOW_TESTS.md` frames the consumer suite's failures as valuable
+  ("The failing tests are valuable"). The real cause: its fixtures use `rest001` / `table001`,
+  which exist in **none** of the current seeds. That framing is why a red suite (39 failures)
+  has been tolerated.
+
+**Also worth a ticket, found while verifying:**
+- `assertOffersEnabled()` in `offers/offerFeatureGuard.js` is dead code — zero callers since the
+  V1 endpoints were deleted.
+- `notifications/updateServerFCMToken` and `handleTableQRScan` exist but are not exported from
+  `index.js` at all.
+- `showDebugCards` defaults to `true` in the kitchen app, flagged in its own doc as a go-live TODO.
+- Multi-config Phase 6 is claimed done in one doc and pending in another. Evidence favours
+  pending: no widget test references `CartVariantPickerSheet`.

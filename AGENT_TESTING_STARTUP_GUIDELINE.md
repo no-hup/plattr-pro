@@ -1,6 +1,31 @@
 # Agent Testing Startup Guideline
 
+> **Which seed?** Backend e2e/API testing = **MockData5** (this file).
+> Browser / front-end testing = **MockData7** — see `FRONTEND_TESTING.md`.
+
 This file is designed for a low-reasoning coding agent (e.g. Haiku) to execute all startup commands and guide manual testing across two restaurants.
+
+---
+
+## Emulator per session (read this first if another agent is already testing)
+
+Several Claude Code sessions share one machine. The default emulator ports are
+fixed, so a second session either fails to start or — worse — runs
+`importMockData5.js --clean` into the first session's data. Take your own slot:
+
+```bash
+cd backend/src-plattr && EMU_SLOT=1 ./emu.sh        # terminal 1 (slot 0 = the old 8080/5002)
+eval "$(EMU_SLOT=1 backend/src-plattr/emu.sh env)"  # terminal 2, then import + tests as usual
+```
+
+`emu.sh` refuses to start if the slot's ports are taken (it names the pid and the
+next free slot) or if the disk is under 3 GB free. The `eval` exports
+`FIRESTORE_EMULATOR_HOST` and `PLATTR_BASE_URL`, which `importMockData5.js`, the
+e2e config, `run-tests.sh`, `run-all.sh` and the matrix runner all honour —
+unset, they fall back to today's 8080/5002, so nothing else changes.
+`npm run emulators` now just calls `./emu.sh` (it used to reference a
+`firebase.temp.json` that does not exist, and a service-account path that is one
+directory off, so it had been broken).
 
 ---
 
