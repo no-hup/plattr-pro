@@ -45,11 +45,9 @@ export interface Sitting {
   openedAt: number;
   lines: Line[];
   bills: Bill[];
-  cleared?: boolean;           // the cashier tapped Clear
-  settledAt?: number | null;   // when the last bill settled
 }
 
-export const DEFAULTS = { pollSeconds: 5, staleAfterSeconds: 20, settledFreeAfterMinutes: 30 };
+export const DEFAULTS = { pollSeconds: 5, staleAfterSeconds: 20 };
 
 // ── The two numbers ────────────────────────────────────────────────────────
 
@@ -197,20 +195,20 @@ export function canMove(from: Table, dest: Table, sitting: Sitting | null, role:
 // ── Freeing a settled table (FL-Q1) ────────────────────────────────────────
 
 /**
- * Signed 2026-09-17: a settled table holds its tile so the next party is not seated on people
- * drinking coffee, the cashier can free it now with Clear, and it frees itself after
- * `settledFreeAfterMinutes` so nothing is a permanent tile.
+ * Re-decided 2026-09-18: **the payment path writes nothing to a table.** A fully paid sitting
+ * reads `settled` from the data it already has, with no write at all, and the table frees when
+ * its session actually ends. The earlier answer had payment fire a release, which meant a
+ * settled group released its merged children unaudited and ended the sitting, so `settled` could
+ * never be shown and FL-S14 and FL-S35 could not hold.
+ *
+ * What is left is the cashier's explicit Clear, and the only question it asks is whether any
+ * money is still open. Deriving beats storing here for the same reason `isParent` is derived:
+ * a written flag is a thing that can drift, and then needs a reconciler.
  */
-export function isReleasable(
-  sitting: Sitting,
-  now: number,
-  settledFreeAfterMinutes = DEFAULTS.settledFreeAfterMinutes,
-): boolean {
+export function isReleasable(sitting: Sitting): boolean {
   if (onTable(sitting.lines) > 0) return false;   // dessert after the bill
   if (unpaid(sitting.bills) > 0) return false;    // one half of a split still owing
-  if (sitting.cleared) return true;
-  if (!sitting.settledAt) return false;
-  return now - sitting.settledAt >= settledFreeAfterMinutes * 60_000;
+  return true;
 }
 
 /** R18. Once every bill is settled the sitting stops taking new guests and new checkouts. */

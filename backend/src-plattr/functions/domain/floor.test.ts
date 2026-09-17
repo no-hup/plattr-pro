@@ -367,53 +367,43 @@ describe('canMove (R5, R6, R16)', () => {
   });
 });
 
-describe('isReleasable — when a paid table frees itself (FL-Q1, R14)', () => {
-  const settledAt = NOW - 31 * MIN;
-
-  it('last bill fully paid and nothing unbilled → releasable', () => {
-    const done = sitting({ bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })], settledAt });
-    expect(isReleasable(done, NOW)).toBe(true);
+describe('isReleasable — what Clear is allowed to free (FL-Q1, R14)', () => {
+  it('a sitting whose every bill is paid and with nothing unbilled is releasable', () => {
+    expect(isReleasable(sitting({ bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })] }))).toBe(true);
   });
 
-  it('last bill fully paid but 30000p of dessert unbilled → not releasable', () => {
+  it('30000p of dessert ordered after the bill is not releasable', () => {
     const dessert = sitting({
       lines: [line({ lineId: 'l_jamun', listPrice: 30000 })],
-      bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })], settledAt,
+      bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })],
     });
-    expect(isReleasable(dessert, NOW)).toBe(false);
+    expect(isReleasable(dessert)).toBe(false);
   });
 
-  it('one of two split bills still owing 100000p → not releasable', () => {
+  it('one of two split bills still owing 100000p is not releasable', () => {
     const half = sitting({
       bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' }), bill({ billId: 'b2', payable: 100000 })],
-      settledAt,
     });
-    expect(isReleasable(half, NOW)).toBe(false);
+    expect(isReleasable(half)).toBe(false);
   });
 
   it('a merged group is judged across every table in it, not just the parent', () => {
     const group = sitting({
       tableIds: ['5', '6'],
       lines: [line({ lineId: 'l6', listPrice: 40000, tableId: '6' })],
-      bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })], settledAt,
+      bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })],
     });
-    expect(isReleasable(group, NOW)).toBe(false);
+    expect(isReleasable(group)).toBe(false);
   });
 
-  it('FL-Q1 settled 10 minutes ago and nobody tapped Clear → holds its tile, so the coffee party is not sat on', () => {
-    const recent = sitting({ bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })], settledAt: NOW - 10 * MIN });
-    expect(isReleasable(recent, NOW)).toBe(false);
+  it('a sitting that was never billed is releasable: nothing is open, so nothing can be hidden', () => {
+    expect(isReleasable(sitting())).toBe(true);
   });
 
-  it('FL-Q1 Clear frees it immediately, whatever the timer says', () => {
-    const cleared = sitting({ bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })], settledAt: NOW - MIN, cleared: true });
-    expect(isReleasable(cleared, NOW)).toBe(true);
-  });
-
-  it('FL-Q1 the 30-minute default is config: a restaurant on 5 frees at 6 minutes', () => {
-    const s = sitting({ bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })], settledAt: NOW - 6 * MIN });
-    expect(isReleasable(s, NOW)).toBe(false);
-    expect(isReleasable(s, NOW, 5)).toBe(true);
+  it('it asks about money and nothing else: no clock, no flag, no stored settled time', () => {
+    // The payment path writes nothing, so there is no settledAt to read and no timer to trust.
+    // The whole question is whether anything is still open (re-decided 2026-09-18).
+    expect(isReleasable.length).toBe(1);
   });
 });
 

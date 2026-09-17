@@ -4,7 +4,7 @@
 // what the screen is handed when a port is down.
 
 import {
-  getFloor, openTable, moveTable, clearTable, releaseIfSettled, setMerge, floorConfigFrom,
+  getFloor, openTable, moveTable, clearTable, setMerge, floorConfigFrom,
   Ports, Tx, Order, SittingHead, ApprovalError,
 } from './floor';
 import { Bill, Table, OrderState } from '../domain/floor';
@@ -405,22 +405,16 @@ describe('getFloor — what happens when a port is down (R19)', () => {
     await expect(getFloor(ports, REQ)).rejects.toThrow(/settings unreadable/);
   });
 
-  it('an unreadable settings document also refuses the automatic release', async () => {
-    const ports = busy();
-    ports.world.breakConfig = true;
-    await expect(releaseIfSettled(ports, RID, '12', 'cid_x')).rejects.toThrow(/settings unreadable/);
-  });
-
   it('config falls back to the defaults on a fresh restaurant rather than failing the floor', async () => {
     const { config } = await getFloor(busy(), REQ);
-    expect(config).toEqual({ pollSeconds: 5, staleAfterSeconds: 20, settledFreeAfterMinutes: 30 });
+    expect(config).toEqual({ pollSeconds: 5, staleAfterSeconds: 20 });
   });
 
   it('config keys are read from the restaurant doc and bad values fall back, never crash', () => {
-    expect(floorConfigFrom({ floor: { pollSeconds: 10, settledFreeAfterMinutes: 45 } }))
-      .toEqual({ pollSeconds: 10, staleAfterSeconds: 20, settledFreeAfterMinutes: 45 });
+    expect(floorConfigFrom({ floor: { pollSeconds: 10, staleAfterSeconds: 45 } }))
+      .toEqual({ pollSeconds: 10, staleAfterSeconds: 45 });
     expect(floorConfigFrom({ floor: { pollSeconds: -1, staleAfterSeconds: 'soon' } }))
-      .toEqual({ pollSeconds: 5, staleAfterSeconds: 20, settledFreeAfterMinutes: 30 });
+      .toEqual({ pollSeconds: 5, staleAfterSeconds: 20 });
   });
 });
 
@@ -658,7 +652,7 @@ describe('moveTable — one transaction, four writes, no price rewritten (R5)', 
 describe('clearTable and releaseIfSettled — freeing a settled table (FL-Q1)', () => {
   const settled = (over: Partial<World> = {}) => fake({
     tables: [table({ tableId: '7', status: 'active' })],
-    sittings: [head({ sessionId: 's7', tableIds: ['7'], settledAt: T0 - 5 * MIN })],
+    sittings: [head({ sessionId: 's7', tableIds: ['7'] })],
     bills: [bill({ billId: 'b1', sessionId: 's7', payable: 100000, paid: 100000, status: 'paid' })],
     ...over,
   });
@@ -696,7 +690,7 @@ describe('clearTable and releaseIfSettled — freeing a settled table (FL-Q1)', 
   it('Clear frees every table of a merged group, not just the one tapped', async () => {
     const ports = settled({
       tables: [table({ tableId: '5', status: 'active', isParent: true }), table({ tableId: '6', status: 'disabled', mergedInto: '5' })],
-      sittings: [head({ sessionId: 's5', tableIds: ['5', '6'], settledAt: T0 - MIN })],
+      sittings: [head({ sessionId: 's5', tableIds: ['5', '6'] })],
       bills: [bill({ billId: 'b1', sessionId: 's5', payable: 100000, paid: 100000, status: 'paid' })],
     });
     const r = await clearTable(ports, { ...CLEAR, tableId: '5' });
@@ -704,35 +698,23 @@ describe('clearTable and releaseIfSettled — freeing a settled table (FL-Q1)', 
     expect(ports.world.tables.every(t => t.status === 'vacant' && t.mergedInto === null)).toBe(true);
   });
 
-  it('FL-Q1 the timer leaves a table settled 5 minutes ago alone, and frees it at 31', async () => {
+  it('FL-Q1 the payment path writes nothing to a table: there is no automatic release to call', () => {
+    // Re-decided 2026-09-18 against the code, not the sheet. table/vacateTable.js releases every
+    // merged child unaudited (:31, swallowed at :35) and ends the sitting (:41), so a release
+    // fired by payment could never leave a tile reading settled — FL-S14 and FL-S35 could not
+    // hold. A fully paid sitting reads settled from the data it already has, with no write.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    expect(Object.keys(require('./floor'))).not.toContain('releaseIfSettled');
+  });
+
+  it('Clear asks only whether money is open; it reads no timer and no stored settled time', async () => {
     const ports = settled();
-    expect(await releaseIfSettled(ports, RID, '7', 'cid_auto')).toEqual([]);
-    ports.tick(26 * MIN);
-    expect(await releaseIfSettled(ports, RID, '7', 'cid_auto')).toEqual(['7']);
-    expect(ports.audits.get('cid_auto_release')).toMatchObject({ action: 'table.release', by: 'system' });
+    ports.tick(600 * MIN);                       // however long it has sat changes nothing
+    expect((await clearTable(ports, CLEAR)).freed).toEqual(['7']);
   });
 
-  it('FL-Q1 a restaurant configured to 5 minutes frees at 6, not at 30', async () => {
-    const ports = settled({ configDoc: { floor: { settledFreeAfterMinutes: 5 } } });
-    ports.tick(MIN);
-    expect(await releaseIfSettled(ports, RID, '7', 'cid_auto')).toEqual(['7']);
-  });
 
-  it('FL-Q1 the timer never frees a table that still owes, however long it has sat', async () => {
-    const ports = settled({ bills: [bill({ billId: 'b1', sessionId: 's7', payable: 100000, paid: 0 })] });
-    ports.tick(600 * MIN);
-    expect(await releaseIfSettled(ports, RID, '7', 'cid_auto')).toEqual([]);
-  });
-
-  it('the timer path needs no staff session: it runs from the payment path, not a screen', async () => {
-    const ports = settled();
-    ports.tick(31 * MIN);
-    const spy = jest.spyOn(ports.staff, 'bySession');
-    await releaseIfSettled(ports, RID, '7', 'cid_auto');
-    expect(spy).not.toHaveBeenCalled();
-  });
 });
-
 
 describe('setMerge — the race and the release (R14, R16, OR-5a, FL-S32)', () => {
   const MERGE = { ...REQ, parentTableId: '5', cid: 'cid_merge_1' };
