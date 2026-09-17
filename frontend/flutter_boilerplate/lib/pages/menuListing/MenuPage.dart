@@ -369,13 +369,15 @@ class _MenuPageContentState extends State<MenuPageContent> with WidgetsBindingOb
             ],
           ),
         ],
-        primaryAction: ElevatedButton(
+        primaryAction: Semantics(
+          identifier: 'menu-open-cart',
+          child: ElevatedButton(
           onPressed: () {
             AppLogger.log('🛒 MENU: Navigate to cart');
             context.go('/r/${widget.restaurantId}/t/${widget.tableId}/cart');
           },
           child: const Text('View Cart'),
-        ),
+        ),),
       ),
     );
   }

@@ -491,7 +491,9 @@ class TableVerificationPageState extends State<TableVerificationPage> {
 
   /// Builds the name input field
   Widget _buildNameField() {
-    return TextFormField(
+    return Semantics(
+      identifier: 'verify-name',
+      child: TextFormField(
       controller: _nameController,
       decoration: const InputDecoration(
         labelText: 'Name',
@@ -503,12 +505,14 @@ class TableVerificationPageState extends State<TableVerificationPage> {
         }
         return null;
       },
-    );
+    ),);
   }
 
   /// Builds the phone number input field
   Widget _buildPhoneField() {
-    return TextFormField(
+    return Semantics(
+      identifier: 'verify-phone',
+      child: TextFormField(
       controller: _phoneController,
       decoration: const InputDecoration(
         labelText: 'Phone Number',
@@ -524,12 +528,14 @@ class TableVerificationPageState extends State<TableVerificationPage> {
         }
         return null;
       },
-    );
+    ),);
   }
 
   /// Builds the submit button with loading state
   Widget _buildSubmitButton() {
-    return ElevatedButton(
+    return Semantics(
+      identifier: 'verify-submit',
+      child: ElevatedButton(
       onPressed: _isLoading ? null : _handleSubmit,
       child: _isLoading
           ? const SizedBox(
@@ -538,6 +544,6 @@ class TableVerificationPageState extends State<TableVerificationPage> {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : const Text('Continue'),
-    );
+    ),);
   }
 }

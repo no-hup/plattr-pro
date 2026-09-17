@@ -7,9 +7,19 @@ class RestaurantSettings {
   final ThemeConfig theme;
   final Map<String, bool> featureFlags;
 
+  /// `ordering` block on `restaurants/{id}/config/settings`. A separate namespace from
+  /// `featureFlags` on purpose: these change how the ordering flow BEHAVES per restaurant,
+  /// alongside `approvals` (ST) and `tax` (BL) on the same document.
+  ///
+  /// Keys: `requireWaiterConfirmation` — a guest-placed round waits for a waiter before the
+  /// kitchen is told. Absent means false, which is the behaviour every restaurant had before.
+  @JsonKey(defaultValue: <String, bool>{})
+  final Map<String, bool> ordering;
+
   RestaurantSettings({
     required this.theme,
     required this.featureFlags,
+    this.ordering = const <String, bool>{},
   });
 
   factory RestaurantSettings.fromJson(Map<String, dynamic> json) =>

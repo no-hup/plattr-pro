@@ -65,6 +65,8 @@ class _SettingsView extends StatelessWidget {
                 children: [
                   _buildHeader(context, provider),
                   const SizedBox(height: 24),
+                  _buildOrderingSection(context, provider),
+                  const SizedBox(height: 24),
                   _buildFeatureFlagsSection(context, provider),
                   const SizedBox(height: 24),
                   _buildThemeSection(context, provider),
@@ -97,6 +99,25 @@ class _SettingsView extends StatelessWidget {
           tooltip: 'Refresh',
           onPressed: provider.loadSettings,
           icon: const Icon(Icons.refresh),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrderingSection(BuildContext context, SettingsProvider provider) {
+    final ordering = provider.settings?.ordering ?? const <String, bool>{};
+
+    return _SettingsSection(
+      title: 'Ordering',
+      icon: Icons.room_service,
+      children: [
+        _FeatureFlagTile(
+          title: 'Waiter confirms QR orders',
+          subtitle: 'A guest order waits on the waiter\'s phone. The kitchen is only '
+              'told once the waiter confirms it at the table.',
+          value: ordering['requireWaiterConfirmation'] ?? false,
+          onChanged: (value) =>
+              provider.updateSetting('ordering.requireWaiterConfirmation', value),
         ),
       ],
     );

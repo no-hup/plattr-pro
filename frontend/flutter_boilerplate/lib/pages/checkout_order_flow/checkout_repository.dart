@@ -19,6 +19,7 @@ class CheckoutRepository {
     required String tableId,
     required String sessionId,
     String? notes, // Optional notes
+    String? requestId, // OF R1: one per Place order tap; a retry with the same id is the same order
   }) async {
     const endpoint = ApiConfig.checkoutCartEndpoint;
     
@@ -28,6 +29,7 @@ class CheckoutRepository {
         'tableId': tableId,
         'sessionId': sessionId,
         if (notes != null && notes.isNotEmpty) 'notes': notes,
+        if (requestId != null && requestId.isNotEmpty) 'requestId': requestId,
       },
     };
 

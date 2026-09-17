@@ -137,10 +137,13 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
     widget.onAppBarConfigChanged?.call(
       ServerAppBarConfiguration(
         additionalActions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshOrders,
-            tooltip: 'Refresh Orders',
+          Semantics(
+            identifier: 'orders-refresh',
+            child: IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _refreshOrders,
+              tooltip: 'Refresh Orders',
+            ),
           ),
         ],
       ),
@@ -296,7 +299,9 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
         : StatusColors.getColorForStatus(
             StatusUtils.parseCartStatus(card.cartStatus));
 
-    return OrderCard(
+    return Semantics(
+      identifier: 'order-cart-${card.cartId}',
+      child: OrderCard(
       tableId: card.tableId,
       orderId: card.orderId,
       price: '₹${card.finalPrice.toStringAsFixed(0)}',
@@ -306,12 +311,22 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
       maxItems: _ordersProvider.uiFlags.maxItemsInOrderCard,
       onTap: () => _navigateToOrderDetail(card),
       onLongPress: () => _handleLongPress(card),
-    );
+    ),);
   }
 
   void _handleLongPress(CartCard card) async {
+    final cartStatus = StatusUtils.normalizeCartStatus(card.cartStatus);
+
     // Don't allow marking already served carts
-    if (StatusUtils.normalizeCartStatus(card.cartStatus) == 'SERVED') {
+    if (cartStatus == 'SERVED') {
+      return;
+    }
+
+    // A cart still behind the waiter-confirmation gate cannot be served — the kitchen
+    // has not even seen it. The same gesture confirms it instead, which is the only
+    // move the waiter has here.
+    if (cartStatus == 'AWAITING_CONFIRMATION') {
+      await _handleConfirmCart(card);
       return;
     }
 
@@ -331,9 +346,12 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
               onPressed: () => Navigator.of(context).pop(false),
               child: const Text('Cancel'),
             ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Mark Served'),
+            Semantics(
+              identifier: 'order-mark-served',
+              child: FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Mark Served'),
+              ),
             ),
           ],
         ),
@@ -356,6 +374,55 @@ class _OrdersHomeScreenState extends State<OrdersHomeScreen>
           content: Text(
             success ? 'Cart marked as served' : 'Failed to mark cart as served',
           ),
+          backgroundColor: success ? Colors.green : Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Waiter reads the order back to the table, then confirms. That send is what
+  /// releases it to the kitchen, so it always asks first — `confirmServeCartAction`
+  /// governs the serve gesture, not this one.
+  Future<void> _handleConfirmCart(CartCard card) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm order'),
+        content: Text(
+          'Read the order back to Table ${card.tableId} and confirm it will not be '
+          'changed. Sending it puts it on the kitchen queue.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Not yet'),
+          ),
+          Semantics(
+            identifier: 'order-confirm-cart',
+            child: FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Send to kitchen'),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final success = await _ordersProvider.confirmCart(
+      restaurantId: widget.restaurantId,
+      orderId: card.orderId,
+      cartIndex: card.cartIndex,
+      sessionId: widget.sessionId,
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success
+              ? 'Order sent to the kitchen'
+              : 'Failed to confirm order'),
           backgroundColor: success ? Colors.green : Colors.red,
         ),
       );

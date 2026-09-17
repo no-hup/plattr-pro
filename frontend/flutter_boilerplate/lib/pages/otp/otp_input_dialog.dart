@@ -184,7 +184,9 @@ class _OtpInputDialogState extends State<OtpInputDialog> {
 
                 // --- Optional Name Field ---
                 if (widget.requireName) ...[
-                  TextFormField(
+                  Semantics(
+                    identifier: 'verify-name',
+                    child: TextFormField(
                     controller: _nameController,
                     decoration: const InputDecoration(
                       labelText: 'Name',
@@ -197,13 +199,15 @@ class _OtpInputDialogState extends State<OtpInputDialog> {
                       return null;
                     },
                     textInputAction: TextInputAction.next, // Improve keyboard navigation
-                  ),
+                  ),),
                   AppSpacing.verticalLG,
                 ],
 
                 // --- Optional Phone Field ---
                  if (widget.requirePhoneNumber) ...[
-                  TextFormField(
+                  Semantics(
+                    identifier: 'verify-phone',
+                    child: TextFormField(
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
                      inputFormatters: [
@@ -222,12 +226,14 @@ class _OtpInputDialogState extends State<OtpInputDialog> {
                       return null;
                     },
                     textInputAction: widget.requireName ? TextInputAction.next : TextInputAction.done, // Adjust based on fields
-                  ),
+                  ),),
                   AppSpacing.verticalLG,
                  ],
 
                 // --- OTP Field (Mandatory) ---
-                TextFormField(
+                Semantics(
+                  identifier: 'verify-otp',
+                  child: TextFormField(
                   controller: _otpController,
                   autofocus: !widget.requireName && !widget.requirePhoneNumber, // Autofocus if it's the first field
                   keyboardType: TextInputType.number,
@@ -253,7 +259,7 @@ class _OtpInputDialogState extends State<OtpInputDialog> {
                   maxLength: widget.otpDigits,
                   textInputAction: TextInputAction.done, // Last field
                   onFieldSubmitted: (_) => _isLoading ? null : _handleSubmit(), // Allow submit via keyboard
-                ),
+                ),),
               ],
              ),
         ),
@@ -271,7 +277,9 @@ class _OtpInputDialogState extends State<OtpInputDialog> {
           },
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
+        Semantics(
+          identifier: 'verify-submit',
+          child: ElevatedButton(
           onPressed: _isLoading ? null : _handleSubmit,
           child: _isLoading
               ? const SizedBox(
@@ -280,7 +288,7 @@ class _OtpInputDialogState extends State<OtpInputDialog> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Text('Submit'),
-        ),
+        ),),
       ],
     );
   }

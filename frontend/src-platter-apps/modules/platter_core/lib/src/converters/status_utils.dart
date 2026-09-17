@@ -11,6 +11,10 @@ enum OrderStatus {
 }
 
 enum CartStatus {
+  /// Placed by the guest, not yet confirmed by a waiter. Only appears when the
+  /// restaurant sets `ordering.requireWaiterConfirmation`. The kitchen endpoint
+  /// withholds these carts, so in practice only the server app sees one.
+  awaitingConfirmation,
   pending,
   preparing,
   ready,
@@ -49,6 +53,8 @@ class StatusUtils {
   static String normalizeCartStatus(String value) {
     final normalized = value.toUpperCase();
     switch (normalized) {
+      case 'AWAITING_CONFIRMATION':
+        return 'AWAITING_CONFIRMATION';
       case 'PENDING':
       case 'ORDERED':
         return 'PENDING';
@@ -94,6 +100,8 @@ class StatusUtils {
   static CartStatus parseCartStatus(dynamic value) {
     if (value == null || value is! String) return CartStatus.unknown;
     switch (normalizeCartStatus(value)) {
+      case 'AWAITING_CONFIRMATION':
+        return CartStatus.awaitingConfirmation;
       case 'PENDING':
         return CartStatus.pending;
       case 'PREPARING':
@@ -113,6 +121,8 @@ class StatusUtils {
 
   static String mapCartStatusToDisplay(String status) {
     switch (parseCartStatus(status)) {
+      case CartStatus.awaitingConfirmation:
+        return 'To confirm';
       case CartStatus.pending:
         return 'Pending';
       case CartStatus.preparing:
@@ -149,6 +159,7 @@ class StatusUtils {
 
   // Valid status transitions (mirrors backend)
   static final Map<String, List<String>> _validTransitions = {
+    'AWAITING_CONFIRMATION': ['PENDING', 'CANCELLED'],
     'PENDING': ['PREPARING', 'READY', 'CANCELLED'],
     'PREPARING': ['READY', 'CANCELLED'],
     'READY': ['SERVED', 'CANCELLED'],
@@ -168,6 +179,7 @@ class StatusUtils {
 
 /// Default status colors (fallback when backend doesn't provide color)
 class StatusColors {
+  static const Color awaitingConfirmationColor = Color(0xFF607D8B); // Blue grey
   static const Color pendingColor = Color(0xFFFFC107); // Yellow
   static const Color preparingColor = Color(0xFFFFC107); // Yellow
   static const Color readyColor = Color(0xFF4CAF50); // Green
@@ -179,6 +191,8 @@ class StatusColors {
   /// Get color for a cart status
   static Color getColorForStatus(CartStatus status) {
     switch (status) {
+      case CartStatus.awaitingConfirmation:
+        return awaitingConfirmationColor;
       case CartStatus.pending:
         return pendingColor;
       case CartStatus.preparing:

@@ -11,6 +11,7 @@ class QuantitySelector extends StatelessWidget {
     this.isEnabled = true,
     this.compact = false,
     this.minQuantity = 0,
+    this.identifierPrefix,
   });
 
   /// Current quantity value to display.
@@ -30,6 +31,11 @@ class QuantitySelector extends StatelessWidget {
 
   /// Minimum quantity allowed. Decrement is disabled at this value.
   final int minQuantity;
+
+  /// When set, the - and + buttons get stable `Semantics(identifier:)` values
+  /// `<prefix>-dec` / `<prefix>-inc` so a browser agent can click them without
+  /// snapshot refs. See FRONTEND_AGENT_TESTING.md.
+  final String? identifierPrefix;
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +66,7 @@ class QuantitySelector extends StatelessWidget {
             iconSize: iconSize,
             onTap: canDecrement ? onDecrement : null,
             isPrimary: false,
+            identifier: identifierPrefix == null ? null : '$identifierPrefix-dec',
           ),
 
           // Quantity Display
@@ -82,6 +89,7 @@ class QuantitySelector extends StatelessWidget {
             iconSize: iconSize,
             onTap: canIncrement ? onIncrement : null,
             isPrimary: true,
+            identifier: identifierPrefix == null ? null : '$identifierPrefix-inc',
           ),
         ],
       ),
@@ -94,6 +102,7 @@ class QuantitySelector extends StatelessWidget {
     required double iconSize,
     required VoidCallback? onTap,
     required bool isPrimary,
+    String? identifier,
   }) {
     final bool isDisabled = onTap == null;
     
@@ -107,7 +116,9 @@ class QuantitySelector extends StatelessWidget {
         ? Colors.white.withOpacity(0.5)
         : (isPrimary ? Colors.white : AppColors.ink);
 
-    return Material(
+    return Semantics(
+      identifier: identifier,
+      child: Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
@@ -133,6 +144,6 @@ class QuantitySelector extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),);
   }
 }

@@ -88,9 +88,12 @@ class _LiveOrdersScreenState extends State<LiveOrdersScreen> {
                   style: const TextStyle(color: Colors.red),
                 ),
                 const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: () => provider.refresh(),
-                  child: const Text('Retry'),
+                Semantics(
+                  identifier: 'kitchen-refresh',
+                  child: FilledButton(
+                    onPressed: () => provider.refresh(),
+                    child: const Text('Retry'),
+                  ),
                 ),
               ],
             ),
@@ -127,12 +130,16 @@ class _LiveOrdersScreenState extends State<LiveOrdersScreen> {
                       ),
                       itemCount: displayCarts.length,
                       itemBuilder: (context, index) {
-                        return ActiveCartCard(
-                          cart: displayCarts[index],
-                          onTap: () => _showCartDetail(
-                            context,
-                            provider,
-                            displayCarts[index],
+                        return Semantics(
+                          identifier:
+                              'kitchen-cart-${displayCarts[index].cartId}',
+                          child: ActiveCartCard(
+                            cart: displayCarts[index],
+                            onTap: () => _showCartDetail(
+                              context,
+                              provider,
+                              displayCarts[index],
+                            ),
                           ),
                         );
                       },

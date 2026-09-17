@@ -45,7 +45,14 @@ class MenuApiService {
         AppLogger.log('Result keys: ${result.keys}');
 
         // Get the success flag and message
-        final success = result['success'] as bool? ?? false;
+        // The backend is not consistent: ResponseBuilder.success() (used by
+        // menu-getRestaurantMenu) returns {status: 'success'}, while a few
+        // hand-rolled handlers return {success: true}. Accept either, the way
+        // table_api_service.dart and platter_core's ResponseParser already do.
+        final statusValue = result['status'];
+        final success = statusValue is String
+            ? statusValue.toLowerCase() == 'success'
+            : result['success'] as bool? ?? false;
         final message = result['message'] as String?;
 
         if (!success) {

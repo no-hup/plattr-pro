@@ -7,6 +7,11 @@ import 'pages/auth/login_screen.dart';
 import 'pages/auth/login_provider.dart';
 import 'main_navigation.dart';
 import 'config/app_config.dart';
+// platter_core keeps its OWN AppConfig, and the shared login/network code
+// (LoginApiService -> core DioClient) reads THAT one. Initialising only the
+// local copy above left core's at Environment.dev -> http://localhost:5002,
+// so every login failed with "No internet connection". Initialise both.
+import 'package:platter_core/platter_core.dart' as core;
 
 /// Global navigator key for showing dialogs from anywhere (e.g., interceptors)
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -41,8 +46,10 @@ Future<void> main() async {
     // Initialize AppConfig based on build mode
     if (kReleaseMode) {
       AppConfig.initialize(Environment.prod);
+      core.AppConfig.initialize(core.Environment.prod);
     } else {
       AppConfig.initialize(Environment.dev);
+      core.AppConfig.initialize(core.Environment.dev);
     }
 
     // Set up global interrupt flow handler
@@ -83,6 +90,7 @@ class MyApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
       debugShowCheckedModeBanner: false,
+      builder: (_, child) => OfflineBanner(child: child!),   // OF-S5: this device's own line to the server
       initialRoute: '/',
       routes: {
         '/': (context) => const _AuthWrapper(),

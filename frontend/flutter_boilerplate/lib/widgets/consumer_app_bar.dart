@@ -79,10 +79,10 @@ class ConsumerAppBar extends StatelessWidget implements PreferredSizeWidget {
                 // Actions
                 ...leadingActions,
                 ...trailingActions,
-                if (onSearchTap != null) _buildIconButton(Icons.search, onSearchTap!),
-                if (onOffersTap != null) _buildIconButton(Icons.local_offer_outlined, onOffersTap!),
-                if (onOrdersTap != null) _buildIconButton(Icons.receipt_long_outlined, onOrdersTap!),
-                if (onMenuTap != null) _buildIconButton(Icons.menu_book_outlined, onMenuTap!),
+                if (onSearchTap != null) _buildIconButton(Icons.search, onSearchTap!, 'nav-search'),
+                if (onOffersTap != null) _buildIconButton(Icons.local_offer_outlined, onOffersTap!, 'nav-offers'),
+                if (onOrdersTap != null) _buildIconButton(Icons.receipt_long_outlined, onOrdersTap!, 'nav-orders'),
+                if (onMenuTap != null) _buildIconButton(Icons.menu_book_outlined, onMenuTap!, 'nav-menu'),
                 if (onCartTap != null) _buildCartButton(context),
               ],
             ),
@@ -104,16 +104,20 @@ class ConsumerAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
   
-  Widget _buildIconButton(IconData icon, VoidCallback onTap) {
+  // `identifier` is the agent-facing stable selector (flt-semantics-identifier).
+  Widget _buildIconButton(IconData icon, VoidCallback onTap, String identifier) {
     return SizedBox(
       width: AppDimensions.iconButtonSize,
       height: AppDimensions.iconButtonSize,
-      child: IconButton(
-        icon: Icon(icon, size: 22, color: AppColors.ink),
-        onPressed: onTap,
-        style: IconButton.styleFrom(
-            padding: EdgeInsets.zero,
-            shape: const CircleBorder(),
+      child: Semantics(
+        identifier: identifier,
+        child: IconButton(
+          icon: Icon(icon, size: 22, color: AppColors.ink),
+          onPressed: onTap,
+          style: IconButton.styleFrom(
+              padding: EdgeInsets.zero,
+              shape: const CircleBorder(),
+          ),
         ),
       ),
     );
@@ -123,7 +127,7 @@ class ConsumerAppBar extends StatelessWidget implements PreferredSizeWidget {
     return Stack(
       alignment: Alignment.center,
       children: [
-        _buildIconButton(Icons.shopping_cart_outlined, onCartTap!),
+        _buildIconButton(Icons.shopping_cart_outlined, onCartTap!, 'nav-cart'),
         if (cartItemCount != null && cartItemCount! > 0)
           Positioned(
             top: 4,

@@ -201,10 +201,13 @@ class _TableDetailDialogState extends State<TableDetailDialog> {
                     height: 24,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: _refreshTableOtp,
-                    tooltip: 'Refresh OTP',
+                : Semantics(
+                    identifier: 'table-refresh-otp',
+                    child: IconButton(
+                      icon: const Icon(Icons.refresh),
+                      onPressed: _refreshTableOtp,
+                      tooltip: 'Refresh OTP',
+                    ),
                   ),
           ],
         ),
@@ -230,10 +233,13 @@ class _TableDetailDialogState extends State<TableDetailDialog> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            TextButton.icon(
-              icon: const Icon(Icons.visibility),
-              label: const Text('View'),
-              onPressed: () => _viewOrderDetails(table.currentOrderId),
+            Semantics(
+              identifier: 'table-view-order',
+              child: TextButton.icon(
+                icon: const Icon(Icons.visibility),
+                label: const Text('View'),
+                onPressed: () => _viewOrderDetails(table.currentOrderId),
+              ),
             ),
           ],
         ),
@@ -263,6 +269,9 @@ class _TableDetailDialogState extends State<TableDetailDialog> {
                   Colors.green,
                   () => _updateTableStatus('active'),
                 ),
+              // Reserved = staff-held (PRD 16.1). Customers scanning this table's QR are
+              // refused with "ask the staff to seat you"; set it back to Vacant to seat a
+              // party. A party already seated here is not evicted.
               if (currentStatus != 'reserved')
                 _buildStatusButton(
                   'Reserved',
@@ -280,13 +289,16 @@ class _TableDetailDialogState extends State<TableDetailDialog> {
   }
 
   Widget _buildStatusButton(String label, Color color, VoidCallback onPressed) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
+    return Semantics(
+      identifier: 'table-status-${label.toLowerCase()}',
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+        ),
+        child: Text(label),
       ),
-      child: Text(label),
     );
   }
 }

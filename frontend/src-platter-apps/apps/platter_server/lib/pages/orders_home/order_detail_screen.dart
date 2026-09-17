@@ -210,6 +210,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         _buildActionButton(
+          identifier: 'order-cancel',
           icon: Icons.cancel,
           label: 'Cancel Order',
           color: Colors.red,
@@ -217,6 +218,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ),
         const SizedBox(width: 8),
         _buildActionButton(
+          identifier: 'order-mark-paid',
           icon: Icons.check_circle,
           label: 'Mark Paid',
           color: Colors.green,
@@ -238,13 +240,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('No'),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _updateOrderStatus('completed');
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.green),
-            child: const Text('Yes, Mark Paid'),
+          Semantics(
+            identifier: 'order-mark-paid-confirm',
+            child: TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _updateOrderStatus('completed');
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.green),
+              child: const Text('Yes, Mark Paid'),
+            ),
           ),
         ],
       ),
@@ -256,18 +261,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     required String label,
     required Color color,
     required VoidCallback? onPressed,
+    required String identifier,
   }) {
     final resolvedColor = onPressed == null ? Colors.grey : color;
-    return OutlinedButton.icon(
-      icon: Icon(icon),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: resolvedColor,
-        side: BorderSide(color: resolvedColor.withValues(alpha: 0.4)),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        textStyle: const TextStyle(fontWeight: FontWeight.w500),
+    return Semantics(
+      identifier: identifier,
+      child: OutlinedButton.icon(
+        icon: Icon(icon),
+        label: Text(label),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: resolvedColor,
+          side: BorderSide(color: resolvedColor.withValues(alpha: 0.4)),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          textStyle: const TextStyle(fontWeight: FontWeight.w500),
+        ),
+        onPressed: onPressed,
       ),
-      onPressed: onPressed,
     );
   }
 

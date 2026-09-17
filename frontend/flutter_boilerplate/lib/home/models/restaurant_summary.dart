@@ -1,3 +1,12 @@
+/// The backend returns tables in Firestore document-id order, which puts
+/// table "10" before table "2". Sort numerically when the labels are numbers.
+int _byTableNumber(RestaurantTableSummary a, RestaurantTableSummary b) {
+  final aNumber = int.tryParse(a.label);
+  final bNumber = int.tryParse(b.label);
+  if (aNumber != null && bNumber != null) return aNumber.compareTo(bNumber);
+  return a.label.compareTo(b.label);
+}
+
 class RestaurantSummary {
   const RestaurantSummary({
     required this.id,
@@ -15,10 +24,11 @@ class RestaurantSummary {
       address: (json['address'] ?? '').toString(),
       phone: (json['phone'] ?? '').toString(),
       tables: tablesJson is List
-          ? tablesJson
+          ? (tablesJson
               .whereType<Map<String, dynamic>>()
               .map(RestaurantTableSummary.fromJson)
               .toList()
+            ..sort(_byTableNumber))
           : const <RestaurantTableSummary>[],
     );
   }

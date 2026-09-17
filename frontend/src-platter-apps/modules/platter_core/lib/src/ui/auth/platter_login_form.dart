@@ -78,7 +78,9 @@ class _PlatterLoginFormState<T extends BaseLoginProvider> extends State<PlatterL
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32.0),
-                  TextFormField(
+                  Semantics(
+                    identifier: 'login-restaurant',
+                    child: TextFormField(
                     controller: _restaurantIdController,
                     decoration: const InputDecoration(
                       labelText: 'Restaurant ID',
@@ -91,9 +93,11 @@ class _PlatterLoginFormState<T extends BaseLoginProvider> extends State<PlatterL
                       }
                       return null;
                     },
-                  ),
+                  ),),
                   const SizedBox(height: 16.0),
-                  TextFormField(
+                  Semantics(
+                    identifier: 'login-username',
+                    child: TextFormField(
                     controller: _usernameController,
                     decoration: const InputDecoration(
                       labelText: 'Username (Email or Phone)',
@@ -106,9 +110,11 @@ class _PlatterLoginFormState<T extends BaseLoginProvider> extends State<PlatterL
                       }
                       return null;
                     },
-                  ),
+                  ),),
                   const SizedBox(height: 16.0),
-                  TextFormField(
+                  Semantics(
+                    identifier: 'login-password',
+                    child: TextFormField(
                     controller: _passwordController,
                     decoration: const InputDecoration(
                       labelText: 'Password',
@@ -122,19 +128,21 @@ class _PlatterLoginFormState<T extends BaseLoginProvider> extends State<PlatterL
                       }
                       return null;
                     },
-                  ),
+                  ),),
                   const SizedBox(height: 24.0),
                   if (provider.isLoading)
                     const Center(child: CircularProgressIndicator())
                   else
-                    ElevatedButton(
+                    Semantics(
+                      identifier: 'login-submit',
+                      child: ElevatedButton(
                       onPressed: _login,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
                         textStyle: const TextStyle(fontSize: 16.0),
                       ),
                       child: const Text('Login'),
-                    ),
+                    ),),
                   if (provider.state == DataState.error &&
                       provider.errorMessage != null)
                     Padding(

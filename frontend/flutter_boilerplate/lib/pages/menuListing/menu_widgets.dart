@@ -341,6 +341,7 @@ class _QuantityControl extends StatelessWidget {
 
     if (quantity > 0) {
       return QuantitySelector(
+        identifierPrefix: 'menu-${item.id}',
         quantity: quantity,
         onIncrement: onAddToCart,
         onDecrement: onDecrement,
@@ -348,7 +349,9 @@ class _QuantityControl extends StatelessWidget {
       );
     }
 
-    return TextButton(
+    return Semantics(
+      identifier: 'menu-add-${item.id}',
+      child: TextButton(
       onPressed: onAddToCart,
       style: TextButton.styleFrom(
         foregroundColor: AppColors.primary,
@@ -363,9 +366,13 @@ class _QuantityControl extends StatelessWidget {
       ),
       child: Text(
         'ADD',
+        // Screen readers otherwise hear a list of identical "ADD" buttons; the
+        // item name and price live in sibling widgets they never reach.
+        semanticsLabel:
+            'Add ${item.meta.name}, ₹${item.priceInfo.finalPrice.toDouble().toStringAsFixed(2)}',
         style: AppTypography.label.copyWith(letterSpacing: 1.0, fontWeight: FontWeight.bold),
       ),
-    );
+    ),);
   }
 }
 

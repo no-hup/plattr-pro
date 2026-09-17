@@ -18,21 +18,33 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Plattr — scan the QR code on your table to view the menu and order.">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="flutterboilerplate">
+  <meta name="apple-mobile-web-app-title" content="Plattr">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>flutterboilerplate</title>
+  <title>Plattr</title>
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+    <!-- Agent hook: ?agent=1 turns on Flutter's accessibility tree so a browser
+       agent can see the CanvasKit UI. Inert without the query param. See
+       FRONTEND_AGENT_TESTING.md. -->
+  <script>
+    if (new URLSearchParams(location.search).get('agent') === '1') {
+      var _t = setInterval(function () {
+        if (document.querySelector('flt-semantics-host')) return clearInterval(_t);
+        var p = document.querySelector('flt-semantics-placeholder');
+        if (p) p.click();
+      }, 100);
+    }
+  </script>
+<script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

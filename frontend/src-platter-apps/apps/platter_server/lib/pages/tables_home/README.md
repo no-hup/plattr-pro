@@ -105,6 +105,14 @@ Purpose: Updates the status of a table. Used in the table detail popup when chan
 }
 ```
 
+**`reserved` (policy decided 2026-09-08, PRD 16.1):** a reserved table is held by
+staff. A customer who scans its QR gets 403 "This table is reserved. Please ask the
+staff to seat you.", and OTP entry is refused too. To seat a party there, set the table
+to **Vacant** — the normal scan → OTP flow takes over. Reserving a table that already
+has a seated party does NOT evict them; their existing session keeps working. Reserved
+tables are not touched by the inactivity cleanup that vacates stale active/pending
+tables, so a reserved table stays reserved until a waiter changes it.
+
 **Expected Response Format:**
 
 ```json

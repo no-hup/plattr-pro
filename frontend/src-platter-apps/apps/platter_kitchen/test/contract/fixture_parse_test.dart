@@ -79,16 +79,6 @@ void main() {
         // Every cart in every order must survive the flatten, except the ones
         // the kitchen view deliberately drops (SERVED / CANCELLED).
         final orders = (data['orders'] as List<dynamic>? ?? const []);
-        // The load_* fixtures come from staff-load, where the kitchen polls at the
-        // same moment the checkouts fire, so an empty list is a legitimate capture
-        // (the poll simply won the race). Everywhere else an empty fixture would
-        // silently vacuum up every assertion below, so it stays an error there.
-        final racy = name.startsWith('load_');
-        if (racy && orders.isEmpty) {
-          expect(result.carts, isEmpty,
-              reason: 'an empty poll must flatten to no tickets, not crash');
-          return;
-        }
         expect(orders, isNotEmpty, reason: 'fixture has no orders to flatten');
 
         for (final cart in result.carts) {

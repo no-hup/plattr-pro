@@ -2,6 +2,15 @@ import 'package:flutter/foundation.dart';
 import 'package:platter_core/platter_core.dart';
 import 'tables_api_service.dart';
 
+/// The backend returns tables in Firestore document-id order, which puts
+/// table "10" before table "2". Sort numerically when the table numbers are.
+int _byTableNumber(TableInfo a, TableInfo b) {
+  final aNumber = int.tryParse(a.number);
+  final bNumber = int.tryParse(b.number);
+  if (aNumber != null && bNumber != null) return aNumber.compareTo(bNumber);
+  return a.number.compareTo(b.number);
+}
+
 /// Provider for table management state
 class TablesProvider extends ChangeNotifier {
   final TablesApiService _apiService;
@@ -41,7 +50,7 @@ class TablesProvider extends ChangeNotifier {
     );
 
     if (response.success && response.data != null) {
-      _tables = response.data!;
+      _tables = response.data!..sort(_byTableNumber);
       _state = DataState.loaded;
     } else {
       _errorMessage = response.message ?? 'Failed to load tables';

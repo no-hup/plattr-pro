@@ -144,7 +144,14 @@ A Flutter web application for restaurant customers to view menus, place orders, 
 #### Offline Handling
 - Graceful degradation
 - Error messages for connectivity issues
-- Session persistence
+- Session persistence — BUILT, via `window.sessionStorage`
+  (`lib/session/services/session_storage_service.dart`, loaded by `SessionProvider`).
+  Deliberately tab-scoped: the session survives page reload and in-tab navigation, and
+  is dropped when the tab closes, so the next diner at that table starts clean.
+  Verified end to end on 2026-09-08 (reload mid-order → menu → cart → checkout, no
+  re-auth). Known limitation: the OTP path stores `restaurantId`/`tableId`/`expiresAt`
+  as null, so the stored session is not table-scoped on the client; the backend rejects
+  it for any other table (session resume is caller- and table-scoped there).
 - Retry mechanisms
 
 #### Error States
@@ -241,9 +248,13 @@ A Flutter web application for restaurant customers to view menus, place orders, 
   - subscribeToOrderUpdates(orderId) → Real-time status updates
 
 ### Global Features
-- **Session Management**:
-  - checkSession(tableId) → Validates session status
-  - refreshSession(tableId) → Extends session if valid
+- **Session Management**: NOT BUILT as specified — neither `checkSession` nor
+  `refreshSession` exists in the backend. `table-validateTableAndLocation` covers the
+  same ground: passing the stored `sessionId` returns the live session if it is still
+  valid and still belongs to that table, and otherwise falls through to the OTP prompt.
+  There is no session extension; expiry ends the sitting.
+  - ~~checkSession(tableId) → Validates session status~~
+  - ~~refreshSession(tableId) → Extends session if valid~~
 - **Real-time Updates**:
   - subscribeToMenuUpdates() → Stock status changes
   - subscribeToCartUpdates() → Cart modifications

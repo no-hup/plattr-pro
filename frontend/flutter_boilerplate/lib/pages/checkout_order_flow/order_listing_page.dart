@@ -702,7 +702,7 @@ class CartHistoryCard extends StatelessWidget {
                         border: Border.all(color: _getStatusColor(cart.status).withOpacity(0.3)),
                       ),
                       child: Text(
-                        cart.status.toUpperCase(),
+                        _getStatusLabel(cart.status),
                         style: AppTypography.labelSmall.copyWith(
                           color: _getStatusColor(cart.status),
                           fontWeight: FontWeight.bold,
@@ -751,8 +751,21 @@ class CartHistoryCard extends StatelessWidget {
     );
   }
 
+  /// The guest never sees a raw backend enum. Anything unmapped falls back to the
+  /// old behaviour (the status, upper-cased) rather than an empty chip.
+  String _getStatusLabel(String status) {
+    switch (status.toLowerCase()) {
+      case 'awaiting_confirmation':
+        return 'WAITING FOR CONFIRMATION';
+      default:
+        return status.toUpperCase();
+    }
+  }
+
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
+      case 'awaiting_confirmation':
+        return Colors.blueGrey;
       case 'pending':
         return Colors.orange;
       case 'preparing':

@@ -128,19 +128,28 @@ class _MainNavigationState extends State<MainNavigation> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_outlined),
+            icon: Semantics(
+              identifier: 'tab-orders',
+              child: Icon(Icons.receipt_outlined),
+            ),
             activeIcon: Icon(Icons.receipt),
             label: 'Orders',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.table_bar_outlined),
+            icon: Semantics(
+              identifier: 'tab-tables',
+              child: Icon(Icons.table_bar_outlined),
+            ),
             activeIcon: Icon(Icons.table_bar),
             label: 'Tables',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.restaurant_menu_outlined),
+            icon: Semantics(
+              identifier: 'tab-menu',
+              child: Icon(Icons.restaurant_menu_outlined),
+            ),
             activeIcon: Icon(Icons.restaurant_menu),
             label: 'Menu',
           ),

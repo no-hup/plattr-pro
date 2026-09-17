@@ -13,18 +13,15 @@ class AppLogger {
   );
 
   static void log(String message) {
-    final msg = 'poopoo $message';
-    _logger.d(msg);
+    _logger.d(message);
     //print(msg); // Log at debug level
   }
 
   static void e(String message) {
-    final msg = 'poopoo $message';
-    _logger.e(msg); // Log at error level
+    _logger.e(message); // Log at error level
   }
 
   static void i(String message) {
-    final msg = 'poopoo $message';
-    _logger.i(msg); // Log at info level
+    _logger.i(message); // Log at info level
   }
 }

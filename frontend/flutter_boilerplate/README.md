@@ -21,6 +21,29 @@ That said, I may consider creating branches with my architecture and state manag
 
 ## Getting Started
 
+### First run after a fresh clone
+
+`lib/env.g.dart` is generated and gitignored, so these steps are required once:
+
+```bash
+cd frontend/flutter_boilerplate
+cp .env.example .env      # edit SERVER_URL if you are not using the local emulator
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs   # generates lib/env.g.dart (+ freezed/json models)
+```
+
+Then run the app (see the runbook below for ports and troubleshooting):
+
+```bash
+flutter run -d web-server --web-port 5173 --web-hostname 127.0.0.1
+```
+
+`lib/firebase_options.dart` is committed (same values as the `platter_*` apps, project
+`rms-app-dd875`); regenerate it with `flutterfire configure --project=rms-app-dd875` only if
+the Firebase project changes.
+
+### Running the backend
+
 This README contains project-specific notes. The canonical emulator and Flutter run instructions (including port handling and troubleshooting) are maintained in:
 
 ```
