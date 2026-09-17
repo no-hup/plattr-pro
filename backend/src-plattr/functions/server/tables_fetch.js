@@ -44,7 +44,9 @@ exports.getTables = functions.https.onCall(async (data, context) => {
         }
 
         // Define valid table statuses
-        const VALID_STATUSES = ['active', 'vacant', 'disabled', 'pending', 'OTP_PENDING'];
+        // 'reserved' is a real staff-held status (PRD 16.1) — pass it through rather than
+        // coercing it to 'vacant', or the waiter sees a held table as free.
+        const VALID_STATUSES = ['active', 'vacant', 'disabled', 'reserved', 'pending', 'OTP_PENDING'];
         
         // Process tables data
         const tables = tablesSnapshot.docs.map(doc => {

@@ -13,6 +13,7 @@ const { validateStaffSession } = require('../adminApp/auth');
 const { safeArrayUnion, applyArrayOperation } = require('../utils/arrayOperations');
 const { buildAuthDetails } = require('./tableHelperFunctions');
 const { vacateTable } = require('./vacateTable');
+const { resolveTableId, unmergeChildren } = require('./mergedTables');
 const customerService = require('../customer/customerService');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 
@@ -22,7 +23,8 @@ const TABLE_STATUS = {
     ACTIVE: 'active',
     VACANT: 'vacant',
     DISABLED: 'disabled',
-    OTP_PENDING: 'pending'
+    OTP_PENDING: 'pending',
+    RESERVED: 'reserved'   // staff-held: no self-service join until a waiter marks it vacant
 };
 
 /**
@@ -48,7 +50,12 @@ exports.validateTableAndLocation = functions.https.onCall(async (request, contex
 
         // 2. Input Validation
         TableInputValidation.validateTableAndLocationInput(data);
-        const { restaurantId, tableId, userLocation, sessionId } = data;
+        let { restaurantId, tableId, userLocation, sessionId } = data;
+
+        // A merged table's QR code still says table 6. Everything below this line —
+        // the disabled guard, the session, the cart — is about the table the party is
+        // actually sitting at.
+        tableId = await resolveTableId(restaurantId, tableId);
 
         // 3. Data Fetching
         const { restaurantData, tableData, tableRef } = await TableInputValidation.getTableAndRestaurantData(restaurantId, tableId);
@@ -101,6 +108,10 @@ exports.validateTableAndLocation = functions.https.onCall(async (request, contex
         let validatedSession = null;
         if (sessionId) {
             validatedSession = await sessionService.validateTableSession(restaurantId, tableId, { throwError: false });
+            // validateTableSession is table-scoped: it returns whatever session the table
+            // has. Resume only if the caller actually holds that id — anything else is a
+            // stale or guessed id and goes through OTP like everyone else.
+            if (validatedSession && validatedSession.id !== sessionId) validatedSession = null;
         }
 
         if (validatedSession) {
@@ -128,10 +139,25 @@ exports.validateTableAndLocation = functions.https.onCall(async (request, contex
             return ResponseBuilder.success(responseData, "Access granted");
         }
 
+        // 5d. Reserved table: a waiter seats the party (server app → Vacant) and the
+        // normal scan → OTP flow takes over. Deliberately after 5c so a party already
+        // seated here keeps access if staff flip the table to reserved mid-meal.
+        if (originalStatus === TABLE_STATUS.RESERVED) {
+            errorHandler.forbidden(
+                "This table is reserved. Please ask the staff to seat you.",
+                {
+                    tableStatus: TABLE_STATUS.RESERVED,
+                    restaurant: restaurantInfo,
+                    table: tableInfo,
+                    error: 'Table is reserved'
+                }
+            );
+        }
+
         // 6. OTP Generation for Vacant Tables
         if (originalStatus === TABLE_STATUS.VACANT ||
             (originalStatus === TABLE_STATUS.OTP_PENDING && !otpService.isOTPValid(tableData.currentOTP))) {
-            console.log(`poopoo Table ${tableId} is ${originalStatus} (with expired/missing OTP), generating new OTP and setting status to OTP_PENDING`);
+            console.log(`Table ${tableId} is ${originalStatus} (with expired/missing OTP), generating new OTP and setting status to OTP_PENDING`);
             const otpObject = otpService.createOTPObject();
 
             try {
@@ -140,7 +166,7 @@ exports.validateTableAndLocation = functions.https.onCall(async (request, contex
                     firstScannedAt: timestamp.serverTimestamp(),
                     status: TABLE_STATUS.OTP_PENDING
                 });
-                console.log(`poopoo Table ${tableId} status updated to OTP_PENDING in Firestore`);
+                console.log(`Table ${tableId} status updated to OTP_PENDING in Firestore`);
             } catch (updateError) {
                 console.error(`Error updating table ${tableId} to OTP_PENDING:`, updateError);
                 errorHandler.internalError(
@@ -171,7 +197,7 @@ exports.validateTableAndLocation = functions.https.onCall(async (request, contex
                 || featureFlags.isEnabled('isMultiUserSupportEnabled');
             const isUsernameMandatory = featureFlags.isEnabled('isUsernameEnabled');
             const isMultiUserSupported = featureFlags.isEnabled('isMultiUserSupportEnabled');
-            console.log('poopoo Table scan auth details:', { originalStatus, isPhoneNumberMandatory, isUsernameMandatory, isMultiUserSupported });
+            console.log('Table scan auth details:', { originalStatus, isPhoneNumberMandatory, isUsernameMandatory, isMultiUserSupported });
 
             errorHandler.unauthorized(
                 "Authentication required",
@@ -237,7 +263,7 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
     // Load feature flag overrides from Firestore (for test environments)
     await featureFlags.loadOverrides(db);
     const data = request.data;
-    console.log("poopoo ==== validateOTP called with data:", {
+    console.log("==== validateOTP called with data:", {
         restaurantId: data?.restaurantId,
         tableId: data?.tableId,
         otp: data?.otp,
@@ -246,17 +272,21 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
     });
     try {
         // 1. Input Validation
-        console.log("poopoo validateOTP - Validating input parameters");
+        console.log("validateOTP - Validating input parameters");
         TableInputValidation.validateOTPInput(data);
-        const { restaurantId, tableId, otp, phoneNumber, name } = data;
+        let { restaurantId, tableId, otp, phoneNumber, name } = data;
+
+        // Scanning the merged table's QR must accept the parent table's OTP, because
+        // the OTP lives on the parent's doc.
+        tableId = await resolveTableId(restaurantId, tableId);
 
         // 2. Data Fetching
         const { tableData, tableRef } = await TableInputValidation.getTableAndRestaurantData(restaurantId, tableId);
-        console.log(`poopoo validateOTP - Table data retrieved successfully`);
+        console.log(`validateOTP - Table data retrieved successfully`);
 
         // Validate table data structure
         if (!tableData) {
-            console.error("poopoo validateOTP - Error: Table data is null or undefined");
+            console.error("validateOTP - Error: Table data is null or undefined");
             errorHandler.internalError(
                 "Invalid table data structure",
                 {
@@ -269,18 +299,29 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
 
         // Store original status for reference
         const originalStatus = tableData.status || TABLE_STATUS.VACANT; // Default to VACANT if status is undefined
-        console.log(`poopoo validateOTP - Current table status: ${originalStatus}`);
+        console.log(`validateOTP - Current table status: ${originalStatus}`);
+
+        // Reserved tables are staff-seated: no self-service OTP join until a waiter marks
+        // the table vacant (mirrors the scan-time guard in validateTableAndLocation).
+        if (originalStatus === TABLE_STATUS.RESERVED) {
+            errorHandler.forbidden("This table is reserved. Please ask the staff to seat you.", {
+                tableStatus: originalStatus,
+                error: 'Table is reserved',
+                restaurantId,
+                tableId
+            });
+        }
 
         // 3. Hoisted Requirement Calculations
         const isPhoneNumberRequired = (originalStatus === TABLE_STATUS.VACANT || originalStatus === TABLE_STATUS.OTP_PENDING)
             || featureFlags.isEnabled('isMultiUserSupportEnabled');
-        console.log(`poopoo validateOTP - isPhoneNumberRequired: ${isPhoneNumberRequired}, phoneNumber provided: ${!!phoneNumber}`);
+        console.log(`validateOTP - isPhoneNumberRequired: ${isPhoneNumberRequired}, phoneNumber provided: ${!!phoneNumber}`);
 
         // Early exit if phone number is required but missing
         if (isPhoneNumberRequired && !phoneNumber) {
-            console.log("poopoo validateOTP - Error: Phone number is required but not provided");
+            console.log("validateOTP - Error: Phone number is required but not provided");
             errorHandler.badRequest('Phone number is required for this operation', {
-                details: 'Phone number is required for primary customers or when multi-user support is disabled'
+                details: 'Phone number is required for primary customers (vacant/pending table) or when multi-user support is enabled'
             });
         }
 
@@ -289,11 +330,11 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
         const isUsernameEnabled = featureFlags.isEnabled('isUsernameEnabled');
         //todo shaurya recheck this logic
         const isUsernameRequired = isUsernameEnabled && potentiallyPrimary;
-        console.log(`poopoo validateOTP - isUsernameRequired: ${isUsernameRequired}, name provided: ${!!name}`);
+        console.log(`validateOTP - isUsernameRequired: ${isUsernameRequired}, name provided: ${!!name}`);
 
         // Early exit if username is required but missing
         if (isUsernameRequired && !name) {
-            console.log("poopoo validateOTP - Error: Name is required but not provided");
+            console.log("validateOTP - Error: Name is required but not provided");
             errorHandler.badRequest('Name is required for this operation', {
                 details: 'Name is required for primary customers or when username feature is enabled'
             });
@@ -303,11 +344,11 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
         let isPrimaryCustomer = false;
 
         if (originalStatus === TABLE_STATUS.OTP_PENDING || originalStatus === TABLE_STATUS.VACANT) {
-            console.log(`poopoo validateOTP - Validating OTP for potential primary customer`);
+            console.log(`validateOTP - Validating OTP for potential primary customer`);
 
             // Validate OTP data exists and has required structure
             if (!tableData.currentOTP || typeof tableData.currentOTP !== 'object') {
-                console.error("poopoo validateOTP - Error: currentOTP missing or invalid for VACANT/PENDING table");
+                console.error("validateOTP - Error: currentOTP missing or invalid for VACANT/PENDING table");
                 errorHandler.internalError(
                     "OTP data missing for the table. Please try scanning again.",
                     {
@@ -320,7 +361,7 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
             }
 
             if (!tableData.currentOTP.code || typeof tableData.currentOTP.code !== 'string') {
-                console.error("poopoo validateOTP - Error: Invalid OTP code structure");
+                console.error("validateOTP - Error: Invalid OTP code structure");
                 errorHandler.internalError(
                     "Invalid OTP data. Please try scanning again.",
                     {
@@ -334,7 +375,7 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
 
             // Check OTP expiry before comparing code
             if (!otpService.isOTPValid(tableData.currentOTP)) {
-                console.log("poopoo validateOTP - Error: OTP has expired");
+                console.log("validateOTP - Error: OTP has expired");
                 errorHandler.preconditionFailed(
                     "OTP has expired. Please scan the QR code again to get a new OTP.",
                     {
@@ -346,9 +387,9 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
                 );
             }
 
-            console.log(`poopoo validateOTP - Expected OTP: ${tableData.currentOTP.code}, Provided OTP: ${otp}`);
+            console.log(`validateOTP - Expected OTP: ${tableData.currentOTP.code}, Provided OTP: ${otp}`);
             if (tableData.currentOTP.code !== otp) {
-                console.log("poopoo validateOTP - Error: Invalid OTP provided");
+                console.log("validateOTP - Error: Invalid OTP provided");
                 errorHandler.unauthorized('Invalid OTP', {
                     details: 'The provided OTP is incorrect',
                     tableStatus: originalStatus
@@ -356,10 +397,10 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
             }
 
             isPrimaryCustomer = true;
-            console.log("poopoo validateOTP - User confirmed as primary customer");
+            console.log("validateOTP - User confirmed as primary customer");
 
             // Update table status and customer info with proper null checks
-            console.log("poopoo validateOTP - Updating table as active with primary customer info");
+            console.log("validateOTP - Updating table as active with primary customer info");
             const updateData = {
                 status: TABLE_STATUS.ACTIVE,
                 primaryCustomer: { phoneNumber, name },
@@ -375,14 +416,14 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
             }
 
             await tableRef.update(updateData);
-            console.log("poopoo validateOTP - Table updated successfully");
+            console.log("validateOTP - Table updated successfully");
 
         } else if (originalStatus === TABLE_STATUS.ACTIVE) {
-            console.log("poopoo validateOTP - Validating OTP for secondary user");
+            console.log("validateOTP - Validating OTP for secondary user");
 
             // Validate OTP data exists and has required structure
             if (!tableData.currentOTP || typeof tableData.currentOTP !== 'object') {
-                console.error("poopoo validateOTP - Error: currentOTP missing or invalid for ACTIVE table");
+                console.error("validateOTP - Error: currentOTP missing or invalid for ACTIVE table");
                 errorHandler.internalError(
                     "OTP data missing for the table. Please ask the primary customer or server for assistance.",
                     {
@@ -395,7 +436,7 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
             }
 
             if (!tableData.currentOTP.code || typeof tableData.currentOTP.code !== 'string') {
-                console.error("poopoo validateOTP - Error: Invalid OTP code structure");
+                console.error("validateOTP - Error: Invalid OTP code structure");
                 errorHandler.internalError(
                     "Invalid OTP data. Please ask the primary customer or server for assistance.",
                     {
@@ -411,9 +452,9 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
             // authenticated, so code match alone is sufficient for secondary users.
             // Expiry is only enforced on VACANT/OTP_PENDING tables (above).
 
-            console.log(`poopoo validateOTP - Expected OTP: ${tableData.currentOTP.code}, Provided OTP: ${otp}`);
+            console.log(`validateOTP - Expected OTP: ${tableData.currentOTP.code}, Provided OTP: ${otp}`);
             if (tableData.currentOTP.code !== otp) {
-                console.log("poopoo validateOTP - Wrong OTP for active table");
+                console.log("validateOTP - Wrong OTP for active table");
                 errorHandler.unauthorized('Invalid OTP', {
                     status: 'ask_primary_customer',
                     message: 'Please ask the primary customer or the server/waiter for the correct OTP.',
@@ -422,7 +463,7 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
             }
 
             if (phoneNumber) {
-                console.log("poopoo validateOTP - Adding secondary user to occupied list");
+                console.log("validateOTP - Adding secondary user to occupied list");
                 const updateData = {
                     lastActivity: timestamp.serverTimestamp()
                 };
@@ -437,10 +478,10 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
                 }
 
                 await tableRef.update(updateData);
-                console.log("poopoo validateOTP - Table updated with new user");
+                console.log("validateOTP - Table updated with new user");
             }
         } else {
-            console.warn(`poopoo validateOTP - Unexpected table status: ${originalStatus}`);
+            console.warn(`validateOTP - Unexpected table status: ${originalStatus}`);
             errorHandler.internalError(
                 "Unexpected table status encountered during OTP validation",
                 {
@@ -454,12 +495,12 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
 
         // 5. Customer Profile Update
         if (phoneNumber && name) {
-            console.log(`poopoo validateOTP - Creating/updating customer profile for ${phoneNumber}`);
+            console.log(`validateOTP - Creating/updating customer profile for ${phoneNumber}`);
             try {
                 await customerService.createOrUpdateCustomerProfileDirect(phoneNumber, name);
-                console.log("poopoo validateOTP - Customer profile updated successfully");
+                console.log("validateOTP - Customer profile updated successfully");
             } catch (profileError) {
-                console.error("poopoo validateOTP - Error updating customer profile:", profileError);
+                console.error("validateOTP - Error updating customer profile:", profileError);
                 // Continue execution even if profile update fails
             }
         }
@@ -467,16 +508,16 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
         // 6. Session Management
         let session;
         if (isPrimaryCustomer) {
-            console.log(`poopoo validateOTP - Creating new session for primary customer ${phoneNumber}`);
+            console.log(`validateOTP - Creating new session for primary customer ${phoneNumber}`);
             try {
                 session = await sessionService.createOrGetTableSession(
                     restaurantId,
                     tableId,
                     phoneNumber
                 );
-                console.log(`poopoo validateOTP - Session created with ID: ${session.id}`);
+                console.log(`validateOTP - Session created with ID: ${session.id}`);
             } catch (sessionError) {
-                console.error("poopoo validateOTP - Error creating table session:", sessionError);
+                console.error("validateOTP - Error creating table session:", sessionError);
                 // Let the main error handler deal with specific HttpsError types
                 // Add context about the operation being performed
                 errorHandler.handleError(sessionError, 'validateOTP', {
@@ -488,13 +529,13 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
                 });
             }
         } else {
-            console.log("poopoo validateOTP - Validating existing table session");
+            console.log("validateOTP - Validating existing table session");
             try {
                 const tableSession = await sessionService.validateTableSession(restaurantId, tableId);
-                console.log(`poopoo validateOTP - Existing session validation result: ${tableSession ? tableSession.id : 'null'}`);
+                console.log(`validateOTP - Existing session validation result: ${tableSession ? tableSession.id : 'null'}`);
 
                 if (!tableSession) {
-                    console.log("poopoo validateOTP - No active session found");
+                    console.log("validateOTP - No active session found");
                     errorHandler.preconditionFailed('No active session for this table', {
                         restaurantId,
                         tableId,
@@ -503,12 +544,12 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
                 }
 
                 if (phoneNumber) {
-                    console.log(`poopoo validateOTP - Adding user ${phoneNumber} to existing session ${tableSession.id}`);
+                    console.log(`validateOTP - Adding user ${phoneNumber} to existing session ${tableSession.id}`);
                     try {
                         session = await sessionService.addUserToTableSession(restaurantId, tableSession.id, phoneNumber);
-                        console.log(`poopoo validateOTP - User added to session, updated session: ${session.id}`);
+                        console.log(`validateOTP - User added to session, updated session: ${session.id}`);
                     } catch (addUserError) {
-                        console.error("poopoo validateOTP - Error adding user to session:", addUserError);
+                        console.error("validateOTP - Error adding user to session:", addUserError);
                         // Add specific context for user addition errors
                         errorHandler.handleError(addUserError, 'validateOTP', {
                             operation: 'add_user_to_session',
@@ -522,7 +563,7 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
                     session = tableSession;
                 }
             } catch (sessionError) {
-                console.error("poopoo validateOTP - Error handling session:", sessionError);
+                console.error("validateOTP - Error handling session:", sessionError);
                 // Add context about which session operation failed
                 errorHandler.handleError(sessionError, 'validateOTP', {
                     operation: 'validate_existing_session',
@@ -536,18 +577,18 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
         // 7. Token Generation
         let customToken = null;
         if (phoneNumber) {
-            console.log(`poopoo validateOTP - Creating custom token for user ${phoneNumber}`);
+            console.log(`validateOTP - Creating custom token for user ${phoneNumber}`);
             try {
                 customToken = await admin.auth().createCustomToken(phoneNumber);
-                console.log("poopoo validateOTP - Custom token created successfully");
+                console.log("validateOTP - Custom token created successfully");
             } catch (tokenError) {
-                console.error("poopoo validateOTP - Error creating custom token:", tokenError);
+                console.error("validateOTP - Error creating custom token:", tokenError);
                 // Continue execution even if token creation fails
             }
         }
 
         // 8. Return Success Response
-        console.log(`poopoo validateOTP - Returning success response, isPrimaryCustomer: ${isPrimaryCustomer}, sessionId: ${session.id}`);
+        console.log(`validateOTP - Returning success response, isPrimaryCustomer: ${isPrimaryCustomer}, sessionId: ${session.id}`);
         const responseData = {
             status: 'success',
             customToken: customToken,
@@ -587,23 +628,23 @@ exports.cleanupInactiveSessions = functions.https.onCall(async (data, context) =
         if (!environment.isEmulator()) {
             errorHandler.forbidden('cleanupInactiveSessions is emulator-only', {});
         }
-        console.log("poopoo cleanupInactiveSessions: Starting cleanup of inactive sessions");
+        console.log("cleanupInactiveSessions: Starting cleanup of inactive sessions");
         const restaurantsSnapshot = await db.collection('restaurants').get();
-        console.log(`poopoo cleanupInactiveSessions: Found ${restaurantsSnapshot.size} restaurants`);
+        console.log(`cleanupInactiveSessions: Found ${restaurantsSnapshot.size} restaurants`);
 
         const batch = db.batch();
         const inactivityThreshold = Date.now() - (60 * 60 * 1000); // 1 hour in milliseconds
-        console.log(`poopoo cleanupInactiveSessions: Using inactivity threshold of ${new Date(inactivityThreshold).toISOString()}`);
+        console.log(`cleanupInactiveSessions: Using inactivity threshold of ${new Date(inactivityThreshold).toISOString()}`);
 
         for (const restaurantDoc of restaurantsSnapshot.docs) {
             const restaurantId = restaurantDoc.id;
-            console.log(`poopoo cleanupInactiveSessions: Checking tables in restaurant ${restaurantId}`);
+            console.log(`cleanupInactiveSessions: Checking tables in restaurant ${restaurantId}`);
 
             const tablesSnapshot = await restaurantDoc.ref.collection('tables')
                 .where('status', 'in', [TABLE_STATUS.ACTIVE, TABLE_STATUS.OTP_PENDING])
                 .get();
 
-            console.log(`poopoo cleanupInactiveSessions: Found ${tablesSnapshot.size} active tables in restaurant ${restaurantId}`);
+            console.log(`cleanupInactiveSessions: Found ${tablesSnapshot.size} active tables in restaurant ${restaurantId}`);
 
             for (const tableDoc of tablesSnapshot.docs) {
                 const tableData = tableDoc.data();
@@ -613,7 +654,7 @@ exports.cleanupInactiveSessions = functions.https.onCall(async (data, context) =
                     if (tableData.status === TABLE_STATUS.OTP_PENDING && fallbackTime) {
                         const scannedDate = timestamp.safeToDate(fallbackTime);
                         if (scannedDate && scannedDate.getTime() < inactivityThreshold) {
-                            console.log(`poopoo cleanupInactiveSessions: OTP_PENDING table ${tableDoc.id} scanned at ${scannedDate.toISOString()} is stale, cleaning up`);
+                            console.log(`cleanupInactiveSessions: OTP_PENDING table ${tableDoc.id} scanned at ${scannedDate.toISOString()} is stale, cleaning up`);
                             batch.update(tableDoc.ref, {
                                 status: TABLE_STATUS.VACANT,
                                 sessionToken: null,
@@ -622,7 +663,7 @@ exports.cleanupInactiveSessions = functions.https.onCall(async (data, context) =
                             });
                         }
                     } else {
-                        console.log(`poopoo cleanupInactiveSessions: Table ${tableDoc.id} has no lastActivity, skipping`);
+                        console.log(`cleanupInactiveSessions: Table ${tableDoc.id} has no lastActivity, skipping`);
                     }
                     continue;
                 }
@@ -630,14 +671,14 @@ exports.cleanupInactiveSessions = functions.https.onCall(async (data, context) =
                 // Use timestamp utility to safely convert lastActivity
                 const lastActivityDate = timestamp.safeToDate(tableData.lastActivity);
                 if (!lastActivityDate) {
-                    console.log(`poopoo cleanupInactiveSessions: Could not parse lastActivity for table ${tableDoc.id}, skipping`);
+                    console.log(`cleanupInactiveSessions: Could not parse lastActivity for table ${tableDoc.id}, skipping`);
                     continue;
                 }
 
-                console.log(`poopoo cleanupInactiveSessions: Table ${tableDoc.id} lastActivity: ${lastActivityDate.toISOString()}`);
+                console.log(`cleanupInactiveSessions: Table ${tableDoc.id} lastActivity: ${lastActivityDate.toISOString()}`);
 
                 if (lastActivityDate.getTime() < inactivityThreshold) {
-                    console.log(`poopoo cleanupInactiveSessions: Table ${tableDoc.id} is inactive, ending sessions`);
+                    console.log(`cleanupInactiveSessions: Table ${tableDoc.id} is inactive, ending sessions`);
                     try {
                         await sessionService.endTableSessions(
                             restaurantId,
@@ -650,7 +691,7 @@ exports.cleanupInactiveSessions = functions.https.onCall(async (data, context) =
                             lastActivity: null,
                             currentOTP: null
                         });
-                        console.log(`poopoo cleanupInactiveSessions: Marked table ${tableDoc.id} as vacant`);
+                        console.log(`cleanupInactiveSessions: Marked table ${tableDoc.id} as vacant`);
                     } catch (error) {
                         console.error(`Error cleaning up table ${tableDoc.id}: ${error.message}`);
                         // Continue with other tables
@@ -660,7 +701,7 @@ exports.cleanupInactiveSessions = functions.https.onCall(async (data, context) =
         }
 
         await batch.commit();
-        console.log('poopoo cleanupInactiveSessions: Inactive sessions cleaned up successfully');
+        console.log('cleanupInactiveSessions: Inactive sessions cleaned up successfully');
         return ResponseBuilder.success(null, 'Inactive sessions cleaned up successfully');
     } catch (error) {
         console.error('Error in cleanupInactiveSessions:', error);
@@ -692,25 +733,30 @@ function isWithinRadius(point1, point2, radius) {
 * - Checks if table has an assigned server
 * - Verifies if table has an active OTP
 */
-exports.checkTableStatus = functions.https.onCall(async (data, context) => {
-    console.log("poopoo ==== checkTableStatus called with data:", JSON.stringify(data));
+exports.checkTableStatus = functions.https.onCall(async (request, context) => {
+    // Read request.data, like every other callable here. Destructuring the
+    // request wrapper itself left restaurantId/tableId undefined on every call,
+    // which is why this endpoint always returned 500.
+    const data = request?.data ?? request;
+    console.log("==== checkTableStatus called with data:", JSON.stringify(data));
     try {
-        console.log("poopoo checkTableStatus - Validating input parameters");
+        console.log("checkTableStatus - Validating input parameters");
         TableInputValidation.validateTableStatusInput(data);
-        const { restaurantId, tableId } = data;
+        let { restaurantId, tableId } = data;
+        tableId = await resolveTableId(restaurantId, tableId);
 
-        console.log(`poopoo checkTableStatus - Getting restaurant and table data`);
+        console.log(`checkTableStatus - Getting restaurant and table data`);
         const { tableData } = await TableInputValidation.getTableAndRestaurantData(restaurantId, tableId);
-        console.log(`poopoo checkTableStatus - Table data retrieved successfully`);
+        console.log(`checkTableStatus - Table data retrieved successfully`);
 
         if (!Object.values(TABLE_STATUS).includes(tableData.status)) {
-            console.warn(`poopoo checkTableStatus - Invalid table status: ${tableData.status}. Defaulting to VACANT`);
+            console.warn(`checkTableStatus - Invalid table status: ${tableData.status}. Defaulting to VACANT`);
             tableData.status = TABLE_STATUS.VACANT;
         }
 
         let serverInfo = null;
         if (tableData.assignedServerId) {
-            console.log(`poopoo checkTableStatus - Fetching server info for serverId: ${tableData.assignedServerId}`);
+            console.log(`checkTableStatus - Fetching server info for serverId: ${tableData.assignedServerId}`);
             try {
                 const serverDoc = await db
                     .collection('restaurants')
@@ -719,26 +765,26 @@ exports.checkTableStatus = functions.https.onCall(async (data, context) => {
                     .doc(tableData.assignedServerId)
                     .get();
 
-                console.log(`poopoo checkTableStatus - Server document exists: ${serverDoc.exists}`);
+                console.log(`checkTableStatus - Server document exists: ${serverDoc.exists}`);
                 if (serverDoc.exists) {
                     const serverData = serverDoc.data();
                     serverInfo = {
                         name: serverData.name,
                         status: serverData.status
                     };
-                    console.log(`poopoo checkTableStatus - Server info retrieved: ${JSON.stringify(serverInfo)}`);
+                    console.log(`checkTableStatus - Server info retrieved: ${JSON.stringify(serverInfo)}`);
                 }
             } catch (serverError) {
-                console.error("poopoo checkTableStatus - Error fetching server info:", serverError);
+                console.error("checkTableStatus - Error fetching server info:", serverError);
                 // Continue execution even if server info fetch fails
             }
         }
 
-        console.log(`poopoo checkTableStatus - Checking OTP validity for table`);
+        console.log(`checkTableStatus - Checking OTP validity for table`);
         const hasActiveOTP = otpService.isOTPValid(tableData.currentOTP);
-        console.log(`poopoo checkTableStatus - OTP validity: ${hasActiveOTP}`);
+        console.log(`checkTableStatus - OTP validity: ${hasActiveOTP}`);
 
-        console.log("poopoo checkTableStatus - Returning table status response");
+        console.log("checkTableStatus - Returning table status response");
         const responseData = {
             tableNumber: tableData.number,
             capacity: tableData.capacity,
@@ -758,10 +804,10 @@ exports.checkTableStatus = functions.https.onCall(async (data, context) => {
         if (error.code === 'not-found') {
             const message = error.message.includes('Restaurant') ?
                 'Restaurant not found' : 'Table not found';
-            console.log(`poopoo checkTableStatus - Not found error: ${message}`);
+            console.log(`checkTableStatus - Not found error: ${message}`);
             errorHandler.notFound(message);
         } else if (error.code === 'invalid-argument') {
-            console.log(`poopoo checkTableStatus - Invalid argument error`);
+            console.log(`checkTableStatus - Invalid argument error`);
             errorHandler.badRequest('Invalid or missing parameters');
         } else {
             errorHandler.handleError(error, 'checkTableStatus');
@@ -782,7 +828,7 @@ exports.getTablesForRestaurant = functions.https.onCall(async (request, context)
     // Declare data outside try block so it's accessible in catch
     let data;
     try {
-        console.log('poopoo getTablesForRestaurant - Function called');
+        console.log('getTablesForRestaurant - Function called');
 
         // 1. Input Validation & Standardization
         if (!request?.data) {
@@ -792,7 +838,7 @@ exports.getTablesForRestaurant = functions.https.onCall(async (request, context)
         }
 
         data = request.data;
-        console.log('poopoo getTablesForRestaurant - Request data:', { restaurantId: data.restaurantId });
+        console.log('getTablesForRestaurant - Request data:', { restaurantId: data.restaurantId });
 
         // 2. Validate restaurantId
         if (!data.restaurantId) {
@@ -818,11 +864,11 @@ exports.getTablesForRestaurant = functions.https.onCall(async (request, context)
         const restaurantData = restaurantDoc.data();
 
         // 4. Get all tables for this restaurant
-        console.log(`poopoo getTablesForRestaurant - Fetching tables for restaurant ${restaurantId}`);
+        console.log(`getTablesForRestaurant - Fetching tables for restaurant ${restaurantId}`);
         const tablesSnapshot = await restaurantRef.collection('tables').get();
 
         if (tablesSnapshot.empty) {
-            console.log(`poopoo getTablesForRestaurant - No tables found for restaurant ${restaurantId}`);
+            console.log(`getTablesForRestaurant - No tables found for restaurant ${restaurantId}`);
             const responseData = {
                 restaurantId,
                 tables: [],
@@ -875,13 +921,23 @@ exports.getTablesForRestaurant = functions.https.onCall(async (request, context)
                 formattedTable.tableOtp = tableData.currentOTP.code;
             }
 
+            // Merged tables: the child names its parent so the app can draw them as one
+            // group, and names who merged them so that waiter can be told when the
+            // bill frees them again.
+            if (tableData.mergedInto) {
+                formattedTable.mergedInto = tableData.mergedInto;
+                if (tableData.mergedBy) {
+                    formattedTable.mergedBy = tableData.mergedBy;
+                }
+            }
+
             // If serverId is specified, filter tables by assigned server
             if (!serverId || tableData.assignedServerId === serverId) {
                 tables.push(formattedTable);
             }
         });
 
-        console.log(`poopoo getTablesForRestaurant - Successfully retrieved ${tables.length} tables`);
+        console.log(`getTablesForRestaurant - Successfully retrieved ${tables.length} tables`);
 
         // 6. Return formatted response
         const responseData = {
@@ -915,7 +971,7 @@ exports.getTableDetails = functions.https.onCall(async (request, context) => {
     // Declare data outside try block so it's accessible in catch
     let data;
     try {
-        console.log('poopoo getTableDetails - Function called');
+        console.log('getTableDetails - Function called');
 
         // 1. Input Validation & Standardization
         if (!request?.data) {
@@ -925,7 +981,7 @@ exports.getTableDetails = functions.https.onCall(async (request, context) => {
         }
 
         data = request.data;
-        console.log('poopoo getTableDetails - Request data:', {
+        console.log('getTableDetails - Request data:', {
             restaurantId: data.restaurantId,
             tableId: data.tableId
         });
@@ -940,14 +996,14 @@ exports.getTableDetails = functions.https.onCall(async (request, context) => {
         const { restaurantId, tableId } = data;
 
         // 3. Get table and restaurant data
-        console.log(`poopoo getTableDetails - Getting table and restaurant data`);
+        console.log(`getTableDetails - Getting table and restaurant data`);
         const { tableData, tableRef, restaurantData } = await TableInputValidation.getTableAndRestaurantData(restaurantId, tableId);
-        console.log(`poopoo getTableDetails - Table data retrieved successfully`);
+        console.log(`getTableDetails - Table data retrieved successfully`);
 
         // 4. Get server information if assigned
         let serverInfo = null;
         if (tableData.assignedServerId) {
-            console.log(`poopoo getTableDetails - Fetching server info for serverId: ${tableData.assignedServerId}`);
+            console.log(`getTableDetails - Fetching server info for serverId: ${tableData.assignedServerId}`);
             try {
                 const serverDoc = await db
                     .collection('restaurants')
@@ -956,7 +1012,7 @@ exports.getTableDetails = functions.https.onCall(async (request, context) => {
                     .doc(tableData.assignedServerId)
                     .get();
 
-                console.log(`poopoo getTableDetails - Server document exists: ${serverDoc.exists}`);
+                console.log(`getTableDetails - Server document exists: ${serverDoc.exists}`);
                 if (serverDoc.exists) {
                     const serverData = serverDoc.data();
                     serverInfo = {
@@ -965,21 +1021,21 @@ exports.getTableDetails = functions.https.onCall(async (request, context) => {
                         status: serverData.status,
                         profileImage: serverData.profileImage || null
                     };
-                    console.log(`poopoo getTableDetails - Server info retrieved: ${JSON.stringify(serverInfo)}`);
+                    console.log(`getTableDetails - Server info retrieved: ${JSON.stringify(serverInfo)}`);
                 }
             } catch (serverError) {
-                console.error("poopoo getTableDetails - Error fetching server info:", serverError);
+                console.error("getTableDetails - Error fetching server info:", serverError);
                 // Continue execution even if server info fetch fails
             }
         }
 
         // 5. Check OTP validity
-        console.log(`poopoo getTableDetails - Checking OTP validity for table`);
+        console.log(`getTableDetails - Checking OTP validity for table`);
         const hasActiveOTP = otpService.isOTPValid(tableData.currentOTP);
-        console.log(`poopoo getTableDetails - OTP validity: ${hasActiveOTP}`);
+        console.log(`getTableDetails - OTP validity: ${hasActiveOTP}`);
 
         // 6. Get recent orders for this table (last 3)
-        console.log(`poopoo getTableDetails - Fetching recent orders for table`);
+        console.log(`getTableDetails - Fetching recent orders for table`);
         let recentOrders = [];
         try {
             const ordersSnapshot = await db
@@ -1001,9 +1057,9 @@ exports.getTableDetails = functions.https.onCall(async (request, context) => {
                     itemCount: orderData.items?.length || 0
                 });
             });
-            console.log(`poopoo getTableDetails - Retrieved ${recentOrders.length} recent orders`);
+            console.log(`getTableDetails - Retrieved ${recentOrders.length} recent orders`);
         } catch (ordersError) {
-            console.error("poopoo getTableDetails - Error fetching recent orders:", ordersError);
+            console.error("getTableDetails - Error fetching recent orders:", ordersError);
             // Continue execution even if orders fetch fails
         }
 
@@ -1054,7 +1110,7 @@ exports.getTableDetails = functions.https.onCall(async (request, context) => {
             responseData.reservationDetails = tableData.reservationDetails;
         }
 
-        console.log("poopoo getTableDetails - Returning table details response");
+        console.log("getTableDetails - Returning table details response");
         return ResponseBuilder.success(responseData, "Table details retrieved successfully");
 
     } catch (error) {
@@ -1064,10 +1120,10 @@ exports.getTableDetails = functions.https.onCall(async (request, context) => {
         if (error.code === 'not-found') {
             const message = error.message.includes('Restaurant') ?
                 'Restaurant not found' : 'Table not found';
-            console.log(`poopoo getTableDetails - Not found error: ${message}`);
+            console.log(`getTableDetails - Not found error: ${message}`);
             errorHandler.notFound(message);
         } else if (error.code === 'invalid-argument') {
-            console.log(`poopoo getTableDetails - Invalid argument error`);
+            console.log(`getTableDetails - Invalid argument error`);
             errorHandler.badRequest('Invalid or missing parameters');
         } else {
             errorHandler.handleError(error, 'getTableDetails', {
@@ -1091,7 +1147,7 @@ exports.assignTableToServer = functions.https.onCall(async (request, context) =>
     // Declare data outside try block so it's accessible in catch
     let data;
     try {
-        console.log('poopoo assignTableToServer - Function called');
+        console.log('assignTableToServer - Function called');
 
         // 1. Input Validation & Standardization
         if (!request?.data) {
@@ -1101,7 +1157,7 @@ exports.assignTableToServer = functions.https.onCall(async (request, context) =>
         }
 
         data = request.data;
-        console.log('poopoo assignTableToServer - Request data:', {
+        console.log('assignTableToServer - Request data:', {
             restaurantId: data.restaurantId,
             tableId: data.tableId,
             serverId: data.serverId
@@ -1114,17 +1170,17 @@ exports.assignTableToServer = functions.https.onCall(async (request, context) =>
         await validateStaffSession(restaurantId, data.sessionId);
 
         // 3. Get table and restaurant data
-        console.log(`poopoo assignTableToServer - Getting table and restaurant data`);
+        console.log(`assignTableToServer - Getting table and restaurant data`);
         const { tableData, tableRef, restaurantData } = await TableInputValidation.getTableAndRestaurantData(restaurantId, tableId);
-        console.log(`poopoo assignTableToServer - Table data retrieved successfully`);
+        console.log(`assignTableToServer - Table data retrieved successfully`);
 
         // 4. Validate server exists
-        console.log(`poopoo assignTableToServer - Validating server ${serverId} exists`);
+        console.log(`assignTableToServer - Validating server ${serverId} exists`);
         const serverRef = db.collection('restaurants').doc(restaurantId).collection('servers').doc(serverId);
         const serverDoc = await serverRef.get();
 
         if (!serverDoc.exists) {
-            console.error(`poopoo assignTableToServer - Server ${serverId} not found in restaurant ${restaurantId}`);
+            console.error(`assignTableToServer - Server ${serverId} not found in restaurant ${restaurantId}`);
             errorHandler.notFound('Server not found', {
                 details: `Server with ID ${serverId} was not found in restaurant ${restaurantId}`,
                 serverId,
@@ -1133,11 +1189,11 @@ exports.assignTableToServer = functions.https.onCall(async (request, context) =>
         }
 
         const serverData = serverDoc.data();
-        console.log(`poopoo assignTableToServer - Server data retrieved successfully: ${serverData.name}`);
+        console.log(`assignTableToServer - Server data retrieved successfully: ${serverData.name}`);
 
         // 5. Check if table is already assigned to this server
         if (tableData.assignedServerId === serverId) {
-            console.log(`poopoo assignTableToServer - Table ${tableId} is already assigned to server ${serverId}`);
+            console.log(`assignTableToServer - Table ${tableId} is already assigned to server ${serverId}`);
             const responseData = {
                 tableId,
                 serverId,
@@ -1148,13 +1204,13 @@ exports.assignTableToServer = functions.https.onCall(async (request, context) =>
         }
 
         // 6. Update table with new server assignment
-        console.log(`poopoo assignTableToServer - Assigning table ${tableId} to server ${serverId}`);
+        console.log(`assignTableToServer - Assigning table ${tableId} to server ${serverId}`);
         await tableRef.update({
             assignedServerId: serverId,
             lastUpdated: timestamp.serverTimestamp()
         });
 
-        console.log(`poopoo assignTableToServer - Table ${tableId} successfully assigned to server ${serverId}`);
+        console.log(`assignTableToServer - Table ${tableId} successfully assigned to server ${serverId}`);
 
         // 7. Return success response
         const responseData = {
@@ -1171,10 +1227,10 @@ exports.assignTableToServer = functions.https.onCall(async (request, context) =>
         console.error('Error stack:', error.stack);
 
         if (error.code === 'not-found') {
-            console.log(`poopoo assignTableToServer - Not found error: ${error.message}`);
+            console.log(`assignTableToServer - Not found error: ${error.message}`);
             errorHandler.notFound(error.message);
         } else if (error.code === 'invalid-argument') {
-            console.log(`poopoo assignTableToServer - Invalid argument error`);
+            console.log(`assignTableToServer - Invalid argument error`);
             errorHandler.badRequest('Invalid or missing parameters');
         } else {
             errorHandler.handleError(error, 'assignTableToServer', {
@@ -1199,7 +1255,7 @@ exports.unassignTableFromServer = functions.https.onCall(async (request, context
     // Declare data outside try block so it's accessible in catch
     let data;
     try {
-        console.log('poopoo unassignTableFromServer - Function called');
+        console.log('unassignTableFromServer - Function called');
 
         // 1. Input Validation & Standardization
         if (!request?.data) {
@@ -1209,7 +1265,7 @@ exports.unassignTableFromServer = functions.https.onCall(async (request, context
         }
 
         data = request.data;
-        console.log('poopoo unassignTableFromServer - Request data:', {
+        console.log('unassignTableFromServer - Request data:', {
             restaurantId: data.restaurantId,
             tableId: data.tableId
         });
@@ -1221,13 +1277,13 @@ exports.unassignTableFromServer = functions.https.onCall(async (request, context
         await validateStaffSession(restaurantId, data.sessionId);
 
         // 3. Get table and restaurant data
-        console.log(`poopoo unassignTableFromServer - Getting table and restaurant data`);
+        console.log(`unassignTableFromServer - Getting table and restaurant data`);
         const { tableData, tableRef } = await TableInputValidation.getTableAndRestaurantData(restaurantId, tableId);
-        console.log(`poopoo unassignTableFromServer - Table data retrieved successfully`);
+        console.log(`unassignTableFromServer - Table data retrieved successfully`);
 
         // 4. Check if table is not assigned to any server
         if (!tableData.assignedServerId) {
-            console.log(`poopoo unassignTableFromServer - Table ${tableId} is not assigned to any server`);
+            console.log(`unassignTableFromServer - Table ${tableId} is not assigned to any server`);
             const responseData = {
                 tableId,
                 tableNumber: tableData.number || tableId
@@ -1251,18 +1307,18 @@ exports.unassignTableFromServer = functions.https.onCall(async (request, context
                 serverName = serverDoc.data().name;
             }
         } catch (serverError) {
-            console.error(`poopoo unassignTableFromServer - Error fetching server info: ${serverError.message}`);
+            console.error(`unassignTableFromServer - Error fetching server info: ${serverError.message}`);
             // Continue execution even if server info fetch fails
         }
 
         // 6. Update table to remove server assignment
-        console.log(`poopoo unassignTableFromServer - Unassigning table ${tableId} from server ${previousServerId}`);
+        console.log(`unassignTableFromServer - Unassigning table ${tableId} from server ${previousServerId}`);
         await tableRef.update({
             assignedServerId: null,
             lastUpdated: timestamp.serverTimestamp()
         });
 
-        console.log(`poopoo unassignTableFromServer - Table ${tableId} successfully unassigned from server`);
+        console.log(`unassignTableFromServer - Table ${tableId} successfully unassigned from server`);
 
         // 7. Return success response
         const responseData = {
@@ -1279,10 +1335,10 @@ exports.unassignTableFromServer = functions.https.onCall(async (request, context
         console.error('Error stack:', error.stack);
 
         if (error.code === 'not-found') {
-            console.log(`poopoo unassignTableFromServer - Not found error: ${error.message}`);
+            console.log(`unassignTableFromServer - Not found error: ${error.message}`);
             errorHandler.notFound(error.message);
         } else if (error.code === 'invalid-argument') {
-            console.log(`poopoo unassignTableFromServer - Invalid argument error`);
+            console.log(`unassignTableFromServer - Invalid argument error`);
             errorHandler.badRequest('Invalid or missing parameters');
         } else {
             errorHandler.handleError(error, 'unassignTableFromServer', {
@@ -1306,7 +1362,7 @@ exports.generateTableOTP = functions.https.onCall(async (request, context) => {
     // Declare data outside try block so it's accessible in catch
     let data;
     try {
-        console.log('poopoo generateTableOTP - Function called');
+        console.log('generateTableOTP - Function called');
 
         // 1. Input Validation & Standardization
         if (!request?.data) {
@@ -1316,7 +1372,7 @@ exports.generateTableOTP = functions.https.onCall(async (request, context) => {
         }
 
         data = request.data;
-        console.log('poopoo generateTableOTP - Request data:', {
+        console.log('generateTableOTP - Request data:', {
             restaurantId: data.restaurantId,
             tableId: data.tableId
         });
@@ -1329,12 +1385,12 @@ exports.generateTableOTP = functions.https.onCall(async (request, context) => {
         await validateStaffSession(restaurantId, data.sessionId);
 
         // 3. Get table and restaurant data
-        console.log(`poopoo generateTableOTP - Getting table and restaurant data`);
+        console.log(`generateTableOTP - Getting table and restaurant data`);
         const { tableData, tableRef } = await TableInputValidation.getTableAndRestaurantData(restaurantId, tableId);
-        console.log(`poopoo generateTableOTP - Table data retrieved successfully`);
+        console.log(`generateTableOTP - Table data retrieved successfully`);
 
         // 4. Generate new OTP
-        console.log(`poopoo generateTableOTP - Generating new OTP for table ${tableId}`);
+        console.log(`generateTableOTP - Generating new OTP for table ${tableId}`);
         const otpObject = otpService.createOTPObject();
 
         // 5. Update table with new OTP
@@ -1343,7 +1399,7 @@ exports.generateTableOTP = functions.https.onCall(async (request, context) => {
             lastUpdated: timestamp.serverTimestamp()
         });
 
-        console.log(`poopoo generateTableOTP - New OTP generated successfully: ${otpObject.code}`);
+        console.log(`generateTableOTP - New OTP generated successfully: ${otpObject.code}`);
 
         // 6. Return success response
         const responseData = {
@@ -1361,10 +1417,10 @@ exports.generateTableOTP = functions.https.onCall(async (request, context) => {
         console.error('Error stack:', error.stack);
 
         if (error.code === 'not-found') {
-            console.log(`poopoo generateTableOTP - Not found error: ${error.message}`);
+            console.log(`generateTableOTP - Not found error: ${error.message}`);
             errorHandler.notFound(error.message);
         } else if (error.code === 'invalid-argument') {
-            console.log(`poopoo generateTableOTP - Invalid argument error`);
+            console.log(`generateTableOTP - Invalid argument error`);
             errorHandler.badRequest('Invalid or missing parameters');
         } else {
             errorHandler.handleError(error, 'generateTableOTP', {
@@ -1388,7 +1444,7 @@ exports.updateTableStatus = functions.https.onCall(async (request, context) => {
     // Declare data outside try block so it's accessible in catch
     let data;
     try {
-        console.log('poopoo updateTableStatus - Function called');
+        console.log('updateTableStatus - Function called');
 
         // 1. Input Validation & Standardization
         if (!request?.data) {
@@ -1398,7 +1454,7 @@ exports.updateTableStatus = functions.https.onCall(async (request, context) => {
         }
 
         data = request.data;
-        console.log('poopoo updateTableStatus - Request data:', {
+        console.log('updateTableStatus - Request data:', {
             restaurantId: data.restaurantId,
             tableId: data.tableId,
             status: data.status
@@ -1411,13 +1467,13 @@ exports.updateTableStatus = functions.https.onCall(async (request, context) => {
         await validateStaffSession(restaurantId, data.sessionId);
 
         // 3. Get table and restaurant data
-        console.log(`poopoo updateTableStatus - Getting table and restaurant data`);
+        console.log(`updateTableStatus - Getting table and restaurant data`);
         const { tableData, tableRef } = await TableInputValidation.getTableAndRestaurantData(restaurantId, tableId);
-        console.log(`poopoo updateTableStatus - Table data retrieved successfully`);
+        console.log(`updateTableStatus - Table data retrieved successfully`);
 
         // 4. Check if status is already set to requested value
         if (tableData.status === status) {
-            console.log(`poopoo updateTableStatus - Table ${tableId} is already in ${status} status`);
+            console.log(`updateTableStatus - Table ${tableId} is already in ${status} status`);
             const responseData = {
                 tableId,
                 tableNumber: tableData.number || tableId,
@@ -1439,14 +1495,14 @@ exports.updateTableStatus = functions.https.onCall(async (request, context) => {
 
         // 6. Update table status. Vacant clears the party's state and ends its
         // sessions (same helper order-updateOrderStatus uses at COMPLETED).
-        console.log(`poopoo updateTableStatus - Updating table ${tableId} status from ${previousStatus} to ${status}`);
+        console.log(`updateTableStatus - Updating table ${tableId} status from ${previousStatus} to ${status}`);
         if (status === 'vacant') {
             await vacateTable(restaurantId, tableId);
         } else {
             await tableRef.update(updateData);
         }
 
-        console.log(`poopoo updateTableStatus - Table ${tableId} status updated successfully`);
+        console.log(`updateTableStatus - Table ${tableId} status updated successfully`);
 
         // 7. Return success response
         const responseData = {
@@ -1464,10 +1520,10 @@ exports.updateTableStatus = functions.https.onCall(async (request, context) => {
         console.error('Error stack:', error.stack);
 
         if (error.code === 'not-found') {
-            console.log(`poopoo updateTableStatus - Not found error: ${error.message}`);
+            console.log(`updateTableStatus - Not found error: ${error.message}`);
             errorHandler.notFound(error.message);
         } else if (error.code === 'invalid-argument') {
-            console.log(`poopoo updateTableStatus - Invalid argument error`);
+            console.log(`updateTableStatus - Invalid argument error`);
             errorHandler.badRequest('Invalid or missing parameters');
         } else {
             errorHandler.handleError(error, 'updateTableStatus', {
@@ -1476,5 +1532,134 @@ exports.updateTableStatus = functions.https.onCall(async (request, context) => {
                 status: data?.status
             });
         }
+    }
+});
+
+/**
+ * Merges tables together, or releases a merge.
+ *
+ * A party of eight walks in and the waiter pushes table 6 against table 5. One
+ * party, one cart, one kitchen ticket, one bill — so the waiter who moved the
+ * furniture tells us, from the server app (or the till's floor screen, which calls
+ * this same endpoint).
+ *
+ * The child keeps its printed QR code but goes `disabled`: the server app already
+ * greys disabled tables out, so nobody seats a second party on it, and a guest who
+ * scans it is resolved to the parent instead of being turned away.
+ *
+ * Unmerging normally happens by itself when the bill is paid (vacateTable). This
+ * endpoint's `merge: false` is the manual escape hatch for when the party moves
+ * before paying.
+ *
+ * @param {Object} request.data.restaurantId
+ * @param {Object} request.data.parentTableId - the table the party is billed on
+ * @param {Object} request.data.childTableIds - tables absorbed into the parent
+ * @param {Object} [request.data.merge=true] - false releases the parent's children
+ * @param {Object} request.data.sessionId - staff session
+ */
+exports.setMerge = functions.https.onCall(async (request, context) => {
+    let data;
+    try {
+        if (!request?.data) {
+            errorHandler.badRequest('Invalid request format - missing data', {
+                details: 'Request must include a data object'
+            });
+        }
+
+        data = request.data;
+        const { restaurantId, parentTableId, sessionId } = data;
+        const childTableIds = Array.isArray(data.childTableIds) ? data.childTableIds : [];
+        const merge = data.merge !== false;
+
+        if (!restaurantId || !parentTableId) {
+            errorHandler.badRequest('restaurantId and parentTableId are required');
+        }
+
+        const { serverId, serverData } = await validateStaffSession(restaurantId, sessionId);
+
+        // Release: whoever asks, everything hanging off this parent comes free.
+        if (!merge) {
+            const released = await unmergeChildren(restaurantId, parentTableId);
+            console.log(`setMerge - released ${released.length} table(s) from ${parentTableId}`);
+            return ResponseBuilder.success(
+                { parentTableId, childTableIds: released, merged: false },
+                released.length ? 'Tables released successfully' : 'No merged tables to release'
+            );
+        }
+
+        if (childTableIds.length === 0) {
+            errorHandler.badRequest('childTableIds must list at least one table to merge');
+        }
+
+        const { tableData: parentData } = await TableInputValidation.getTableAndRestaurantData(restaurantId, parentTableId);
+
+        if (parentData.status === TABLE_STATUS.DISABLED) {
+            errorHandler.preconditionFailed(
+                `Table ${parentData.number || parentTableId} is out of service`,
+                { parentTableId, status: parentData.status }
+            );
+        }
+
+        // One level deep, always. A child can never become a parent, so resolving a
+        // scanned table is a single hop that cannot chain or loop.
+        if (parentData.mergedInto) {
+            errorHandler.preconditionFailed(
+                `Table ${parentData.number || parentTableId} is itself merged into another table`,
+                { parentTableId, mergedInto: parentData.mergedInto }
+            );
+        }
+
+        const mergedBy = { serverId, name: serverData?.name || null };
+        const batch = db.batch();
+
+        for (const childTableId of childTableIds) {
+            if (childTableId === parentTableId) {
+                errorHandler.badRequest('A table cannot be merged into itself', { parentTableId });
+            }
+
+            const { tableData: childData, tableRef: childRef } =
+                await TableInputValidation.getTableAndRestaurantData(restaurantId, childTableId);
+
+            // Only a free table can be absorbed. An occupied one has its own party and
+            // its own bill; a disabled one is out of service for a reason.
+            if (childData.status !== TABLE_STATUS.VACANT) {
+                errorHandler.preconditionFailed(
+                    `Table ${childData.number || childTableId} is not vacant`,
+                    { childTableId, status: childData.status }
+                );
+            }
+
+            const grandchildren = await db
+                .collection('restaurants').doc(restaurantId).collection('tables')
+                .where('mergedInto', '==', childTableId).limit(1).get();
+            if (!grandchildren.empty) {
+                errorHandler.preconditionFailed(
+                    `Table ${childData.number || childTableId} already has tables merged into it`,
+                    { childTableId }
+                );
+            }
+
+            batch.update(childRef, {
+                status: TABLE_STATUS.DISABLED,
+                mergedInto: parentTableId,
+                mergedBy,
+                lastUpdated: timestamp.serverTimestamp()
+            });
+        }
+
+        await batch.commit();
+        console.log(`setMerge - merged ${childTableIds.join(', ')} into ${parentTableId} by server ${serverId}`);
+
+        return ResponseBuilder.success(
+            { parentTableId, childTableIds, merged: true, mergedBy },
+            'Tables merged successfully'
+        );
+
+    } catch (error) {
+        console.error('Error in setMerge:', error);
+        errorHandler.handleError(error, 'setMerge', {
+            restaurantId: data?.restaurantId,
+            parentTableId: data?.parentTableId
+        });
     }
 });

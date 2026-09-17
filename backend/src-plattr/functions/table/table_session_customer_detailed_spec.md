@@ -47,6 +47,12 @@ The Table-Session-Customer system manages restaurant table authentication, sessi
     │  DISABLED   │◄──── Admin Disables (no customer access)
     │             │────► VACANT (clears OTP, ends sessions)
     └─────────────┘
+
+    ┌─────────────┐
+    │             │◄──── Waiter Reserves (staff-held, no self-service join)
+    │  RESERVED   │────► VACANT (waiter seats the party; normal flow resumes)
+    │             │      Scan and validateOTP both return 403.
+    └─────────────┘      NOT auto-vacated by the 1hr inactivity cleanup.
 ```
 
 ### TABLE_STATUS Constants
@@ -55,7 +61,8 @@ const TABLE_STATUS = {
     ACTIVE: 'active',      // Table in use with active session
     VACANT: 'vacant',      // Available for new customers
     DISABLED: 'disabled',  // Unavailable (admin controlled)
-    OTP_PENDING: 'pending' // OTP generated, awaiting validation
+    OTP_PENDING: 'pending',// OTP generated, awaiting validation
+    RESERVED: 'reserved'   // Staff-held; waiter sets VACANT to seat the party
 };
 ```
 
@@ -66,7 +73,7 @@ const TABLE_STATUS = {
 ```
 restaurants/{restaurantId}/
 ├── tables/{tableId}
-│   ├── status: 'active' | 'vacant' | 'disabled' | 'pending'
+│   ├── status: 'active' | 'vacant' | 'disabled' | 'pending' | 'reserved'
 │   ├── number: string
 │   ├── capacity: number
 │   ├── primaryCustomer: { phoneNumber, name }
@@ -123,7 +130,12 @@ customers/{phoneNumber}/
 3. **Guard Clauses:**
    - **IMP:** If `status === 'disabled'` → HTTP 403 Forbidden
    - **IMP:** If `!isWithinRadius(userLocation, restaurantLocation)` → HTTP 412 Precondition Failed
-   - If valid `sessionId` provided and validated → Return success with session
+   - If the caller's `sessionId` matches the table's active session → Return success with
+     session. **IMP:** the match is required — `validateTableSession` is table-scoped and
+     will otherwise hand the table's live session id to any caller that guesses.
+   - **IMP:** If `status === 'reserved'` → HTTP 403 Forbidden ("ask the staff to seat
+     you"). Deliberately AFTER the session check, so a party already seated keeps access
+     if staff flip the table to reserved mid-meal.
 4. **OTP Generation** (for VACANT tables, or OTP_PENDING with expired OTP):
    - Generate OTP via `otpService.createOTPObject()`
    - Update table: `status: OTP_PENDING`, set `currentOTP`, `firstScannedAt`
