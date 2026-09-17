@@ -7,14 +7,6 @@
         "serve"
       ],
       "type": "stdio"
-    },
-    "engram": {
-      "command": "engram",
-      "args": [
-        "mcp",
-        "--tools=agent"
-      ],
-      "type": "stdio"
     }
   }
 }
