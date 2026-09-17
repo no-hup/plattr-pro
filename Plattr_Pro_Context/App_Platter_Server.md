@@ -118,6 +118,11 @@ lib/
 - **List:** Active orders sorted by urgency/status, shows orderId + tableId + status pills
 - **Detail:** Multi-cart display, each cart as expandable section with items
 - **Actions:** Mark cart SERVED, cancel order, remove item from cart
+- **Confirm a guest order:** where the restaurant requires waiter confirmation, a cart
+  arrives as `AWAITING_CONFIRMATION` and appears in the **Pending** tab with a "To confirm"
+  chip. Long-press opens *Confirm order* instead of *Mark as Served* — sending it is what
+  releases it to the kitchen. Rejecting is an ordinary cancel. See
+  [[01_Business_Rules_and_States]].
 - **Models:** Rich model hierarchy — `OrderSummary` (list) → `OrderDetail` (detail) → `CartSummary` → `CartItemSummary` with `VariantDetail` + `AddonDetail`
 
 ### Tables Tab

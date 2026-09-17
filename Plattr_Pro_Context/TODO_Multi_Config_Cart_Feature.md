@@ -99,8 +99,8 @@ Legend: ⬜ pending · 🔄 in progress · ✅ complete · ⚠️ complete with 
 - `backend/src-plattr/functions/test/mocks/featureFlags.mock.js`
 - `backend/src-plattr/functions/mock/MockData5EndToEndTesting.json`
 - `backend/src-plattr/functions/test/unit/cart/addItemToCart.test.js`
-- `backend/claude-api-testing-workflow/suites/feature-flags.js` (not in §4.1 file list — see Review Q7 below)
-- `backend/claude-api-testing-workflow/suites/cart.js` (not in §4.1 file list — see Review Q7 below)
+- `backend/src-plattr/functions/test/e2e/suites/feature-flags.js` (not in §4.1 file list — see Review Q7 below)
+- `backend/src-plattr/functions/test/e2e/suites/cart.js` (not in §4.1 file list — see Review Q7 below)
 
 **Merge criteria:**
 - ✅ `node -c` on every edited JS file — clean
@@ -125,7 +125,7 @@ Legend: ⬜ pending · 🔄 in progress · ✅ complete · ⚠️ complete with 
    - **Emulator smoke test not yet run.** Documented under Merge Criteria above. The human reviewer should do this before merging Phase 1.
 
 **Plan amendments:**
-- §10 Critical Files Index → Backend section: added `backend/claude-api-testing-workflow/suites/feature-flags.js` and `backend/claude-api-testing-workflow/suites/cart.js` inline (applied this session).
+- §10 Critical Files Index → Backend section: added `backend/src-plattr/functions/test/e2e/suites/feature-flags.js` and `backend/src-plattr/functions/test/e2e/suites/cart.js` inline (applied this session).
 
 **Deferred items:** None for Phase 1 as scoped in §4.1. The optional docs in `API_WORKFLOW_TEST.md` / `cart_order_flow.puml` are explicitly listed as deferrable by §4.1 and are deferred.
 
@@ -920,8 +920,8 @@ Each phase is independently reviewable and can ship as its own PR if desired. Su
 - `backend/src-plattr/functions/test/mocks/featureFlags.mock.js` — remove the three deleted flag entries (~L7, L8, L13)
 - `backend/src-plattr/functions/mock/MockData5EndToEndTesting.json` — remove flag overrides
 - `backend/src-plattr/functions/test/unit/cart/addItemToCart.test.js` — delete + add tests
-- `backend/claude-api-testing-workflow/suites/feature-flags.js` — delete test blocks 5/6/7 (they exercise the deleted flags directly via `setFeatureFlags`) and prune now-unused imports. Discovered during Phase 1 execution.
-- `backend/claude-api-testing-workflow/suites/cart.js` — test 5 previously relied on the fallback flag to auto-fill a missing mandatory variant; flip it to assert mandatory-variant rejection. Discovered during Phase 1 execution.
+- `backend/src-plattr/functions/test/e2e/suites/feature-flags.js` — delete test blocks 5/6/7 (they exercise the deleted flags directly via `setFeatureFlags`) and prune now-unused imports. Discovered during Phase 1 execution.
+- `backend/src-plattr/functions/test/e2e/suites/cart.js` — test 5 previously relied on the fallback flag to auto-fill a missing mandatory variant; flip it to assert mandatory-variant rejection. Discovered during Phase 1 execution.
 - `backend/src-plattr/functions/tests/API_WORKFLOW_TEST.md` — **optional docs cleanup** (prune flag name mentions, or defer as follow-up)
 - `backend/src-plattr/functions/docs/cart_order_flow.puml` — **optional docs cleanup** (same)
 

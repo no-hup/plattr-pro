@@ -131,10 +131,15 @@ class KitchenLiveProvider extends ChangeNotifier {
 
 ### `KitchenRepository` (`core/kitchen_repository.dart`)
 
-> **Important: Currently returns MOCK DATA.** Real API integration is not yet wired up. The `NetworkService` class exists but is minimal (just wraps Dio with no methods).
+> **Corrected 2026-09-08: this is no longer mock.** The repository is fully wired to the
+> backend through `network/kitchen_order_api_service.dart` + `network/api_constants.dart`,
+> which call `order-getActiveCartsForKitchen` and `cart-updateCartStatus`. It raises
+> `KitchenSessionExpiredException` and `KitchenCartTransitionException`. `NetworkService`
+> is now only a small legacy shim. There are zero mock or `Future.delayed` references left
+> in `core/kitchen_repository.dart`.
 
 The repository provides:
-- `getLiveOrders(restaurantId)` — Returns mock `KitchenOrder` list
+- `getLiveOrders(restaurantId)` — Returns a `KitchenOrder` list from the live API
 - `getActiveCarts(restaurantId)` — Returns `ActiveCartsResponse` (for Freezed models)
 
 ---
@@ -186,6 +191,16 @@ enum ActiveCartStatus { pending, cooking, ready, served, cancelled }
 
 > This is intentional: kitchen staff don't distinguish between returned and cancelled items. Both mean "stop working on it."
 
+> **`AWAITING_CONFIRMATION` is absent on purpose.** Where a restaurant requires waiter
+> confirmation, `order-getActiveCartsForKitchen` filters those carts out server-side, so
+> the kitchen app never receives the value and needs no enum entry for it.
+>
+> ⚠️ If that filter is ever relaxed so unconfirmed carts are SHOWN here greyed out, fix
+> these two first: `_parseStatus` in `models/active_order_models.dart` (`orElse`) and
+> `_mapStatus` in `core/kitchen_repository.dart` (`default`). Both fall through to
+> `.pending`, so an unconfirmed ticket would silently render as ordinary cookable work —
+> the exact thing the gate exists to prevent. Neither throws.
+
 ### View Types
 ```dart
 enum KitchenViewType { cart, item }
@@ -195,7 +210,7 @@ enum KitchenViewType { cart, item }
 
 ### Order Models (Non-Freezed — `models/order_models.dart`)
 
-Simpler models used by the mock repository:
+Simpler models used by the repository:
 - `KitchenOrder` — Full order with carts
 - `KitchenCart` — Cart within an order
 - `KitchenOrderItem` — Individual item
@@ -260,8 +275,8 @@ This is separate from platter_core's `PlatterThemeService`, optimized for large-
 | History screen | Implemented | Filtered by `completedStatuses` |
 | Polling mechanism | Implemented | 60s default, 30s recommended |
 | Active cart models (Freezed) | Implemented | Production-ready parsing |
-| Network integration | **MOCK ONLY** | `KitchenRepository` returns hardcoded data |
-| Cart status updates | **Not implemented** | No API call to `updateCartStatus` yet |
+| Network integration | Implemented (corrected 2026-09-08) | `KitchenOrderApiService` → `order-getActiveCartsForKitchen` |
+| Cart status updates | Implemented (corrected 2026-09-08) | Mark-ready calls `cart-updateCartStatus`; verified end to end |
 | Sound notifications | **Not implemented** | Flag exists but no implementation |
 | Backend-driven categories | **Not implemented** | Uses hardcoded defaults |
 

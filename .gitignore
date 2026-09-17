@@ -60,3 +60,11 @@ moonshot/reviews/sessions.jsonl
 moonshot/reviews/inbox/
 moonshot/reviews/.review-head
 moonshot/reviews/.drift-*
+
+# local editor/MCP scratch
+.mcp.json.bak-*
+
+# prod launch artifacts: live credentials and 58MB of release APKs — keep out of git
+**/CREDENTIALS.local.md
+restaurant-menu-setup-prod/launch-1/apks/
+restaurant-menu-setup-prod/launch-1/firestore-kaanchipuram-kaapi-hsr.json

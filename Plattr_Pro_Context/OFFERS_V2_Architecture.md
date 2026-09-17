@@ -66,7 +66,7 @@ See `backend/src-plattr/functions/auxilary/docs/OFFERS_SYSTEM.md` for the full F
 
 ## Testing
 
-- E2E: `backend/claude-api-testing-workflow/suites/offer-pricing.js` — needs updates for V2 (old suite assumed cart-level apply/remove)
+- E2E: `backend/src-plattr/functions/test/e2e/suites/offer-pricing.js` — needs updates for V2 (old suite assumed cart-level apply/remove)
 - Manual: seed an offer via admin app → checkout in consumer app → verify `order.appliedOffer` is populated → mark COMPLETED → verify `priceInfo.offerDiscount` persists
 
 ## Open Items / Future Work

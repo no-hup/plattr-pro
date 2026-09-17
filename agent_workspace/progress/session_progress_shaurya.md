@@ -74,7 +74,7 @@ Parsing robustness (suggestions)
 
 **E2E API Testing Framework — Expanded to ~95% Consumer Coverage**
 
-Scope: `backend/claude-api-testing-workflow/`
+Scope: `backend/src-plattr/functions/test/e2e/`
 
 **Output optimization (for Haiku-class LLM execution):**
 - `run.js` now summary-only by default (silent passes, detailed failures); `--verbose` for humans
@@ -98,7 +98,7 @@ Scope: `backend/claude-api-testing-workflow/`
 
 New assertions: `assertPriceRange`, `assertContains`, `assertOneOf`
 
-Progress file also at: `backend/claude-api-testing-workflow/PROGRESS.md`
+Progress file also at: `backend/src-plattr/functions/test/e2e/PROGRESS.md`
 
 todo: run full suite against emulator and fix any test failures. BUG-1 (Firestore transaction ordering in createOrUpdateOrder.js) still blocks all checkout-dependent tests.
 
@@ -172,7 +172,7 @@ Moved from cart-level manual offer application to order-level auto-apply at chec
 
 **Todo for next session:**
 - Wait for frontend subagent to complete, review output
-- Rewrite `backend/claude-api-testing-workflow/suites/offers.js` and `offer-pricing.js` for V2 (they test the deleted apply/remove flow)
+- Rewrite `backend/src-plattr/functions/test/e2e/suites/offers.js` and `offer-pricing.js` for V2 (they test the deleted apply/remove flow)
 - Update Big Brewski mock offer data if it uses old field names (`buyQty`, `CART` scope, `minCartValue`)
 - Manual E2E testing in emulator: admin create offer → consumer checkout → verify order.appliedOffer → mark COMPLETED → verify persistence
 - Consider: server app manual discount override endpoint as graceful fallback (documented as future work)

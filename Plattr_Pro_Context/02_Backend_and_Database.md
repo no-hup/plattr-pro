@@ -21,6 +21,7 @@ restaurants/{restaurantId}/
 ├── orders/{orderId}               → Order header (status, total, table, server, carts[])
 ├── carts/{tableId}                → Active cart for a table (items[], priceInfo)
 │   └── items/{itemId}             → Cart items sub-collection (alt: items[] array)
+├── config/settings                → Per-restaurant settings: tax.blocks, ordering.*
 └── sessions/{sessionId}           → Active sessions (server or customer)
 
 _system/
@@ -184,6 +185,21 @@ Singleton pattern with `Object.freeze`. Manages runtime feature toggles.
 
 **Dev endpoint:** `dev-setFeatureFlags` allows runtime flag changes in emulator mode.
 
+### Per-Restaurant Settings (`config/settings`)
+
+Not every switch belongs in the FeatureFlags singleton — that one is process-global, so it
+cannot differ between two restaurants served by the same function instance. Anything that
+must vary per restaurant lives in `restaurants/{id}/config/settings` and is read
+out-of-band (never inside a transaction), the same way the charges config is.
+
+| Setting | Default | Purpose |
+|---------|---------|---------|
+| `tax.blocks` | `{}` | Tax blocks a placed line freezes (SPEC_BL R12) |
+| `ordering.requireWaiterConfirmation` | `false` | Guest checkout lands on `AWAITING_CONFIRMATION` and is withheld from the kitchen until a waiter confirms it. See [[01_Business_Rules_and_States]] §Fulfillment Status |
+
+A missing doc or missing field means the default, so every existing restaurant keeps the
+behaviour it already had.
+
 ### ErrorHandler (`singleton/ErrorHandler.js`)
 
 Singleton with `Object.freeze`. Standardized error throwing for Cloud Functions.
@@ -253,7 +269,7 @@ These triggers use v2 Firestore triggers (`firebase-functions/v2/firestore`).
 - `ResponseBuilder.test.js` — 19 test cases
 - Other tests for cart, order, table operations
 
-**E2E API tests:** `backend/claude-api-testing-workflow/`
+**E2E API tests:** `backend/src-plattr/functions/test/e2e/`
 - Custom test runner for full API flow testing
 - Suites: admin, cart, feature-flags, server-journey
 
