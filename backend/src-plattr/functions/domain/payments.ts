@@ -157,6 +157,19 @@ export function businessDateFor(at: number, config: PaymentsConfig): string {
  * a transaction, at 23:40.
  *
  * Round-trips with `businessDateFor` for every instant in the window; see the unit test.
+ *
+ * INVARIANT — `timezoneOffsetMinutes` must be a FIXED offset, never a zone with DST.
+ * This used to be a labelling detail. Since day close reads by this window it is now load-bearing
+ * for query COMPLETENESS, and the two directions fail differently: a window that is too wide is
+ * harmless because the domain still filters by businessDate afterwards, but a window that is too
+ * narrow drops rows the domain never sees, and a payment goes silently missing from the day's count.
+ * A DST zone has 23- and 25-hour business days, so a fixed 86,400,000 ms window under-fetches by an
+ * hour twice a year.
+ *
+ * `domain/invoice.ts` deliberately holds the OTHER representation — an IANA zone through `Intl` —
+ * because a fiscal year is a label and may be one. Do not "unify" the two by giving this side an
+ * IANA zone: that is the trap. If they are ever unified, it must be onto the fixed offset, and
+ * invoice.ts changes, not this.
  */
 export function businessDayWindow(businessDate: string, config: PaymentsConfig): { start: number; end: number } {
   const closeMs = (config.dayCloseHour * 60 + config.dayCloseMinute) * 60_000;
