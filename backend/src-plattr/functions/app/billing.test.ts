@@ -130,6 +130,13 @@ describe('app/billing issue', () => {
     await expect(issue(p, issueReq({ expectedV: { pizza: 3 } }))).rejects.toMatchObject({ code: 'failed-precondition' });
     expect(p.bills.size).toBe(0);
   });
+  it('BL-S7 a missing expectedV is a bad request, not a crash: invalid-argument, nothing written', async () => {
+    const p = fakePorts();
+    const { expectedV, ...noVersions } = issueReq();
+    await expect(issue(p, noVersions as never)).rejects.toMatchObject({ code: 'invalid-argument' });
+    await expect(issue(p, issueReq({ expectedV: 'all of them' }) as never)).rejects.toMatchObject({ code: 'invalid-argument' });
+    expect(p.bills.size).toBe(0);
+  });
   it('D7 client money is ignored: the request carries no amounts and the bill is 60900 regardless', async () => {
     const b = await issue(fakePorts(), issueReq({ payable: 1, lines: [] } as never));
     expect(b.payable).toBe(60900);

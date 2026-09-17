@@ -286,6 +286,21 @@ describe('domain/billing preview — cases from the blind lists', () => {
     expect(v.payable).toBe(49900);
     expect(v.blocks.map(b => b.id)).toEqual(['liquor']);
   });
+  it('C6b a charge is never levied without its tax definition: amount ≠ 0 ⟹ its block is on the bill', () => {
+    // The definition is taken off a line, not out of config, so it LOOKS like a charge could be
+    // levied untaxed. It cannot: `base` counts only components in the charge's own block. This
+    // pins that coupling — widen `base` past the charge's block and this goes red.
+    const bar = ok(preview([line('beer', 49900, { block: LIQ })], null, [{ type: 'SERVICE_CHARGE', pctBps: 1000, taxBlockId: 'food' }], cfg));
+    const kitchen = ok(preview([line('pizza', 50000)], null, [{ type: 'SERVICE_CHARGE', pctBps: 1000, taxBlockId: 'liquor' }], cfg));
+    const unknown = ok(preview([line('pizza', 50000), line('whisky', 80000, { block: LIQ })], null, [{ type: 'SERVICE_CHARGE', pctBps: 1000, taxBlockId: 'wine' }], cfg));
+    for (const v of [bar, kitchen, unknown]) {
+      for (const c of v.charges) {
+        if (c.amount !== 0) expect(v.blocks.map(b => b.id)).toContain(c.taxBlockId);
+        else expect(c.tax).toEqual({ taxable: 0, parts: [] });
+      }
+    }
+    expect([bar, kitchen, unknown].map(v => v.charges[0].amount)).toEqual([0, 0, 0]);
+  });
   it('C7/C9 round-off matrix: 60999 → +1; 60901 → −1; roundTo 500 on 60940 → 61000 (+60)', () => {
     expect(ok(preview([line('x', 58095)], null, [], cfg))).toMatchObject({ payable: 61000, roundOff: 1 });   // 58095 + 1452 + 1452 = 60999
     expect(ok(preview([line('x', 58001)], null, [], cfg))).toMatchObject({ payable: 60900, roundOff: -1 });  // 58001 + 1450 + 1450 = 60901
