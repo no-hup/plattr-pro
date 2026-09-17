@@ -630,6 +630,22 @@
               "_nanoseconds": 0
             }
           }
+        },
+        "table_clean_9": {
+          "number": "C9",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
         }
       },
       "sessions": {},

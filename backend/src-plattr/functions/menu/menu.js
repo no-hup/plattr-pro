@@ -146,7 +146,7 @@ const addMenuItem = functions.https.onCall(async (data, context) => {
   const request = data?.data || data || {};
   try {
     // Log the function call
-    console.log('poopoo addMenuItem function called with request:', request);
+    console.log('addMenuItem function called with request:', request);
     
     // Validate input
     if (!request.restaurantId || !request.menuItemData) {
@@ -176,7 +176,7 @@ const addMenuItem = functions.https.onCall(async (data, context) => {
     // Get the created menu item
     const menuItem = await getMenuItemById(restaurantId, menuItemId);
     
-    console.log(`poopoo Successfully created menu item: ${menuItemId} for restaurant: ${restaurantId}`);
+    console.log(`Successfully created menu item: ${menuItemId} for restaurant: ${restaurantId}`);
     return ResponseBuilder.success(
       {
         menuItemId,
@@ -202,7 +202,7 @@ const updateMenuItem = functions.https.onCall(async (data, context) => {
   const request = data?.data || data || {};
   try {
     // Log the function call
-    console.log('poopoo updateMenuItem function called with request:', request);
+    console.log('updateMenuItem function called with request:', request);
     
     // Validate input
     if (!request.restaurantId || !request.menuItemId || !request.updateData) {
@@ -234,7 +234,7 @@ const updateMenuItem = functions.https.onCall(async (data, context) => {
     // Get the updated menu item
     const updatedMenuItem = await getMenuItemById(restaurantId, menuItemId);
     
-    console.log(`poopoo Successfully updated menu item: ${menuItemId} for restaurant: ${restaurantId}`);
+    console.log(`Successfully updated menu item: ${menuItemId} for restaurant: ${restaurantId}`);
     return ResponseBuilder.success(
       {
         menuItemId,
@@ -260,7 +260,7 @@ const deleteMenuItem = functions.https.onCall(async (data, context) => {
   const request = data?.data || data || {};
   try {
     // Log the function call
-    console.log('poopoo deleteMenuItem function called with request:', request);
+    console.log('deleteMenuItem function called with request:', request);
     
     // Validate input
     if (!request.restaurantId || !request.menuItemId) {
@@ -288,7 +288,7 @@ const deleteMenuItem = functions.https.onCall(async (data, context) => {
     // Delete the menu item
     await deleteMenuItemUtil(restaurantId, menuItemId);
     
-    console.log(`poopoo Successfully deleted menu item: ${menuItemId} for restaurant: ${restaurantId}`);
+    console.log(`Successfully deleted menu item: ${menuItemId} for restaurant: ${restaurantId}`);
     return ResponseBuilder.success(
       {
         menuItemId
@@ -311,7 +311,7 @@ const deleteMenuItem = functions.https.onCall(async (data, context) => {
  */
 const updateMenuItemAvailability = functions.https.onRequest(async (req, res) => {
   try {
-    console.log('poopoo updateMenuItemAvailability function called with request:', req.body);
+    console.log('updateMenuItemAvailability function called with request:', req.body);
     
     // Validate input
     const { restaurantId, sessionId, menuItemId, isAvailable } = req.body || {};
@@ -366,7 +366,7 @@ const updateMenuItemAvailability = functions.https.onRequest(async (req, res) =>
     // Get the updated menu item
     const updatedMenuItem = await getMenuItemById(restaurantId, menuItemId);
     
-    console.log(`poopoo Successfully updated menu item availability: ${menuItemId} for restaurant: ${restaurantId}`);
+    console.log(`Successfully updated menu item availability: ${menuItemId} for restaurant: ${restaurantId}`);
     return res
       .status(200)
       .json(

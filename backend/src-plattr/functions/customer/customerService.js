@@ -18,7 +18,7 @@ const timestamp = require('../utils/timestamp');
  */
 async function createOrUpdateCustomerProfileDirect(phoneNumber, name) {
   try {
-    console.log(`poopoo customerService.createOrUpdateCustomerProfileDirect: Processing for phone ${phoneNumber}`);
+    console.log(`customerService.createOrUpdateCustomerProfileDirect: Processing for phone ${phoneNumber}`);
     
     if (!phoneNumber) {
       throw new Error('Phone number is required');
@@ -32,7 +32,7 @@ async function createOrUpdateCustomerProfileDirect(phoneNumber, name) {
     
     if (!customerDoc.exists) {
       // Create new customer profile
-      console.log(`poopoo Creating new customer profile for ${phoneNumber}`);
+      console.log(`Creating new customer profile for ${phoneNumber}`);
       const customerData = {
         phoneNumber,
         name: name || '',
@@ -42,11 +42,11 @@ async function createOrUpdateCustomerProfileDirect(phoneNumber, name) {
       };
       
       await customerRef.set(customerData);
-      console.log(`poopoo New customer profile created for ${phoneNumber}`);
+      console.log(`New customer profile created for ${phoneNumber}`);
       return { ...customerData, id: phoneNumber };
     } else {
       // Update existing customer profile
-      console.log(`poopoo Updating existing customer profile for ${phoneNumber}`);
+      console.log(`Updating existing customer profile for ${phoneNumber}`);
       const updateData = {
         updatedAt: now
       };
@@ -57,7 +57,7 @@ async function createOrUpdateCustomerProfileDirect(phoneNumber, name) {
       }
       
       await customerRef.update(updateData);
-      console.log(`poopoo Customer profile updated for ${phoneNumber}`);
+      console.log(`Customer profile updated for ${phoneNumber}`);
       
       const updatedDoc = await customerRef.get();
       return { ...updatedDoc.data(), id: phoneNumber };

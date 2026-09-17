@@ -34,7 +34,7 @@ const sendFCMNotification = async (token, payload) => {
       data: payload.data ? Object.fromEntries(Object.entries(payload.data).map(([k, v]) => [k, String(v)])) : {}, // Ensure all values are strings
     });
 
-    console.log('poopoo Notification sent successfully');
+    console.log('Notification sent successfully');
   } catch (error) {
     console.error('Error sending notification:', error);
 

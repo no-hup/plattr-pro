@@ -185,6 +185,9 @@ const restaurants = {};
   defCategory(R, 'mc_seafood', 'Seafood', { order: 3, subcategoryIds: ['ms_seafood'] });
   defCategory(R, 'mc_breads', 'Breads & Rice', { order: 4, subcategoryIds: ['ms_breads'] });
   defCategory(R, 'mc_desserts', 'Desserts', { order: 5, subcategoryIds: ['ms_dessert'] });
+  // Bar. The only liquor menu in the seed: BL's second tax block (inclusive, no GST part) has no
+  // other place to be exercised against real data. Prices are inclusive of whatever the state levies.
+  defCategory(R, 'mc_bar', 'Bar', { order: 6, subcategoryIds: ['ms_beer', 'ms_spirits'] });
 
   defSub(R, 'ms_bir_chicken', 'Chicken Biryani', 'mc_biryani', 0);
   defSub(R, 'ms_bir_veg', 'Veg Biryani', 'mc_biryani', 1);
@@ -194,6 +197,8 @@ const restaurants = {};
   defSub(R, 'ms_seafood', 'Coastal Seafood', 'mc_seafood', 0);
   defSub(R, 'ms_breads', 'Breads & Rice', 'mc_breads', 0);
   defSub(R, 'ms_dessert', 'Desserts', 'mc_desserts', 0);
+  defSub(R, 'ms_beer', 'Beer', 'mc_bar', 0);
+  defSub(R, 'ms_spirits', 'Spirits', 'mc_bar', 1);
 
   // Variants: biryani portion (respectParent TRUE); Andhra spice (non-priced, respectParent irrelevant)
   defVariant(R, 'mv_bir_portion', 'Portion', { mandatory: true, respectParent: true, items: ['mi_chicken_bir', 'mi_veg_bir', 'mi_mutton_bir'], catAssoc: ['mc_biryani'], description: 'Single or family portion', options: [{ id: 'single', name: 'Single', price: 0 }, { id: 'family', name: 'Family (serves 3)', price: 260 }] });
@@ -219,6 +224,10 @@ const restaurants = {};
   defItem(R, 'mi_butter_naan', 'Butter Naan', 60, { cat: 'mc_breads', sub: 'ms_breads', disc: 0, diet: 'VEG' });
   defItem(R, 'mi_gulab', 'Gulab Jamun (2 pc)', 90, { cat: 'mc_desserts', sub: 'ms_dessert', disc: 0, diet: 'VEG' });
   defItem(R, 'mi_qubani', 'Qubani ka Meetha', 140, { cat: 'mc_desserts', sub: 'ms_dessert', disc: 15, diet: 'VEG' });
+  // Liquor lines: taxBlockId 'liquor', never discounted (offers must not touch alcohol), no HSN code.
+  defItem(R, 'mi_kingfisher', 'Kingfisher Premium (650 ml)', 260, { cat: 'mc_bar', sub: 'ms_beer', disc: 0, diet: 'VEG', taxBlockId: 'liquor', taxCode: '' });
+  defItem(R, 'mi_bira_white', 'Bira 91 White (330 ml)', 220, { cat: 'mc_bar', sub: 'ms_beer', disc: 0, diet: 'VEG', taxBlockId: 'liquor', taxCode: '' });
+  defItem(R, 'mi_old_monk', 'Old Monk 60 ml', 180, { cat: 'mc_bar', sub: 'ms_spirits', disc: 0, diet: 'VEG', taxBlockId: 'liquor', taxCode: '' });
 
   defMenu(R, 'menu_meg', 'Meghana Menu', { categoryIds: ['mc_biryani', 'mc_starters', 'mc_andhra', 'mc_seafood', 'mc_breads', 'mc_desserts'], menuItemIds: Object.keys(R.menuItems) });
 

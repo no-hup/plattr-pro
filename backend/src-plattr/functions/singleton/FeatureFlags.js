@@ -31,6 +31,8 @@
  *            Apps: Server (receives push notifications)
  *   - FALSE: No server notifications.
  */
+const environment = require('./Environment');
+
 class FeatureFlags {
   constructor() {
     if (FeatureFlags.instance) {
@@ -77,6 +79,9 @@ class FeatureFlags {
    * @param {object} db - Firestore instance
    */
   async loadOverrides(db) {
+    // Emulator-only: in production this would be a Firestore read on every
+    // hot-path call AND a live surface for flipping flags by writing a doc.
+    if (!environment.isEmulator()) return;
     try {
       const doc = await db.collection('_system').doc('featureFlagOverrides').get();
       if (doc.exists) {

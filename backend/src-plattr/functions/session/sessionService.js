@@ -19,7 +19,7 @@ const SESSION_STATUS = {
  */
 async function createOrGetTableSession(restaurantId, tableId, primaryUserId) {
   try {
-    console.log(`poopoo createOrGetTableSession: Creating or getting session for table ${tableId} with primary user ${primaryUserId}`);
+    console.log(`createOrGetTableSession: Creating or getting session for table ${tableId} with primary user ${primaryUserId}`);
     
     // First check if restaurant exists
     const restaurantRef = db.collection('restaurants').doc(restaurantId);
@@ -31,7 +31,7 @@ async function createOrGetTableSession(restaurantId, tableId, primaryUserId) {
     }
     
     // Check if table already has an active session
-    console.log(`poopoo createOrGetTableSession: Checking for existing active sessions for table ${tableId}`);
+    console.log(`createOrGetTableSession: Checking for existing active sessions for table ${tableId}`);
     const existingSessionQuery = await restaurantRef
       .collection('sessions')
       .where('tableId', '==', tableId)
@@ -42,13 +42,13 @@ async function createOrGetTableSession(restaurantId, tableId, primaryUserId) {
     // If session already exists, return it
     if (!existingSessionQuery.empty) {
       const existingSession = existingSessionQuery.docs[0];
-      console.log(`poopoo createOrGetTableSession: Existing table session ${existingSession.id} found for table ${tableId}`);
+      console.log(`createOrGetTableSession: Existing table session ${existingSession.id} found for table ${tableId}`);
       
       // Add this user to the users array if not already present
       const sessionData = existingSession.data();
       if (!Array.isArray(sessionData.users)) sessionData.users = [];
       if (!sessionData.users.includes(primaryUserId)) {
-        console.log(`poopoo createOrGetTableSession: Adding primary user ${primaryUserId} to existing session ${existingSession.id}`);
+        console.log(`createOrGetTableSession: Adding primary user ${primaryUserId} to existing session ${existingSession.id}`);
         try {
           const updateData = {
             updatedAt: timestamp.serverTimestamp()
@@ -59,7 +59,7 @@ async function createOrGetTableSession(restaurantId, tableId, primaryUserId) {
           applyArrayOperation(updateData, 'users', sessionData.users, arrayOp);
           
           await existingSession.ref.update(updateData);
-          console.log(`poopoo createOrGetTableSession: Successfully added primary user to existing session`);
+          console.log(`createOrGetTableSession: Successfully added primary user to existing session`);
         } catch (updateError) {
           console.error(`Error updating session users: ${updateError.message}`);
           // Continue with existing session data
@@ -74,12 +74,12 @@ async function createOrGetTableSession(restaurantId, tableId, primaryUserId) {
     }
     
     // Create new table session document with random ID
-    console.log(`poopoo createOrGetTableSession: No existing session found, creating new session for table ${tableId}`);
+    console.log(`createOrGetTableSession: No existing session found, creating new session for table ${tableId}`);
     const sessionRef = restaurantRef.collection('sessions').doc();
     
     // 4 hour expiry from now
     const expiryDate = new Date(Date.now() + (4 * 60 * 60 * 1000));
-    console.log(`poopoo createOrGetTableSession: Setting session expiry to ${expiryDate.toISOString()}`);
+    console.log(`createOrGetTableSession: Setting session expiry to ${expiryDate.toISOString()}`);
       
     const session = {
       tableId,
@@ -94,7 +94,7 @@ async function createOrGetTableSession(restaurantId, tableId, primaryUserId) {
     
     try {
       await sessionRef.set(session);
-      console.log(`poopoo createOrGetTableSession: New table session ${sessionRef.id} created for table ${tableId}`);
+      console.log(`createOrGetTableSession: New table session ${sessionRef.id} created for table ${tableId}`);
     } catch (setError) {
       console.error(`Error creating session: ${setError.message}`);
       throw new functions.https.HttpsError('internal', `Failed to create table session: ${setError.message}`);
@@ -120,7 +120,7 @@ async function createOrGetTableSession(restaurantId, tableId, primaryUserId) {
  */
 async function addUserToTableSession(restaurantId, sessionId, userId) {
   try {
-    console.log(`poopoo addUserToTableSession: Adding user ${userId} to session ${sessionId} in restaurant ${restaurantId}`);
+    console.log(`addUserToTableSession: Adding user ${userId} to session ${sessionId} in restaurant ${restaurantId}`);
     
     // First check if restaurant exists
     const restaurantRef = db.collection('restaurants').doc(restaurantId);
@@ -140,20 +140,20 @@ async function addUserToTableSession(restaurantId, sessionId, userId) {
     }
     
     const sessionData = sessionDoc.data();
-    console.log(`poopoo addUserToTableSession: Found session ${sessionId}, checking expiry`);
+    console.log(`addUserToTableSession: Found session ${sessionId}, checking expiry`);
     
     // Check if session is expired using the timestamp utility
     const expiryDate = timestamp.safeToDate(sessionData.expiresAt);
-    console.log(`poopoo addUserToTableSession: Session expiresAt=${JSON.stringify(sessionData.expiresAt)}, parsed as ${expiryDate}`);
+    console.log(`addUserToTableSession: Session expiresAt=${JSON.stringify(sessionData.expiresAt)}, parsed as ${expiryDate}`);
     
     if (!expiryDate || expiryDate < new Date()) {
-      console.log(`poopoo Session expired: expiresAt=${JSON.stringify(sessionData.expiresAt)}, converted to ${expiryDate}`);
+      console.log(`Session expired: expiresAt=${JSON.stringify(sessionData.expiresAt)}, converted to ${expiryDate}`);
       try {
         await sessionRef.update({
           status: SESSION_STATUS.EXPIRED,
           updatedAt: timestamp.serverTimestamp()
         });
-        console.log(`poopoo addUserToTableSession: Marked session ${sessionId} as expired`);
+        console.log(`addUserToTableSession: Marked session ${sessionId} as expired`);
       } catch (updateError) {
         console.error(`Error updating expired session: ${updateError.message}`);
         // Continue and throw the original error
@@ -164,7 +164,7 @@ async function addUserToTableSession(restaurantId, sessionId, userId) {
     // Add user to the session if not already present
     if (!Array.isArray(sessionData.users)) sessionData.users = [];
     if (!sessionData.users.includes(userId)) {
-      console.log(`poopoo addUserToTableSession: Adding user ${userId} to users array`);
+      console.log(`addUserToTableSession: Adding user ${userId} to users array`);
       try {
         const updateData = {
           updatedAt: timestamp.serverTimestamp()
@@ -175,13 +175,13 @@ async function addUserToTableSession(restaurantId, sessionId, userId) {
         applyArrayOperation(updateData, 'users', sessionData.users, arrayOp);
         
         await sessionRef.update(updateData);
-        console.log(`poopoo addUserToTableSession: Successfully added user ${userId} to session ${sessionId}`);
+        console.log(`addUserToTableSession: Successfully added user ${userId} to session ${sessionId}`);
       } catch (updateError) {
         console.error(`Error updating session users: ${updateError.message}`);
         throw new functions.https.HttpsError('internal', 'Failed to add user to session');
       }
     } else {
-      console.log(`poopoo addUserToTableSession: User ${userId} already in session ${sessionId}`);
+      console.log(`addUserToTableSession: User ${userId} already in session ${sessionId}`);
     }
     
     return {
@@ -206,7 +206,7 @@ async function addUserToTableSession(restaurantId, sessionId, userId) {
  */
 async function validateTableSession(restaurantId, tableId, options = {}) {
   try {
-    console.log(`poopoo validateTableSession: Checking session for restaurant ${restaurantId}, table ${tableId}`);
+    console.log(`validateTableSession: Checking session for restaurant ${restaurantId}, table ${tableId}`);
     
     // First check if restaurant exists
     const restaurantRef = db.collection('restaurants').doc(restaurantId);
@@ -230,7 +230,7 @@ async function validateTableSession(restaurantId, tableId, options = {}) {
       }
     }
     
-    console.log(`poopoo validateTableSession: Querying active sessions for table ${tableId}`);
+    console.log(`validateTableSession: Querying active sessions for table ${tableId}`);
     const sessionQuery = await restaurantRef
       .collection('sessions')
       .where('tableId', '==', tableId)
@@ -239,7 +239,7 @@ async function validateTableSession(restaurantId, tableId, options = {}) {
       .get();
       
     if (sessionQuery.empty) {
-      console.log(`poopoo validateTableSession: No active session found for table ${tableId}`);
+      console.log(`validateTableSession: No active session found for table ${tableId}`);
       if (options.throwError) {
         throw new functions.https.HttpsError('failed-precondition', 'No active session found');
       }
@@ -248,21 +248,21 @@ async function validateTableSession(restaurantId, tableId, options = {}) {
     
     const session = sessionQuery.docs[0];
     const sessionData = session.data();
-    console.log(`poopoo validateTableSession: Found session ${session.id} for table ${tableId}`);
+    console.log(`validateTableSession: Found session ${session.id} for table ${tableId}`);
     
     // Check if session is expired using the timestamp utility
-    console.log(`poopoo validateTableSession: Checking if session is expired. expiresAt=${JSON.stringify(sessionData.expiresAt)}`);
+    console.log(`validateTableSession: Checking if session is expired. expiresAt=${JSON.stringify(sessionData.expiresAt)}`);
     const expiryDate = timestamp.safeToDate(sessionData.expiresAt);
     
     // If we couldn't parse the expiry date or it's in the past
     if (!expiryDate || expiryDate < new Date()) {
-      console.log(`poopoo Session expired: expiresAt=${JSON.stringify(sessionData.expiresAt)} converted to ${expiryDate}`);
+      console.log(`Session expired: expiresAt=${JSON.stringify(sessionData.expiresAt)} converted to ${expiryDate}`);
       try {
         await session.ref.update({
           status: SESSION_STATUS.EXPIRED,
           updatedAt: timestamp.serverTimestamp()
         });
-        console.log(`poopoo validateTableSession: Marked session ${session.id} as expired`);
+        console.log(`validateTableSession: Marked session ${session.id} as expired`);
       } catch (updateError) {
         console.error(`Error updating expired session: ${updateError.message}`);
         // Continue even if update fails
@@ -280,14 +280,14 @@ async function validateTableSession(restaurantId, tableId, options = {}) {
       try {
         await addUserToTableSession(restaurantId, session.id, options.context.auth.uid);
         sessionData.users.push(options.context.auth.uid);
-        console.log(`poopoo validateTableSession: Added user ${options.context.auth.uid} to session ${session.id}`);
+        console.log(`validateTableSession: Added user ${options.context.auth.uid} to session ${session.id}`);
       } catch (addUserError) {
         console.error(`Error adding user to session: ${addUserError.message}`);
         // Continue even if adding user fails
       }
     }
     
-    console.log(`poopoo validateTableSession: Session ${session.id} is valid`);
+    console.log(`validateTableSession: Session ${session.id} is valid`);
     return {
       id: session.id,
       ...sessionData
@@ -308,7 +308,7 @@ async function validateTableSession(restaurantId, tableId, options = {}) {
  */
 async function endTableSessions(restaurantId, tableId) {
   try {
-    console.log(`poopoo endTableSessions: Ending sessions for table ${tableId} in restaurant ${restaurantId}`);
+    console.log(`endTableSessions: Ending sessions for table ${tableId} in restaurant ${restaurantId}`);
     
     // First check if restaurant exists
     const restaurantRef = db.collection('restaurants').doc(restaurantId);
@@ -320,7 +320,7 @@ async function endTableSessions(restaurantId, tableId) {
     }
     
     // Get the active session for this table
-    console.log(`poopoo endTableSessions: Finding active sessions for table ${tableId}`);
+    console.log(`endTableSessions: Finding active sessions for table ${tableId}`);
     const sessionQuery = await restaurantRef
       .collection('sessions')
       .where('tableId', '==', tableId)
@@ -329,20 +329,20 @@ async function endTableSessions(restaurantId, tableId) {
       .get();
       
     if (sessionQuery.empty) {
-      console.log(`poopoo endTableSessions: No active session found for table ${tableId}`);
+      console.log(`endTableSessions: No active session found for table ${tableId}`);
       return;
     }
     
     // Update the single active session
     const sessionDoc = sessionQuery.docs[0];
-    console.log(`poopoo endTableSessions: Found active session ${sessionDoc.id} for table ${tableId}`);
+    console.log(`endTableSessions: Found active session ${sessionDoc.id} for table ${tableId}`);
     
     try {
       await sessionDoc.ref.update({
         status: SESSION_STATUS.ENDED,
         updatedAt: timestamp.serverTimestamp()
       });
-      console.log(`poopoo endTableSessions: Successfully ended session ${sessionDoc.id} for table ${tableId}`);
+      console.log(`endTableSessions: Successfully ended session ${sessionDoc.id} for table ${tableId}`);
     } catch (updateError) {
       console.error(`Error updating session status: ${updateError.message}`);
       throw new functions.https.HttpsError('internal', `Failed to end table session: ${updateError.message}`);

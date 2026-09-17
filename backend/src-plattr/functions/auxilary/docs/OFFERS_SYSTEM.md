@@ -51,8 +51,11 @@ Provide a simple, admin-managed offers system where:
     minOrderValue: number
     requiredItems: [{ menuItemId, quantity }]
     userHistory: {              // optional, session-based offers
-      minOrderCount: number
-      activeSessionOrderCount: number
+      minOrderCount: number         // N PRIOR orders in this sitting (the order being
+                                    // evaluated never counts itself) — unlocks on order N+1
+      activeSessionOrderCount: number // "this is the Nth order of the sitting" — unlocks on
+                                    // order N (i.e. N-1 prior). Note the two count differently.
+                                    // Both are session-scoped today; neither is lifetime history.
     }
   }
   benefit: {

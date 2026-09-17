@@ -3,6 +3,8 @@
  * Enables cross-origin requests for local development with Flutter web
  */
 
+const environment = require('../singleton/Environment');
+
 /**
  * CORS configuration
  * In emulator mode, allow all origins. In production, restrict to specific domains.
@@ -16,8 +18,10 @@ const corsOptions = {
     },
     production: {
         origin: [
-            'https://your-production-domain.com',
-            // Add production domains here
+            'https://plattrpro.web.app',
+            'https://plattrpro.firebaseapp.com',
+            'https://rms-app-dd875.web.app',
+            'https://rms-app-dd875.firebaseapp.com',
         ],
         methods: ['GET', 'POST', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
@@ -26,20 +30,30 @@ const corsOptions = {
 };
 
 /**
- * Set CORS headers on the response
+ * Set CORS headers on the response.
+ *
+ * Production echoes the *request* Origin when it is whitelisted (a fixed
+ * origin[0] would break every other allowed host) and always sends
+ * `Vary: Origin` so caches don't serve one app's header to another.
+ * A request with no Origin header (Android APK, curl, server-to-server) gets
+ * no Access-Control-Allow-Origin — those clients don't enforce CORS.
+ *
+ * @param {Object} req - Express-like request object
  * @param {Object} res - Express-like response object
  * @param {boolean} isEmulator - Whether running in emulator mode
  */
-function setCorsHeaders(res, isEmulator = true) {
+function setCorsHeaders(req, res, isEmulator = environment.isEmulator()) {
     const options = isEmulator ? corsOptions.development : corsOptions.production;
 
-    // For development, allow any origin
     if (options.origin === true) {
+        // Development: allow any origin
         res.set('Access-Control-Allow-Origin', '*');
-    } else if (Array.isArray(options.origin)) {
-        // For production, check against whitelist
-        // Note: In real production, you'd check the request origin
-        res.set('Access-Control-Allow-Origin', options.origin[0]);
+    } else {
+        res.set('Vary', 'Origin');
+        const requestOrigin = req && req.headers && req.headers.origin;
+        if (requestOrigin && options.origin.includes(requestOrigin)) {
+            res.set('Access-Control-Allow-Origin', requestOrigin);
+        }
     }
 
     res.set('Access-Control-Allow-Methods', options.methods.join(', '));
@@ -58,7 +72,7 @@ function setCorsHeaders(res, isEmulator = true) {
  */
 function handlePreflight(req, res) {
     if (req.method === 'OPTIONS') {
-        setCorsHeaders(res, true);
+        setCorsHeaders(req, res);
         res.status(204).send('');
         return true;
     }
@@ -73,7 +87,7 @@ function handlePreflight(req, res) {
 function withCors(handler) {
     return (req, res) => {
         // Set CORS headers for all responses
-        setCorsHeaders(res, true);
+        setCorsHeaders(req, res);
 
         // Handle preflight
         if (handlePreflight(req, res)) {

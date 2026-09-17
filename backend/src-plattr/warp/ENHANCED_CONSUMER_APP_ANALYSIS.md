@@ -1,5 +1,22 @@
 # Plattr Pro Consumer App Flow Analysis - Complete System Deep Dive
 
+> ## ⚠️ HISTORICAL — Sep 2025 snapshot. Do not trust the Feature Flags section.
+>
+> Verified 2026-09-08. This document's feature-flag section is **wrong in both directions**:
+> it lists 7 flags, the code has 4 (`singleton/FeatureFlags.js`). Three of the flags it
+> documents — `isMultipleVariantOrAddonForMenuItemsSupported`,
+> `shouldUpdateFoodStatusAtItemLevelORAtOrderLevel`,
+> `fallbackToSameCustomConfigurationForAddItem` — **do not exist**. Every default it states
+> is inverted: it says `isOtpManadatoryAtScan` defaults false (real: **true**) and
+> `isMultiUserSupportEnabled` defaults true (real: **false**).
+>
+> Other invented content: a `performanceTrace` Express middleware, a `tester.mockQRScan()`
+> test API, and a Firestore rules example with `hasValidSessionForTable()`. None exist.
+>
+> **Read `backend/src-plattr/functions/singleton/FeatureFlags.js` instead** — it carries its
+> own flow-impact map, and AGENTS.md requires reading it before touching any flagged path.
+> Kept for its cross-system impact matrix and edge-case brainstorm only.
+
 ## Overview
 This document provides an exhaustive analysis of the Plattr Pro consumer app flow, covering the complete journey from QR code scan to order completion. It includes detailed session management, feature flags, Firebase triggers, cross-system interactions, and all edge cases discovered through comprehensive code analysis.
 

@@ -134,7 +134,7 @@ class MenuValidation {
   static validateMenuFetchInput(data) {
     // Safely log only the data property to avoid circular references
     const safeDataToLog = data && typeof data === 'object' ? (data.data || 'No data property found') : data;
-    console.log("poopoo validateMenuFetchInput received:", JSON.stringify(safeDataToLog));
+    console.log("validateMenuFetchInput received:", JSON.stringify(safeDataToLog));
     
     if (!data || !data.data) {
       throw new functions.https.HttpsError(
@@ -144,7 +144,7 @@ class MenuValidation {
     }
     
     const { restaurantId, inStock = true } = data.data;
-    console.log("poopoo extracted restaurantId:", restaurantId, "inStock:", inStock);
+    console.log("extracted restaurantId:", restaurantId, "inStock:", inStock);
     this.validateRestaurantId(restaurantId);
     
     return { restaurantId, inStock };

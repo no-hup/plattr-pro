@@ -34,7 +34,7 @@ const getServerTimestamp = () => {
     console.error('Error getting serverTimestamp:', e);
   }
   // Fallback if serverTimestamp isn't available
-  // console.log('poopoo Using fallback timestamp implementation');
+  // console.log('Using fallback timestamp implementation');
   return { _seconds: Math.floor(Date.now() / 1000), _nanoseconds: 0 };
 };
 
