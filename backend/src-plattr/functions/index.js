@@ -18,7 +18,13 @@ const offersFunctions = require('./offers/indexOffers');
 const adminAppFunctions = require('./adminApp/indexAdminApp');
 const adminMenuFunctions = require('./adminApp/menu_admin');
 
-exports.table = tableFunctions;
+// FL: move is a table verb, so it joins the table group rather than opening a second door (OR-4).
+// The group must stay a nested export — see INFRASTRUCTURE.md, the Cloud Run requirement.
+exports.table = {
+  ...tableFunctions,
+  moveTable: require('./lib/api/floor').moveHandler,
+  setMerge: require('./lib/api/floor').setMergeHandler,
+};
 exports.server = serverFunctions;
 exports.customer = customerFunctions;
 exports.cart = {
@@ -93,6 +99,11 @@ exports.dayClose = {
   get: require('./lib/api/dayClose').getHandler,
   move: require('./lib/api/dayClose').moveHandler,
   voidMove: require('./lib/api/dayClose').voidMoveHandler,
+};
+exports.floor = {
+  get: require('./lib/api/floor').getHandler,
+  open: require('./lib/api/floor').openHandler,
+  clear: require('./lib/api/floor').clearHandler,
 };
 exports.billing = {
   preview: require('./lib/api/billing').previewHandler,
