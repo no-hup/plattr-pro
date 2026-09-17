@@ -1,6 +1,6 @@
 # KT · Print path
 
-Status: **v2, 2026-09-17 — Review answered and signed.** Nothing built. Written against BL (built), ST (built), OF (built, uncommitted),
+Status: **v3, 2026-09-18 — KT-D1c revises who the print agent is; see the Decisions table.** Nothing built. Written against BL (built), ST (built), OF (built, uncommitted),
 the live order code (`orders/createOrUpdateOrder.js`, `cart/updateCartStatus.js`) and the Flutter kitchen app.
 Fan-out and donor review not yet run. **All six Review calls were answered by Shaurya on 2026-09-17**
 and are now rows in Decisions; this sheet has been rewritten around them. The one that reshaped it:
@@ -67,6 +67,64 @@ its own internet connection to pull jobs; and a second deployable with no update
 The queue below is unchanged by the decision. A job is claimed with a lease and acknowledged, exactly as
 drafted — the only difference is **who claims it**. Draft v1 said "the till"; it now says "a print agent",
 which is the bridge by default and may be the till.
+
+### Revised 2026-09-18 (KT-D1c): the first agent is the kitchen tablet, not a box. Delegated by Shaurya.
+
+KT-D1's architecture stands. The queue, the lease, the ack, the status line, at-least-once — all
+unchanged. What changes is the default answer to "who claims it", and one thing upstream of it.
+
+**The donor review offered a third path and it is rejected.** URY's `websocket_print` is a browser
+tab with a hidden iframe calling `window.print()` (`websocket_print.js:41-57`). It addresses the
+printer **not at all** — paper comes out of whatever that tab's default printer is. Our job statement
+is *three* printers in three places: food to the kitchen, drinks to the bar, the bill to the counter.
+One default printer cannot do that. It also marks the invoice printed with no subscriber listening
+(`ury_print.py:185-192`). This is the same call the last row of Decisions already makes: a browser
+print dialog is not a receipt path.
+
+So the honest choice was the bridge box, or the Flutter kitchen app — which is Dart, so unlike the
+React till it *can* open a TCP socket (`dart:io`), and it is already installed on a tablet in the
+kitchen and already updated through the Play Store.
+
+**What made that a real choice: move the encoder to the server.** Draft v1 put the ~70 lines of
+ESC/POS encoding in the till because the till was the print station. With a queue, that is the wrong
+side of the wire. The server already renders the ticket and pads every row to `charsPerLine` (R2, R3)
+— it should render the last inch too, and put **bytes** on the job document rather than rows.
+
+The agent then has no ticket logic in it at all: pull a job, open TCP 9100, write the bytes, ack.
+That is about thirty lines and no arithmetic, in whatever language the agent happens to be. The
+encoder stays exactly where the sheet wanted it — one implementation, in TypeScript, with a jest test
+against a hand-written expected byte string — instead of being duplicated per agent.
+
+**So:**
+
+- **Agent #1 is the Flutter kitchen app.** No hardware, no setup visit, nothing new to deploy or
+  monitor. It ships in an app we already build and already push updates to.
+- **The bridge box is not cancelled, it is demoted to the second implementation.** Same protocol,
+  same job document, no rework — the day a restaurant's tablet proves unreliable, or a restaurant has
+  no kitchen tablet, the box drops in behind the identical contract.
+- **TD-032 is deferred, not solved.** The moment we ship a box, the update-and-monitoring story is
+  owed. Today we do not ship one.
+
+**Why this is the practical call for both sides.** The restaurant pays ₹0 instead of ₹4,000 and gets
+no setup visit, using the tablet it already owns. We ship no hardware, support no hardware, and keep
+the one piece of this system that runs where we cannot see it out of the product until something
+forces it. The first live restaurant is reachable without a supply chain.
+
+**What it costs, written down rather than discovered later.**
+
+- A sleeping, unplugged or pocketed tablet prints nothing. This is the bridge's real advantage and we
+  are giving it up on purpose.
+- The agent needs a foreground service and a wake lock, and on Android 16 the local-network
+  permission. None of that is exotic; all of it is unverified on the actual tablet — see the
+  hardware-in-the-room list.
+- Agent changes ship at Play Store speed, not at our speed.
+
+**What makes it safe is the reconciler, and it is now load-bearing rather than a nicety.** URY runs a
+cron every minute that finds orders with no ticket, prints a duplicate, tags it `Duplicate` and logs
+it (`ury_kot_validation.py:12-36`, with a one-minute grace window so an order still being typed is
+not swept). With a box, that is a good idea. With a tablet as the agent, it is what turns "the tablet
+was asleep for four minutes" from lost food into a late ticket that announces itself. Build it in the
+same phase as the agent, not after.
 
 ---
 
@@ -347,6 +405,10 @@ document to print; a draft on paper is the estimate, and that is OF's, gated on 
 | 2026-09-17 | A KOT carries no prices (R11), by default | Every Indian KOT I have seen does the same. It is also one fewer place for money to disagree with the bill |
 | 2026-09-17 | `Rs.` not `₹` on paper, as a config string | The standard ESC/POS code pages have no rupee glyph; a printer prints `?` or a box. Rendering ₹ as a raster image is a real option and is KT-D5 |
 | 2026-09-17 | The estimate slip is rendered in the till, not the server (the one exception to R3) | There is no server to ask; that is the definition of the scenario. Six rows, no money maths beyond the cached total |
+| 2026-09-18 | **The first print agent is the Flutter kitchen app, not a bridge box** (KT-D1c, delegated) | The restaurant pays ₹0 and gets no setup visit; we ship and support no hardware. The bridge is demoted to the second implementation behind the identical protocol, so it drops in later with no rework |
+| 2026-09-18 | **The server encodes to bytes; the job document carries bytes, not rows** | This is what makes the agent thirty lines in any language, so the encoder stays one TypeScript implementation with one jest test instead of being rewritten per agent. Draft v1 put it in the till only because the till was the print station |
+| 2026-09-18 | URY's `websocket_print` browser-tab spooler is rejected | It addresses no printer — paper comes out of that tab's default. The job is three printers in three places, and it marks the invoice printed with no subscriber listening |
+| 2026-09-18 | The every-minute reconciler is built in the same phase as the agent, not after | With a box it is a nicety. With a tablet as the agent it is what turns "asleep for four minutes" into a late, labelled ticket instead of food nobody cooks |
 | 2026-09-17 | `window.print()` is not used anywhere, including for the estimate | OF's current `EstimateScreen` shows a printable `<div>`. It becomes a ticket through the same encoder, so there is one path to paper and one thing to test. A browser print dialog is not a receipt path |
 | 2026-09-17 | Reprinting a KOT is recorded on the job, not in ST's audit trail; reprinting a **bill** stays an ST audit row | A kitchen ticket is not money. A second bill copy is, and ST already has the `reprint` action with `amount = payable` |
 | 2026-09-17 | A cancel is a new ticket at the stations the original went to, not at every station | Odoo prints the diff of what the kitchen was last told (`pos_restaurant/models/pos_session.py:19-35`). The job rows are our record of what was told, so the diff is free |
