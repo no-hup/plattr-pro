@@ -5,15 +5,20 @@ import { fetchReasons, useApproval, type LineSnapshot } from './features/approva
 import { BillScreen } from './features/billing/BillScreen'
 import { TenderScreen } from './features/payments/TenderScreen'
 import { DayCloseScreen } from './features/dayclose/DayCloseScreen'
+import { ReconcileScreen } from './features/offline/ReconcileScreen'
+import { useOnline } from './features/offline/useOnline'
+import { startSync } from './features/offline/sync'
 
 // Screens are picked by the URL: ?r=<restaurantId>&line=<lineId> discounts one line (ST); ?r=&draft=<draftId> shows that draft's bill (BL);
-// ?r=&bill=<billId> takes money against an issued bill (PY); ?r=&day=1 (or &day=2026-09-16) counts the drawer and closes the day (DC).
+// ?r=&bill=<billId> takes money against an issued bill (PY); ?r=&day=1 (or &day=2026-09-16) counts the drawer and closes the day (DC);
+// ?r=&reconcile=1 works through the estimates printed while the server was gone (OF).
 const q = new URLSearchParams(location.search)
 const RESTAURANT = q.get('r') ?? ''
 const LINE = q.get('line') ?? ''
 const DRAFT = q.get('draft') ?? ''
 const BILL = q.get('bill') ?? ''
 const DAY = q.get('day') ?? ''
+const RECONCILE = q.get('reconcile') ?? ''
 
 export default function App() {
   const [session, setSession] = useState<{ sessionId: string; name: string } | null>(null)
@@ -21,8 +26,10 @@ export default function App() {
   const [reasons, setReasons] = useState<string[]>([])
   const [line, setLine] = useState<LineSnapshot | null>(null)
   const { apply, busy, error } = useApproval()
+  const { offline, since } = useOnline()
 
   useEffect(() => { if (session) fetchReasons(RESTAURANT, session.sessionId).then(setReasons).catch(e => setMsg(`Error: ${e.message}`)) }, [session])
+  useEffect(() => { if (session) return startSync({ restaurantId: RESTAURANT, sessionId: session.sessionId }) }, [session])   // OF-S20
   useEffect(() => {
     if (!error) return
     // A challenge the cashier cancelled keeps the server's own message; a plain 403 is a role refusal.
@@ -54,11 +61,15 @@ export default function App() {
   return (
     <main>
       <h1>Till</h1>
+      {/* OF-S5: blind, not quiet. The time is the last answer's; the banner leaves on the next one. */}
+      {offline && <p data-testid="offline-banner">No connection since {new Date(since).toTimeString().slice(0, 5)}</p>}
       {!session ? (
         <form onSubmit={login}>
           <input name="email" placeholder="email" data-testid="email" /> <input name="password" type="password" placeholder="password" data-testid="password" />
           <button type="submit" data-testid="login">Log in</button>
         </form>
+      ) : RECONCILE ? (
+        <ReconcileScreen ctx={{ restaurantId: RESTAURANT, sessionId: session.sessionId }} />
       ) : DAY ? (
         <DayCloseScreen ctx={{ restaurantId: RESTAURANT, sessionId: session.sessionId, ...(DAY === '1' ? {} : { businessDate: DAY }) }} />
       ) : BILL ? (

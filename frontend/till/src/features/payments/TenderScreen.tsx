@@ -1,12 +1,16 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { fmt, toMinor, useTender, type Ctx, type Tender } from './useTender'
+import { EstimateScreen } from '../offline/EstimateScreen'
+import { getBill } from '../offline/cache'
+import { useOnline } from '../offline/useOnline'
 
 // PY · the tender screen for one issued bill. The server owns every number: this screen shows
 // the outstanding it was told, previews change for cash, and sends integers. Drawer hardware is
 // KT's; here `opensDrawer` from the response flips a visible signal the browser test can assert.
 
 export function TenderScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
-  const { bill, busy, error, last, take, refund, voidRow } = useTender(ctx)
+  const { bill, busy, error, last, asOf, take, refund, voidRow } = useTender(ctx)
+  const { offline } = useOnline()
   const [tender, setTender] = useState<Tender | null>(null)
   const [text, setText] = useState('')
   const [ref, setRef] = useState('')
@@ -33,6 +37,8 @@ export function TenderScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) 
   const outstanding = bill?.outstanding ?? 0
   const change = tender?.kind === 'cash' && minor !== null && minor > outstanding ? minor - outstanding : 0
   const settled = !!bill && bill.status === 'paid'
+  // The figure on screen was answered before the cut (asOf null) or read from the cache after it: its time either way.
+  const cachedAt = asOf ?? getBill(ctx.billId)?.at ?? null
 
   async function onTake(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -60,6 +66,13 @@ export function TenderScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) 
         <span data-testid="status"> [{bill.status}]</span>
       </p>
       <p data-testid="drawer" hidden={!drawer}>DRAWER OPEN</p>
+      {/* OF-S17: issued, then dark. The slip says what is due on which bill; the morning does take only. */}
+      {offline && !settled && cachedAt !== null && (
+        <>
+          <p data-testid="due-offline">due {fmt(outstanding)} on {bill.billId} (as of {new Date(cachedAt).toTimeString().slice(0, 5)})</p>
+          <EstimateScreen billId={bill.billId} amountMinor={outstanding} previewAt={cachedAt} />
+        </>
+      )}
 
       {settled || bill.status === 'cancelled' ? (
         <p data-testid="nothing-to-collect">{bill.status === 'cancelled' ? 'Bill cancelled' : 'Nothing to collect'}</p>

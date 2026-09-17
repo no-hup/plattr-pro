@@ -177,6 +177,74 @@ describe('domain/billing preview(lines, billDiscount, charges, cfg)', () => {
   });
 });
 
+describe('domain/billing preview — TD-016: a scoped offer lands on the lines it targets', () => {
+  // `targets` is the offer engine's own appliedItems[], cartItemId → minor units. The test lines use
+  // lineId as cartItemId, the way line() builds them. live[] is sorted by lineId, so naan comes first.
+
+  it('TD-016a an ITEM offer of 24000 on the paneer leaves the naan alone: billDiscount 0/24000, line taxable 12000/24000 (old code split it 4800/19200)', () => {
+    const d = { ...bd(24000), targets: { paneer: 24000 } };
+    const v = ok(preview([line('paneer', 48000), line('naan', 12000)], d, [], cfg));
+    const naan = v.lines.find(l => l.lineId === 'naan')!;
+    const paneer = v.lines.find(l => l.lineId === 'paneer')!;
+    expect([naan.billDiscount, paneer.billDiscount]).toEqual([0, 24000]);
+    expect([naan.tax['naan_base'].taxable, paneer.tax['paneer_base'].taxable]).toEqual([12000, 24000]);
+    // The bill total never moved — that is exactly why this hid: 36000 taxable, [900, 900], payable 37800.
+    expect(amounts(v, 'food')).toEqual({ taxable: 36000, parts: [900, 900], total: 37800 });
+    expect(v.payable).toBe(37800);
+  });
+
+  it('TD-016b with liquor beside food the leak is real money: food-only offer → liquor 18957 + VAT 1043, food 24000 [600,600], payable 45200 (old code: 45600, and CGST/SGST filed as 776 each)', () => {
+    const d = { ...bd(24000), targets: { paneer: 24000 } };
+    const v = ok(preview([line('paneer', 48000), line('beer', 20000, { block: VAT })], d, [], cfg));
+    expect(amounts(v, 'liquor')).toEqual({ taxable: 18957, parts: [1043], total: 20000 });
+    expect(amounts(v, 'food')).toEqual({ taxable: 24000, parts: [600, 600], total: 25200 });
+    expect(v.payable).toBe(45200);
+    expect(v.roundOff).toBe(0);
+  });
+
+  it('TD-016c an ORDER offer carries no targets and still spreads by net share: 24000 over 48000+12000 → 19200/4800', () => {
+    const v = ok(preview([line('paneer', 48000), line('naan', 12000)], bd(24000), [], cfg));
+    expect(v.lines.find(l => l.lineId === 'naan')!.billDiscount).toBe(4800);
+    expect(v.lines.find(l => l.lineId === 'paneer')!.billDiscount).toBe(19200);
+    expect(v.payable).toBe(37800);
+  });
+
+  it('TD-016d BL-S12 split: the half that holds none of the targeted lines gets no discount at all, and discount is null so the bill claims none', () => {
+    const d = { ...bd(24000), targets: { paneer: 24000 } };
+    const v = ok(preview([line('naan', 12000)], d, [], cfg));
+    expect(v.lines[0].billDiscount).toBe(0);
+    expect(v.discount).toBeNull();
+    expect(v.payable).toBe(12600);
+  });
+
+  it('TD-016e split with the targets divided: only the part sitting on this bill is given (6000 of 10000), so the two halves cannot each claim the whole offer', () => {
+    const d = { ...bd(10000), targets: { paneer: 6000, naan: 4000 } };
+    const v = ok(preview([line('paneer', 48000)], d, [], cfg));
+    expect(v.lines[0].billDiscount).toBe(6000);
+    expect(v.discount!.amount).toBe(6000);
+    expect(amounts(v, 'food')).toEqual({ taxable: 42000, parts: [1050, 1050], total: 44100 });
+  });
+
+  it('TD-016f an offer worth more than its own target line can absorb is refused, never spilled onto the others', () => {
+    const d = { ...bd(60000), targets: { paneer: 60000 } };
+    expect(preview([line('paneer', 48000), line('naan', 12000)], d, [], cfg)).toMatchObject({ ok: false, code: 'failed-precondition' });
+  });
+
+  it('TD-016g the targeted line is voided → nothing to discount, the surviving line keeps its full price', () => {
+    const d = { ...bd(24000), targets: { paneer: 24000 } };
+    const v = ok(preview([line('paneer', 48000, { countsTowardTotal: false }), line('naan', 12000)], d, [], cfg));
+    expect(v.lines.find(l => l.lineId === 'naan')!.billDiscount).toBe(0);
+    expect(v.payable).toBe(12600);
+  });
+
+  it('TD-016h a BOGO across two lines of the same dish: targets both cart items, nothing reaches the naan', () => {
+    const d = { ...bd(24000), targets: { paneerA: 12000, paneerB: 12000 } };
+    const v = ok(preview([line('paneerA', 24000), line('paneerB', 24000), line('naan', 12000)], d, [], cfg));
+    expect(v.lines.map(l => [l.lineId, l.billDiscount])).toEqual([['naan', 0], ['paneerA', 12000], ['paneerB', 12000]]);
+    expect(v.payable).toBe(37800);
+  });
+});
+
 describe('domain/billing apportion / taxOn', () => {
   it('apportion 100 over [0, 0] → [0, 0]; 100 over [1, 0] → [100, 0] (leftover on the last non-zero weight)', () => {
     expect(apportion(100, [0, 0])).toEqual([0, 0]);

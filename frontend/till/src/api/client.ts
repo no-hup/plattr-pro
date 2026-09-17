@@ -19,16 +19,31 @@ export class ApiError extends Error {
 // challenges per call is the ceiling; the cashier can also press Cancel at any time.
 const MAX_CHALLENGES = 10
 
+// OF R5: the till knows it is offline only because a call failed. These two times are the whole fact;
+// features/offline reads them and nothing else in the till looks at navigator.onLine.
+export const net = { answeredAt: 0, failedAt: 0 }
+const listeners = new Set<() => void>()
+export function onNet(fn: () => void): () => void { listeners.add(fn); return () => { listeners.delete(fn) } }
+function mark(k: 'answeredAt' | 'failedAt') { net[k] = Date.now(); listeners.forEach(f => f()) }
+
 export async function call<T = unknown>(endpoint: string, body: Record<string, unknown> = {}, challenges = 0): Promise<T> {
-  const res = await fetch(`${BASE}/${endpoint}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ data: body }),
-  })
-  const json = await res.json()
-  const out = json.result ?? json
+  let res: Response
+  let json: { result?: unknown; error?: { message?: string; code?: string; details?: { data?: Record<string, unknown> }; data?: Record<string, unknown> } } & Record<string, unknown>
+  try {
+    res = await fetch(`${BASE}/${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: body }),
+    })
+    json = await res.json()
+  } catch (e) {
+    mark('failedAt')
+    throw new ApiError('unavailable', 'No connection', { cause: String(e) })
+  }
+  mark('answeredAt')
+  const out = (json.result ?? json) as Record<string, unknown> & { status?: string; message?: string }
   if (res.ok && out.status !== 'error') return out as T
-  const err = json.error ?? out
+  const err = (json.error ?? out) as { message?: string; code?: string; details?: { data?: Record<string, unknown> }; data?: Record<string, unknown> }
   const data = err.details?.data ?? err.data ?? {}
   // Ask whenever the server asks, including after a wrong credential (ST-S3: "till asks again").
   const requires = data.requires as Requires | undefined
@@ -37,5 +52,5 @@ export async function call<T = unknown>(endpoint: string, body: Record<string, u
     const cred = await challenge(requires, data)
     if (cred !== null) return call<T>(endpoint, { ...body, [requires]: cred }, challenges + 1)
   }
-  throw new ApiError(data.code ?? err.code ?? 'unknown', err.message ?? out.message ?? 'Request failed', data)
+  throw new ApiError(String(data.code ?? err.code ?? 'unknown'), err.message ?? out.message ?? 'Request failed', data)
 }

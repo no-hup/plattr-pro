@@ -4,7 +4,7 @@ import { CartItem, PlaceContext, TaxBlock, componentShares, placeLine } from './
 
 const FOOD: TaxBlock = { label: 'GST', mode: 'exclusive', collect: true, parts: [{ label: 'CGST', rateBps: 250 }, { label: 'SGST', rateBps: 250 }] };
 const LIQ: TaxBlock = { label: 'Liquor', mode: 'inclusive', collect: true, parts: [] };
-const ctx: PlaceContext = { cid: 'c1', orderId: 'o1', cartId: 'k1', tableId: 't7', sessionId: 's1', draftId: 'd1', placedAt: 1000, placedBy: 'guest', blocks: { food: FOOD, liquor: LIQ } };
+const ctx: PlaceContext = { cid: 'c1', orderId: 'o1', cartId: 'k1', tableId: 't7', sessionId: 's1', draftId: 'd1', placedAt: 1000, placedBy: 'guest', blocks: { food: FOOD, liquor: LIQ }, sent: true };
 
 const burger = (over: Partial<CartItem> = {}): CartItem => ({
   menuItemId: 'mi_burger', name: 'Burger', quantity: 3, cartItemId: '1', taxBlockId: 'food', taxCode: '9963',
@@ -44,12 +44,23 @@ describe('domain/line placeLine', () => {
     expect(l.components.every(c => c.taxBlockId === null)).toBe(true);
     expect(l.taxBlocks).toEqual({});
   });
-  it('the line starts unsent, unbilled, v 0, counted, in the table\'s draft, with its provenance', () => {
+  it('the line starts unbilled, v 0, counted, in the table\'s draft, with its provenance', () => {
     expect(placeLine(burger(), ctx, 'L1')).toMatchObject({
       lineId: 'L1', cid: 'c1', orderId: 'o1', cartId: 'k1', cartItemId: '1', tableId: 't7', sessionId: 's1',
       placedAt: 1000, placedBy: 'guest', menuItemId: 'mi_burger', name: 'Burger',
-      sent: false, v: 0, countsTowardTotal: true, draftId: 'd1', billId: null,
+      v: 0, countsTowardTotal: true, draftId: 'd1', billId: null,
     });
+  });
+
+  // ST reads `sent` to decide whether a void is free or a PIN (ST-S5, R8). It used to be
+  // hardcoded false on every line ever written, which made that whole branch unreachable:
+  // no void anywhere was ever gated, and every one was logged P1 instead of P0.
+  it('carries the caller\'s `sent`: placing a round normally tells the kitchen', () => {
+    expect(placeLine(burger(), ctx, 'L1').sent).toBe(true);
+  });
+
+  it('is unsent when a waiter still has to confirm the round', () => {
+    expect(placeLine(burger(), { ...ctx, sent: false }, 'L1').sent).toBe(false);
   });
   it('component ids are stable and unique inside the line, so bill.lines[].tax can be keyed by them', () => {
     const ids = placeLine(burger(), ctx, 'L1').components.map(c => c.id);

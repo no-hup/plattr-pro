@@ -1,6 +1,7 @@
 // ST app layer: apply() with fake adapters and a fake clock. No emulator.
 import { apply, reasons, ApprovalError, Ports, Tx, Staff } from './approvals';
 import { Line, PinState, AuditRow, DEFAULTS } from '../domain/approvals';
+import { OFFLINE_DEFAULTS } from '../domain/offline';
 
 const RID = 'r1';
 const MIN = 60_000;
@@ -32,6 +33,7 @@ function fakePorts(opts: { staff?: Partial<Staff>; config?: unknown; failAudit?:
         getLine: async id => lines.get(id) ?? null,
         setLine: (id, line) => { pendingLines.set(id, line); },
         createAudit: (id, row) => { if (opts.failAudit) throw new Error('firestore unavailable'); if (audits.has(id)) throw new Error('already exists'); pendingAudits.set(id, row); },
+        getAudit: async id => audits.get(id) ?? null,
       };
       const out = await fn(t);
       for (const [k, v] of pendingLines) lines.set(k, v);
@@ -282,8 +284,9 @@ describe('app/approvals apply()', () => {
 
   it('reasons(): staff session → config reasons; missing config → the 7 defaults; bad session → unauthenticated; never the limit', async () => {
     const p = fakePorts({ config: { reasons: ['placard', 'other'], discountPinAbovePercent: 5 } });
-    expect(await reasons(p, { restaurantId: RID, sessionId: 's1' })).toEqual({ reasons: ['placard', 'other'] });
-    expect(await reasons(fakePorts(), { restaurantId: RID, sessionId: 's1' })).toEqual({ reasons: DEFAULTS.reasons });
+    // OF: the till's offline keys ride the same read (their own defaults when the block is missing)
+    expect(await reasons(p, { restaurantId: RID, sessionId: 's1' })).toEqual({ reasons: ['placard', 'other'], offline: OFFLINE_DEFAULTS });
+    expect(await reasons(fakePorts(), { restaurantId: RID, sessionId: 's1' })).toEqual({ reasons: DEFAULTS.reasons, offline: OFFLINE_DEFAULTS });
     expect((await fails(reasons(p, { restaurantId: RID, sessionId: 'ghost' }))).code).toBe('unauthenticated');
   });
 });

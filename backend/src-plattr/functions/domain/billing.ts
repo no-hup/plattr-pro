@@ -9,7 +9,12 @@ export const BILLING_DEFAULTS: BillingConfig = { partRounding: 'independent', ro
 
 export interface ChargeIn { type: string; pctBps: number; taxBlockId: string }
 export interface Charge extends ChargeIn { base: number; amount: number; tax: ComponentTax }
-export interface BillDiscount { amount: number; pct: number; source: DiscountSource }
+export interface BillDiscount {
+  amount: number; pct: number; source: DiscountSource;
+  /** TD-016. cartItemId → minor units, as the offer itself scored each item. Present on an ITEM- or
+   *  CATEGORY-scoped offer, absent on an ORDER offer and on a manual comp, which have no target. */
+  targets?: Record<string, number>;
+}
 export interface PartAmount { label: string; rateBps: number; amount: number }
 export interface ComponentTax { taxable: number; parts: PartAmount[] }
 export interface BilledLine extends Line { billDiscount: number; tax: Record<string, ComponentTax>; credited: { qty: number } }
@@ -64,8 +69,20 @@ export function preview(lines: Line[], discount: BillDiscount | null, charges: C
   if (live.some(l => l.qty < 1 || l.components.some(c => c.unitListPrice < 0))) return { ok: false, code: 'invalid-argument', message: 'qty below 1 or a negative component price' };
   const nets = live.map(net);
   if (nets.some(n => n < 0)) return { ok: false, code: 'failed-precondition', message: 'line below zero' };
-  const shares = discount ? apportion(discount.amount, nets) : live.map(() => 0);
-  if (discount && discount.amount > nets.reduce((a, n) => a + n, 0)) return { ok: false, code: 'failed-precondition', message: 'discount exceeds bill' };
+  // R1 / TD-016: a scoped offer names the cart items it discounts, and those names are the weights, so
+  // the cut lands on the lines the offer targets and never on a naan sitting beside them. An ORDER offer
+  // and a manual comp name nothing and spread across every line by net share, exactly as before.
+  const tgt = discount?.targets;
+  const weights = tgt ? live.map(l => tgt[l.cartItemId] ?? 0) : nets;
+  const here = weights.reduce((a, w) => a + w, 0);
+  const all = tgt ? Object.values(tgt).reduce((a, w) => a + w, 0) : here;
+  // Every line the offer names is on this bill → its own total, to the paise, so no existing figure moves.
+  // Split bill (BL-S12) → only the part sitting here, so the two halves cannot each claim the whole offer.
+  const want = !discount ? 0 : !tgt || here >= all ? discount.amount : here;
+  const reach = weights.reduce((a, w, i) => a + (w > 0 ? nets[i] : 0), 0);   // what the weighted lines can absorb
+  if (want > reach) return { ok: false, code: 'failed-precondition', message: 'discount exceeds bill' };
+  const shares = apportion(want, weights);
+  const applied: BillDiscount | null = discount && want > 0 ? { ...discount, amount: want } : null;
 
   const blocks = new Map<string, Block>();
   const addTo = (id: string, def: TaxBlock, t: ComponentTax) => {
@@ -110,7 +127,7 @@ export function preview(lines: Line[], discount: BillDiscount | null, charges: C
   const sum = list.reduce((a, b) => a + b.total, 0);
   const taxTotal = sum - subtotal;
   const roundOff = halfUp(sum, cfg.roundTo) - sum;
-  return { ok: true, value: { lines: [...billed, ...voided], blocks: list, charges: out, discount, subtotal, taxTotal, roundOff, payable: sum + roundOff } };
+  return { ok: true, value: { lines: [...billed, ...voided], blocks: list, charges: out, discount: applied, subtotal, taxTotal, roundOff, payable: sum + roundOff } };
 }
 
 // ---- issue / cancel / credit note (R3, R4). The number and counter come from domain/invoice inside the caller's transaction.
