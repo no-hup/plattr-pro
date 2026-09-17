@@ -16,6 +16,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { checkEmulator, resetData, resetFeatureFlags } from './lib/data.js';
+import config from './lib/config.js';
 import { narrator } from './lib/narrator.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -68,8 +69,8 @@ async function main() {
   // 1. Check emulator
   const alive = await checkEmulator();
   if (!alive) {
-    console.error('[runner] ERROR: Firebase emulator not reachable at http://127.0.0.1:5002');
-    console.error('[runner] Start it with: cd backend/src-plattr && npm run emulators');
+    console.error(`[runner] ERROR: Firebase emulator not reachable at ${config.BASE_URL}`);
+    console.error('[runner] Start it with: cd backend/src-plattr && ./emu.sh  (see AGENT_TESTING_STARTUP_GUIDELINE.md)');
     process.exit(1);
   }
   console.log('[runner] Emulator: OK\n');

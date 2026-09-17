@@ -20,7 +20,7 @@
             "tableId": "tbl_meg_7",
             "sessionId": "SESSIONID_1",
             "restaurantId": "res_meghana",
-            "lastUpdated": 1788802992678,
+            "lastUpdated": 1788824882564,
             "priceInfo": {
               "basePrice": 860,
               "finalPrice": 824,
@@ -297,7 +297,7 @@
           "_seconds": 1780000000,
           "_nanoseconds": 0
         },
-        "updatedAt": 1788802992000,
+        "updatedAt": 1788824882000,
         "isActive": true,
         "assignedServer": "",
         "notes": "",
@@ -322,7 +322,7 @@
         "paymentStatus": "unpaid",
         "carts": [
           {
-            "lastUpdated": 1788802988243,
+            "lastUpdated": 1788824880223,
             "priceInfo": {
               "totalAddonBasePrice": 0,
               "totalDiscountAmount": 36,
@@ -457,7 +457,7 @@
           "_seconds": 1780000000,
           "_nanoseconds": 0
         },
-        "updatedAt": 1788802992000,
+        "updatedAt": 1788824882000,
         "isActive": true,
         "assignedServer": "",
         "notes": "",
@@ -470,12 +470,12 @@
       {
         "restaurantId": "res_meghana",
         "tableId": "tbl_meg_11",
-        "orderNumber": "ORD-00003",
+        "orderNumber": "ORD-00002",
         "orderStatus": "IN_PROGRESS",
         "paymentStatus": "unpaid",
         "carts": [
           {
-            "lastUpdated": 1788802988243,
+            "lastUpdated": 1788824880041,
             "priceInfo": {
               "totalAddonBasePrice": 0,
               "totalDiscountAmount": 36,
@@ -610,7 +610,7 @@
           "_seconds": 1780000000,
           "_nanoseconds": 0
         },
-        "updatedAt": 1788802989000,
+        "updatedAt": 1788824882000,
         "isActive": true,
         "assignedServer": "",
         "notes": "",
@@ -623,12 +623,12 @@
       {
         "restaurantId": "res_meghana",
         "tableId": "tbl_meg_12",
-        "orderNumber": "ORD-00002",
+        "orderNumber": "ORD-00003",
         "orderStatus": "IN_PROGRESS",
         "paymentStatus": "unpaid",
         "carts": [
           {
-            "lastUpdated": 1788802988152,
+            "lastUpdated": 1788824880225,
             "priceInfo": {
               "totalAddonBasePrice": 0,
               "totalDiscountAmount": 36,
@@ -763,7 +763,7 @@
           "_seconds": 1780000000,
           "_nanoseconds": 0
         },
-        "updatedAt": 1788802989000,
+        "updatedAt": 1788824882000,
         "isActive": true,
         "assignedServer": "",
         "notes": "",
@@ -781,7 +781,7 @@
         "paymentStatus": "unpaid",
         "carts": [
           {
-            "lastUpdated": 1788802987647,
+            "lastUpdated": 1788824879100,
             "priceInfo": {
               "totalAddonBasePrice": 0,
               "totalDiscountAmount": 36,
@@ -916,7 +916,7 @@
           "_seconds": 1780000000,
           "_nanoseconds": 0
         },
-        "updatedAt": 1788802988000,
+        "updatedAt": 1788824880000,
         "isActive": true,
         "assignedServer": "",
         "notes": "",

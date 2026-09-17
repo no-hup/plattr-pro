@@ -49,7 +49,7 @@
     },
     "carts": [
       {
-        "lastUpdated": 1788802980608,
+        "lastUpdated": 1788824871990,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -140,7 +140,7 @@
           },
           {
             "status": "PREPARING",
-            "timestamp": 1788802981979,
+            "timestamp": 1788824872798,
             "userId": "system",
             "notes": ""
           }
@@ -154,7 +154,7 @@
         "assignedTo": "system"
       },
       {
-        "lastUpdated": 1788802982014,
+        "lastUpdated": 1788824872824,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -245,7 +245,7 @@
           },
           {
             "status": "READY",
-            "timestamp": 1788802982064,
+            "timestamp": 1788824872875,
             "userId": "system",
             "notes": ""
           }
@@ -303,6 +303,6 @@
         "status": "PENDING"
       }
     ],
-    "updatedAt": 1788802982064
+    "updatedAt": 1788824872875
   }
 }

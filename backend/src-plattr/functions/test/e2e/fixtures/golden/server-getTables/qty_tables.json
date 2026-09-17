@@ -40,7 +40,7 @@
       {
         "id": "tbl_meg_4",
         "number": "4",
-        "status": "vacant",
+        "status": "reserved",
         "capacity": 6,
         "assignedServerId": null,
         "isOccupied": false,

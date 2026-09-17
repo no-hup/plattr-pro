@@ -29,9 +29,11 @@ export const SLUG = {
 // ── Fixture capture ─────────────────────────────────────────────────────────
 const captured = new Map();   // endpoint -> Map(label -> response)
 
-/** Keep the FIRST successful response per (endpoint,label): stable across reruns. */
+/** Keep the FIRST successful response per (endpoint,label): stable across reruns.
+ *  A label starting with '_' is a transient probe (e.g. a poll deliberately racing
+ *  other traffic) — asserted on by its scenario but never written as a golden. */
 function capture(endpoint, label, resp) {
-  if (!resp || resp.status === 'error') return;
+  if (!resp || resp.status === 'error' || label.startsWith('_')) return;
   if (!captured.has(endpoint)) captured.set(endpoint, new Map());
   const slot = captured.get(endpoint);
   if (!slot.has(label)) slot.set(label, resp);

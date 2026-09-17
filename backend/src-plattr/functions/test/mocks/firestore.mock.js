@@ -27,9 +27,16 @@ function createMockTransaction(mockData) {
             const path = ref.path;
             return Promise.resolve(mockDocSnapshot(ref, mockData[path]));
         }),
-        set: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn()
+        // set/update/delete write back into the same store `get` reads from. They used to be
+        // no-ops, which was fine while every test asserted on a handler's return value — but a
+        // handler that writes to a SECOND collection (cart status → the line snapshots the till
+        // bills from) has nothing to assert on otherwise, and a no-op mock would report a bill
+        // fix as working whether or not it wrote anything.
+        set: jest.fn((ref, data) => { mockData[ref.path] = data; }),
+        update: jest.fn((ref, patch) => {
+            mockData[ref.path] = { ...(mockData[ref.path] || {}), ...patch };
+        }),
+        delete: jest.fn((ref) => { delete mockData[ref.path]; })
     };
 }
 

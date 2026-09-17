@@ -3,7 +3,7 @@
   "message": "Order retrieved successfully",
   "data": {
     "id": "ID_1",
-    "orderNumber": "ORD-00006",
+    "orderNumber": "ORD-00005",
     "orderStatus": "IN_PROGRESS",
     "createdAt": {
       "_seconds": 1780000000,
@@ -79,7 +79,7 @@
     "notes": "",
     "carts": [
       {
-        "lastUpdated": 1788802985207,
+        "lastUpdated": 1788824875776,
         "priceInfo": {
           "basePrice": 620,
           "finalPrice": 620,

@@ -77,7 +77,7 @@ function reseed({ rebuild = true } = {}) {
   }
   execSync(
     'node mock/importMockData5.js --file=mock/MockData7ProductionMenus.json --clean --refresh-timestamps',
-    { cwd: FUNCTIONS_DIR, stdio: 'pipe', timeout: 60000, env: { ...process.env, FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080' } },
+    { cwd: FUNCTIONS_DIR, stdio: 'pipe', timeout: 60000, env: { ...process.env, FIRESTORE_EMULATOR_HOST: process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080' } },
   );
 }
 
@@ -186,7 +186,7 @@ async function main() {
   }
 
   if (!(await checkEmulator())) {
-    console.error('Emulator not reachable at 127.0.0.1:5002. Start it first.');
+    console.error(`Emulator not reachable at ${process.env.PLATTR_BASE_URL || 'http://127.0.0.1:5002'}. Start it first (backend/src-plattr/emu.sh).`);
     process.exit(2);
   }
 

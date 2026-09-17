@@ -64,6 +64,35 @@ export async function setFeatureFlags(flags) {
 }
 
 /**
+ * Turn the waiter-confirmation gate on or off for one restaurant.
+ *
+ * Unlike the FeatureFlags singleton (process-global, `_system/featureFlagOverrides`),
+ * this is a per-restaurant setting in `restaurants/{id}/config/settings`, so it is
+ * written with an updateMask — the same doc holds the tax blocks.
+ */
+export async function setWaiterConfirmation(restaurantId, enabled) {
+  const url = `http://${config.FIRESTORE_HOST}/v1/projects/${config.PROJECT_ID}/databases/(default)/documents`
+    + `/restaurants/${restaurantId}/config/settings?updateMask.fieldPaths=ordering`;
+
+  const resp = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' },
+    body: JSON.stringify({
+      fields: {
+        ordering: {
+          mapValue: { fields: { requireWaiterConfirmation: { booleanValue: Boolean(enabled) } } },
+        },
+      },
+    }),
+  });
+
+  if (!resp.ok) {
+    throw new Error(`setWaiterConfirmation: Firestore write failed: ${resp.status} ${resp.statusText}`);
+  }
+  console.log(`[data] Waiter confirmation for ${restaurantId}: ${enabled ? 'ON' : 'OFF'}`);
+}
+
+/**
  * Reset feature flags by deleting the Firestore override document.
  */
 export async function resetFeatureFlags() {

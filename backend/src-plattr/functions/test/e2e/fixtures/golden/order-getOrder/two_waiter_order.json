@@ -9,7 +9,7 @@
       "_seconds": 1780000000,
       "_nanoseconds": 0
     },
-    "updatedAt": 1788802975176,
+    "updatedAt": 1788824864206,
     "tableId": "tbl_meg_9",
     "restaurantId": "res_meghana",
     "sessionId": "SESSIONID_2",
@@ -44,7 +44,7 @@
     "notes": "",
     "carts": [
       {
-        "lastUpdated": 1788802975102,
+        "lastUpdated": 1788824862945,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,

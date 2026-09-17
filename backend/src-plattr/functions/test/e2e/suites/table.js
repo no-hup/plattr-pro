@@ -190,10 +190,12 @@ export default async function tableSuite() {
   }
 
   // ── 15. Session resume via validateTableAndLocation with sessionId ──
+  // The session from test 3 belongs to TABLE_CLEAN_2, so resume against that
+  // table: resume is caller-scoped, a session id is not a pass to other tables.
   if (sessionId) {
     const resp = await call('table-validateTableAndLocation', {
       restaurantId: RESTAURANT_ID,
-      tableId: TABLE_CLEAN_1,
+      tableId: TABLE_CLEAN_2,
       userLocation: { latitude: 12.9716, longitude: 77.5946 },
       sessionId,
     });

@@ -53,7 +53,7 @@ export default async function billingSuite() {
   const check = (label, cond, actual) => record(Boolean(cond), `${label} → ${cond ? 'ok' : 'FAILED'}`, actual);
 
   // ── clean, then seed ──
-  const OURS = ['bl_pizza', 'bl_coke', 'bl_beer', 'bl_dal'];
+  const OURS = ['bl_pizza', 'bl_coke', 'bl_beer', 'bl_dal', 'bl_off_pizza', 'bl_off_coke'];
   for (const l of OURS) await delDoc(`lines/${l}`);
   for (const b of await listCol('bills')) if (b.cid === 'cid_bl') await delDoc(`bills/${b.id}`);
   for (const a of await listCol('audit')) if (a.cid === 'cid_bl') await delDoc(`audit/${a.id}`);
@@ -188,6 +188,60 @@ export default async function billingSuite() {
 
     await delDoc('lines/bl_comp');
     if (ok.data?.billId) await delDoc(`bills/${ok.data.billId}`);
+  }
+
+  // ── BL-S24 / TD-016 · the order offer becomes the bill discount, on the lines the offer actually named ──
+  // The only end-to-end exercise of the `orderOffer` port: a real Offers V2 `appliedOffer` document on a real
+  // order, read by the real adapter, apportioned by the real domain. Offer money on the order doc is FLOAT
+  // RUPEES (old money), so ₹200 must arrive as 20000 paise.
+  {
+    const offLine = (id, name, list) => ({ ...line(id, name, list, 'food', 'draft_td016'), orderId: 'order_td016', cid: 'order_td016' });
+    await seed('lines/bl_off_pizza', offLine('bl_off_pizza', 'Margherita', 50000));
+    await seed('lines/bl_off_coke', offLine('bl_off_coke', 'Coke', 8000));
+    const previewOffer = async appliedOffer => {
+      await seed('orders/order_td016', { orderId: 'order_td016', appliedOffer });
+      const r = await call('billing-preview', { restaurantId: RID, sessionId: manager, cid: 'cid_bl', draftId: 'draft_td016', tableIds: ['table_bl'], expectedV: {} });
+      const by = Object.fromEntries((r.data?.lines || []).map(l => [l.lineId, l.billDiscount]));
+      return { r, by, payable: r.data?.payable, offer: r.data?.offer };
+    };
+
+    // ITEM scope: appliedItems names the pizza's cart item and nothing else.
+    {
+      const { r, by, payable, offer } = await previewOffer({
+        id: 'offer_flat_item_50', title: 'Flat 200 off the pizza', type: 'FLAT', scope: 'ITEM', discountAmount: 200,
+        appliedItems: [{ menuItemId: 'mi_bl_off_pizza', cartItemId: 'bl_off_pizza', originalPrice: 500, discountAmount: 200, discountedPrice: 300 }],
+      });
+      check('BL-S24 the order offer is read off the order doc and converted to paise → 20000', offer?.amount === 20000, offer);
+      check('TD-016 the ₹200 pizza offer lands entirely on the pizza line, nothing on the coke (old code: 17242 / 2758)',
+        by.bl_off_pizza === 20000 && by.bl_off_coke === 0, by);
+      check('TD-016 and the payable is unchanged at 39900 — the total was always right, the lines were not',
+        payable === 39900 && r.data?.blocks?.[0]?.parts?.map(p => p.amount).join(',') === '950,950', r.data);
+    }
+
+    // ORDER scope: Offers V2 ships no itemised breakdown for it by design, so it must still spread by net share.
+    {
+      const { by, payable, offer } = await previewOffer({
+        id: 'offer_first_time_20', title: '₹200 off the order', type: 'FLAT', scope: 'ORDER', discountAmount: 200, appliedItems: [],
+      });
+      check('TD-016 an ORDER offer carries no appliedItems and still spreads across every line: coke 2758, pizza 17242',
+        by.bl_off_coke === 2758 && by.bl_off_pizza === 17242, by);
+      check('TD-016 same payable either way: 39900', payable === 39900 && offer?.amount === 20000, { payable, offer });
+    }
+
+    // BL-S12 split: the offer names the pizza, so a bill holding only the coke claims none of it.
+    {
+      await seed('orders/order_td016', { orderId: 'order_td016', appliedOffer: {
+        id: 'offer_flat_item_50', title: 'Flat 200 off the pizza', type: 'FLAT', scope: 'ITEM', discountAmount: 200,
+        appliedItems: [{ menuItemId: 'mi_bl_off_pizza', cartItemId: 'bl_off_pizza', originalPrice: 500, discountAmount: 200, discountedPrice: 300 }],
+      } });
+      await seed('lines/bl_off_pizza', { ...offLine('bl_off_pizza', 'Margherita', 50000), draftId: 'draft_td016_b' });
+      const r = await call('billing-preview', { restaurantId: RID, sessionId: manager, cid: 'cid_bl', draftId: 'draft_td016', tableIds: ['table_bl'], expectedV: {} });
+      check('TD-016 BL-S12 the split half that holds none of the named lines gets no discount and claims none (old code: both halves took ₹200)',
+        r.data?.payable === 8400 && r.data?.lines?.[0]?.billDiscount === 0 && r.data?.discount === null, r.data);
+    }
+
+    await delDoc('orders/order_td016');
+    await delDoc('lines/bl_off_pizza'); await delDoc('lines/bl_off_coke');
   }
 
   return results;
