@@ -4,6 +4,21 @@ const { FULFILLMENT_STATUS } = require('../orders/orderConstants');
 const { mapCartStatus } = require('../utils/statusUtils');
 
 /**
+ * Is this cart/order item something the customer pays for?
+ *
+ * CANCELLED (never made) and RETURNED (came back) are both non-billable. This is
+ * the item-level twin of `isLiveCart` in orders/createOrUpdateOrder.js and of the
+ * UNBILLED pair in cart/updateCartStatus.js — keep the three in agreement.
+ *
+ * @param {Object} item - A cart item (or a flattened order item)
+ * @returns {boolean} false when the item must be left out of totals and offers
+ */
+function isBillableItem(item) {
+  const status = mapCartStatus(item?.status);
+  return status !== FULFILLMENT_STATUS.CANCELLED && status !== FULFILLMENT_STATUS.RETURNED;
+}
+
+/**
  * Calculates the price of an item based on its base price, selected variants, and addons.
  * @param {Object} menuItem - The menu item object containing pricing information.
  * @param {Array} selectedVariants - An array of selected variant objects.
@@ -148,8 +163,11 @@ async function calculateCartValue(cart) {
         continue;
       }
 
-      // Skip cancelled items (normalised: legacy docs may store lower-case)
-      if (mapCartStatus(item.status) === FULFILLMENT_STATUS.CANCELLED) {
+      // Skip non-billable items (normalised: legacy docs may store lower-case).
+      // RETURNED belongs here as much as CANCELLED — food that came back is not
+      // paid for. Leaving it out billed a returned cart again at COMPLETED,
+      // because updateOrderStatus recomputes the bill through this function.
+      if (!isBillableItem(item)) {
         continue;
       }
 
@@ -203,4 +221,5 @@ function roundPrice(price) {
 module.exports = {
   calculateCartValue,
   calculateItemPrice,
+  isBillableItem,
 };

@@ -6,6 +6,7 @@ const { calculateCartValue } = require('./calculateCartValue');
 const { BasicPriceInfo, CartItemPriceInfo, CartTotalPriceInfo } = require('../genericModels/priceinfo');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 const errorHandler = require('../singleton/ErrorHandler');
+const { resolveTableId } = require('../table/mergedTables');
 
 /**
  * Sanitizes numeric values to prevent NaN errors
@@ -72,7 +73,9 @@ const getCart = functions.https.onCall(async (data, context) => {
     // console.log("getCart request received:", data.data);
     validateGetCartFields(data.data);
 
-    const { restaurantId, tableId, sessionId } = data.data;
+    let { restaurantId, tableId, sessionId } = data.data;
+    // A merged table shares the parent's cart, so resolve before we touch any doc.
+    tableId = await resolveTableId(restaurantId, tableId);
 
     // Validate session if provided
     if (sessionId) {

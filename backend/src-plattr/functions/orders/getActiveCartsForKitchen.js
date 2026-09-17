@@ -198,7 +198,18 @@ function sanitizeOrderData(id, orderData) {
   if (Array.isArray(orderData.carts)) {
     carts = orderData.carts
       .map((cart, index) => ({ ...cart, cartIndex: index }))
-      .filter(cart => ![FULFILLMENT_STATUS.SERVED, FULFILLMENT_STATUS.CANCELLED, FULFILLMENT_STATUS.RETURNED]
+      // AWAITING_CONFIRMATION is the waiter-confirmation gate: a guest-placed cart is
+      // withheld from the kitchen queue until a waiter confirms it (and it becomes
+      // PENDING). This filter is the whole feature — the waiter endpoint deliberately
+      // does NOT filter it, because the waiter is the one who has to act on it.
+      //
+      // If a restaurant ever wants unconfirmed carts SHOWN here greyed out instead of
+      // withheld, drop AWAITING_CONFIRMATION from this list AND first fix the kitchen
+      // app's two unknown-status defaults (models/active_order_models.dart `_parseStatus`
+      // orElse, core/kitchen_repository.dart `_mapStatus` default) — both currently fall
+      // through to `pending`, which would render an unconfirmed ticket as cookable.
+      .filter(cart => ![FULFILLMENT_STATUS.AWAITING_CONFIRMATION, FULFILLMENT_STATUS.SERVED,
+        FULFILLMENT_STATUS.CANCELLED, FULFILLMENT_STATUS.RETURNED]
         .includes(mapCartStatus(cart.status)));
   } else {
     carts = orderData.carts;

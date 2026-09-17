@@ -3,6 +3,7 @@
 // lives in domain/line.ts; everything here is reading config and old float money and calling it.
 const { db } = require("../admin/admin");
 const { placeLine } = require("../lib/domain/line");
+const { applyToLine, auditRow } = require("../lib/domain/approvals");
 
 /** Old money is float rupees; every new field is integer minor units. */
 const minor = (rupees) => Math.round((Number(rupees) || 0) * 100);
@@ -61,13 +62,16 @@ function toCartItem(item) {
  * Inside the caller's transaction on purpose: a bill must never be askable for lines that do not exist yet.
  * Cancelled items are skipped, matching normalizeCartItemsForOrder.
  */
-function writeLineSnapshots(transaction, restaurantId, { cartSnapshot, orderId, tableId, sessionId, placedBy, blocks, now }) {
+function writeLineSnapshots(transaction, restaurantId, { cartSnapshot, orderId, tableId, sessionId, placedBy, blocks, now, sent = true }) {
   const cartId = cartSnapshot.cartId;
   const ctx = {
     cid: orderId, orderId, cartId, tableId,
     sessionId: sessionId || "",
     draftId: sessionId || tableId,          // one draft per sitting; BL-S12 splits by rewriting it
     placedAt: now, placedBy: placedBy || "system", blocks,
+    // Placing a round normally IS telling the kitchen. False only behind the waiter-confirmation
+    // gate, where markLinesSent flips it when the waiter confirms.
+    sent,
   };
   const written = [];
   for (const item of cartSnapshot.items || []) {
@@ -81,4 +85,93 @@ function writeLineSnapshots(transaction, restaurantId, { cartSnapshot, orderId, 
   return written;
 }
 
-module.exports = { writeLineSnapshots, loadTaxBlocks, toCartItem };
+/**
+ * Flip `sent` on every line of a cart the waiter has just confirmed.
+ *
+ * Line ids are deterministic (`{cartId}_{cartItemId}`, see writeLineSnapshots), so this needs no
+ * query — but each doc is still READ first: a blind `update` throws on a missing line, and a cart
+ * placed before line snapshots existed has none. Reads must therefore happen before the caller's
+ * first write, which is why the transaction is passed in rather than opened here.
+ *
+ * Returns the ids it marked, for the caller's log.
+ */
+async function markLinesSent(transaction, restaurantId, cartSnapshot) {
+  const cartId = cartSnapshot && cartSnapshot.cartId;
+  if (!cartId) return [];
+
+  const refs = (cartSnapshot.items || [])
+    .filter(item => item.menuItemId)
+    .map(item => db.collection("restaurants").doc(restaurantId)
+      .collection("lines").doc(`${cartId}_${item.cartItemId ?? 0}`));
+
+  const docs = await Promise.all(refs.map(ref => transaction.get(ref)));
+  const marked = [];
+  docs.forEach((doc, i) => {
+    if (!doc.exists || doc.data()?.sent === true) return;
+    transaction.update(refs[i], { sent: true });
+    marked.push(refs[i].id);
+  });
+  return marked;
+}
+
+/**
+ * Take a cancelled cart's lines off the bill, and leave a name on each.
+ *
+ * Cancelling a cart used to move only the old float total on the order; the line snapshots the
+ * till bills from kept `countsTowardTotal: true`, so a rejected or cancelled round was still
+ * billable. This is that fix, and it is here rather than at the reject path because every caller
+ * of cart-updateCartStatus had it (kitchen cancel, waiter cancel, guest order rejected).
+ *
+ * Goes through ST's own `applyToLine` so the voided shape is defined in exactly one place, and
+ * writes ST's audit row (R4: the change and its row are one transaction; R5 fixes the keys).
+ *
+ * DEBT(TD-023): records the void, does not gate it. ST says voiding a line the kitchen has
+ * already started needs a PIN (ST-S5), and this path never asks for one — the Flutter apps have
+ * no PIN interceptor (TD-003). Deliberate under "catch it, don't cage it": the money is right
+ * tonight and the P0 row names whoever did it. Gate it when TD-003 lands.
+ *
+ * Reads before writes, same as markLinesSent. Returns the audit ids written.
+ */
+async function voidCartLines(transaction, restaurantId, cartSnapshot, { staffId, reason, note, now }) {
+  const cartId = cartSnapshot && cartSnapshot.cartId;
+  if (!cartId) return [];
+
+  const refs = (cartSnapshot.items || [])
+    .filter(item => item.menuItemId)
+    .map(item => db.collection("restaurants").doc(restaurantId)
+      .collection("lines").doc(`${cartId}_${item.cartItemId ?? 0}`));
+
+  const docs = await Promise.all(refs.map(ref => transaction.get(ref)));
+  const written = [];
+  docs.forEach((doc, i) => {
+    if (!doc.exists) return;
+    const before = doc.data();
+    // An issued bill freezes its lines; reversing one is cancel or a credit note (BL-S8/S9/S11),
+    // never a quiet void. Leave it and let billing refuse.
+    if (before.billId) return;
+    const applied = applyToLine(before, {
+      action: 'void',
+      reason: reason || 'guest left',
+      note: note || '',
+      approverId: staffId || 'system',
+    });
+    if (!applied.ok) return;   // already voided — nothing to do, and no second audit row
+
+    const auditId = `${refs[i].id}_v${applied.line.v}`;
+    transaction.set(
+      db.collection("restaurants").doc(restaurantId).collection("audit").doc(auditId),
+      auditRow({
+        ts: now, cid: cartSnapshot.cartId, action: 'void', staffId: staffId || 'system',
+        // P0 once the kitchen had it, P1 while it had not. Same split ST uses.
+        sev: before.sent ? 'P0' : 'P1',
+        reason: reason || 'guest left', note: note || '',
+        lineId: refs[i].id, before, after: applied.line,
+      }),
+    );
+    transaction.set(refs[i], applied.line);
+    written.push(auditId);
+  });
+  return written;
+}
+
+module.exports = { writeLineSnapshots, markLinesSent, voidCartLines, loadTaxBlocks, toCartItem };

@@ -4,6 +4,7 @@ const featureFlags = require('../../singleton/FeatureFlags');
 const environment = require('../../singleton/Environment');
 const { sendFCMNotification } = require('../../notifications/sendNotification');
 const { FULFILLMENT_STATUS } = require('../../orders/orderConstants');
+const { mapCartStatus } = require('../../utils/statusUtils');
 const { safeArrayUnion } = require('../../utils/arrayOperations');
 
 /**
@@ -110,12 +111,20 @@ const onOrderPlaced = onDocumentCreated('restaurants/{restaurantId}/orders/{orde
 
         const itemNames = (orderData.items || []).map(i => i.name).join(', ') || 'Items';
 
+        // Behind the waiter-confirmation gate this is not "an order came in", it is "a table is
+        // waiting for you". Nothing is cooking until the waiter walks over and confirms, so the
+        // wording has to carry that or the round sits there.
+        const needsConfirming = (orderData.carts || [])
+            .some(cart => mapCartStatus(cart.status) === FULFILLMENT_STATUS.AWAITING_CONFIRMATION);
+
         // Send notification to server
         await sendFCMNotification(serverData.fcmToken, {
-            title: 'New Order Placed',
-            body: `Table ${tableId}: ${itemNames}`,
+            title: needsConfirming ? 'Confirm order' : 'New Order Placed',
+            body: needsConfirming
+                ? `Table ${tableId} is waiting for you to confirm: ${itemNames}`
+                : `Table ${tableId}: ${itemNames}`,
             data: {
-                type: 'order',
+                type: needsConfirming ? 'order_awaiting_confirmation' : 'order',
                 tableId: tableId,
                 orderId: orderId
             }
@@ -169,8 +178,16 @@ const onOrderUpdated = onDocumentUpdated('restaurants/{restaurantId}/orders/{ord
         return indices;
     }, []);
 
-    if (readyCartIndices.length === 0) {
-        console.log('No carts transitioned to READY status in this update.');
+    // Round two onwards appends a cart to the SAME order, so an unconfirmed round never reaches
+    // onOrderCreated — this is the only trigger that sees it. Matched on cartId, not index: a
+    // cart's index is stable but a new cart has no `before` at its index at all.
+    const beforeCartIds = new Set(beforeCarts.map(c => c.cartId).filter(Boolean));
+    const awaitingCarts = afterCarts.filter(cart =>
+        mapCartStatus(cart.status) === FULFILLMENT_STATUS.AWAITING_CONFIRMATION &&
+        !beforeCartIds.has(cart.cartId));
+
+    if (readyCartIndices.length === 0 && awaitingCarts.length === 0) {
+        console.log('No carts transitioned to READY or arrived awaiting confirmation.');
         return;
     }
 
@@ -189,6 +206,19 @@ const onOrderUpdated = onDocumentUpdated('restaurants/{restaurantId}/orders/{ord
         const serverData = await getOrAssignServer(restaurantId, tableId, tableDoc.data().serverId);
 
         if (!serverData || !serverData.fcmToken) return;
+
+        if (awaitingCarts.length > 0) {
+            const awaitingNames = awaitingCarts
+                .flatMap(cart => (cart.items || []).map(i => i.menuItem?.meta?.name || i.name))
+                .filter(Boolean).join(', ') || 'Items';
+            await sendFCMNotification(serverData.fcmToken, {
+                title: 'Confirm order',
+                body: `Table ${tableId} is waiting for you to confirm: ${awaitingNames}`,
+                data: { type: 'order_awaiting_confirmation', tableId, orderId },
+            });
+        }
+
+        if (readyCartIndices.length === 0) return;
 
         const itemNames = (afterData.items || [])
             .filter((item, index) => readyCartIndices.includes(index)) // rough approx of items in the ready carts

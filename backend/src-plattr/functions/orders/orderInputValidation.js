@@ -237,6 +237,7 @@ class OrderInputValidation {
     }
     
     const validStatuses = [
+      FULFILLMENT_STATUS.AWAITING_CONFIRMATION,
       FULFILLMENT_STATUS.PENDING,
       FULFILLMENT_STATUS.PREPARING,
       FULFILLMENT_STATUS.READY,
