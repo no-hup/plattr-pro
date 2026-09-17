@@ -9,6 +9,7 @@ const timestamp = require('../utils/timestamp');
 const { validateStaffSession } = require('../adminApp/auth');
 const { buildOrderPriceInfo } = require('../orders/createOrUpdateOrder');
 const { loadChargesConfig } = require('../orders/calculateCharges');
+const { markLinesSent, voidCartLines } = require('../orders/lineSnapshots');
 
 const UNBILLED = [FULFILLMENT_STATUS.CANCELLED, FULFILLMENT_STATUS.RETURNED];
 
@@ -45,7 +46,7 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
 
     // Staff only: this mutates fulfillment status and (below) can rewrite the
     // order's sessionId, which feeds offer eligibility at COMPLETED.
-    await validateStaffSession(restaurantId, sessionId);
+    const { serverId } = await validateStaffSession(restaurantId, sessionId);
 
     // Update the cart status using the internal function
     const updatedOrder = await _updateCartStatus(
@@ -55,7 +56,8 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
       mappedStatus,
       userId,
       notes,
-      sessionId
+      sessionId,
+      serverId
     );
 
     return {
@@ -95,7 +97,8 @@ async function _updateCartStatus(
   newStatus,
   userId,
   notes = '',
-  sessionId = null
+  sessionId = null,
+  staffId = null
 ) {
   const orderRef = db.collection("restaurants")
     .doc(restaurantId)
@@ -129,6 +132,22 @@ async function _updateCartStatus(
         throw new Error(`Invalid status transition from ${currentStatus} to ${normalizedNewStatus}`);
       }
 
+      // ── Line-snapshot side effects. Reads, so they must happen before the first write. ──
+      // The order doc and the lines are two collections telling one story; they move together
+      // or the bill and the kitchen disagree.
+      const isConfirm = currentStatus === FULFILLMENT_STATUS.AWAITING_CONFIRMATION &&
+                        normalizedNewStatus === FULFILLMENT_STATUS.PENDING;
+      const isCancel = normalizedNewStatus === FULFILLMENT_STATUS.CANCELLED;
+
+      if (isConfirm) {
+        // The waiter just told the kitchen. ST reads `sent` to price a later void (ST-S5).
+        await markLinesSent(transaction, restaurantId, cart);
+      } else if (isCancel) {
+        await voidCartLines(transaction, restaurantId, cart, {
+          staffId, reason: 'guest left', note: notes, now: Date.now(),
+        });
+      }
+
       // Create status history entry
       const statusEntry = {
         status: normalizedNewStatus,
@@ -141,17 +160,16 @@ async function _updateCartStatus(
       // has READY items (server-markItemServed needs that) and a CANCELLED cart
       // drops out of the bill. Items already CANCELLED/RETURNED/SERVED keep their
       // status (an individually served item must not flip back to READY or to
-      // CANCELLED). The flat order.items copy is not cascaded: no read path
-      // returns its status and it carries no cart reference to match on.
-      const cascadedItems = (cart.items || []).map(item => {
-        const itemStatus = mapCartStatus(item.status);
-        if (itemStatus === FULFILLMENT_STATUS.CANCELLED ||
-            itemStatus === FULFILLMENT_STATUS.RETURNED ||
-            itemStatus === FULFILLMENT_STATUS.SERVED) {
-          return item;
-        }
-        return { ...item, status: normalizedNewStatus };
-      });
+      // CANCELLED).
+      const keepsOwnStatus = (item) => {
+        const s = mapCartStatus(item.status);
+        return s === FULFILLMENT_STATUS.CANCELLED ||
+               s === FULFILLMENT_STATUS.RETURNED ||
+               s === FULFILLMENT_STATUS.SERVED;
+      };
+      const cascadedItems = (cart.items || []).map(item =>
+        keepsOwnStatus(item) ? item : { ...item, status: normalizedNewStatus }
+      );
       const updatedCart = {
         ...cart,
         items: cascadedItems,
@@ -168,11 +186,26 @@ async function _updateCartStatus(
       const updatedCarts = [...orderData.carts];
       updatedCarts[cartIndex] = updatedCart;
 
+      // Cascade to the flat order.items copy too. Without this the customer's
+      // bill still listed a cancelled dish while the total had already dropped,
+      // so the lines did not add up to what they were asked to pay.
+      // Match on cartId: cartItemId restarts at 1 in each new cart, so it alone
+      // would also hit an unrelated item in another round. Items written before
+      // cartId existed carry none and are left alone — the total stays correct,
+      // only the stale line remains, which is how it behaved before this fix.
+      const flatItems = Array.isArray(orderData.items)
+        ? orderData.items.map(item => {
+            if (!item.cartId || item.cartId !== cart.cartId) return item;
+            return keepsOwnStatus(item) ? item : { ...item, status: normalizedNewStatus };
+          })
+        : orderData.items;
+
       // Deliberately NOT writing sessionId here: the caller is staff, but
       // order.sessionId must stay the customer session from checkout — offer
       // eligibility at COMPLETED reads that session's order history.
       const updates = {
         carts: updatedCarts,
+        ...(Array.isArray(orderData.items) ? { items: flatItems } : {}),
         updatedAt: timestamp.now()
       };
 
