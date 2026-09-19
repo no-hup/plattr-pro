@@ -86,17 +86,18 @@ Closing sessions on purpose, 2026-09-18. Shaurya's call: too many at once was dr
 - **TD-040** — the stale-line guard has never fired. Needs OF to decide what the offline replay sends,
   so it is a decision before it is a patch.
 
-### Waiting on Shaurya, not on an agent
+### Answered by Shaurya 2026-09-20 (were waiting on him)
 
-- **`covers` on `table-openTable`: yes or no.** Two documents of the same date contradict each other.
-  TD-031 records it declined on 2026-09-17 and says a later session must not re-add it unasked. The
-  counter-argument is that a head count not taken at the sitting can never be backfilled, and
-  not-live makes that sharper. One optional field plus a number pad at Open.
-- **`stuff.md`** — accounts and infra pointers, still untracked. In git or local only.
-- **The timer half of FL-Q1 is not built.** A settled table now frees only when a cashier taps Clear;
-  it no longer frees itself after 30 minutes, because `releaseIfSettled` ran from the payment path and
-  that path was corrected to write nothing to the table. Either the timer returns driven by the floor
-  read or a sweep, or the signed row is amended to say Clear is enough. Recorded in the FL sheet.
+- **`covers` on `table-openTable`: yes.** One optional number field, asked at Open. TD-031 is closed
+  by this; the "must not re-add unasked" note no longer applies.
+- **`stuff.md`: local only.** Now in `.gitignore`.
+- **FL-Q1 timer: Clear-only.** The signed row is amended: a settled table frees when a cashier taps
+  Clear, and there is no timer. Nothing to build.
+- **Reconcile decisions** (board: `reviews/2026-09-18-reconcile.html`): D1 the floor module is the one
+  owner of "when a table frees", done before OR (`updateOrderStatus.js:181` stops calling
+  `vacateTable`); D2 delete `order.priceInfo` now (already row 2 above); D3 keep the sheet plus one
+  donor review, drop fan-out and blind Opus for modules smaller than BL, delete the dated working
+  files and spent handoffs.
 
 ### The drift itself is an item
 
@@ -224,12 +225,8 @@ is not progress; a restaurant issuing a bill is.**
 | 2026-09-13 | First customer: single outlet, dine-in, serves alcohol | Liquor is finite work; aggregators are a permanent dependency |
 
 ## Open questions (owner: Shaurya)
-- **`covers` on the table session — contradicted, needs one word from you.** `reviews/2026-09-17-go-live-plan.md`
-  D2/D3 records "yes to `table-openTable`, with `openedBy` and `covers`". `DECISIONS_2026-09-17.md` OR-2
-  records the opposite — covers declined, filed as TD-031, an accepted and permanently unrecoverable loss.
-  Both are dated 2026-09-17. The endpoint and `openedBy` are agreed either way and are signed; only the head
-  count is in dispute. It cannot be backfilled, so it is cheap now and impossible later.
-- **Printing technology — reopened, three options.** (1) Bluetooth printer driven from Chrome; (2) a LAN
+- **`covers`** — answered yes on 2026-09-20, see "Answered by Shaurya" above.
+- **Printing technology — settled as KT-D1c (option 3, the kitchen tablet). Kept for the record.** (1) Bluetooth printer driven from Chrome; (2) a LAN
   bridge box that pulls jobs; (3) the Flutter kitchen tablet as the print agent — already on the LAN,
   already logged in, and Dart can open a TCP socket, so no new hardware and no new deployable. Option 3
   surfaced after both earlier answers and nobody has ruled on it. `link.ts` is the only file that differs,
