@@ -95,7 +95,7 @@ Closing sessions on purpose, 2026-09-18. Shaurya's call: too many at once was dr
   Clear, and there is no timer. Nothing to build.
 - **Reconcile decisions** (board: `reviews/2026-09-18-reconcile.html`): D1 the floor module is the one
   owner of "when a table frees", done before OR (`updateOrderStatus.js:181` stops calling
-  `vacateTable`); D2 delete `order.priceInfo` now (already row 2 above); D3 keep the sheet plus one
+  `vacateTable`); D2 revised the same day after a code check: `order.priceInfo` is read by 8 endpoints and every Flutter app, so it is not deleted yet; the rule is that till, BL and RP read only line snapshots, and the delete lands when OR retires the old cart path; D3 keep the sheet plus one
   donor review, drop fan-out and blind Opus for modules smaller than BL, delete the dated working
   files and spent handoffs. Done the same day: the four `HANDOFF_*.md` and `PROPOSED_DIFFS_2026-09-17.md`
   are gone (git history keeps them). The two `DECISIONS_*_2026-09-17.md` stay, because OR, UQ and KT
