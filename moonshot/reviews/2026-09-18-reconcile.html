@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reconcile Board</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1c1c1c;--muted:#666;--line:#e3e0d8;--ok:#1f8a4c;--warn:#c47a00;--bad:#c62828;--accent:#2452c7;--chip:#eef1fa}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#141414;--card:#1e1e1e;--ink:#eee;--muted:#aaa;--line:#333;--chip:#26304a}}
+:root[data-theme=dark]{--bg:#141414;--card:#1e1e1e;--ink:#eee;--muted:#aaa;--line:#333;--chip:#26304a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,Segoe UI,Helvetica,Arial,sans-serif;padding:24px 16px 80px}
+main{max-width:860px;margin:0 auto}
+h1{font-size:26px;margin:0 0 4px}
+h2{font-size:20px;margin:36px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--line)}
+h3{font-size:16px;margin:18px 0 6px}
+p{margin:6px 0}
+.sub{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:10px 0}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--accent);margin-right:6px;vertical-align:middle}
+.ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle}
+.dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.bad{background:var(--bad)}
+table{width:100%;border-collapse:collapse;margin:8px 0;font-size:15px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:13px}
+ul{margin:6px 0;padding-left:22px} li{margin:4px 0}
+details{margin:8px 0} summary{cursor:pointer;font-weight:600}
+.q{border-left:4px solid var(--accent);padding-left:12px}
+.opt{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 0}
+.opt b{display:block}
+.rec{background:var(--chip);border-radius:8px;padding:8px 10px;margin-top:6px}
+.log{font-size:15px}
+.log time{color:var(--muted);font-size:13px;display:block}
+.who{font-weight:600}
+.small{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+<h1>Reconcile board</h1>
+<p class="sub">Two agents (the <b>manager</b> session and the <b>main Petpooja</b> session) checking where we are, how far we drifted from "simple and robust", and what you need to decide. Updated as the thread runs. Started 18 Sep 2026.</p>
+
+<h2>1. Where we are, in one breath</h2>
+<div class="card">
+<p><b>Started:</b> a QR-ordering app. Guests scan, order, the kitchen sees it. Four Flutter apps, Firebase.</p>
+<p><b>Goal set on 15 Sep:</b> become a full POS for one Bangalore restaurant that serves alcohol, replacing Petpooja. Staff screens in a new React web app (the "till"). New backend code in TypeScript, in clean layers.</p>
+<p><b>Three days later:</b> the money side is built and tested well. Approvals with PIN, billing with GST, payments ledger, day close, offline fallback, the floor screen. About 5,000 lines of new code plus as much again in tests, 1,005 unit tests green, 27 commits since the last push, nothing pushed.</p>
+<p><b>But a restaurant still cannot trade on it.</b> A cashier cannot take a walk-in order. Nothing prints. No setup screen. No reports. And every hand-typed dish is unbillable because no screen sets its tax bucket.</p>
+</div>
+
+<h3>The restaurant's day, honestly</h3>
+<table>
+<tr><th>Moment</th><th>Today</th></tr>
+<tr><td>Manager puts float in the drawer</td><td class="ok">Works</td></tr>
+<tr><td>Cashier opens the till, sees tables</td><td class="ok">Works (built yesterday)</td></tr>
+<tr><td>Couple sits down, no phone, wants to order via the captain</td><td class="bad">Wall. No staff screen can place an order</td></tr>
+<tr><td>Round reaches the kitchen</td><td class="warn">On the kitchen tablet, yes. On paper, no</td></tr>
+<tr><td>"Bill please"</td><td class="ok">Works, tax and round-off correct</td></tr>
+<tr><td>Hand over a printed invoice</td><td class="bad">Wall. Screen only</td></tr>
+<tr><td>Pay by card and cash, split</td><td class="ok">Works</td></tr>
+<tr><td>Pay by UPI</td><td class="warn">Works with the restaurant's own soundbox; cashier types the reference</td></tr>
+<tr><td>Phone order to collect</td><td class="bad">Wall (same as order entry)</td></tr>
+<tr><td>Party moves table</td><td class="ok">Works (built yesterday)</td></tr>
+<tr><td>Close the day, count cash</td><td class="ok">Works</td></tr>
+<tr><td>Owner: "what sold yesterday?"</td><td class="bad">Wall. No reports</td></tr>
+<tr><td>Set up a new restaurant: GST, tax buckets, tables, printers</td><td class="bad">Wall. No setup screen; a typed-in menu cannot be billed</td></tr>
+</table>
+<p class="small">Source: the go-live plan of 17 Sep, checked against the code today.</p>
+
+<h2>2. Drift check: did we stay simple?</h2>
+<p class="sub">Each row is the manager session's read. The main session adds its view in section 4.</p>
+
+<div class="card"><span class="dot ok"></span><b>The new code itself: fine.</b>
+<p>Small layered modules, pure logic tested without the emulator, one door for PIN, one for config, one for errors. Restaurant differences are config keys, not code branches. This is what lets a Supabase or AWS move later be weeks, not a quarter. No sign of over-building here.</p></div>
+
+<div class="card"><span class="dot bad"></span><b>Two worlds, one seam. This is the real risk.</b>
+<p>The old app code (cart, orders, table, session, about 3,000 lines of plain JS) still owns the <i>spine</i>: what a table is, when it frees, what an order's status means. The new modules bolt onto it through hooks. Every "two paths free a table by opposite rules" bug this week came from that seam (TD-013, TD-036, TD-037, TD-033).</p>
+<p><b>Plain example:</b> a captain taps "order complete" on the kitchen app at 20:44. The old code frees the table and ends the session. The new floor screen says a table with ₹2,340 unbilled is never free. Both are "right" in their own world. The guest walks out unbilled.</p>
+<p><b>Why it matters for the future:</b> takeaway, delivery, aggregator orders, counter service, a second till: every one of those lands on the session and order lifecycle. If that stays split across two worlds, each new requirement becomes a patch in both. That is the "major rewrite later" you are worried about, arriving slowly.</p></div>
+
+<div class="card"><span class="dot bad"></span><b>Two records of the same money.</b>
+<p>Each order still stores its own totals in rupees as decimals (<i>priceInfo</i>), while the new billing sums exact per-line snapshots in paise. Four places decide "is this billable" differently. Today deleting the old copy is a schema change and a re-seed. After the first real order it is a year of history that disagrees with itself.</p></div>
+
+<div class="card"><span class="dot warn"></span><b>Order of building: back office first, front of house missing.</b>
+<p>We built approvals, payments ledger, day close and offline before order entry, printing and setup. Not wrong: the money maths is the hard part and it is done well. But it means the demo you can give today is "close a day you could not trade". The order must flip now: tax on the menu, order entry, print, reports.</p></div>
+
+<div class="card"><span class="dot warn"></span><b>Process weight.</b>
+<p>Per module: a spec sheet, a fan-out to three outside models, a blind Opus test list, a donor review of open-source POS code, then build. 21 documents, about 570 KB, for a product that cannot issue one bill. The thinking was good and it caught real bugs before code. But the sheets are now heavier than the code they describe, and a fresh agent spends its first 100k tokens reading. Some of this should be cut, not all.</p></div>
+
+<div class="card"><span class="dot ok"></span><b>Scope creep: mostly held.</b>
+<p>UPI dynamic QR (a 63 KB sheet) is deferred, the first restaurant's soundbox covers it. Offline was cut to four items. Covers, sections, reopen-a-day, a second till: all said no or later, in writing. Good.</p></div>
+
+<h2>3. Decisions for you</h2>
+<p class="sub">Plain question, an example, the options, and what we recommend. Status updates as the thread runs. You can answer here in chat or in the manager session.</p>
+
+<div class="card q">
+<span class="tag">D1</span><b>Who owns "when does a table free up"?</b>
+<p><b>Example:</b> table 7 has ₹2,340 unbilled. The captain taps Complete on the kitchen app. Should the table go free?</p>
+<div class="opt"><b>A. One owner: the new floor module. Recommended.</b> The old "complete order frees table" path is removed or made to ask the floor module first. A table frees only when no money is open. Cost: a few hours, one characterization test on the old path. Gain: every future flow (takeaway, delivery, counter) has one rulebook.</div>
+<div class="opt"><b>B. Leave both, patch as bugs come.</b> Zero work now. Each new flow is fixed twice, and the next bug is found by a guest walking out unbilled.</div>
+<div class="rec">Recommend A. This is the most coupled thing in the system and the cheapest moment to fix it.</div>
+<p class="small">Status: <span class="ok">decided 20 Sep: A. Floor module owns "table frees". Do it before order entry.</span></p>
+</div>
+
+<div class="card q">
+<span class="tag">D2</span><b>Delete the old money copy on orders?</b>
+<p><b>Example:</b> a ₹333 dish. The old copy stores 333.0 with tax as a decimal. The new line stores 33300 paise with CGST 833 and SGST 833. Reports built on the old copy will never match the GST bill.</p>
+<div class="opt"><b>A. Delete it now, re-seed. Recommended.</b> Lines are the only truth. Old reads move to the lines. One-time cost, a day. Free only while we are not live.</div>
+<div class="opt"><b>B. Keep both.</b> Nothing now. Permanent double bookkeeping once real orders exist.</div>
+<div class="rec">Recommend A, and before order entry is built, because order entry sits right on top of this code.</div>
+<p class="small">Status: <span class="ok">decided 20 Sep: A. Delete order.priceInfo, re-seed.</span></p>
+</div>
+
+<div class="card q">
+<span class="tag">D3</span><b>How heavy should the process be from here?</b>
+<p><b>Example:</b> the floor screen took a 37 KB sheet, three outside reviews and a donor review before code. It found nine real defects before code, which was worth it. Order entry is next and is smaller than it looked.</p>
+<div class="opt"><b>A. Keep the sheet, keep ONE outside pass (the donor review), drop the three-model fan-out and the blind Opus list for modules smaller than billing. Recommended.</b> Halves the reading and the documents. Keeps the part that caught the real bugs.</div>
+<div class="opt"><b>B. Keep everything.</b> Safest, slowest, and the documents keep growing faster than the code.</div>
+<div class="opt"><b>C. Drop the sheets, code straight from a short plan.</b> Fastest. Loses the "without this, what breaks" discipline that has been catching money bugs.</div>
+<div class="rec">Recommend A. Also delete the three dated working files and four spent handoffs (already listed on the pickup list).</div>
+<p class="small">Status: <span class="ok">decided 20 Sep: A. Keep the sheet plus one donor review. Delete the 3 dated working files and 4 spent handoffs.</span></p>
+</div>
+
+<div class="card q">
+<span class="tag">D4</span><b>Small leftovers, one word each</b>
+<ul>
+<li><b>Covers.</b> Ask "how many people?" when staff open a table? Yes costs one number pad. No means per-head average is lost forever for those nights. <i>Our lean: yes, optional field.</i></li>
+<li><b>Settled table timer.</b> After paying, a table now frees only when the cashier taps Clear. You had chosen "also frees itself after 30 minutes". Keep Clear-only (simpler), or bring the timer back? <i>Our lean: Clear-only.</i></li>
+<li><b>stuff.md.</b> Accounts and infra pointers. Into git, or local only?</li>
+</ul>
+<p class="small">Status: <span class="ok">decided 20 Sep: covers yes (ask "how many people?" on open). Settled-table timer: Clear-only. stuff.md: local only, never in git.</span></p>
+</div>
+
+<h2>4. Thread between the two sessions</h2>
+<p class="sub">Newest at the top. Short on purpose. Full text lives in the sessions.</p>
+<div class="card log" id="log">
+<div><time>20 Sep, Shaurya</time><span class="who">Shaurya:</span> answered all four. D1 A, D2 A, D3 A, D4 covers yes / Clear-only / stuff.md local. Order of work stands: D1 and D2 land before order entry.</div>
+<div><time>20 Sep, manager</time><span class="who">Manager:</span> the brief to the main session expired unread, seven times over two days. Cross-session messages to that tab need approval within a short window. The brief is now a file for Shaurya to paste: <i>reviews/2026-09-18-brief-for-main.md</i>. Until it is pasted, this board has only the manager's view.</div>
+<div><time>18 Sep, manager</time><span class="who">Manager → Main:</span> wrote the brief. Asked for the "future requirements" test: list what restaurants two to ten will ask for, and for each say where it lands in the current design and whether the core lifecycle would have to change.</div>
+</div>
+
+<h2>5. Order of work after the decisions</h2>
+<ol>
+<li>Tax bucket on the menu (TD-038). Until this, no typed-in dish can be billed.</li>
+<li>D1 and D2 above: one owner for the table lifecycle, one record of money.</li>
+<li>Approval PINs stored hashed (TD-041).</li>
+<li>Order entry at the till.</li>
+<li>Printing: bill at the counter, bar ticket, kitchen ticket by config. The kitchen tablet is the printer's driver, no extra box.</li>
+<li>Reports, then the setup screen, then UPI QR.</li>
+</ol>
+<p class="small">Unchanged from the pickup list in STATE.md except that D1 and D2 are now explicit decisions, not assumptions.</p>
+</main>
+</body>
+</html>
