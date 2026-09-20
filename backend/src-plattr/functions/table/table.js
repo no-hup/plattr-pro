@@ -1561,3 +1561,6 @@ exports.updateTableStatus = functions.https.onCall(async (request, context) => {
 // endpoint name and its door are unchanged. It gained what the batch version could not have: the
 // child re-read inside the transaction (FL-S32 — two cashiers could both win before), the R14
 // refusal to release a group that still holds money, a role check, and an audit row.
+
+// OR-S1: staff open a table without a QR scan. Own file, same door.
+exports.openTable = require("./openTable").openTable;
