@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'add_dishes_screen.dart';
 import 'package:provider/provider.dart';
 
 import 'tables_provider.dart';
@@ -89,6 +90,24 @@ class _TableDetailDialogState extends State<TableDetailDialog> {
     });
   }
 
+  /// OR-S1: punch a round for this table with no guest scan. Returns to the tables list.
+  Future<void> _addDishes(TableModel table) async {
+    Navigator.of(context).pop();
+    final sent = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddDishesScreen(
+          restaurantId: widget.restaurantId,
+          sessionId: widget.sessionId,
+          table: table,
+        ),
+      ),
+    );
+    if (sent == true) {
+      widget.tablesProvider.refreshTables(restaurantId: widget.restaurantId);
+    }
+  }
+
   Future<void> _viewOrderDetails(String orderId) async {
     Navigator.of(context).pop(); // Close dialog first
 
@@ -155,6 +174,16 @@ class _TableDetailDialogState extends State<TableDetailDialog> {
         ],
       ),
       actions: [
+        if (!selectedTable.isDisabled &&
+            selectedTable.status.toLowerCase() != 'disabled')
+          Semantics(
+            identifier: 'table-add-dishes',
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.add),
+              label: const Text('Add dishes'),
+              onPressed: () => _addDishes(selectedTable),
+            ),
+          ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Close'),

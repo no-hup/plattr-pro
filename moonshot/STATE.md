@@ -96,6 +96,13 @@ Closing sessions on purpose, 2026-09-18. Shaurya's call: too many at once was dr
   (pick table, search, tap, send) on `cart-addItemToCart` / `cart-checkoutCart`, plus `table-openTable`
   (OR phase 2, unchanged). Search is local over the cached menu: prefix of any word, case/space
   insensitive, sorted by sales. Table map, move, counter tickets and the till screens wait with OR.
+  **Shipped the same day:** `table-openTable` (`table/openTable.js`: staff session in, TABLE session out,
+  occupied → the live sitting extended, disabled refused, merged child → parent, optional `covers`;
+  6 unit tests) and the server app's **Add dishes** screen (`tables_home/add_dishes_screen.dart`:
+  covers prompt, local search `dish_search.dart` with 5 tests, category chips, mandatory-variant
+  picker, round pane, Send = `cart-addItemToCart` per line then `cart-checkoutCart`, all on the
+  table session with `addedBy: 'staff:<id>'`). Not yet: an e2e suite for openTable and a browser
+  walk of the screen against the emulator. Sales ranking and typo tolerance were skipped.
 
 - **`covers` on `table-openTable`: yes.** One optional number field, asked at Open. TD-031 is closed
   by this; the "must not re-add unasked" note no longer applies.

@@ -23,6 +23,11 @@ class ApiConstants {
   // Cart endpoints
   static const String updateCartStatus = '/cart-updateCartStatus';
   static const String removeItemFromCart = '/cart-removeItemFromCart';
+  static const String addItemToCart = '/cart-addItemToCart';
+  static const String checkoutCart = '/cart-checkoutCart';
+
+  // Staff order entry (OR-S1): open a table with no scan, then use the table session above
+  static const String openTable = '/table-openTable';
 
   // Server-specific order item endpoints
   static const String markItemServed = '/server-markItemServed';
