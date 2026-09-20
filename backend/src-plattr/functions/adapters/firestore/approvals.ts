@@ -15,7 +15,8 @@ const lines = (rid: string) => rest(rid).collection('lines');
 const audit = (rid: string) => rest(rid).collection('audit');
 const servers = (rid: string) => rest(rid).collection('servers');
 
-// Same rule as login (server/server_auth.js): bcrypt hash if it looks like one, else legacy plaintext.
+// TD-041: the PIN is its own secret (`pinHash`), never the login password, and only a bcrypt hash
+// is ever compared. A staff doc with no hash, or a plaintext value, has no PIN and is refused.
 const looksLikeBcrypt = (v: unknown): v is string => typeof v === 'string' && ['$2a$', '$2b$', '$2y$'].some(p => v.startsWith(p));
 
 export const ports: Ports = {
@@ -26,14 +27,14 @@ export const ports: Ports = {
   staff: {
     async bySession(rid, sid): Promise<Staff> {
       const { serverData, serverId } = await validateStaffSession(rid, sid);
-      return { staffId: serverId, role: serverData.role, status: serverData.status, password: serverData.password };
+      return { staffId: serverId, role: serverData.role, status: serverData.status, pinHash: serverData.pinHash };
     },
   },
 
   pin: {
     async verify(pin, stored) {
       if (typeof stored !== 'string' || stored === '') return false;
-      try { return looksLikeBcrypt(stored) ? await comparePassword(pin, stored) : stored === pin; } catch { return false; }
+      try { return looksLikeBcrypt(stored) ? await comparePassword(pin, stored) : false; } catch { return false; }
     },
   },
 

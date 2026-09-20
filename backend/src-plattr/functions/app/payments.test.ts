@@ -34,7 +34,7 @@ function fakePorts(opts: Opts = {}): Fake {
   const logs: object[] = []; const warnings: string[] = []; const calls: string[] = [];
   let now = opts.now ?? T0;
   let n = 0; let aborted = false;
-  const staff: Staff = { staffId: 'manager_py', role: 'MANAGER', status: 'active', password: 'hash(1234)', ...opts.staff };
+  const staff: Staff = { staffId: 'manager_py', role: 'MANAGER', status: 'active', pinHash: 'hash(1234)', ...opts.staff };
   const p: Fake = {
     rows, bills, notes, orders, audits, logs, warnings, calls, sessions: new Set([`${RID}/s1`]),
     tick: ms => { now += ms; },

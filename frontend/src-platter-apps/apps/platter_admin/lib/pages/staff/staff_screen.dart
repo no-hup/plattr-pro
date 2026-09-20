@@ -149,7 +149,8 @@ class _StaffView extends StatelessWidget {
     );
 
     if (response != null && context.mounted) {
-      _showPinDialog(context, response.name, response.pin);
+      _showPinDialog(context, response.name, response.pin,
+          password: response.password);
     }
   }
 
@@ -199,7 +200,8 @@ class _StaffView extends StatelessWidget {
     }
   }
 
-  void _showPinDialog(BuildContext context, String name, String pin) {
+  void _showPinDialog(BuildContext context, String name, String pin,
+      {String password = ''}) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -224,6 +226,16 @@ class _StaffView extends StatelessWidget {
                 ),
               ),
             ),
+            if (password.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text('Login password for $name:'),
+              const SizedBox(height: 8),
+              SelectableText(
+                password,
+                style: const TextStyle(
+                    fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 4),
+              ),
+            ],
             const SizedBox(height: 16),
             const Text(
               'Share this PIN securely with the staff member.',

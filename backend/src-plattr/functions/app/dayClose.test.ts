@@ -49,7 +49,7 @@ function fakePorts(opts: Opts = {}): Fake {
   const audits = new Map<string, AuditRow>();
   const pins = new Map<string, PinState>();
   const logs: object[] = []; const warnings: string[] = []; const calls: string[] = [];
-  const staff: Staff = { staffId: 'priya', role: 'MANAGER', status: 'active', password: 'hash(1234)', ...opts.staff };
+  const staff: Staff = { staffId: 'priya', role: 'MANAGER', status: 'active', pinHash: 'hash(1234)', ...opts.staff };
 
   const p: Fake = {
     closes, movements, audits, logs, warnings, calls,

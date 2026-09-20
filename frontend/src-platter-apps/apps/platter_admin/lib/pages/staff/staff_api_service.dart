@@ -209,6 +209,8 @@ class AddServerResponse {
   final String role;
   final String status;
   final String pin;
+  /// The generated login password, shown once. Separate from the PIN (TD-041).
+  final String password;
 
   AddServerResponse({
     required this.serverId,
@@ -218,6 +220,7 @@ class AddServerResponse {
     required this.role,
     required this.status,
     required this.pin,
+    this.password = '',
   });
 
   factory AddServerResponse.fromJson(Map<String, dynamic> json) {
@@ -229,6 +232,7 @@ class AddServerResponse {
       role: json['role'] as String? ?? 'SERVER',
       status: json['status'] as String? ?? 'active',
       pin: json['pin'] as String? ?? '',
+      password: json['password'] as String? ?? '',
     );
   }
 }

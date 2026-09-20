@@ -68,7 +68,7 @@ Closing sessions on purpose, 2026-09-18. Shaurya's call: too many at once was dr
 
 ### Then, in order
 
-3. **The approval PIN — TD-041.** One job, not two: `pinHash` as its own field, and the plaintext
+3. **DONE 2026-09-20 — TD-041.** `pinHash` split off `password`, plaintext compare gone, seed hashed, admin shows PIN and password once. Was: One job, not two: `pinHash` as its own field, and the plaintext
    seed goes with it. **Do not "delete the dead plaintext branch" first** — MockData7 seeds
    `password: "1234"` unhashed on all 25 staff documents, so `stored === pin` is the live comparison
    path for every test in this repo. Same free-exactly-once window as item 2.
