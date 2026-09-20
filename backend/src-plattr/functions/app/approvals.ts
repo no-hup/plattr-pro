@@ -6,7 +6,7 @@ import {
 import { loadApprovalsConfig } from './config';
 import { offlineFrom, OfflineConfig } from '../domain/offline';
 
-export interface Staff { staffId: string; role: string; status: string; password?: string }
+export interface Staff { staffId: string; role: string; status: string; pinHash?: string }  // pinHash: bcrypt of the approval PIN, never the login password (TD-041)
 export interface Tx {
   getLine(lineId: string): Promise<Line | null>;
   setLine(lineId: string, line: Line): void;
@@ -52,7 +52,7 @@ export async function pinGate(ports: PinPorts, cfg: ApprovalsConfig, restaurantI
   const now = ports.now();
   const state = await ports.pinState.get(restaurantId, staff.staffId);
   if (tooSoon(state, now)) throw new ApprovalError('permission-denied', 'Too soon, wait before trying again', { requires: 'pin', tooSoon: true, retryAfter: state.retryAfter, action, sev });
-  const ok = await ports.pin.verify(pin, staff.password);
+  const ok = await ports.pin.verify(pin, staff.pinHash);
   if (!ok) {
     let r = { attemptsLeft: 0, penaltySeconds: 0, retryAfter: undefined as number | undefined };
     await ports.pinState.update(restaurantId, staff.staffId, s => {

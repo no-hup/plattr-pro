@@ -31,6 +31,9 @@ function createSeedKit() {
 
   const TEST_OTP = '123456';
   const SERVER_PW = '1234';
+  // bcrypt of the approval PIN '1234' (TD-041). A constant so the seed is deterministic and needs no
+  // bcrypt at build time. Login password and PIN are separate secrets; the seed happens to use the same digits.
+  const PIN_HASH = '$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm';
 
   let _itemSeq = 0;
 
@@ -143,7 +146,7 @@ function createSeedKit() {
   }
 
   function defServer(R, id, name, role, email, { phone = '', status = 'active' } = {}) {
-    R.servers[id] = { name, role, status, email, phoneNumber: phone, password: SERVER_PW, profileImageUrl: '', createdAt: ts(-30 * DAY), updatedAt: ts(-DAY) };
+    R.servers[id] = { name, role, status, email, phoneNumber: phone, password: SERVER_PW, pinHash: PIN_HASH, profileImageUrl: '', createdAt: ts(-30 * DAY), updatedAt: ts(-DAY) };
   }
 
   function defTable(R, id, number, capacity, status, extra = {}) {

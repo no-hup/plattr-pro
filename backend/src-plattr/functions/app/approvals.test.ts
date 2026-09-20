@@ -16,7 +16,7 @@ function fakePorts(opts: { staff?: Partial<Staff>; config?: unknown; failAudit?:
   const logs: object[] = [];
   const warnings: string[] = [];
   let now = 1_000_000;
-  const staff: Staff = { staffId: 'manager_st', role: 'MANAGER', status: 'active', password: 'hash(1234)', ...opts.staff };
+  const staff: Staff = { staffId: 'manager_st', role: 'MANAGER', status: 'active', pinHash: 'hash(1234)', ...opts.staff };
   const ports: Ports & { lines: typeof lines; audits: typeof audits; pins: typeof pins; logs: typeof logs; warnings: typeof warnings; tick(ms: number): void; sessions: Set<string> } = {
     lines, audits, pins, logs, warnings, sessions: new Set([`${RID}/s1`]),
     tick: (ms: number) => { now += ms; },

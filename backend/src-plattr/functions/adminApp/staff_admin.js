@@ -130,11 +130,11 @@ exports.addServer = functions.https.onCall(async (request, context) => {
             }
         }
 
-        // Generate a PIN if not provided. The plain PIN is returned once below
-        // so the admin can share it with the staff member; the stored value is
-        // always hashed.
-        const pin = server.password || generatePIN(4);
-        const hashedPin = await hashPassword(pin);
+        // Two secrets, each hashed (TD-041): the login password and the approval PIN. Both are
+        // returned in plain text once, below, so the admin can hand them over; never stored plain.
+        const password = server.password || generatePIN(6);
+        const pin = server.pin || generatePIN(4);
+        const [hashedPassword, hashedPin] = await Promise.all([hashPassword(password), hashPassword(pin)]);
 
         // Create server document
         const serverData = {
@@ -143,7 +143,8 @@ exports.addServer = functions.https.onCall(async (request, context) => {
             email: server.email || '',
             role: server.role || SERVER_ROLES.SERVER,
             status: SERVER_STATUS.ACTIVE,
-            password: hashedPin,
+            password: hashedPassword,
+            pinHash: hashedPin,
             profileImageUrl: server.profileImageUrl || '',
             createdAt: timestamp.serverTimestamp(),
             updatedAt: timestamp.serverTimestamp(),
@@ -158,7 +159,8 @@ exports.addServer = functions.https.onCall(async (request, context) => {
             email: serverData.email,
             role: serverData.role,
             status: serverData.status,
-            pin: pin, // Return PIN so admin can share it with server
+            pin, // Return PIN so admin can share it with server
+            password, // and the login password, once
         }, 'Server added successfully');
 
     } catch (error) {
@@ -321,9 +323,9 @@ exports.resetServerPin = functions.https.onCall(async (request, context) => {
         const pin = newPin || generatePIN(4);
         const hashedPin = await hashPassword(pin);
 
-        // Update password
+        // Update the PIN only; the login password is untouched (TD-041)
         await serverRef.update({
-            password: hashedPin,
+            pinHash: hashedPin,
             updatedAt: timestamp.serverTimestamp(),
         });
 
