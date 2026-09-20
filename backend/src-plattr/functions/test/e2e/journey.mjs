@@ -268,10 +268,10 @@ info('order status', ord?.orderStatus);
 check('the order really is COMPLETED in Firestore', ord?.orderStatus === 'COMPLETED', ord?.orderStatus);
 // TD-010: finishing the food must say nothing about the money. Only PY writes paymentStatus.
 check('COMPLETED left the order UNPAID — the kitchen does not settle bills', String(ord?.paymentStatus ?? 'unpaid').toLowerCase() === 'unpaid', ord?.paymentStatus);
-// TD-013: COMPLETED vacates the table even though nobody has paid yet. Recorded, not asserted —
-// the day this stops being true the line below flips and someone reads this comment.
+// TD-013/TD-036 closed 2026-09-20: COMPLETED no longer touches the table. Only Clear (FL) or the
+// waiter's manual Vacant frees it, so an unpaid bill can never sit on a vacant table.
 const tbl = await getDoc(`tables/${table.id}`);
-info('table after COMPLETED', `${tbl?.status}${tbl?.currentSessionId ? '' : ', session ended'}  ← TD-013: freed before the bill is paid`);
+check('COMPLETED left the table occupied with its session — the bill is still unpaid', tbl?.status !== 'vacant' && !!tbl?.currentSessionId, `${tbl?.status}, session ${tbl?.currentSessionId ?? 'ended'}`);
 
 step('4 · cashier previews the bill');
 const pv = await call('billing-preview', { restaurantId: RID, sessionId: staff.sessionId, draftId });

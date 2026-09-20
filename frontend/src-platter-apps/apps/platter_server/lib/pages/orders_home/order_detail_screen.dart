@@ -234,7 +234,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Mark as Paid?'),
         content: const Text(
-            'This closes the bill and frees the table. The guests will need to scan again to order more.'),
+            'This marks the food as done. The table stays occupied until the bill is settled and someone taps Vacant.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),

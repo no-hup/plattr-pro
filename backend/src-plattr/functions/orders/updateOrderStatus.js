@@ -12,7 +12,6 @@ const ResponseBuilder = require('../utils/ResponseBuilder');
 const errorHandler = require('../singleton/ErrorHandler');
 const { evaluateAndPickBestOffer, buildAppliedOfferObject } = require('../offers/evaluateOrderOffers');
 const { calculateCharges, loadChargesConfig } = require('./calculateCharges');
-const { vacateTable } = require('../table/vacateTable');
 
 const COLLECTIONS = {
   RESTAURANTS: 'restaurants',
@@ -173,16 +172,10 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
       );
     });
 
-    // Paid means the party is done: free the table and end its session, after
-    // the commit so a failure here never rolls back the PAID write (the waiter
-    // can still tap Vacant manually).
-    if (orderStatus === ORDER_STATUS.COMPLETED && tableId) {
-      try {
-        await vacateTable(restaurantId, tableId);
-      } catch (vacateError) {
-        console.error(`updateOrderStatus: could not vacate table ${tableId} for order ${orderId}: ${vacateError.message}`);
-      }
-    }
+    // COMPLETED says the food is done. It says nothing about the table: whether the party has
+    // paid and left is the floor module's to decide (FL R14, Clear), and it used to be decided
+    // here too, by opposite rules (TD-013, TD-036). One owner now. The waiter's manual Vacant
+    // (table-updateTableStatus) and the till's Clear are the only things that free a table.
 
     // Notify server after the commit: a transaction retry must not double-push
     // and an FCM failure must not roll back the PAID write.
