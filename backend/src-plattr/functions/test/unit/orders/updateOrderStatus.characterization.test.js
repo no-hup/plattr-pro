@@ -33,7 +33,6 @@ jest.mock('../../../adminApp/auth', () => ({ validateStaffSession: async () => (
 jest.mock('../../../singleton/FeatureFlags', () => ({ loadOverrides: async () => undefined, isEnabled: () => false }));
 jest.mock('../../../orders/calculateCharges', () => ({ loadChargesConfig: async () => [], calculateCharges: () => ({ charges: [], chargesTotal: 0 }) }));
 jest.mock('../../../offers/evaluateOrderOffers', () => ({ evaluateAndPickBestOffer: async () => null, buildAppliedOfferObject: () => null }));
-jest.mock('../../../table/vacateTable', () => ({ vacateTable: async () => undefined }));
 jest.mock('../../../notifications/sendNotification', () => ({ sendFCMNotification: async () => undefined }));
 jest.mock('../../../utils/timestamp', () => ({ now: () => 1_000_000, serverTimestamp: () => 1_000_000, safeToDate: (v) => v }));
 
@@ -64,6 +63,13 @@ describe('updateOrderStatus — the COMPLETED write, pinned for TD-010', () => {
         expect(w.data.priceInfo).toBeDefined();
         // TD-010: payment is PY's axis. Completing an order says the food is done; it says nothing about money.
         expect(w.data).not.toHaveProperty('paymentStatus');
+    });
+    test('COMPLETED writes nothing to the table or its session: freeing a table is the floor module\'s alone (TD-013, TD-036)', async () => {
+        db._seed['restaurants/res_1/tables/t7'] = { status: 'active', currentSessionId: 'sess_1' };
+        await invoke(updateOrderStatus, { restaurantId: 'res_1', sessionId: 'sess_1', orderId: 'o1', orderStatus: 'COMPLETED' });
+        const touched = [...writes.set, ...writes.update, ...writes.delete].map(w => w.path);
+        expect(touched).toEqual(['restaurants/res_1/orders/o1']);
+        expect(db._seed['restaurants/res_1/tables/t7']).toMatchObject({ status: 'active', currentSessionId: 'sess_1' });
     });
     test('IN_PROGRESS → CANCELLED never touched paymentStatus, before or after', async () => {
         await invoke(updateOrderStatus, { restaurantId: 'res_1', sessionId: 'sess_1', orderId: 'o1', orderStatus: 'CANCELLED' });
