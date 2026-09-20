@@ -310,6 +310,7 @@ class _ItemsPanel extends StatelessWidget {
       context: context,
       builder: (context) => DishEditorDialog(
         categories: provider.categories,
+        taxBlocks: provider.taxBlocks,
         initialItem: item,
         selectedCategoryId: provider.selectedCategoryId,
         selectedSubcategoryId: provider.selectedSubcategoryId,

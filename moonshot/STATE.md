@@ -53,7 +53,7 @@ Closing sessions on purpose, 2026-09-18. Shaurya's call: too many at once was dr
 
 ### Before anything else — these two have a real deadline
 
-1. **TD-038 — a hand-entered menu is 100 % unbillable.** `taxBlockId` is read
+1. **DONE 2026-09-20 — TD-038.** Resolver, write-time refusal and admin picker landed; `tax.assign` is set by hand on the config doc until CF. Was: **a hand-entered menu is 100 % unbillable.** `taxBlockId` is read
    (`orders/lineSnapshots.js:51`) and refused when null (`domain/line.ts:12`), and every writer in
    the repo is a seed, a mock or a Playwright fixture. No admin screen, no endpoint. The fix is the
    already-decided resolver: `tax.assign` category→block map, dish → category → refuse, no default,

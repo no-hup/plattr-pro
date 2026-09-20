@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:platter_core/platter_core.dart';
 import 'menu_api_service.dart';
+import '../settings/settings_api_service.dart';
 
 class MenuCatalogProvider extends ChangeNotifier {
   MenuCatalogProvider({
@@ -16,6 +17,8 @@ class MenuCatalogProvider extends ChangeNotifier {
   DataState _state = DataState.initial;
   String? _errorMessage;
   FullRestaurantMenuResponse? _menu;
+  /// Tax block id → label from the restaurant config, for the dish editor's picker.
+  Map<String, String> taxBlocks = const {};
   String? _selectedCategoryId;
   String? _selectedSubcategoryId;
 
@@ -71,6 +74,13 @@ class MenuCatalogProvider extends ChangeNotifier {
       restaurantId: restaurantId,
       sessionId: sessionId,
     );
+    // TD-038: the picker needs the block names. A failed settings read leaves the picker empty
+    // (a dish then falls back to its category's block); it never blocks the menu from loading.
+    final settings = await AdminSettingsApiService().getSettings(
+      restaurantId: restaurantId,
+      sessionId: sessionId,
+    );
+    taxBlocks = settings.data?.taxBlockLabels ?? const {};
 
     if (response.success && response.data != null) {
       _menu = response.data;

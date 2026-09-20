@@ -32,6 +32,10 @@ class MenuItem {
   @JsonKey(defaultValue: [])
   final List<String> subcategoryIds;
 
+  /// BL tax block this dish bills under (`tax.blocks` key on the restaurant config). Null means
+  /// "take the category's block" (`tax.assign`) at placement; if neither answers, the bill refuses.
+  final String? taxBlockId;
+
   @JsonKey(defaultValue: '')
   final String restaurantId;
 
@@ -58,6 +62,7 @@ class MenuItem {
     required this.categoryId,
     this.primarySubcategoryId,
     this.subcategoryIds = const [],
+    this.taxBlockId,
     this.restaurantId = '',
     required this.nutritionalInfo,
     this.addons = const [],
@@ -110,6 +115,7 @@ class MenuItem {
       categoryId: categoryId,
       primarySubcategoryId: primarySubcategoryId,
       subcategoryIds: subcategoryIds,
+      taxBlockId: taxBlockId,
       restaurantId: restaurantId,
       nutritionalInfo: nutritionalInfo,
       addons: addons,

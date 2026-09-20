@@ -73,7 +73,34 @@ describe('toCartItem — the shape, pinned', () => {
     test('a missing tax block stays null rather than guessing — BL refuses to bill it', () => {
         const out = toCartItem(muttonBiryani({ menuItem: { meta: { name: 'X' } } }));
         expect(out.taxBlockId).toBeNull();
+        expect(out.taxSource).toBeNull();
         expect(out.taxCode).toBe('');
+    });
+});
+
+// TD-038: dish → category → refuse. `tax.assign` is the category → block map on the config doc.
+describe('toCartItem — tax block resolution (TD-038)', () => {
+    const assign = { mc_bar: 'liquor', mc_mains: 'food' };
+    const handTyped = (over = {}) => muttonBiryani({ menuItem: { meta: { name: 'Kingfisher' }, categoryId: 'mc_bar', ...over } });
+
+    test('a dish with its own block keeps it, even when its category says otherwise', () => {
+        const out = toCartItem(handTyped({ taxBlockId: 'food' }), assign);
+        expect(out).toMatchObject({ taxBlockId: 'food', taxSource: 'dish', categoryId: 'mc_bar' });
+    });
+    test('a hand-entered dish with no block takes its category\'s: Kingfisher in Bar → liquor', () => {
+        const out = toCartItem(handTyped(), assign);
+        expect(out).toMatchObject({ taxBlockId: 'liquor', taxSource: 'category', categoryId: 'mc_bar' });
+    });
+    test('a category the map does not name resolves to null — never a default', () => {
+        const out = toCartItem(handTyped({ categoryId: 'mc_imported_beers' }), assign);
+        expect(out).toMatchObject({ taxBlockId: null, taxSource: null, categoryId: 'mc_imported_beers' });
+    });
+    test('no map at all behaves exactly as before', () => {
+        expect(toCartItem(handTyped()).taxBlockId).toBeNull();
+    });
+    test('the cart item\'s top-level categoryId is the fallback when the menu snapshot lacks one', () => {
+        const out = toCartItem(muttonBiryani({ menuItem: { meta: { name: 'X' } }, categoryId: 'mc_mains' }), assign);
+        expect(out).toMatchObject({ taxBlockId: 'food', taxSource: 'category' });
     });
 });
 

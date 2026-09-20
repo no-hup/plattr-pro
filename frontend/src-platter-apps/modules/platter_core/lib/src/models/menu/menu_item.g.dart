@@ -35,6 +35,7 @@ MenuItem _$MenuItemFromJson(Map<String, dynamic> json) {
             ?.map((e) => e as String)
             .toList() ??
         [],
+    taxBlockId: json['taxBlockId'] as String?,
     restaurantId: json['restaurantId'] as String? ?? '',
     nutritionalInfo: NutritionalInfo.fromJson(
         json['nutritionalInfo'] as Map<String, dynamic>),
@@ -59,6 +60,7 @@ Map<String, dynamic> _$MenuItemToJson(MenuItem instance) => <String, dynamic>{
       'categoryId': instance.categoryId,
       'primarySubcategoryId': instance.primarySubcategoryId,
       'subcategoryIds': instance.subcategoryIds,
+      'taxBlockId': instance.taxBlockId,
       'restaurantId': instance.restaurantId,
       'nutritionalInfo': instance.nutritionalInfo.toJson(),
       'addons': instance.addons.map((e) => e.toJson()).toList(),

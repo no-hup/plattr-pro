@@ -7,12 +7,15 @@ class DishEditorDialog extends StatefulWidget {
   const DishEditorDialog({
     super.key,
     required this.categories,
+    this.taxBlocks = const {},
     this.initialItem,
     this.selectedCategoryId,
     this.selectedSubcategoryId,
   });
 
   final List<MenuCategory> categories;
+  /// Tax block id → label. Empty when the restaurant has none configured; the picker then hides.
+  final Map<String, String> taxBlocks;
   final MenuItem? initialItem;
   final String? selectedCategoryId;
   final String? selectedSubcategoryId;
@@ -34,6 +37,7 @@ class _DishEditorDialogState extends State<DishEditorDialog> {
   String? _primarySubcategoryId;
   List<String> _subcategoryIds = [];
   bool _isInStock = true;
+  String? _taxBlockId;
   String _dietaryType = 'Veg';
   int _spiceLevel = 0;
   bool _isVegan = false;
@@ -73,6 +77,7 @@ class _DishEditorDialogState extends State<DishEditorDialog> {
             ? [widget.selectedSubcategoryId!]
             : []);
     _isInStock = item?.isAvailable ?? true;
+    _taxBlockId = item?.taxBlockId;
     _dietaryType = item?.meta.dietaryType.isNotEmpty == true
         ? item!.meta.dietaryType
         : 'Veg';
@@ -170,6 +175,7 @@ class _DishEditorDialogState extends State<DishEditorDialog> {
       categoryId: _categoryId!,
       primarySubcategoryId: primarySubcategoryId,
       subcategoryIds: subcategoryIds,
+      taxBlockId: _taxBlockId,
       meta: MenuItemMeta(
         name: name,
         description: _descriptionController.text.trim(),
@@ -325,6 +331,28 @@ class _DishEditorDialogState extends State<DishEditorDialog> {
                 ],
               ),
               const SizedBox(height: 12),
+              if (widget.taxBlocks.isNotEmpty)
+                DropdownButtonFormField<String?>(
+                  value: _taxBlockId,
+                  decoration: const InputDecoration(
+                    labelText: 'Tax group',
+                    helperText: 'Leave on "Same as category" unless this dish is taxed differently',
+                  ),
+                  items: [
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('Same as category'),
+                    ),
+                    ...widget.taxBlocks.entries.map(
+                      (e) => DropdownMenuItem<String?>(
+                        value: e.key,
+                        child: Text(e.value),
+                      ),
+                    ),
+                  ],
+                  onChanged: (value) => setState(() => _taxBlockId = value),
+                ),
+              if (widget.taxBlocks.isNotEmpty) const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(

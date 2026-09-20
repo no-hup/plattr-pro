@@ -18,10 +18,17 @@ jest.mock('../../../admin/admin', () => ({
     db: { collection: () => ({ doc: () => ({ collection: () => ({ doc: () => ({ get: mockGet }) }) }) }) },
 }));
 
-const { loadTaxBlocks } = require('../../../orders/lineSnapshots');
+const { loadTaxBlocks, loadTaxConfig } = require('../../../orders/lineSnapshots');
 
 describe('loadTaxBlocks fails closed on an unreadable config', () => {
     beforeEach(() => mockGet.mockReset());
+
+    it('loadTaxConfig returns the category map beside the blocks, each {} when absent (TD-038)', async () => {
+        mockGet.mockResolvedValue({ exists: true, data: () => ({ tax: { blocks: { food: {} }, assign: { mc_mains: 'food' } } }) });
+        await expect(loadTaxConfig('r1')).resolves.toEqual({ blocks: { food: {} }, assign: { mc_mains: 'food' } });
+        mockGet.mockResolvedValue({ exists: true, data: () => ({ tax: { blocks: { food: {} } } }) });
+        await expect(loadTaxConfig('r1')).resolves.toEqual({ blocks: { food: {} }, assign: {} });
+    });
 
     it('refuses when the settings read throws', async () => {
         mockGet.mockRejectedValue(new Error('DEADLINE_EXCEEDED'));

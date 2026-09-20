@@ -13,7 +13,7 @@ const { evaluateAndPickBestOffer, buildAppliedOfferObject } = require('../offers
 const { calculateCharges, loadChargesConfig } = require('./calculateCharges');
 const { validateCart } = require('../cart/validateCart');
 const { calculateCartValue } = require('../cart/calculateCartValue');
-const { writeLineSnapshots, loadTaxBlocks } = require('./lineSnapshots');
+const { writeLineSnapshots, loadTaxConfig } = require('./lineSnapshots');
 
 
 /**
@@ -62,7 +62,7 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
 
   // BL: the tax blocks a placed line freezes. Read out-of-band for the same reason as the charges
   // config, and never re-read at billing time (SPEC_BL R12).
-  const taxBlocks = await loadTaxBlocks(restaurantId);
+  const { blocks: taxBlocks, assign: taxAssign } = await loadTaxConfig(restaurantId);
 
   // Waiter confirmation gate: read out-of-band like the two configs above. Decides the
   // fulfillment status a checked-out cart is BORN with, and nothing else.
@@ -236,6 +236,7 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
         sessionId,
         placedBy: userId,
         blocks: taxBlocks,
+        assign: taxAssign,
         now: Date.now(),
         sent: linesAreSent,
       });

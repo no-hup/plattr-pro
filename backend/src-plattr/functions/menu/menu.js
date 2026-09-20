@@ -39,6 +39,22 @@ const { getAllCategories, getCategoryById } = require('./creation/cateogory');
 const { getAllMenuItems, getMenuItemsByCategory, createMenuItem, updateMenuItem: updateMenuItemUtil, deleteMenuItem: deleteMenuItemUtil, getMenuItemById, updateMenuItemStock } = require('./menuItem');
 
 /**
+ * TD-038: a dish may name a tax block, and if it does the block must exist on this restaurant's
+ * config. Refused here, where the admin is still standing at the form, not at bill preview.
+ * `null`/absent is allowed: the dish then takes its category's block (`tax.assign`) at placement.
+ */
+async function assertKnownTaxBlock(restaurantId, taxBlockId) {
+  if (taxBlockId === undefined || taxBlockId === null) return;
+  const doc = await db.collection('restaurants').doc(restaurantId).collection('config').doc('settings').get();
+  const blocks = (doc.exists && doc.data()?.tax?.blocks) || {};
+  if (typeof taxBlockId !== 'string' || !blocks[taxBlockId]) {
+    errorHandler.badRequest(`Unknown tax block "${taxBlockId}"; set it up under tax.blocks first`, {
+      restaurantId, taxBlockId, known: Object.keys(blocks),
+    });
+  }
+}
+
+/**
  * Input: { }
  * Gets the full menu structure with categories and menu items
  */
@@ -171,6 +187,7 @@ const addMenuItem = functions.https.onCall(async (data, context) => {
     }
     
     // Create the menu item
+    await assertKnownTaxBlock(restaurantId, menuItemData.taxBlockId);
     const menuItemId = await createMenuItem(restaurantId, menuItemData);
     
     // Get the created menu item
@@ -229,6 +246,7 @@ const updateMenuItem = functions.https.onCall(async (data, context) => {
     }
     
     // Update the menu item
+    await assertKnownTaxBlock(restaurantId, updateData.taxBlockId);
     await updateMenuItemUtil(restaurantId, menuItemId, updateData);
     
     // Get the updated menu item

@@ -14,6 +14,7 @@ RestaurantSettings _$RestaurantSettingsFromJson(Map<String, dynamic> json) =>
             (k, e) => MapEntry(k, e as bool),
           ) ??
           {},
+      tax: json['tax'] as Map<String, dynamic>? ?? {},
     );
 
 Map<String, dynamic> _$RestaurantSettingsToJson(RestaurantSettings instance) =>
@@ -21,6 +22,7 @@ Map<String, dynamic> _$RestaurantSettingsToJson(RestaurantSettings instance) =>
       'theme': instance.theme,
       'featureFlags': instance.featureFlags,
       'ordering': instance.ordering,
+      'tax': instance.tax,
     };
 
 ThemeConfig _$ThemeConfigFromJson(Map<String, dynamic> json) => ThemeConfig(
