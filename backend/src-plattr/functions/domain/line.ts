@@ -20,6 +20,7 @@ export interface Line extends StLine {
   qty: number;                                                        // F, ≥ 1
   components: Component[];                                            // F
   taxBlocks: Record<string, TaxBlock>;                                // F, every block this line touches, snapshot at placement
+  taxSource?: 'dish' | 'category' | null; categoryId?: string | null; // F, how the item's block was found (2026-09-18 decision)
   draftId: string;                                                    // L
   billId: string | null;                                              // L → F at issue; cancel sets null in the same transaction
 }
@@ -29,7 +30,9 @@ export interface Line extends StLine {
 export interface CartComponent { id: string; name: string; basePrice: number; finalPrice?: number; taxBlockId?: string | null; taxCode?: string }
 export interface CartItem {
   menuItemId: string; name: string; quantity: number; cartItemId: string;
-  taxBlockId?: string | null; taxCode?: string;            // from the menu item (set in Admin)
+  taxBlockId?: string | null; taxCode?: string;            // resolved dish → category (tax.assign) → null, in lineSnapshots
+  taxSource?: 'dish' | 'category' | null;                   // which of the two answered; null = neither, BL refuses (R10)
+  categoryId?: string | null;
   itemBasePrice: number; itemFinalPrice: number;            // LINE totals in minor units, the base item only
   variants: CartComponent[]; addons: CartComponent[];       // per unit, minor units
 }
@@ -78,6 +81,7 @@ export function placeLine(item: CartItem, ctx: PlaceContext, lineId: string): Li
     lineId, cid: ctx.cid, orderId: ctx.orderId, cartId: ctx.cartId, cartItemId: item.cartItemId,
     tableId: ctx.tableId, sessionId: ctx.sessionId, placedAt: ctx.placedAt, placedBy: ctx.placedBy,
     menuItemId: item.menuItemId, name: item.name, qty, components, taxBlocks,
+    taxSource: item.taxSource ?? (item.taxBlockId ? 'dish' : null), categoryId: item.categoryId ?? null,
     listPrice, sent: ctx.sent, v: 0, countsTowardTotal: true, draftId: ctx.draftId, billId: null,
     offer: cut > 0 ? { id: 'menu', amount: cut } : null,
   };

@@ -44,6 +44,14 @@ describe('domain/line placeLine', () => {
     expect(l.components.every(c => c.taxBlockId === null)).toBe(true);
     expect(l.taxBlocks).toEqual({});
   });
+  it('freezes how the block was found: a dish with its own block reads dish; a category-resolved one reads category (TD-038)', () => {
+    expect(placeLine(burger(), ctx, 'L1')).toMatchObject({ taxSource: 'dish', categoryId: null });
+    const l = placeLine(burger({ taxBlockId: 'liquor', taxSource: 'category', categoryId: 'mc_bar' }), ctx, 'L2');
+    expect(l).toMatchObject({ taxSource: 'category', categoryId: 'mc_bar' });
+    expect(l.components[0].taxBlockId).toBe('liquor');
+    expect(placeLine(burger({ taxBlockId: null }), ctx, 'L3').taxSource).toBeNull();
+  });
+
   it('the line starts unbilled, v 0, counted, in the table\'s draft, with its provenance', () => {
     expect(placeLine(burger(), ctx, 'L1')).toMatchObject({
       lineId: 'L1', cid: 'c1', orderId: 'o1', cartId: 'k1', cartItemId: '1', tableId: 't7', sessionId: 's1',

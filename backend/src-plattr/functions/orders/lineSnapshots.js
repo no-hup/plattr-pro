@@ -10,14 +10,16 @@ const errorHandler = require("../singleton/ErrorHandler");
 const minor = (rupees) => Math.round((Number(rupees) || 0) * 100);
 
 /**
- * The restaurant's tax blocks, read out-of-band like the charges config (never inside the transaction).
+ * The restaurant's tax blocks and the category → block map, read out-of-band like the charges config (never inside the transaction).
  * Missing config is not an error here: the line is written with a null block and BL-S14 refuses to bill it.
  */
-async function loadTaxBlocks(restaurantId) {
+async function loadTaxConfig(restaurantId) {
   try {
     const doc = await db.collection("restaurants").doc(restaurantId).collection("config").doc("settings").get();
-    const blocks = doc.exists ? (doc.data()?.tax?.blocks || {}) : {};
-    return typeof blocks === "object" && blocks !== null ? blocks : {};
+    const tax = doc.exists ? (doc.data()?.tax || {}) : {};
+    const obj = (v) => (typeof v === "object" && v !== null ? v : {});
+    // `assign` is the category → block map (TD-038): a dish with no block of its own takes its category's.
+    return { blocks: obj(tax.blocks), assign: obj(tax.assign) };
   } catch (e) {
     // Fail closed. A MISSING settings document is a fresh restaurant and still means {} above —
     // but an UNREADABLE one is a blip we cannot tell apart from a fresh restaurant, and the cost
@@ -32,8 +34,14 @@ async function loadTaxBlocks(restaurantId) {
 }
 
 /** A cart item as domain/line.ts wants it: minor units, components split out, per-unit variant and addon prices. */
-function toCartItem(item) {
+function toCartItem(item, assign = {}) {
   const p = item.priceInfo || {};
+  // TD-038: dish → category → refuse. No default, ever: a silent guess bills an "Imported Beers"
+  // category as food for weeks; a null is refused at bill preview with the cashier standing there.
+  const categoryId = item.menuItem?.categoryId ?? item.categoryId ?? null;
+  const own = item.menuItem?.taxBlockId ?? null;
+  const taxBlockId = own ?? (categoryId && assign[categoryId]) ?? null;
+  const taxSource = own ? "dish" : taxBlockId ? "category" : null;
   // TD-014: a variant or addon flagged `respectParentDiscount` is sold at the ITEM's discount, and
   // `calculateItemPrice` applies that at cart time — but only into the cart's AGGREGATE totals. The
   // component's own `priceInfo.finalPrice` never learns about it, so reading it here quietly billed
@@ -56,7 +64,7 @@ function toCartItem(item) {
     name: item.menuItem?.meta?.name || item.name || "Unknown Item",
     quantity: typeof item.quantity === "number" && item.quantity > 0 ? item.quantity : 1,
     cartItemId: String(item.cartItemId ?? 0),
-    taxBlockId: item.menuItem?.taxBlockId ?? null,
+    taxBlockId, taxSource, categoryId,
     taxCode: item.menuItem?.taxCode ?? "",
     itemBasePrice: minor(p.itemBasePrice),
     itemFinalPrice: minor(p.itemFinalPrice),
@@ -70,7 +78,9 @@ function toCartItem(item) {
  * Inside the caller's transaction on purpose: a bill must never be askable for lines that do not exist yet.
  * Cancelled items are skipped, matching normalizeCartItemsForOrder.
  */
-function writeLineSnapshots(transaction, restaurantId, { cartSnapshot, orderId, tableId, sessionId, placedBy, blocks, now, sent = true }) {
+const loadTaxBlocks = async (restaurantId) => (await loadTaxConfig(restaurantId)).blocks;
+
+function writeLineSnapshots(transaction, restaurantId, { cartSnapshot, orderId, tableId, sessionId, placedBy, blocks, assign = {}, now, sent = true }) {
   const cartId = cartSnapshot.cartId;
   const ctx = {
     cid: orderId, orderId, cartId, tableId,
@@ -86,7 +96,7 @@ function writeLineSnapshots(transaction, restaurantId, { cartSnapshot, orderId, 
     if (!item.menuItemId) continue;
     if (String(item.status || "").toUpperCase() === "CANCELLED") continue;
     const lineId = `${cartId}_${item.cartItemId ?? 0}`;
-    const line = placeLine(toCartItem(item), ctx, lineId);
+    const line = placeLine(toCartItem(item, assign), ctx, lineId);
     transaction.set(db.collection("restaurants").doc(restaurantId).collection("lines").doc(lineId), line);
     written.push(lineId);
   }
@@ -182,4 +192,4 @@ async function voidCartLines(transaction, restaurantId, cartSnapshot, { staffId,
   return written;
 }
 
-module.exports = { writeLineSnapshots, markLinesSent, voidCartLines, loadTaxBlocks, toCartItem };
+module.exports = { writeLineSnapshots, markLinesSent, voidCartLines, loadTaxBlocks, loadTaxConfig, toCartItem };
