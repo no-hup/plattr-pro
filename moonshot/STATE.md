@@ -88,6 +88,15 @@ Closing sessions on purpose, 2026-09-18. Shaurya's call: too many at once was dr
 
 ### Answered by Shaurya 2026-09-20 (were waiting on him)
 
+- **KT-Q1 yes, the kitchen gets a printer. KT-Q3 no, the tandoor shares the kitchen ticket.** KT-Q2 (venue
+  network) still open. Printing stays one server-side module with per-restaurant routing; there is no
+  other printing code in the repo to unify.
+- **OR (till order entry) is deferred** until the system is stable: more than three screens and six-plus
+  endpoints is too big for now. What ships instead: **one add-dish screen in the Flutter server app**
+  (pick table, search, tap, send) on `cart-addItemToCart` / `cart-checkoutCart`, plus `table-openTable`
+  (OR phase 2, unchanged). Search is local over the cached menu: prefix of any word, case/space
+  insensitive, sorted by sales. Table map, move, counter tickets and the till screens wait with OR.
+
 - **`covers` on `table-openTable`: yes.** One optional number field, asked at Open. TD-031 is closed
   by this; the "must not re-add unasked" note no longer applies.
 - **`stuff.md`: local only.** Now in `.gitignore`.
