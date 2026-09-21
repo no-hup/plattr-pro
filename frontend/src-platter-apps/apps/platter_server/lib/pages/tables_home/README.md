@@ -1,5 +1,11 @@
 # Tables Home Feature
 
+> **The `pending` status is gone (2026-09-21).** A guest part way through signing in is now a
+> HOLD on the table's code — `currentOTP.expiresAt` is when the claim lapses, not when the
+> code dies, and the code itself does not expire. Derived where it is needed rather than
+> stored, so it lapses with nothing having to run. Full reasoning and blast radius:
+> `moonshot/reviews/2026-09-21-otp-and-table-state.md`.
+
 This feature allows restaurant staff to view and manage tables in the restaurant.
 
 ## Features
@@ -110,7 +116,7 @@ staff. A customer who scans its QR gets 403 "This table is reserved. Please ask 
 staff to seat you.", and OTP entry is refused too. To seat a party there, set the table
 to **Vacant** — the normal scan → OTP flow takes over. Reserving a table that already
 has a seated party does NOT evict them; their existing session keeps working. Reserved
-tables are not touched by the inactivity cleanup that vacates stale active/pending
+tables are not touched by the inactivity cleanup that vacates stale active
 tables, so a reserved table stays reserved until a waiter changes it.
 
 **Expected Response Format:**

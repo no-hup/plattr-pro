@@ -1,5 +1,11 @@
 # Server App PRD (Waiter/Staff)
 
+> **The `pending` status is gone (2026-09-21).** A guest part way through signing in is now a
+> HOLD on the table's code — `currentOTP.expiresAt` is when the claim lapses, not when the
+> code dies, and the code itself does not expire. Derived where it is needed rather than
+> stored, so it lapses with nothing having to run. Full reasoning and blast radius:
+> `moonshot/reviews/2026-09-21-otp-and-table-state.md`.
+
 ## Overview
 - Purpose: waiter-facing app to manage tables, orders, and menu availability for in-restaurant service
 - Primary users: servers/waiters and shift leads; secondary: floor manager
@@ -30,7 +36,7 @@
 - Display: grid of tables with capacity, status, and active order badge
 - Detail dialog: status change buttons, OTP display + refresh, quick link to active order
 - Rules: OTP only for vacant tables; show error if OTP refresh attempted when not vacant
-- Statuses: active, vacant, reserved, disabled, pending/otp_pending (from backend enum)
+- Statuses: active, vacant, reserved, disabled (from backend enum; `pending` was removed 2026-09-21)
 - Reserved = staff-held: customers scanning it are told to ask staff (403). Set the table
   to Vacant to seat a party. See PRD 16.1 and tables_home/README.md.
 - Suggestion: add table grouping by section/floor + search by tableId

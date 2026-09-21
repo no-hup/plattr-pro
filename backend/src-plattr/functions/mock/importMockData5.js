@@ -56,6 +56,14 @@ for (const includePath of includeFiles) {
  * { _seconds, _nanoseconds } objects to (now - 600) seconds so the
  * data looks recent.
  */
+// When the seed says when it was built, every timestamp is slid forward by the same amount, so
+// the whole file keeps its shape: what was an hour before the build is an hour ago now, and what
+// was an hour after it is an hour away. That matters since 2026-09-21, when a table's
+// `currentOTP.expiresAt` became a HOLD rather than a session expiry: a seed deliberately carries
+// one hold that has lapsed and one that has not, and the old rule below flattened both into
+// "an hour from now" and lost the distinction.
+let slideSeconds = null;
+
 function refreshTimestamps(data, parentKey) {
     if (!data || typeof data !== 'object') return data;
     const nowSeconds = Math.floor(Date.now() / 1000) - 600; // 10 min ago
@@ -66,8 +74,11 @@ function refreshTimestamps(data, parentKey) {
         const value = result[key];
         if (value && typeof value === 'object') {
             if (value._seconds !== undefined && value._nanoseconds !== undefined) {
-                // expiresAt fields should be in the future, not the past
-                const target = key === 'expiresAt' ? futureSeconds : nowSeconds;
+                // Older seeds carry no build time. Fall back to the blunt rule they were written
+                // for: everything lands 10 minutes ago, except an expiry, which lands an hour out.
+                const target = slideSeconds !== null
+                    ? value._seconds + slideSeconds
+                    : (key === 'expiresAt' ? futureSeconds : nowSeconds);
                 result[key] = { _seconds: target, _nanoseconds: 0 };
             } else {
                 result[key] = refreshTimestamps(value, key);
@@ -78,7 +89,12 @@ function refreshTimestamps(data, parentKey) {
 }
 
 if (shouldRefreshTimestamps) {
-    console.log('Refreshing timestamps to (now - 10 min)...');
+    const builtAt = mockData?._meta?.generatedAtUnix;
+    slideSeconds = typeof builtAt === 'number' ? Math.floor(Date.now() / 1000) - builtAt : null;
+    console.log(slideSeconds !== null
+        ? `Sliding every timestamp forward ${slideSeconds}s, keeping the seed's shape`
+        : 'No build time in this seed — flattening timestamps the old way');
+
     if (mockData.restaurants) {
         for (const rid of Object.keys(mockData.restaurants)) {
             mockData.restaurants[rid] = refreshTimestamps(mockData.restaurants[rid]);

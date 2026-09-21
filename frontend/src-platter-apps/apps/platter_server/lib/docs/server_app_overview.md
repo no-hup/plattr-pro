@@ -1,5 +1,11 @@
 # Waiter App Documentation
 
+> **The `pending` status is gone (2026-09-21).** A guest part way through signing in is now a
+> HOLD on the table's code — `currentOTP.expiresAt` is when the claim lapses, not when the
+> code dies, and the code itself does not expire. Derived where it is needed rather than
+> stored, so it lapses with nothing having to run. Full reasoning and blast radius:
+> `moonshot/reviews/2026-09-21-otp-and-table-state.md`.
+
 ## Overview
 The waiter-facing app is designed for restaurant staff to efficiently manage in-restaurant dining operations, including table management, order processing, and menu updates.
 
@@ -31,7 +37,7 @@ The waiter-facing app is designed for restaurant staff to efficiently manage in-
   - `active` - Table has active session with customers
   - `vacant` - Table is empty and available
   - `disabled` - Table is not in use
-  - `pending` (OTP_PENDING) - OTP generated, awaiting customer validation
+  - (`pending` was removed on 2026-09-21: a guest mid-sign-in is a hold on the code, not a status)
 - **Actions**:
   - Clicking opens Table Popup
   - Manage table status and orders

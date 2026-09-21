@@ -34,6 +34,21 @@ const millis = (v: unknown): number => {
  * one query for the whole floor answers it for every table at once, and a stored flag is one
  * more thing that can drift out of step with `mergedInto`.
  */
+/**
+ * Is a scan still holding this table? `currentOTP.expiresAt` is the claim a scan put on the
+ * table, NOT the life of the code — the code does not expire (session/otpService.js). Derived
+ * here rather than stored, so it lapses without anything having to run.
+ */
+function holdActive(otp: unknown): boolean {
+  const at = (otp as { expiresAt?: unknown } | null | undefined)?.expiresAt;
+  if (!at) return false;
+  const ms = at instanceof Date ? at.getTime()
+    : typeof (at as { toMillis?: () => number }).toMillis === 'function' ? (at as { toMillis: () => number }).toMillis()
+    : typeof at === 'number' ? at
+    : Date.parse(String(at));
+  return Number.isFinite(ms) && ms > Date.now();
+}
+
 function toTable(d: FirebaseFirestore.QueryDocumentSnapshot, parents: Set<string>): Table {
   const x = d.data();
   return {
@@ -41,7 +56,7 @@ function toTable(d: FirebaseFirestore.QueryDocumentSnapshot, parents: Set<string
     number: x.number ? String(x.number) : undefined,
     status: String(x.status ?? 'vacant').toLowerCase() as Table['status'],
     mergedInto: x.mergedInto ?? null,
-    currentOTP: x.currentOTP ?? null,
+    hasHold: holdActive(x.currentOTP),
     hasSession: !!x.activeSessionId || (Array.isArray(x.occupiedBy) && x.occupiedBy.length > 0),
     isParent: parents.has(d.id),
   };
@@ -175,7 +190,7 @@ export const ports: Ports = {
             number: x.number ? String(x.number) : undefined,
             status: String(x.status ?? 'vacant').toLowerCase() as Table['status'],
             mergedInto: (x.mergedInto as string) ?? null,
-            currentOTP: (x.currentOTP as string) ?? null,
+            hasHold: holdActive(x.currentOTP),
             hasSession: !live.empty,
             isParent: !kids.empty,
           };

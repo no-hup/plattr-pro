@@ -23,6 +23,10 @@ const TABLE_STATUS = {
     ACTIVE: 'active',
     VACANT: 'vacant',
     DISABLED: 'disabled',
+    // Read-only since 2026-09-21: nothing writes `pending` any more. A guest part way through
+    // signing in is a hold on `currentOTP.expiresAt`, derived where it is needed instead of
+    // stored — a status had to be undone by a cleanup job, and that job was never scheduled
+    // (TD-044). Kept here so a document written before that date still reads sanely.
     OTP_PENDING: 'pending',
     RESERVED: 'reserved'   // staff-held: no self-service join until a waiter marks it vacant
 };
@@ -154,21 +158,30 @@ exports.validateTableAndLocation = functions.https.onCall(async (request, contex
             );
         }
 
-        // 6. OTP Generation for Vacant Tables
-        if (originalStatus === TABLE_STATUS.VACANT ||
-            (originalStatus === TABLE_STATUS.OTP_PENDING && !otpService.isOTPValid(tableData.currentOTP))) {
-            console.log(`Table ${tableId} is ${originalStatus} (with expired/missing OTP), generating new OTP and setting status to OTP_PENDING`);
-            const otpObject = otpService.createOTPObject();
+        // 6. A scan HOLDS the table; it does not mint a new code and does not change the status.
+        //
+        // Decided 2026-09-21 (moonshot/reviews/2026-09-21-otp-and-table-state.md). Minting here
+        // was a live flaw: anyone who can read the QR could rotate the code, which silently
+        // invalidated the number the waiter was in the middle of reading out. A code is minted
+        // only when the table has none — a fresh table, or one just freed, since `vacateTable`
+        // and FL's Clear both write `currentOTP: null`. That is also where rotation happens: a
+        // new party gets a new code because the old one was cleared when the table was freed.
+        //
+        // The old `pending` status is gone. What it carried — "someone is part way through
+        // signing in" — is now the hold on `currentOTP.expiresAt`, which lapses on its own clock
+        // and so needs no cleanup job to undo it.
+        if (originalStatus === TABLE_STATUS.VACANT || originalStatus === TABLE_STATUS.OTP_PENDING) {
+            const otpObject = otpService.handleOTPGeneration(tableData);   // keeps the code it has; mints only if there is none
+            console.log(`Table ${tableId} is ${originalStatus}; holding it for this scan${tableData.currentOTP?.code ? '' : ' and minting its first code'}`);
 
             try {
                 await tableRef.update({
-                    currentOTP: otpObject,
-                    firstScannedAt: timestamp.serverTimestamp(),
-                    status: TABLE_STATUS.OTP_PENDING
+                    currentOTP: { ...otpObject, expiresAt: otpService.holdExpiry() },
+                    firstScannedAt: timestamp.serverTimestamp()
                 });
-                console.log(`Table ${tableId} status updated to OTP_PENDING in Firestore`);
+                console.log(`Table ${tableId} held in Firestore`);
             } catch (updateError) {
-                console.error(`Error updating table ${tableId} to OTP_PENDING:`, updateError);
+                console.error(`Error holding table ${tableId}:`, updateError);
                 errorHandler.internalError(
                     "Failed to prepare table for OTP validation",
                     {
@@ -373,19 +386,10 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
                 );
             }
 
-            // Check OTP expiry before comparing code
-            if (!otpService.isOTPValid(tableData.currentOTP)) {
-                console.log("validateOTP - Error: OTP has expired");
-                errorHandler.preconditionFailed(
-                    "OTP has expired. Please scan the QR code again to get a new OTP.",
-                    {
-                        tableStatus: originalStatus,
-                        error: 'OTP expired',
-                        restaurantId,
-                        tableId
-                    }
-                );
-            }
+            // No expiry check. The code lives as long as the party does (see session/otpService.js);
+            // `expiresAt` is the hold a scan put on the table, not the life of the code, and a guest
+            // who took twenty minutes to find a waiter must not be sent back to the QR. The ACTIVE
+            // branch below never checked expiry either, so this is now one rule instead of two.
 
             console.log(`validateOTP - Expected OTP: ${tableData.currentOTP.code}, Provided OTP: ${otp}`);
             if (tableData.currentOTP.code !== otp) {
@@ -404,6 +408,8 @@ exports.validateOTP = functions.https.onCall(async (request, context) => {
             const updateData = {
                 status: TABLE_STATUS.ACTIVE,
                 primaryCustomer: { phoneNumber, name },
+                // The claim is spent: they are in. The code stays, because their friends join on it.
+                currentOTP: { ...tableData.currentOTP, expiresAt: null },
                 lastActivity: timestamp.serverTimestamp()
             };
 
@@ -641,6 +647,11 @@ exports.cleanupInactiveSessions = functions.https.onCall(async (data, context) =
             console.log(`cleanupInactiveSessions: Checking tables in restaurant ${restaurantId}`);
 
             const tablesSnapshot = await restaurantDoc.ref.collection('tables')
+                // `pending` is kept in this query for documents written before 2026-09-21 only.
+                // Nothing writes it any more: a guest part way through signing in is a hold on
+                // the code, and a hold lapses on its own clock with no job to run. See TD-044 —
+                // this function is still unscheduled, so the ACTIVE half below has never run in
+                // production either.
                 .where('status', 'in', [TABLE_STATUS.ACTIVE, TABLE_STATUS.OTP_PENDING])
                 .get();
 
@@ -780,8 +791,10 @@ exports.checkTableStatus = functions.https.onCall(async (request, context) => {
             }
         }
 
-        console.log(`checkTableStatus - Checking OTP validity for table`);
-        const hasActiveOTP = otpService.isOTPValid(tableData.currentOTP);
+        console.log(`checkTableStatus - Checking whether the table carries a code`);
+        // A code does not expire any more, so the honest answer is whether one exists. The old
+        // check here read the hold, which is a different question (session/otpService.js).
+        const hasActiveOTP = !!tableData.currentOTP?.code;
         console.log(`checkTableStatus - OTP validity: ${hasActiveOTP}`);
 
         console.log("checkTableStatus - Returning table status response");
@@ -1030,8 +1043,10 @@ exports.getTableDetails = functions.https.onCall(async (request, context) => {
         }
 
         // 5. Check OTP validity
-        console.log(`getTableDetails - Checking OTP validity for table`);
-        const hasActiveOTP = otpService.isOTPValid(tableData.currentOTP);
+        console.log(`getTableDetails - Checking whether the table carries a code`);
+        // A code does not expire any more, so the honest answer is whether one exists. The old
+        // check here read the hold, which is a different question (session/otpService.js).
+        const hasActiveOTP = !!tableData.currentOTP?.code;
         console.log(`getTableDetails - OTP validity: ${hasActiveOTP}`);
 
         // 6. Get recent orders for this table (last 3)
