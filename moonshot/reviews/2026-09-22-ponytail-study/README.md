@@ -48,3 +48,32 @@ Replace *"Already in this codebase? A helper, util, type, or pattern that alread
 
 The plugin's own file is overwritten on update, so the place for this is the user's global CLAUDE.md
 (or the repo's), as an addendum that overrides rung 2.
+
+## Round 2 — the same Grok session, pointed at the annotation runbooks (2026-09-22)
+
+`brief-C-runbooks.md` → `grok-C-runbooks.md`. Same session as run A, so it carried the
+plattr-pro findings; it was given scrubbed copies of the three runbooks, the lessons ledger
+and the per-turn checklist.
+
+- **Its call: switch ponytail off for that project.** The upside it would bring is already a
+  rule in those runbooks, bought with two dead worker packets. The downside is the thing those
+  runs grade — an untraced "done" that a rating or a `DONE` row then believes.
+- **Fingerprint check came back negative.** The "already covered / one line" wording is not in
+  the lessons ledger. The nearest cousins are the operator's own untraced claims. Structural
+  risk, no proven harm — recorded because the absence matters as much as the presence.
+- **Five collisions, ranked**: the post-compaction re-read; "already covered" replacing a second
+  arm or a second trial; the five per-turn records read as scaffolding; "deletion over addition"
+  against park-never-delete; "speculative need, skip it" against a phase with no SKIPPED state.
+
+### What was done about it
+
+`lite`, `full` and `ultra` were measured with the plugin's own instruction builder: 5202 / 5229 /
+5267 characters, all three containing the reuse rung, the one-line rung and the brake. **There is
+no soft setting** — only on or off.
+
+Ponytail was disabled per folder with `.claude/settings.json` →
+`{"enabledPlugins": {"ponytail@ponytail": false}}` (project beats user in the settings precedence)
+in: linkedin-remote-tech-jobs, its data-annotation subfolder, moonshot-marketing, self/empty,
+self/stocks, dev/browser-agent-claude. Left at full in the coding repos, this one included.
+No runbook was edited. Open gap: worker dirs created outside any project folder still inherit the
+user-level default.
