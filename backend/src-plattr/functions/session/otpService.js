@@ -3,8 +3,11 @@ const functions = require('firebase-functions');
 const timestamp = require('../utils/timestamp');
 const environment = require('../singleton/Environment');
 
+// 10 minutes, not 5: on a busy night a waiter can take that long to reach the table and read
+// the code out, and a code that dies before they arrive sends the guest back to the QR for a
+// new one — which silently invalidates the number the waiter is about to say. Shaurya, 2026-09-21.
 const OTP_CONFIG = {
-  VALIDITY_MINUTES: environment.isEmulator() ? 60 : 5,
+  VALIDITY_MINUTES: environment.isEmulator() ? 60 : 10,
   LENGTH: 6
 };
 
