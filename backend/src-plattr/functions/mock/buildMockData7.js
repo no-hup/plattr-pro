@@ -145,12 +145,14 @@ function goldenCheckout(R, scenarioId, description, itemSpecs, tags = [], sessio
 // ═════════════════════════════════════════════════════════════════════════════
 // Shared staff/customer helpers
 // ═════════════════════════════════════════════════════════════════════════════
-// EASY AUTH: every login is `<role>@<slug>.test` / password `1234`, and phone
-// numbers follow a clean, collision-free scheme `9<idx>0000000<n>` (idx 1-5 per
-// restaurant, n 1-4 per staffer). Primary server login per restaurant is
-// `server@<slug>.test`. OTP everywhere is 123456. Summarised in _meta.logins.
+// EASY AUTH, one rule: **the app's own name is the username**. Every staff app logs in with
+// `<app>@<slug>.test` and password `1234` — `server@meg.test` in the server app, `kitchen@meg.test`
+// in the kitchen app, `admin@meg.test` in the admin app. `manager@` and `server2@` are the extra
+// hands for approval and two-waiter scenarios. Phone numbers are `9<idx>0000000<n>` (idx 1-5 per
+// restaurant, n 0-4 per staffer), collision-free. OTP everywhere is 123456. Listed in _meta.logins.
 function standardStaff(R, slug, idx) {
   const ph = (n) => `9${idx}0000000${n}`;
+  defServer(R, `srv_${slug}_admin`, 'Admin', 'ADMIN', `admin@${slug}.test`, { phone: ph(0) });
   defServer(R, `srv_${slug}_mgr`, 'Manager', 'MANAGER', `manager@${slug}.test`, { phone: ph(1) });
   defServer(R, `srv_${slug}_1`, 'Server One', 'SERVER', `server@${slug}.test`, { phone: ph(2) });
   defServer(R, `srv_${slug}_2`, 'Server Two', 'SERVER', `server2@${slug}.test`, { phone: ph(3) });
@@ -638,15 +640,14 @@ const out = {
       otp: TEST_OTP,
       serverPassword: SERVER_PW,
       customers: ['9876543210 (Customer One)', '9876543211 (first-time VEG)', '9876543212 (returning)'],
-      // EASY LOGIN: every server logs in with password `1234`. Primary server per
-      // restaurant below; manager@ / server2@ / kitchen@ also exist per restaurant.
-      logins: {
-        res_meghana: { server: 'server@meg.test', manager: 'manager@meg.test', password: '1234' },
-        res_pizzabakery: { server: 'server@pb.test', manager: 'manager@pb.test', password: '1234' },
-        res_truffles: { server: 'server@tr.test', manager: 'manager@tr.test', password: '1234' },
-        res_salt: { server: 'server@salt.test', manager: 'manager@salt.test', password: '1234' },
-        res_chowman: { server: 'server@cw.test', manager: 'manager@cw.test', password: '1234' },
-      },
+      // EASY LOGIN, one rule: username is `<app>@<slug>.test`, password is always `1234`.
+      // So the server app takes server@meg.test, the kitchen app kitchen@meg.test, the admin
+      // app admin@meg.test. manager@ and server2@ exist everywhere too, for approvals and for
+      // two-waiter scenarios. Slugs: meg, pb, tr, salt, cw.
+      rule: '<app>@<slug>.test / 1234',
+      slugs: { res_meghana: 'meg', res_pizzabakery: 'pb', res_truffles: 'tr', res_salt: 'salt', res_chowman: 'cw' },
+      roles: ['admin', 'manager', 'server', 'server2', 'kitchen'],
+      example: { restaurantId: 'res_meghana', username: 'server@meg.test', password: '1234' },
     },
     goldenFixture: 'goldenExpectedValues.json',
     note: 'Run importMockData5.js with --refresh-timestamps to make timestamps relative to import time.',

@@ -1,6 +1,8 @@
 // ignore_for_file: avoid_void_async
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutterboilerplate/config/dev_guest.dart';
 import 'package:flutterboilerplate/pages/app_routes.dart';
 import 'package:flutterboilerplate/pages/debug_baner.dart';
 import 'package:flutterboilerplate/pages/otp/otp_input_dialog.dart';
@@ -36,6 +38,11 @@ class TableVerificationPageState extends State<TableVerificationPage> {
   @override
   void initState() {
     super.initState();
+    // Debug builds land on the seeded guest so nobody types a name and number to see a menu.
+    if (kDebugMode) {
+      _nameController.text = DevGuest.name;
+      _phoneController.text = DevGuest.phone;
+    }
     _validateTable();
   }
 
