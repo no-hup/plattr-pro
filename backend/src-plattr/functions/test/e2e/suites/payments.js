@@ -1,3 +1,7 @@
+// TD-041/TD-043: the approval PIN is a bcrypt `pinHash` and nothing else is compared. A suite
+// that seeds only a plaintext password logs in fine and then fails at every PIN. Same constant
+// hash of 1234 the seeds carry.
+const PIN_1234 = '$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm';
 /**
  * Suite: payments (PY · Payments). Real Cloud Functions on the emulator.
  * Seeds its own staff, order, bill and credit note via the Firestore REST API (Bearer owner = emulator
@@ -60,7 +64,7 @@ export default async function paymentsSuite() {
   const IDS = ['py_s1', 'py_s3a', 'py_s3b', 'py_s5', 'py_s7', 'py_s20', 'py_s12', 'py_s9', 'py_s10', 'py_s26', 'py_s27', 'py_s8', 'py_s14', 'py_s13', 'py_s13x', 'py_r8', 'py_s28', 'py_s32', 'py_s36'];
   for (const id of IDS) { await delDoc(`payments/${id}`); await delDoc(`audit/${id}_refund`); await delDoc(`audit/${id}_void`); }
   await delDoc('payments/rules_probe');
-  const staff = (name, role, email) => ({ name, role, status: 'active', email, password: '1234' });
+  const staff = (name, role, email) => ({ name, role, status: 'active', email, password: '1234', pinHash: PIN_1234 });
   await seed('servers/manager_py', staff('Manager PY', 'MANAGER', 'manager@py.test'));
   await seed('servers/captain_py', staff('Captain PY', 'SERVER', 'captain@py.test'));
   const freshBill = async () => {

@@ -1,3 +1,7 @@
+// TD-041/TD-043: the approval PIN is a bcrypt `pinHash` and nothing else is compared. A suite
+// that seeds only a plaintext password logs in fine and then fails at every PIN. Same constant
+// hash of 1234 the seeds carry.
+const PIN_1234 = '$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm';
 /**
  * Suite: approvals (ST · Staff PIN & approvals). Real Cloud Functions on the emulator.
  * Seeds its own staff and lines via the Firestore REST API (Bearer owner = emulator admin), same seam
@@ -60,7 +64,7 @@ export default async function approvalsSuite() {
   const OURS_LINES = ['line_pitcher', 'line_dosa', 'line_tikka'];
   for (const a of await listAudit()) if (OURS_LINES.includes(a.lineId) || OURS_STAFF.includes(a.staffId)) await delDoc(`audit/${a.id}`);
   for (const l of OURS_LINES) await delDoc(`lines/${l}`);
-  const staff = (name, role, email) => ({ name, role, status: 'active', email, password: '1234' });
+  const staff = (name, role, email) => ({ name, role, status: 'active', email, password: '1234', pinHash: PIN_1234 });
   await seed('servers/manager_st', staff('Manager ST', 'MANAGER', 'manager@st.test'));
   await seed('servers/manager_st2', staff('Manager ST Two', 'MANAGER', 'manager2@st.test'));
   await seed('servers/captain_st', staff('Captain ST', 'SERVER', 'captain@st.test'));

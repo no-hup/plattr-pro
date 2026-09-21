@@ -1,3 +1,7 @@
+// TD-041/TD-043: the approval PIN is a bcrypt `pinHash` and nothing else is compared. A suite
+// that seeds only a plaintext password logs in fine and then fails at every PIN. Same constant
+// hash of 1234 the seeds carry.
+const PIN_1234 = '$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm';
 /**
  * Suite: offline (OF · Offline & sync). Real Cloud Functions on the emulator.
  * Sheet: moonshot/SPEC_OF_offline_and_sync.md. Seeds through the Firestore REST API (Bearer owner)
@@ -98,8 +102,8 @@ export default async function offlineSuite() {
   for (const s of await listCol('sessions')) if (s.tableId === TABLE) await delDoc(`sessions/${s.id}`);
   const inAnHour = new Date(Date.now() + 3600_000);
   await seed(`tables/${TABLE}`, { number: 'OF', capacity: 4, status: 'vacant', currentOTP: { code: config.TABLE_OTP, expiresAt: inAnHour, createdAt: new Date() } });
-  await seed('servers/manager_of', { name: 'Manager OF', role: 'MANAGER', status: 'active', email: 'manager@of.test', password: '1234' });
-  await seed('servers/captain_of', { name: 'Captain OF', role: 'SERVER', status: 'active', email: 'captain@of.test', password: '1234' });
+  await seed('servers/manager_of', { name: 'Manager OF', role: 'MANAGER', status: 'active', email: 'manager@of.test', password: '1234', pinHash: PIN_1234 });
+  await seed('servers/captain_of', { name: 'Captain OF', role: 'SERVER', status: 'active', email: 'captain@of.test', password: '1234', pinHash: PIN_1234 });
   const settings = (await getDoc('config/settings')) || {};
   await seed('config/settings', { ...settings, tax: { blocks: { food: FOOD } }, seller: { name: 'E2E Bar', taxId: 'GSTIN_E2E' }, billing: { ...(settings.billing || {}), charges: [] } });
   await seed('orders/order_of', { orderId: 'order_of', tableId: 'table_of_bill', status: 'IN_PROGRESS', paymentStatus: 'unpaid', restaurantId: RID });
