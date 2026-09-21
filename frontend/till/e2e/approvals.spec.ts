@@ -1,4 +1,8 @@
 import { test, expect, type Page } from '@playwright/test'
+// TD-041/TD-043: the approval PIN is a bcrypt `pinHash` and nothing else is compared, so a
+// spec that seeds only a plaintext password logs in fine and then fails at the PIN box.
+// This is the seed's own constant hash of 1234, the same one MockData7 carries.
+const PIN_1234 = '$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm'
 
 // ST in the browser. Needs the emulator (slot 0) with functions; seeds its own staff and line through Firestore REST.
 const RID = 'res_e2e_all_on'
@@ -10,7 +14,7 @@ async function seed(path: string, obj: Record<string, unknown>, mask?: string) {
   const r = await fetch(`${FS}/${path}${mask ? `?updateMask.fieldPaths=${mask}` : ''}`, { method: 'PATCH', headers: H, body: JSON.stringify({ fields: Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, enc(v)])) }) })
   if (!r.ok) throw new Error(`seed ${path}: ${r.status}`)
 }
-const staff = (name: string, role: string, email: string) => ({ name, role, status: 'active', email, password: '1234' })
+const staff = (name: string, role: string, email: string) => ({ name, role, status: 'active', email, password: '1234', pinHash: PIN_1234 })
 
 async function login(page: Page, line: string, email: string) {
   await page.goto(`/?r=${RID}&line=${line}`)

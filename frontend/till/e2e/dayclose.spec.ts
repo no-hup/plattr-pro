@@ -1,4 +1,8 @@
 import { test, expect, type Page } from '@playwright/test'
+// TD-041/TD-043: the approval PIN is a bcrypt `pinHash` and nothing else is compared, so a
+// spec that seeds only a plaintext password logs in fine and then fails at the PIN box.
+// This is the seed's own constant hash of 1234, the same one MockData7 carries.
+const PIN_1234 = '$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm'
 
 // DC in the browser. Needs the emulator (slot 0). Seeds staff and config through Firestore REST.
 const RID = 'res_e2e_all_on'
@@ -48,7 +52,7 @@ async function login(page: Page, day: string) {
 }
 
 test.beforeEach(async () => {
-  await seed('servers/till_manager', { name: 'Till Manager', role: 'MANAGER', status: 'active', email: 'till.manager@st.test', password: '1234' })
+  await seed('servers/till_manager', { name: 'Till Manager', role: 'MANAGER', status: 'active', email: 'till.manager@st.test', password: '1234', pinHash: PIN_1234 })
   // A day can only be closed once, so reopening it for a rerun means clearing its audit row too —
   // that row is written with `create` and would otherwise collide (test housekeeping, not a reopen).
   for (const d of [PAST, TODAY]) { await del(`dayClose/${d}`); await del(`audit/${d}_dayClose`) }
