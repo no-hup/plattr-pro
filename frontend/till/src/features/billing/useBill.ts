@@ -20,13 +20,13 @@ export interface Ctx { restaurantId: string; sessionId: string; draftId: string 
 export function useBill(ctx: Ctx) {
   const [bill, setBill] = useState<Bill | null>(null)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<ApiError | null>(null)
+  // No error state: every failure is reported once, by ui/says, from the api client's one hook.
   const [dropCharges, setDropCharges] = useState<string[]>([])
   const [asOf, setAsOf] = useState<number | null>(null)   // OF-S6: set when the figures on screen are the cached ones
 
   async function run<T>(fn: () => Promise<T>): Promise<T | null> {
-    setBusy(true); setError(null)
-    try { return await fn() } catch (e) { setError(e instanceof ApiError ? e : new ApiError('unknown', String(e))); return null } finally { setBusy(false) }
+    setBusy(true)
+    try { return await fn() } catch { return null } finally { setBusy(false) }
   }
   const body = (extra: Record<string, unknown> = {}) => ({ ...ctx, cid: `till_${ctx.draftId}`, dropCharges, ...extra })
 
@@ -55,5 +55,5 @@ export function useBill(ctx: Ctx) {
   const cancel = (billId: string, reason: string, note: string) =>
     run(async () => { const r = await call<{ data: Bill }>('billing-cancel', body({ billId, reason, note })); setBill(r.data); return r.data })
   const toggleCharge = (type: string) => setDropCharges(d => (d.includes(type) ? d.filter(t => t !== type) : [...d, type]))
-  return { bill, busy, error, dropCharges, asOf, preview, issue, comp, cancel, toggleCharge }
+  return { bill, busy, dropCharges, asOf, preview, issue, comp, cancel, toggleCharge }
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { call } from './api/client'
+import { useSays } from './ui/says'
 import { PinPrompt } from './features/approvals/PinPrompt'
 import { fetchReasons, useApproval, type LineSnapshot } from './features/approvals/useApproval'
 import { BillScreen } from './features/billing/BillScreen'
@@ -31,19 +32,14 @@ export default function App() {
   // FL-S29: the role comes back with the login, so the floor can leave Merge and Move off the
   // screen for a SERVER instead of offering a button that always answers 403.
   const [session, setSession] = useState<{ sessionId: string; name: string; role?: string } | null>(null)
-  const [msg, setMsg] = useState('')
+  const { say, node: msgNode } = useSays('msg')
   const [reasons, setReasons] = useState<string[]>([])
   const [line, setLine] = useState<LineSnapshot | null>(null)
-  const { apply, busy, error } = useApproval()
+  const { apply, busy } = useApproval()
   const { offline, since } = useOnline()
 
-  useEffect(() => { if (session) fetchReasons(RESTAURANT, session.sessionId).then(setReasons).catch(e => setMsg(`Error: ${e.message}`)) }, [session])
+  useEffect(() => { if (session) fetchReasons(RESTAURANT, session.sessionId).then(setReasons).catch(() => { /* the bar already said it */ }) }, [session])
   useEffect(() => { if (session) return startSync({ restaurantId: RESTAURANT, sessionId: session.sessionId }) }, [session])   // OF-S20
-  useEffect(() => {
-    if (!error) return
-    // A challenge the cashier cancelled keeps the server's own message; a plain 403 is a role refusal.
-    setMsg(error.code === 'permission-denied' && !error.data.requires ? 'Not allowed' : error.message)
-  }, [error])
 
   async function login(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -51,20 +47,20 @@ export default function App() {
     try {
       const r = await call<{ data: { sessionId: string; name: string; role?: string } }>('server-serverLogin', { restaurantId: RESTAURANT, username: f.get('email'), password: f.get('password') })
       setSession(r.data)
-    } catch (err) { setMsg(`Login failed: ${(err as Error).message}`) }
+    } catch (err) { say(`Login failed: ${(err as Error).message}`) }
   }
 
   async function discount(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!session) return
     const f = new FormData(e.currentTarget)
-    setMsg('')
+    say('')
     const next = await apply({
       restaurantId: RESTAURANT, sessionId: session.sessionId, action: 'discount', cid: `till_${Date.now()}`, lineId: LINE,
       amount: Number(f.get('amount')), reason: String(f.get('reason')), note: String(f.get('note') ?? ''),
     })
     // Line money is paise (R9); the till shows rupees.
-    if (next) { setLine(next); setMsg(`Applied −₹${(next.discount?.amount ?? 0) / 100} (${next.discount?.pct} %)`) }
+    if (next) { setLine(next); say(`Applied −₹${(next.discount?.amount ?? 0) / 100} (${next.discount?.pct} %)`) }
   }
 
   return (
@@ -101,7 +97,8 @@ export default function App() {
       ) : (
         <FloorScreen ctx={{ restaurantId: RESTAURANT, sessionId: session.sessionId }} role={session.role ?? ''} />
       )}
-      <p data-testid="msg">{msg}</p>
+      {/* Every screen below carries its own bar; these two branches have none of their own. */}
+      {(!session || LINE) && msgNode}
       <PinPrompt />
     </main>
   )

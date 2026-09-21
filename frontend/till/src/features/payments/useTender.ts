@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { call, ApiError } from '../../api/client'
+import { call } from '../../api/client'
 import { getBill, putBill } from '../offline/cache'
 
 // PY · the till side of payments. Money is integer minor units on the wire (R8); the PIN
@@ -48,7 +48,7 @@ function settle(): void { try { sessionStorage.removeItem(KEY) } catch { /* igno
 export function useTender(ctx: Ctx) {
   const [bill, setBill] = useState<BillState | null>(null)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<ApiError | null>(null)
+  // No error state: every failure is reported once, by ui/says, from the api client's one hook.
   const [last, setLast] = useState<WriteResult | null>(null)
   const [asOf, setAsOf] = useState<number | null>(null)   // OF-S17: the outstanding on screen is the cached one
 
@@ -64,18 +64,17 @@ export function useTender(ctx: Ctx) {
     }
   }, [ctx.restaurantId, ctx.sessionId, ctx.billId])
 
-  useEffect(() => { refresh().catch(e => setError(e instanceof ApiError ? e : new ApiError('unknown', String(e)))) }, [refresh])
+  useEffect(() => { refresh().catch(() => { /* ui/says already said it */ }) }, [refresh])
 
   async function write(endpoint: string, body: Record<string, unknown>): Promise<WriteResult | null> {
-    setBusy(true); setError(null)
+    setBusy(true)
     try {
       const r = await call<{ data: WriteResult }>(endpoint, { restaurantId: ctx.restaurantId, sessionId: ctx.sessionId, ...body })
       settle()            // this tap is done; the next tap mints its own id
       setLast(r.data); setBill(b => (b ? { ...b, ...r.data.bill, rows: b.rows } : b))
       await refresh()
       return r.data
-    } catch (e) {
-      setError(e instanceof ApiError ? e : new ApiError('unknown', String(e)))
+    } catch {
       return null
     } finally { setBusy(false) }
   }
@@ -92,5 +91,5 @@ export function useTender(ctx: Ctx) {
   const voidRow = (paymentId: string, reason: string, note = '') =>
     write('payments-void', { paymentId, reason, note })
 
-  return { bill, busy, error, last, asOf, take, refund, voidRow, refresh }
+  return { bill, busy, last, asOf, take, refund, voidRow, refresh }
 }

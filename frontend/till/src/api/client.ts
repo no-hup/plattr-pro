@@ -26,6 +26,13 @@ const listeners = new Set<() => void>()
 export function onNet(fn: () => void): () => void { listeners.add(fn); return () => { listeners.delete(fn) } }
 function mark(k: 'answeredAt' | 'failedAt') { net[k] = Date.now(); listeners.forEach(f => f()) }
 
+// Every failure in the till leaves by one of the three throws below, so this is the only place
+// that has to know a call went wrong. ui/says subscribes; no screen writes its own catch for the
+// message. A new endpoint therefore reports its refusals correctly before anyone wires it up.
+const failures = new Set<(e: ApiError) => void>()
+export function onApiError(fn: (e: ApiError) => void): () => void { failures.add(fn); return () => { failures.delete(fn) } }
+function fail(e: ApiError): ApiError { failures.forEach(f => f(e)); return e }
+
 export async function call<T = unknown>(endpoint: string, body: Record<string, unknown> = {}, challenges = 0): Promise<T> {
   let res: Response
   let json: { result?: unknown; error?: { message?: string; code?: string; details?: { data?: Record<string, unknown> }; data?: Record<string, unknown> } } & Record<string, unknown>
@@ -38,7 +45,7 @@ export async function call<T = unknown>(endpoint: string, body: Record<string, u
     json = await res.json()
   } catch (e) {
     mark('failedAt')
-    throw new ApiError('unavailable', 'No connection', { cause: String(e) })
+    throw fail(new ApiError('unavailable', 'No connection', { cause: String(e) }))
   }
   mark('answeredAt')
   const out = (json.result ?? json) as Record<string, unknown> & { status?: string; message?: string }
@@ -48,9 +55,9 @@ export async function call<T = unknown>(endpoint: string, body: Record<string, u
   // Ask whenever the server asks, including after a wrong credential (ST-S3: "till asks again").
   const requires = data.requires as Requires | undefined
   if (requires) {
-    if (challenges >= MAX_CHALLENGES) throw new ApiError('too-many-challenges', 'Too many PIN attempts, start again', {})
+    if (challenges >= MAX_CHALLENGES) throw fail(new ApiError('too-many-challenges', 'Too many PIN attempts, start again', {}))
     const cred = await challenge(requires, data)
     if (cred !== null) return call<T>(endpoint, { ...body, [requires]: cred }, challenges + 1)
   }
-  throw new ApiError(String(data.code ?? err.code ?? 'unknown'), err.message ?? out.message ?? 'Request failed', data)
+  throw fail(new ApiError(String(data.code ?? err.code ?? 'unknown'), err.message ?? out.message ?? 'Request failed', data))
 }

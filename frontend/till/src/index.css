@@ -1,1 +1,10 @@
 body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; }
+
+/* One message bar, bottom of the screen, tap to dismiss. Empty says nothing and takes no room. */
+.says { margin: 0; }
+.says:not(:empty) {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+  padding: 12px 16px; font-size: 16px; cursor: pointer;
+  background: #1f2937; color: #fff;
+}
+.says.bad:not(:empty) { background: #b91c1c; }

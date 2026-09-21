@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { call, ApiError } from '../../api/client'
+import { call } from '../../api/client'
 export { toMinor, fmt } from '../payments/useTender'   // one money parser in the till, not two
 
 // Money on the wire is integer minor units. The screen formats; nothing here does arithmetic.
@@ -25,14 +25,14 @@ export interface Ctx { restaurantId: string; sessionId: string; businessDate?: s
 export function useDayClose(ctx: Ctx) {
   const [day, setDay] = useState<DayView | null>(null)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<ApiError | null>(null)
+  // No error state: every failure is reported once, by ui/says, from the api client's one hook.
   // R13: one id per tap, kept until that tap succeeds, so a PIN challenge or a lost reply
   // re-sends the SAME id and the vendor is paid once.
   const tap = useRef<string>('')
 
   async function run<T>(fn: () => Promise<T>): Promise<T | null> {
-    setBusy(true); setError(null)
-    try { return await fn() } catch (e) { setError(e instanceof ApiError ? e : new ApiError('unknown', String(e))); return null } finally { setBusy(false) }
+    setBusy(true)
+    try { return await fn() } catch { return null } finally { setBusy(false) }
   }
 
   const load = () => run(async () => {
@@ -56,5 +56,5 @@ export function useDayClose(ctx: Ctx) {
     return r.data.doc
   })
 
-  return { day, busy, error, load, move, close }
+  return { day, busy, load, move, close }
 }

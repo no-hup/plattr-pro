@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useFloor, rupees, type Ctx, type Tile } from './useFloor'
+import { useSays } from '../../ui/says'
 
 // FL · the till's home screen. A cashier glances at it between bills, so a tile says two numbers
 // and a word, and nothing needs a tap to be read (FL-S1).
@@ -15,7 +16,7 @@ export function FloorScreen({ ctx, role }: { ctx: Ctx; role: string }) {
   const floor = useFloor(ctx)
   const [mode, setMode] = useState<Mode>(null)
   const [picked, setPicked] = useState<string[]>([])
-  const [said, setSaid] = useState('')
+  const { say, node: msgNode } = useSays('floor-msg')
 
   const mayAct = ACTORS.includes(role)
   const stop = () => { setMode(null); setPicked([]) }
@@ -31,8 +32,8 @@ export function FloorScreen({ ctx, role }: { ctx: Ctx; role: string }) {
     if (!r) return
     if (r.bills.length === 1 && r.drafts.length === 0) return go({ bill: r.bills[0].billId })
     if (r.drafts.length === 1 && r.bills.length === 0) return go({ draft: r.drafts[0].draftId })
-    if (!r.drafts.length && !r.bills.length) return setSaid(`Nothing open at ${tile.label}`)
-    setSaid('')                                   // FL-S21: several — the cashier picks, we never guess
+    if (!r.drafts.length && !r.bills.length) return say(`Nothing open at ${tile.label}`)
+    say('')                                   // FL-S21: several — the cashier picks, we never guess
     setPicker({ tile, opened: r })
   }
 
@@ -47,10 +48,10 @@ export function FloorScreen({ ctx, role }: { ctx: Ctx; role: string }) {
   async function confirm() {
     if (mode === 'merge' && picked.length >= 2) {
       const [parent, ...children] = picked
-      if (await floor.merge(parent, children)) setSaid(`Merged into ${parent}`)
+      if (await floor.merge(parent, children)) say(`Merged into ${parent}`)
     }
     if (mode === 'move' && picked.length === 2) {
-      if (await floor.move(picked[0], picked[1])) setSaid('Party moved')
+      if (await floor.move(picked[0], picked[1])) say('Party moved')
     }
     stop()
   }
@@ -101,11 +102,11 @@ export function FloorScreen({ ctx, role }: { ctx: Ctx; role: string }) {
             </button>
             {/* FL-S8/S27: unmerge lives on the group's own tile, because that is the thing it acts on. */}
             {mayAct && !mode && t.tableIds.length > 1 && (
-              <button data-testid={`unmerge-${t.label}`} onClick={async () => { if (await floor.unmerge(t.tableIds[0])) setSaid('Released') }} disabled={floor.busy || floor.stale}>Unmerge</button>
+              <button data-testid={`unmerge-${t.label}`} onClick={async () => { if (await floor.unmerge(t.tableIds[0])) say('Released') }} disabled={floor.busy || floor.stale}>Unmerge</button>
             )}
             {/* FL-Q1: Clear is the cashier's override; the table also frees itself later. */}
             {mayAct && !mode && t.word === 'settled' && (
-              <button data-testid={`clear-${t.label}`} onClick={async () => { if (await floor.clear(t.tableIds[0])) setSaid(`${t.label} cleared`) }} disabled={floor.busy || floor.stale}>Clear</button>
+              <button data-testid={`clear-${t.label}`} onClick={async () => { if (await floor.clear(t.tableIds[0])) say(`${t.label} cleared`) }} disabled={floor.busy || floor.stale}>Clear</button>
             )}
           </li>
         ))}
@@ -129,7 +130,7 @@ export function FloorScreen({ ctx, role }: { ctx: Ctx; role: string }) {
         </div>
       )}
 
-      <p data-testid="floor-msg">{said || floor.error}</p>
+      {msgNode}
     </section>
   )
 }
