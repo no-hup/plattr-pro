@@ -15,7 +15,12 @@ import { startSync } from './features/offline/sync'
 // ?r= alone lands on the floor (FL) — the home screen, since a cashier should not have to type a table number to reach a bill.
 // ?r=&reconcile=1 works through the estimates printed while the server was gone (OF).
 const q = new URLSearchParams(location.search)
-const RESTAURANT = q.get('r') ?? ''
+// Dev convenience only: the bare URL lands on Meghana's floor instead of an empty restaurant id,
+// and the login arrives filled in. `till@<slug>.test` is a MANAGER — the till bills and approves.
+// Kept in step with backend/src-plattr/functions/mock/buildMockData7.js (standardStaff).
+const DEV = import.meta.env.DEV
+const DEV_LOGIN = { restaurant: 'res_meghana', email: 'till@meg.test', password: '1234' }
+const RESTAURANT = q.get('r') ?? (DEV ? DEV_LOGIN.restaurant : '')
 const LINE = q.get('line') ?? ''
 const DRAFT = q.get('draft') ?? ''
 const BILL = q.get('bill') ?? ''
@@ -69,7 +74,7 @@ export default function App() {
       {offline && <p data-testid="offline-banner">No connection since {new Date(since).toTimeString().slice(0, 5)}</p>}
       {!session ? (
         <form onSubmit={login}>
-          <input name="email" placeholder="email" data-testid="email" /> <input name="password" type="password" placeholder="password" data-testid="password" />
+          <input name="email" placeholder="email" data-testid="email" defaultValue={DEV ? DEV_LOGIN.email : undefined} /> <input name="password" type="password" placeholder="password" data-testid="password" defaultValue={DEV ? DEV_LOGIN.password : undefined} />
           <button type="submit" data-testid="login">Log in</button>
         </form>
       ) : RECONCILE ? (
