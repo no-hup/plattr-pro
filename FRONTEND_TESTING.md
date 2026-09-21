@@ -129,7 +129,7 @@ differ, do not mix them.
 
 Tables `tbl_<slug>_<n>`: **1 active** (holds the live session), 2–3 pending, **4 reserved**
 (scan and OTP return 403 "ask the staff", by design), **5 disabled**, 6+ vacant. Meghana has
-12, the rest 10. Staff `server@<slug>.test`, `kitchen@<slug>.test`, `admin@<slug>.test`, `manager@<slug>.test`,
+12, the rest 10. Staff `server@<slug>.test`, `kitchen@<slug>.test`, `admin@<slug>.test`, `till@<slug>.test`, `manager@<slug>.test`,
 password `1234`. Customers `9876543210` (Customer One), `9876543211`, `9876543212`.
 Emulator OTP is always `123456`. `--refresh-timestamps` on import is what keeps
 `ses_*_active` unexpired (+1 h).

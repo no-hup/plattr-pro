@@ -113,8 +113,9 @@ read/sanitize path. Full run is **79 assertions**. Always `--clean` re-import
 MockData7 before a fresh run (repeated checkouts on one session group into a single
 multi-cart order and inflate totals). Staff auth: `kitchen@<slug>.test` /
 `server@<slug>.test`, password `1234`. One rule: **the app's own name is the username** —
-`server@`, `kitchen@` and `admin@` each exist for all five restaurants, plus `manager@` and
-`server2@`. `scripts/dev-up.sh` brings up the emulator, MockData7 and all four apps in one go.
+`server@`, `kitchen@`, `admin@` and `till@` each exist for all five restaurants, plus `manager@`
+and `server2@`. `till@` is a MANAGER, because the till bills and approves. `scripts/dev-up.sh`
+brings up the emulator, MockData7 and all five apps (four Flutter, plus the React till) in one go.
 
 ### Waiter-confirmation gate (per-restaurant)
 

@@ -14,15 +14,17 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUN="$ROOT/backend/flutter-app-logs"
 FN=http://127.0.0.1:5002/rms-app-dd875/us-central1
-APPS=(server:5050 consumer:5051 kitchen:5052 admin:5053)
+APPS=(server:5050 consumer:5051 kitchen:5052 admin:5053)   # Flutter, via run_app.sh
+TILL_PORT=5173                                             # the moonshot till: React + Vite
 
 # The tab set. Consumer deep-links straight to a seated table so there is no QR to scan;
-# the staff apps land on a login form that is already filled in (debug builds only).
+# every other app lands on a login form that is already filled in (debug builds only).
 URLS=(
-  "http://127.0.0.1:5050/"                                     # server   · server@meg.test
-  "http://127.0.0.1:5052/"                                     # kitchen  · kitchen@meg.test
-  "http://127.0.0.1:5053/"                                     # admin    · admin@meg.test
-  "http://127.0.0.1:5051/#/r/res_meghana/t/tbl_meg_1"           # consumer · table 1, OTP prefilled
+  "http://127.0.0.1:5173/?r=res_meghana"                        # till     · till@meg.test, floor screen
+  "http://127.0.0.1:5050/"                                      # server   · server@meg.test
+  "http://127.0.0.1:5052/"                                      # kitchen  · kitchen@meg.test
+  "http://127.0.0.1:5053/"                                      # admin    · admin@meg.test
+  "http://127.0.0.1:5051/#/r/res_meghana/t/tbl_meg_1"            # consumer · table 1, OTP prefilled
 )
 
 # curl is wrapped or aliased in some shells on this machine, so probe with python3 instead:
@@ -43,6 +45,8 @@ stop_all() {
     pid=$(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null | head -1)
     [ -n "$pid" ] && { kill "$pid" 2>/dev/null; ok "${a%%:*} (:$port)"; }
   done
+  pid=$(lsof -nP -iTCP:"$TILL_PORT" -sTCP:LISTEN -t 2>/dev/null | head -1)
+  [ -n "$pid" ] && { kill "$pid" 2>/dev/null; ok "till (:$TILL_PORT)"; }
   pkill -f 'flutter_tools.snapshot run' 2>/dev/null
   for port in 8080 5002 4001 4501; do
     pid=$(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null | head -1)
@@ -77,7 +81,9 @@ for a in "${APPS[@]}"; do
   pid=$(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null | head -1)
   [ -n "$pid" ] && { echo "  REFUSING: :$port already held by pid $pid. Run 'scripts/dev-up.sh down' first." >&2; exit 1; }
 done
-ok "app ports 5050-5053 are free"
+pid=$(lsof -nP -iTCP:"$TILL_PORT" -sTCP:LISTEN -t 2>/dev/null | head -1)
+[ -n "$pid" ] && { echo "  REFUSING: :$TILL_PORT already held by pid $pid. Run 'scripts/dev-up.sh down' first." >&2; exit 1; }
+ok "app ports 5050-5053 and $TILL_PORT are free"
 
 # ── 1. emulator ─────────────────────────────────────────────────────────────────
 say "Starting the emulator (slot 0)"
@@ -114,7 +120,10 @@ for a in "${APPS[@]}"; do
   name="${a%%:*}"
   ( "$RUN/run_app.sh" "$name" >/dev/null 2>&1 & )
 done
-for a in "${APPS[@]}"; do
+# The till is Vite, not Flutter, so it does not go through run_app.sh. strictPort so it fails
+# loudly rather than drifting to 5174 and leaving the opened tab pointing at nothing.
+( cd "$ROOT/frontend/till" && npx vite --port "$TILL_PORT" --strictPort --host 127.0.0.1 >"$RUN/till.log" 2>&1 & )
+for a in "${APPS[@]}" "till:$TILL_PORT"; do
   name="${a%%:*}"; port="${a#*:}"
   printf '  %-9s' "$name"
   for _ in $(seq 1 150); do
@@ -125,12 +134,14 @@ for a in "${APPS[@]}"; do
     printf ' \033[32mup\033[0m  http://127.0.0.1:%s/\n' "$port"
   else
     printf ' \033[31mfailed\033[0m — see %s/%s.log\n' "$RUN" "$name"
+    [ "$name" = till ] && warn "the till needs 'npm install' in frontend/till the first time"
+
   fi
 done
 
 # ── 4. one browser window ───────────────────────────────────────────────────────
 if [ "$NO_BROWSER" = 0 ]; then
-  say "Opening one Chrome window with four tabs"
+  say "Opening one Chrome window with five tabs"
   # `open -na Chrome --args --new-window` only activates an already-running Chrome and drops the
   # URLs, so drive it by AppleScript: one new window, four tabs, existing windows untouched.
   osascript >/dev/null 2>&1 <<OSA
@@ -141,10 +152,11 @@ tell application "Google Chrome"
   make new tab at end of tabs of w with properties {URL:"${URLS[1]}"}
   make new tab at end of tabs of w with properties {URL:"${URLS[2]}"}
   make new tab at end of tabs of w with properties {URL:"${URLS[3]}"}
+  make new tab at end of tabs of w with properties {URL:"${URLS[4]}"}
   set index of w to 1
 end tell
 OSA
-  if [ $? -eq 0 ]; then ok "server · kitchen · admin · consumer"
+  if [ $? -eq 0 ]; then ok "till · server · kitchen · admin · consumer"
   else warn "could not drive Chrome; open these yourself:"; printf '     %s\n' "${URLS[@]}"; fi
 fi
 
@@ -153,12 +165,14 @@ cat <<'EOF'
   Logins — one rule: the app's own name is the username.
 
     restaurant   res_meghana        (or res_pizzabakery / res_truffles / res_salt / res_chowman)
+    till         till@meg.test      password 1234   (a MANAGER: it bills and approves)
     server app   server@meg.test    password 1234
     kitchen app  kitchen@meg.test   password 1234
     admin app    admin@meg.test     password 1234
     consumer     table 1, OTP 123456, guest Customer One / 9876543210
 
-  All three staff logins come pre-filled; tap a card under the form to switch restaurant.
+  Every login comes pre-filled. In the Flutter apps, tap a card under the form to switch
+  restaurant; in the till, change ?r= in the URL.
   Emulator UI: http://127.0.0.1:4001      Stop everything: scripts/dev-up.sh down
 
 EOF
