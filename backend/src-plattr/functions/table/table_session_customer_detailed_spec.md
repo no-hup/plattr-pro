@@ -173,7 +173,7 @@ isMultiUserSupportEnabled: boolean   // Allows multiple users per table
 ### OTP Configuration
 ```javascript
 const OTP_CONFIG = {
-  VALIDITY_MINUTES: environment.isEmulator() ? 60 : 5,  // 60 min emulator, 5 min production
+  VALIDITY_MINUTES: environment.isEmulator() ? 60 : 10, // 60 min emulator, 10 min production
   LENGTH: 6               // 6-digit numeric code
 };
 ```
