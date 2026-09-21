@@ -446,28 +446,32 @@
           "role": "waiter",
           "status": "active",
           "email": "server1@e2e.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "server_2": {
           "name": "Server Two",
           "role": "waiter",
           "status": "active",
           "email": "server2@e2e.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "kitchen_staff_1": {
           "name": "Kitchen One",
           "role": "kitchen",
           "status": "active",
           "email": "kitchen1@e2e.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "admin_1": {
           "name": "Admin One",
           "role": "admin",
           "status": "active",
           "email": "admin1@e2e.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         }
       },
       "tables": {
@@ -1219,28 +1223,32 @@
           "role": "waiter",
           "status": "active",
           "email": "server1@e2e-mv.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "server_2": {
           "name": "Server Two",
           "role": "waiter",
           "status": "active",
           "email": "server2@e2e-mv.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "kitchen_staff_1": {
           "name": "Kitchen One",
           "role": "kitchen",
           "status": "active",
           "email": "kitchen1@e2e-mv.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "admin_1": {
           "name": "Admin One",
           "role": "admin",
           "status": "active",
           "email": "admin1@e2e-mv.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         }
       },
       "tables": {
@@ -1739,28 +1747,32 @@
           "role": "waiter",
           "status": "active",
           "email": "server1@e2e-fb.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "server_2": {
           "name": "Server Two",
           "role": "waiter",
           "status": "active",
           "email": "server2@e2e-fb.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "kitchen_staff_1": {
           "name": "Kitchen One",
           "role": "kitchen",
           "status": "active",
           "email": "kitchen1@e2e-fb.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "admin_1": {
           "name": "Admin One",
           "role": "admin",
           "status": "active",
           "email": "admin1@e2e-fb.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         }
       },
       "tables": {
@@ -1978,28 +1990,32 @@
           "role": "waiter",
           "status": "active",
           "email": "server1@e2e-empty.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "server_2": {
           "name": "Server Two",
           "role": "waiter",
           "status": "active",
           "email": "server2@e2e-empty.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "kitchen_staff_1": {
           "name": "Kitchen One",
           "role": "kitchen",
           "status": "active",
           "email": "kitchen1@e2e-empty.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "admin_1": {
           "name": "Admin One",
           "role": "admin",
           "status": "active",
           "email": "admin1@e2e-empty.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         }
       },
       "tables": {
@@ -2561,28 +2577,32 @@
           "role": "waiter",
           "status": "active",
           "email": "server1@e2e-oos.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "server_2": {
           "name": "Server Two",
           "role": "waiter",
           "status": "active",
           "email": "server2@e2e-oos.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "kitchen_staff_1": {
           "name": "Kitchen One",
           "role": "kitchen",
           "status": "active",
           "email": "kitchen1@e2e-oos.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "admin_1": {
           "name": "Admin One",
           "role": "admin",
           "status": "active",
           "email": "admin1@e2e-oos.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         }
       },
       "tables": {
@@ -2895,28 +2915,32 @@
           "role": "waiter",
           "status": "active",
           "email": "server1@e2e-simple.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "server_2": {
           "name": "Server Two",
           "role": "waiter",
           "status": "active",
           "email": "server2@e2e-simple.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "kitchen_staff_1": {
           "name": "Kitchen One",
           "role": "kitchen",
           "status": "active",
           "email": "kitchen1@e2e-simple.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "admin_1": {
           "name": "Admin One",
           "role": "admin",
           "status": "active",
           "email": "admin1@e2e-simple.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         }
       },
       "tables": {
@@ -3478,28 +3502,32 @@
           "role": "waiter",
           "status": "active",
           "email": "server1@e2e-offer.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "server_2": {
           "name": "Server Two",
           "role": "waiter",
           "status": "active",
           "email": "server2@e2e-offer.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "kitchen_staff_1": {
           "name": "Kitchen One",
           "role": "kitchen",
           "status": "active",
           "email": "kitchen1@e2e-offer.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         },
         "admin_1": {
           "name": "Admin One",
           "role": "admin",
           "status": "active",
           "email": "admin1@e2e-offer.com",
-          "password": "1234"
+          "password": "1234",
+          "pinHash": "$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm"
         }
       },
       "tables": {

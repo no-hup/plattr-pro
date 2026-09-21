@@ -1,3 +1,7 @@
+// TD-041/TD-043: the approval PIN is a bcrypt `pinHash` and nothing else is compared. A suite
+// that seeds only a plaintext password logs in fine and then fails at every PIN. Same constant
+// hash of 1234 the seeds carry.
+const PIN_1234 = '$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm';
 /**
  * Suite: floor (FL · Floor & moves). Real Cloud Functions on the emulator.
  * Sheet: moonshot/SPEC_FL_floor_and_moves.md. Seeds through the Firestore REST API (Bearer owner)
@@ -115,8 +119,8 @@ export default async function floorSuite() {
   await seed('orders/order_fl4_done', { orderId: 'order_fl4_done', sessionId: 'sess_fl_4', tableId: 'table_fl_4', status: 'COMPLETED', restaurantId: RID });
   await seed('carts/table_fl_4', { tableId: 'table_fl_4', items: [{ cartItemId: 'ci_1', menuItemId: 'mi_x', quantity: 1 }] });
 
-  await seed('servers/manager_fl', { name: 'Manager FL', role: 'MANAGER', status: 'active', email: 'manager@fl.test', password: '1234' });
-  await seed('servers/server_fl', { name: 'Server FL', role: 'SERVER', status: 'active', email: 'server@fl.test', password: '1234' });
+  await seed('servers/manager_fl', { name: 'Manager FL', role: 'MANAGER', status: 'active', email: 'manager@fl.test', password: '1234', pinHash: PIN_1234 });
+  await seed('servers/server_fl', { name: 'Server FL', role: 'SERVER', status: 'active', email: 'server@fl.test', password: '1234', pinHash: PIN_1234 });
 
   const login = async email => (await call('server-serverLogin', { restaurantId: RID, username: email, password: '1234' })).data?.sessionId;
   const manager = await login('manager@fl.test');

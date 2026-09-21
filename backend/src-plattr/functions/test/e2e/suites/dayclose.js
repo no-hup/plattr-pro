@@ -1,3 +1,7 @@
+// TD-041/TD-043: the approval PIN is a bcrypt `pinHash` and nothing else is compared. A suite
+// that seeds only a plaintext password logs in fine and then fails at every PIN. Same constant
+// hash of 1234 the seeds carry.
+const PIN_1234 = '$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm';
 /**
  * Suite: dayclose (DC · Day close & cash count). Real Cloud Functions on the emulator.
  *
@@ -92,8 +96,8 @@ export default async function dayCloseSuite() {
   // PY's R4 mirrors every payment onto the order the bill's lines name, so that order must exist.
   await seed('orders/order_dc', { orderId: 'order_dc', tableId: 'table_dc', status: 'IN_PROGRESS', paymentStatus: 'unpaid', restaurantId: RID });
   await seed('orders/order_dc_late', { orderId: 'order_dc_late', tableId: 'table_dc', status: 'IN_PROGRESS', paymentStatus: 'unpaid', restaurantId: RID });
-  await seed('servers/manager_dc', { name: 'Manager DC', role: 'MANAGER', status: 'active', email: 'manager@dc.test', password: '1234' });
-  await seed('servers/captain_dc', { name: 'Captain DC', role: 'SERVER', status: 'active', email: 'captain@dc.test', password: '1234' });
+  await seed('servers/manager_dc', { name: 'Manager DC', role: 'MANAGER', status: 'active', email: 'manager@dc.test', password: '1234', pinHash: PIN_1234 });
+  await seed('servers/captain_dc', { name: 'Captain DC', role: 'SERVER', status: 'active', email: 'captain@dc.test', password: '1234', pinHash: PIN_1234 });
   const settings = (await getDoc('config/settings')) || {};
   await seed('config/settings', {
     ...settings,

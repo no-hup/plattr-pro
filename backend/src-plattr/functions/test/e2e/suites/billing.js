@@ -1,3 +1,7 @@
+// TD-041/TD-043: the approval PIN is a bcrypt `pinHash` and nothing else is compared. A suite
+// that seeds only a plaintext password logs in fine and then fails at every PIN. Same constant
+// hash of 1234 the seeds carry.
+const PIN_1234 = '$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm';
 /**
  * Suite: billing (BL · Billing & tax). Real Cloud Functions on the emulator.
  * Seeds staff, tax config and full line snapshots via the Firestore REST API (Bearer owner), deletes its own
@@ -59,8 +63,8 @@ export default async function billingSuite() {
   for (const a of await listCol('audit')) if (a.cid === 'cid_bl') await delDoc(`audit/${a.id}`);
   await delDoc('counters/A_2026-27'); await delDoc('counters/CN_2026-27');
   for (const k of await listCol('counters')) if (/^(A|CN)_/.test(k.id)) await delDoc(`counters/${k.id}`);
-  await seed('servers/manager_bl', { name: 'Manager BL', role: 'MANAGER', status: 'active', email: 'manager@bl.test', password: '1234' });
-  await seed('servers/captain_bl', { name: 'Captain BL', role: 'SERVER', status: 'active', email: 'captain@bl.test', password: '1234' });
+  await seed('servers/manager_bl', { name: 'Manager BL', role: 'MANAGER', status: 'active', email: 'manager@bl.test', password: '1234', pinHash: PIN_1234 });
+  await seed('servers/captain_bl', { name: 'Captain BL', role: 'SERVER', status: 'active', email: 'captain@bl.test', password: '1234', pinHash: PIN_1234 });
   const settings = (await getDoc('config/settings')) || {};
   await seed('config/settings', { ...settings, tax: { blocks: { food: FOOD, liquor: LIQ } }, seller: { name: 'E2E Bar', taxId: 'GSTIN_E2E' }, billing: { ...(settings.billing || {}), charges: [] } });
   await seed('lines/bl_pizza', line('bl_pizza', 'Margherita', 50000, 'food'));
