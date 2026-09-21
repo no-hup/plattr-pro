@@ -1,5 +1,11 @@
 # Table, Session & Customer System - Detailed Flow Specification
 
+> **The `pending` status is gone (2026-09-21).** A guest part way through signing in is now a
+> HOLD on the table's code — `currentOTP.expiresAt` is when the claim lapses, not when the
+> code dies, and the code itself does not expire. Derived where it is needed rather than
+> stored, so it lapses with nothing having to run. Full reasoning and blast radius:
+> `moonshot/reviews/2026-09-21-otp-and-table-state.md`.
+
 ## Overview
 
 The Table-Session-Customer system manages restaurant table authentication, session lifecycle, and customer profiles. It enables multi-user table access via OTP validation with session-based ordering.
@@ -61,7 +67,7 @@ const TABLE_STATUS = {
     ACTIVE: 'active',      // Table in use with active session
     VACANT: 'vacant',      // Available for new customers
     DISABLED: 'disabled',  // Unavailable (admin controlled)
-    OTP_PENDING: 'pending',// OTP generated, awaiting validation
+    OTP_PENDING: 'pending',// LEGACY documents only — nothing writes it since 2026-09-21
     RESERVED: 'reserved'   // Staff-held; waiter sets VACANT to seat the party
 };
 ```
@@ -73,7 +79,7 @@ const TABLE_STATUS = {
 ```
 restaurants/{restaurantId}/
 ├── tables/{tableId}
-│   ├── status: 'active' | 'vacant' | 'disabled' | 'pending' | 'reserved'
+│   ├── status: 'active' | 'vacant' | 'disabled' | 'reserved'   ('pending' = legacy only)
 │   ├── number: string
 │   ├── capacity: number
 │   ├── primaryCustomer: { phoneNumber, name }
@@ -154,7 +160,7 @@ isMultiUserSupportEnabled: boolean   // Allows multiple users per table
 #### Response (OTP Required)
 ```javascript
 {
-  tableStatus: 'pending',
+  tableStatus: 'vacant',   // held, not pending — see the note at the top
   restaurant: { name, id },
   table: { number, id, capacity },
   primaryCustomer: { phoneNumber, name } | null,

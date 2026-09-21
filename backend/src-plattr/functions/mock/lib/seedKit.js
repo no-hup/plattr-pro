@@ -151,10 +151,18 @@ function createSeedKit() {
 
   function defTable(R, id, number, capacity, status, extra = {}) {
     const t = { number, capacity, status };
-    if (extra.otp === 'valid') t.currentOTP = { code: TEST_OTP, createdAt: ts(-5 * MIN), expiresAt: ts(55 * MIN) };
-    else if (extra.otp === 'expired') t.currentOTP = { code: TEST_OTP, createdAt: ts(-2 * HOUR), expiresAt: ts(-1 * HOUR) };
+    // A table carries its code for as long as a party sits at it; `expiresAt` is the HOLD a scan
+    // put on the table, not the life of the code (session/otpService.js, decided 2026-09-21). So:
+    //   'code'   — has a code, nobody mid-scan. The normal state of every table.
+    //   'held'   — someone scanned and is on the code screen: merge and move refuse it and the
+    //              tile reads `signing in`. This is what the `pending` status used to mean.
+    //   'lapsed' — scanned a while ago, never finished. The claim is spent, so the table is free
+    //              again with nothing having had to run to free it. The edge worth seeding.
+    //   'none'   — no code at all; the next scan mints one.
+    if (extra.otp === 'held') t.currentOTP = { code: TEST_OTP, createdAt: ts(-2 * MIN), expiresAt: ts(55 * MIN) };
+    else if (extra.otp === 'lapsed') t.currentOTP = { code: TEST_OTP, createdAt: ts(-2 * HOUR), expiresAt: ts(-1 * HOUR) };
     else if (extra.otp === 'none') t.currentOTP = null;
-    else t.currentOTP = { code: TEST_OTP, createdAt: ts(-5 * MIN), expiresAt: ts(55 * MIN) };
+    else t.currentOTP = { code: TEST_OTP, createdAt: ts(-5 * MIN), expiresAt: null };
     if (extra.primaryCustomer) t.primaryCustomer = extra.primaryCustomer;
     if (extra.occupiedBy) t.occupiedBy = extra.occupiedBy;
     if (extra.assignedServerId) t.assignedServerId = extra.assignedServerId;

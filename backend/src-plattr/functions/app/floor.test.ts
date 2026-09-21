@@ -605,7 +605,7 @@ describe('moveTable — one transaction, four writes, no price rewritten (R5)', 
 
   it('FL-S33 a destination with an OTP in flight is refused', async () => {
     const ports = party({
-      tables: [table({ tableId: '4', status: 'active', hasSession: true }), table({ tableId: '9', status: 'pending', currentOTP: '123456' })],
+      tables: [table({ tableId: '4', status: 'active', hasSession: true }), table({ tableId: '9', status: 'vacant', hasHold: true })],
     });
     await expect(moveTable(ports, MOVE)).rejects.toThrow(/signing in/);
   });

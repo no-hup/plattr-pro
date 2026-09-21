@@ -34,7 +34,7 @@ const name = (t: Table): string => t.number ?? t.tableId;
 const WHY: Record<Table['status'], string> = {
   vacant: 'is free',
   active: 'has a party at it',
-  pending: 'has a guest signing in',
+  pending: 'has a guest signing in',   // legacy documents only; nothing writes it since 2026-09-21
   disabled: 'is out of service',
   reserved: 'is reserved',
 };
@@ -46,7 +46,16 @@ export interface Table {
 
   status: 'vacant' | 'active' | 'pending' | 'disabled' | 'reserved';
   mergedInto?: string | null;
-  currentOTP?: string | null;
+  /**
+   * Someone scanned this table's QR and has not signed in yet, and their claim has not lapsed.
+   *
+   * This replaced the `pending` table status on 2026-09-21. The adapter derives it from
+   * `currentOTP.expiresAt`, the same way it derives `hasSession` and `isParent` — a claim that
+   * is a timestamp lapses on its own, where a stored status needed a cleanup job to undo it and
+   * never got one (TD-044). See session/otpService.js and
+   * moonshot/reviews/2026-09-21-otp-and-table-state.md.
+   */
+  hasHold?: boolean;
   hasSession?: boolean;
   isParent?: boolean;          // some other table is merged into this one
 }
@@ -97,7 +106,7 @@ export const draftCount = (lines: Line[]): number =>
 
 // ── The tile ───────────────────────────────────────────────────────────────
 
-export type TileWord = 'free' | 'seated' | 'ordered' | 'billed' | 'settled';
+export type TileWord = 'free' | 'holding' | 'reserved' | 'seated' | 'ordered' | 'billed' | 'settled';
 
 export interface Tile {
   tableIds: string[];     // document ids: what an act is sent with
@@ -113,11 +122,18 @@ export interface Tile {
  * R11. The word is derived, never stored, and it never replaces the numbers — a table that is
  * billed AND still eating shows both, because ordering does not stop at issue (BL R13, TD-034).
  */
-export function tileWord(s: { onTable: number; unpaid: number; hasSession: boolean; settled: boolean }): TileWord {
+export function tileWord(s: { onTable: number; unpaid: number; hasSession: boolean; settled: boolean; hasHold?: boolean; reserved?: boolean }): TileWord {
   if (s.unpaid > 0) return 'billed';
   if (s.onTable > 0) return 'ordered';
   if (s.settled) return 'settled';        // paid, nothing left open, party may still be sitting
   if (s.hasSession) return 'seated';      // scanned, reading the menu, nothing placed
+  // TD-042. A guest is at the QR screen with the code in their hand. No session and no money, so
+  // every line above says nothing — and until 2026-09-21 the tile therefore read `free` while
+  // merge and move refused that very table. The cashier aimed at a tile that lied to them.
+  if (s.hasHold) return 'holding';
+  // Same lie, second cause: staff are holding this table for a booking, `canReceive` refuses it,
+  // and until 2026-09-21 the tile said free. A word the cashier can act on, or none at all.
+  if (s.reserved) return 'reserved';
   return 'free';                          // R14: no open money anywhere
 }
 
@@ -135,7 +151,7 @@ export function tile(sitting: Sitting | null, table: Table, now: number, numbers
   return {
     tableIds: ids,
     label: ids.map(nameOf).join('+'),
-    word: tileWord({ onTable: money, unpaid: owed, hasSession: !!sitting, settled }),
+    word: tileWord({ onTable: money, unpaid: owed, hasSession: !!sitting, settled, hasHold: table.hasHold, reserved: table.status === 'reserved' }),
     onTable: money,
     unpaid: owed,
     drafts: sitting ? draftCount(sitting.lines) : 0,
@@ -185,7 +201,7 @@ export function canReceive(dest: Table): Check {
   if (dest.status === 'disabled' && !dest.mergedInto) return no(`table ${name(dest)} is out of service`);
   if (dest.mergedInto) return no(`table ${name(dest)} is part of another group`);
   if (dest.isParent) return no(`table ${name(dest)} has tables merged into it`);
-  if (dest.currentOTP) return no(`table ${name(dest)} has a guest signing in`);
+  if (dest.hasHold) return no(`table ${name(dest)} has a guest signing in`);
   if (dest.hasSession) return no(`table ${name(dest)} has a party at it`);
   // Last, because every line above says something sharper than the status word can.
   if (dest.status !== 'vacant') return no(`table ${name(dest)} ${WHY[dest.status]}`);

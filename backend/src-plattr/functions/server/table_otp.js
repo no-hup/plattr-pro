@@ -11,12 +11,11 @@ const TABLE_STATUS = {
     ACTIVE: 'active',
     VACANT: 'vacant',
     DISABLED: 'disabled',
-    OTP_PENDING: 'pending'
 };
 
 /**
- * Generates an OTP for a vacant table and sets its status to OTP_PENDING
- * Similar to the OTP generation that happens when a user scans a table
+ * Gives a vacant table a new code and holds it, the same way a guest's scan does.
+ * The table's status is not touched — see the note beside the write below.
  * 
  * @param {Object} data - The request data
  * @param {string} data.restaurantId - Required: The ID of the restaurant
@@ -68,20 +67,22 @@ exports.generateTableOTP = functions.https.onCall(async (data, context) => {
             });
         }
 
-        // Generate OTP
+        // A new code, and a hold so the floor knows this table is being claimed. The status is NOT
+        // touched: `pending` stopped being written on 2026-09-21 and the hold replaced it, because
+        // a hold is a timestamp that lapses by itself where the status needed a job to undo it
+        // (moonshot/reviews/2026-09-21-otp-and-table-state.md). This is also the one manual
+        // rotation lever, and the only one that does not depend on the table being vacated.
         console.log(`Generating OTP for table ${tableId} in restaurant ${restaurantId}`);
-        const otpObject = otpService.createOTPObject();
-        
+        const otpObject = { ...otpService.createOTPObject(), expiresAt: otpService.holdExpiry() };
+
         try {
-            // Update table with OTP and change status
             await tableRef.update({
                 currentOTP: otpObject,
                 firstScannedAt: timestamp.serverTimestamp(),
-                status: TABLE_STATUS.OTP_PENDING,
                 lastActivity: timestamp.serverTimestamp()
             });
-            
-            console.log(`Table ${tableId} status updated to OTP_PENDING with new OTP`);
+
+            console.log(`Table ${tableId} has a new code, and a hold while the guest uses it`);
             
             // Return success response with OTP details
             return {
@@ -93,12 +94,12 @@ exports.generateTableOTP = functions.https.onCall(async (data, context) => {
                     tableNumber: tableData.number,
                     otp: otpObject.code,
                     expiresAt: timestamp.toISOString(otpObject.expiresAt),
-                    tableStatus: TABLE_STATUS.OTP_PENDING
+                    tableStatus: TABLE_STATUS.VACANT   // unchanged: the hold is on the code, not the status
                 }
             };
             
         } catch (updateError) {
-            console.error(`Error updating table ${tableId} to OTP_PENDING:`, updateError);
+            console.error(`Error holding table ${tableId} with a new code:`, updateError);
             errorHandler.internalError(
                 "Failed to generate OTP for table",
                 {

@@ -334,7 +334,7 @@ describe('canMove (R5, R6, R16)', () => {
   });
 
   it('FL-S33 a destination with an OTP in flight is refused', () => {
-    expect(canMove(from, table({ tableId: '9', status: 'pending', currentOTP: '123456' }), party, 'MANAGER').ok).toBe(false);
+    expect(canMove(from, table({ tableId: '9', status: 'vacant', hasHold: true }), party, 'MANAGER').ok).toBe(false);
   });
 
   it('FL-S33 a destination that is a parent of a merged child is refused', () => {
@@ -360,6 +360,28 @@ describe('canMove (R5, R6, R16)', () => {
   it('moving a sitting onto its own table is refused', () => {
     const r = canMove(from, table({ tableId: '4', status: 'active' }), party, 'MANAGER');
     expect(r.ok === false && r.code).toBe('invalid-argument');
+  });
+
+  it('TD-042 a table a guest is signing in at is refused, and reads `holding` rather than free', () => {
+    // The hold replaced the `pending` status on 2026-09-21. Both halves are one decision: the
+    // refusal and the word on the tile have to come from the same fact, or the cashier aims at
+    // a tile that says free and the till says no — which is exactly what happened on 2026-09-21.
+    const held = table({ tableId: '9', number: '9', status: 'vacant', hasHold: true });
+    const r = canReceive(held);
+    expect(r.ok).toBe(false);
+    expect(r.ok === false && r.message).toMatch(/table 9 has a guest signing in/);
+    expect(tile(null, held, 0).word).toBe('holding');
+
+    // and when the claim lapses, nothing had to run for the table to come free again
+    const lapsed = table({ tableId: '9', number: '9', status: 'vacant', hasHold: false });
+    expect(canReceive(lapsed).ok).toBe(true);
+    expect(tile(null, lapsed, 0).word).toBe('free');
+
+    // same lie, second cause: staff holding a table for a booking is also refused, and also
+    // read `free` before 2026-09-21
+    const held2 = table({ tableId: '9', number: '9', status: 'reserved' });
+    expect(canReceive(held2).ok).toBe(false);
+    expect(tile(null, held2, 0).word).toBe('reserved');
   });
 
   it('a reserved destination is refused: five counts, and "not vacant" is the fifth', () => {

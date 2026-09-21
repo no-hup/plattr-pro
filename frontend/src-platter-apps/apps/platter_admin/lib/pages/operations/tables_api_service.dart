@@ -156,10 +156,12 @@ class PrimaryCustomer {
   }
 }
 
-/// Table status constants
+/// Table status constants.
+/// `pending` used to be one of these. Nothing writes it since 2026-09-21 — a guest part way
+/// through signing in is now a hold on the table's code, not a status
+/// (moonshot/reviews/2026-09-21-otp-and-table-state.md).
 class TableStatus {
   static const String active = 'active';
   static const String vacant = 'vacant';
   static const String disabled = 'disabled';
-  static const String otpPending = 'pending';
 }

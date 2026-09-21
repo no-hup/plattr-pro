@@ -3,15 +3,27 @@ const functions = require('firebase-functions');
 const timestamp = require('../utils/timestamp');
 const environment = require('../singleton/Environment');
 
-// 10 minutes, not 5: on a busy night a waiter can take that long to reach the table and read
-// the code out, and a code that dies before they arrive sends the guest back to the QR for a
-// new one — which silently invalidates the number the waiter is about to say. Shaurya, 2026-09-21.
+// THE CODE DOES NOT EXPIRE. Read this before changing anything here (decided 2026-09-21,
+// moonshot/reviews/2026-09-21-otp-and-table-state.md).
+//
+// A table carries one code for as long as a party sits at it. It is replaced when the table is
+// freed — `vacateTable` and FL's Clear write `currentOTP: null`, and the next scan mints a fresh
+// one — so last night's party cannot order to tonight's table. Nothing rotates it in between,
+// which is the point: the code is read out loud by a waiter, and a code that changes under them
+// makes the number they just said wrong.
+//
+// What DOES expire is the HOLD: `currentOTP.expiresAt` is the moment the claim lapses, not the
+// moment the code dies. A scan sets it; while it is in the future and nobody has signed in, the
+// floor treats that table as being claimed and refuses to merge or move it. Because it is a
+// timestamp and not a stored status, it lapses by itself and no cleanup job has to run.
 const OTP_CONFIG = {
-  VALIDITY_MINUTES: environment.isEmulator() ? 60 : 10,
+  // How long one scan holds a table. 10 minutes, not 5: on a busy night a waiter can take that
+  // long to reach the table and read the code out. Shaurya, 2026-09-21.
+  HOLD_MINUTES: environment.isEmulator() ? 60 : 10,
   LENGTH: 6
 };
 
-console.log(`OTP_CONFIG: validity=${OTP_CONFIG.VALIDITY_MINUTES}min, length=${OTP_CONFIG.LENGTH} (${environment.mode})`);
+console.log(`OTP_CONFIG: hold=${OTP_CONFIG.HOLD_MINUTES}min, length=${OTP_CONFIG.LENGTH} (${environment.mode})`);
 
 /**
  * Generates a numeric OTP of specified length
@@ -28,25 +40,32 @@ function generateOTP() {
 }
 
 /**
- * Creates an OTP object with creation and expiry timestamps
- * @returns {Object} OTP object with code, createdAt, and expiresAt
+ * A fresh code, holding nothing yet. `expiresAt: null` means no claim on the table — the code
+ * works, but nobody has scanned for it, so the floor may still merge or move that table.
+ * @returns {Object} OTP object with code, createdAt and a null hold
  */
 function createOTPObject() {
   return {
     code: generateOTP(),
     createdAt: timestamp.now(),
-    expiresAt: timestamp.fromDate(
-      new Date(Date.now() + (OTP_CONFIG.VALIDITY_MINUTES * 60 * 1000))
-    )
+    expiresAt: null
   };
 }
 
+/** The moment a scan's claim on the table lapses. Written onto the existing code, not a new one. */
+function holdExpiry() {
+  return timestamp.fromDate(new Date(Date.now() + (OTP_CONFIG.HOLD_MINUTES * 60 * 1000)));
+}
+
 /**
- * Validates an OTP object
- * @param {Object} otpObject - The OTP object to validate
- * @returns {boolean} Whether the OTP is valid
+ * Is someone part way through signing in at this table?
+ *
+ * NOT "is the code still good" — the code is always good (see the note at the top). This is the
+ * hold a scan puts on the table, and it is the whole of what replaced the old `pending` status.
+ * @param {Object} otpObject - The table's currentOTP
+ * @returns {boolean} Whether a scan is still holding the table
  */
-function isOTPValid(otpObject) {
+function isHoldActive(otpObject) {
   if (!otpObject?.expiresAt) return false;
 
   const expiryDate = timestamp.safeToDate(otpObject.expiresAt);
@@ -63,7 +82,7 @@ function isOTPValid(otpObject) {
  * @returns {Object} OTP object
  */
 function handleOTPGeneration(tableData) {
-  if (!isOTPValid(tableData.currentOTP)) {
+  if (!tableData.currentOTP?.code) {
     return createOTPObject();
   }
   return tableData.currentOTP;
@@ -73,6 +92,7 @@ module.exports = {
   OTP_CONFIG,
   generateOTP,
   createOTPObject,
-  isOTPValid,
+  holdExpiry,
+  isHoldActive,
   handleOTPGeneration
 }; 

@@ -97,7 +97,10 @@ export function FloorScreen({ ctx, role }: { ctx: Ctx; role: string }) {
               {t.unpaid > 0 && <span data-testid={`due-${t.label}`}> {rupees(t.unpaid)} due</span>}
               {t.onTable > 0 && <span data-testid={`on-${t.label}`}> {rupees(t.onTable)}</span>}
               {t.drafts > 1 && <span data-testid={`drafts-${t.label}`}> · {t.drafts} drafts</span>}
-              {t.word === 'free' ? <span> free</span> : <span> · {t.minutes} min</span>}
+              {t.word === 'free' ? <span> free</span>
+                : t.word === 'holding' ? <span data-testid={`holding-${t.label}`}> signing in</span>
+                : t.word === 'reserved' ? <span data-testid={`reserved-${t.label}`}> reserved</span>
+                : <span> · {t.minutes} min</span>}
               {t.word === 'settled' && <span data-testid={`settled-${t.label}`}> settled</span>}
             </button>
             {/* FL-S8/S27: unmerge lives on the group's own tile, because that is the thing it acts on. */}

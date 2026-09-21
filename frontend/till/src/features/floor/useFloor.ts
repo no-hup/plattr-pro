@@ -5,7 +5,10 @@ import { call, ApiError } from '../../api/client'
 // every act, and the tap itself, goes back to the server. Money on the wire is integer minor
 // units (R8); the screen formats and never does arithmetic.
 
-export type TileWord = 'free' | 'seated' | 'ordered' | 'billed' | 'settled'
+// `holding` = a guest has scanned this table's QR and is on the code screen. It is not seated
+// (no session yet) and not free (merge and move refuse it), and before 2026-09-21 there was no
+// word for it, so the tile said free and the till refused the cashier's own tap. TD-042.
+export type TileWord = 'free' | 'holding' | 'reserved' | 'seated' | 'ordered' | 'billed' | 'settled'
 export interface Tile {
   tableIds: string[]      // document ids: what an act is sent with
   label: string           // what a person reads: "12", or "5+6" for a merged group

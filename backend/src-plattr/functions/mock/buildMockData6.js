@@ -190,11 +190,18 @@ function defServer(R, id, name, role, email, { phone = '', status = 'active' } =
 
 function defTable(R, id, number, capacity, status, extra = {}) {
   const t = { number, capacity, status };
-  // Default OTP block (valid for 60 min — emulator validity) unless overridden.
-  if (extra.otp === 'valid') t.currentOTP = { code: TEST_OTP, createdAt: ts(-5 * MIN), expiresAt: ts(55 * MIN) };
-  else if (extra.otp === 'expired') t.currentOTP = { code: TEST_OTP, createdAt: ts(-2 * HOUR), expiresAt: ts(-1 * HOUR) };
+  // A table carries its code for as long as a party sits at it; `expiresAt` is the HOLD a scan
+  // put on the table, not the life of the code (session/otpService.js, decided 2026-09-21). So:
+  //   'code'    — has a code, nobody mid-scan. The normal state of every table.
+  //   'held'    — someone scanned and is on the code screen: merge and move refuse it, the tile
+  //               reads `signing in`. This is what the old `pending` status used to mean.
+  //   'lapsed'  — scanned a while ago and never finished. The claim is spent, so the table is
+  //               free again with nothing having had to run. The edge case worth seeding.
+  //   'none'    — no code at all; the next scan mints one.
+  if (extra.otp === 'held') t.currentOTP = { code: TEST_OTP, createdAt: ts(-2 * MIN), expiresAt: ts(55 * MIN) };
+  else if (extra.otp === 'lapsed') t.currentOTP = { code: TEST_OTP, createdAt: ts(-2 * HOUR), expiresAt: ts(-1 * HOUR) };
   else if (extra.otp === 'none') t.currentOTP = null;
-  else t.currentOTP = { code: TEST_OTP, createdAt: ts(-5 * MIN), expiresAt: ts(55 * MIN) };
+  else t.currentOTP = { code: TEST_OTP, createdAt: ts(-5 * MIN), expiresAt: null };
 
   if (extra.primaryCustomer) t.primaryCustomer = extra.primaryCustomer;
   if (extra.occupiedBy) t.occupiedBy = extra.occupiedBy;
@@ -809,25 +816,25 @@ const customers = {
 // ═════════════════════════════════════════════════════════════════════════════
 // TABLES — full spread of states (Toit)
 // ═════════════════════════════════════════════════════════════════════════════
-defTable(toit, 'tbl_toit_1', '1', 4, 'active', { primaryCustomer: { phoneNumber: '9876543210', name: 'Customer One' }, occupiedBy: ['9876543210'], assignedServerId: 'srv_toit_1', activeOrderId: 'ord_toit_active', otp: 'valid', section: 'Indoor', floor: 'Ground' });
-defTable(toit, 'tbl_toit_2', '2', 6, 'active', { primaryCustomer: { phoneNumber: '9876543211', name: 'Customer Two' }, occupiedBy: ['9876543211', '9876543210'], assignedServerId: 'srv_toit_2', otp: 'valid', section: 'Indoor', floor: 'Ground' }); // multi-user
-defTable(toit, 'tbl_toit_3', '3', 2, 'pending', { otp: 'valid', section: 'Bar' }); // OTP issued, awaiting validation
-defTable(toit, 'tbl_toit_4', '4', 2, 'pending', { otp: 'expired', section: 'Bar' }); // edge: expired OTP
-defTable(toit, 'tbl_toit_5', '5', 4, 'vacant', { otp: 'valid' });
-defTable(toit, 'tbl_toit_6', '6', 8, 'reserved', { otp: 'valid', section: 'Patio' }); // edge: reserved
+defTable(toit, 'tbl_toit_1', '1', 4, 'active', { primaryCustomer: { phoneNumber: '9876543210', name: 'Customer One' }, occupiedBy: ['9876543210'], assignedServerId: 'srv_toit_1', activeOrderId: 'ord_toit_active', otp: 'code', section: 'Indoor', floor: 'Ground' });
+defTable(toit, 'tbl_toit_2', '2', 6, 'active', { primaryCustomer: { phoneNumber: '9876543211', name: 'Customer Two' }, occupiedBy: ['9876543211', '9876543210'], assignedServerId: 'srv_toit_2', otp: 'code', section: 'Indoor', floor: 'Ground' }); // multi-user
+defTable(toit, 'tbl_toit_3', '3', 2, 'vacant', { otp: 'held', section: 'Bar' }); // a guest is on the code screen
+defTable(toit, 'tbl_toit_4', '4', 2, 'vacant', { otp: 'lapsed', section: 'Bar' }); // edge: scanned, never finished
+defTable(toit, 'tbl_toit_5', '5', 4, 'vacant', { otp: 'code' });
+defTable(toit, 'tbl_toit_6', '6', 8, 'reserved', { otp: 'code', section: 'Patio' }); // edge: reserved
 defTable(toit, 'tbl_toit_7', '7', 4, 'disabled', { otp: 'none' }); // edge: disabled, no OTP
-defTable(toit, 'tbl_toit_8', '8', 4, 'vacant', { otp: 'valid' }); // hosts a COMPLETED order in history
-defTable(toit, 'tbl_toit_9', '9', 2, 'vacant', { otp: 'valid' }); // hosts a CANCELLED order
-for (let i = 10; i <= 18; i++) defTable(toit, `tbl_toit_${i}`, String(i), i % 2 ? 2 : 4, 'vacant', { otp: 'valid' });
+defTable(toit, 'tbl_toit_8', '8', 4, 'vacant', { otp: 'code' }); // hosts a COMPLETED order in history
+defTable(toit, 'tbl_toit_9', '9', 2, 'vacant', { otp: 'code' }); // hosts a CANCELLED order
+for (let i = 10; i <= 18; i++) defTable(toit, `tbl_toit_${i}`, String(i), i % 2 ? 2 : 4, 'vacant', { otp: 'code' });
 
 // Karavalli tables
-defTable(kara, 'tbl_kara_1', '1', 4, 'active', { primaryCustomer: { phoneNumber: '9876543212', name: 'Karthik Menon' }, occupiedBy: ['9876543212'], assignedServerId: 'srv_kara_1', activeOrderId: 'ord_kara_active', otp: 'valid', section: 'Main Hall' });
-defTable(kara, 'tbl_kara_2', '2', 2, 'pending', { otp: 'valid', section: 'Veranda' });
-defTable(kara, 'tbl_kara_3', '3', 6, 'reserved', { otp: 'valid', section: 'Private Dining' });
-defTable(kara, 'tbl_kara_4', '4', 4, 'vacant', { otp: 'valid' });
+defTable(kara, 'tbl_kara_1', '1', 4, 'active', { primaryCustomer: { phoneNumber: '9876543212', name: 'Karthik Menon' }, occupiedBy: ['9876543212'], assignedServerId: 'srv_kara_1', activeOrderId: 'ord_kara_active', otp: 'code', section: 'Main Hall' });
+defTable(kara, 'tbl_kara_2', '2', 2, 'vacant', { otp: 'held', section: 'Veranda' });
+defTable(kara, 'tbl_kara_3', '3', 6, 'reserved', { otp: 'code', section: 'Private Dining' });
+defTable(kara, 'tbl_kara_4', '4', 4, 'vacant', { otp: 'code' });
 defTable(kara, 'tbl_kara_5', '5', 4, 'disabled', { otp: 'none' });
-defTable(kara, 'tbl_kara_6', '6', 10, 'vacant', { otp: 'valid', section: 'Private Dining' });
-for (let i = 7; i <= 12; i++) defTable(kara, `tbl_kara_${i}`, String(i), i % 3 === 0 ? 6 : 4, 'vacant', { otp: 'valid' });
+defTable(kara, 'tbl_kara_6', '6', 10, 'vacant', { otp: 'code', section: 'Private Dining' });
+for (let i = 7; i <= 12; i++) defTable(kara, `tbl_kara_${i}`, String(i), i % 3 === 0 ? 6 : 4, 'vacant', { otp: 'code' });
 
 // ═════════════════════════════════════════════════════════════════════════════
 // SESSIONS

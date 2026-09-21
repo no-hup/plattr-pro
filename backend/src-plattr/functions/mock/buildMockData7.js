@@ -163,12 +163,16 @@ function standardStaff(R, slug, idx) {
   defServer(R, `srv_${slug}_till`, 'Till', 'MANAGER', `till@${slug}.test`, { phone: ph(5) });
 }
 function standardTables(R, slug, n = 10) {
-  defTable(R, `tbl_${slug}_1`, '1', 4, 'active', { primaryCustomer: { phoneNumber: '9876543210', name: 'Customer One' }, occupiedBy: ['9876543210'], assignedServerId: `srv_${slug}_1`, otp: 'valid', section: 'Indoor' });
-  defTable(R, `tbl_${slug}_2`, '2', 2, 'pending', { otp: 'valid', section: 'Indoor' });
-  defTable(R, `tbl_${slug}_3`, '3', 4, 'pending', { otp: 'expired', section: 'Patio' }); // edge
-  defTable(R, `tbl_${slug}_4`, '4', 6, 'reserved', { otp: 'valid' });
+  defTable(R, `tbl_${slug}_1`, '1', 4, 'active', { primaryCustomer: { phoneNumber: '9876543210', name: 'Customer One' }, occupiedBy: ['9876543210'], assignedServerId: `srv_${slug}_1`, otp: 'code', section: 'Indoor' });
+  // `pending` is gone (2026-09-21). Table 2 keeps the scenario it always carried — a guest is on
+  // the code screen — as a HOLD, which is what merge and move refuse and what the tile reads as
+  // `signing in`. Table 3 is the other half: scanned long ago, never finished, free again with
+  // nothing having had to run to free it.
+  defTable(R, `tbl_${slug}_2`, '2', 2, 'vacant', { otp: 'held', section: 'Indoor' });
+  defTable(R, `tbl_${slug}_3`, '3', 4, 'vacant', { otp: 'lapsed', section: 'Patio' }); // edge
+  defTable(R, `tbl_${slug}_4`, '4', 6, 'reserved', { otp: 'code' });
   defTable(R, `tbl_${slug}_5`, '5', 4, 'disabled', { otp: 'none' }); // edge
-  for (let i = 6; i <= n; i++) defTable(R, `tbl_${slug}_${i}`, String(i), i % 2 ? 2 : 4, 'vacant', { otp: 'valid' });
+  for (let i = 6; i <= n; i++) defTable(R, `tbl_${slug}_${i}`, String(i), i % 2 ? 2 : 4, 'vacant', { otp: 'code' });
 }
 
 const restaurants = {};
