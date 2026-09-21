@@ -1,0 +1,31 @@
+| file | user msgs | assistant msgs | thinking blocks | ponytail | distilled bytes |
+|---|---|---|---|---|---|
+| 2026-09-13_048f5286_pony-full.txt | 56 | 191 | 29 | full | 239,093 |
+| 2026-09-13_d28e6a65_pony-full.txt | 193 | 460 | 113 | full | 1,596,644 |
+| 2026-09-15_e097c722_pony-full.txt | 36 | 344 | 0 | full | 389,949 |
+| 2026-09-15_e339134f_pony-full.txt | 6 | 12 | 0 | full | 28,988 |
+| 2026-09-15_d64eec81_pony-full.txt | 8 | 20 | 0 | full | 28,784 |
+| 2026-09-15_aeea9b37_pony-full.txt | 6 | 20 | 5 | full | 22,150 |
+| 2026-09-15_191afc9e_pony-full.txt | 2 | 8 | 0 | full | 29,231 |
+| 2026-09-15_0d1c1ce4_pony-full.txt | 2 | 7 | 0 | full | 29,098 |
+| 2026-09-15_0c314e82_pony-full.txt | 56 | 137 | 46 | full | 180,027 |
+| 2026-09-16_a5cc98e7_pony-full.txt | 1 | 1 | 0 | full | 391 |
+| 2026-09-16_366f8d95_pony-NONE.txt | 1 | 1 | 0 | NONE | 335 |
+| 2026-09-16_723b4526_pony-full.txt | 1 | 1 | 0 | full | 391 |
+| 2026-09-16_fe7a43fc_pony-full.txt | 1 | 1 | 0 | full | 391 |
+| 2026-09-16_d328186a_pony-NONE.txt | 1 | 1 | 0 | NONE | 321 |
+| 2026-09-16_eef574a2_pony-full.txt | 1 | 1 | 0 | full | 391 |
+| 2026-09-17_51f74ffb_pony-full.txt | 51 | 57 | 45 | full | 158,380 |
+| 2026-09-17_a124e001_pony-full.txt | 20 | 36 | 143 | full | 184,253 |
+| 2026-09-17_75f55983_pony-full.txt | 42 | 172 | 84 | full | 249,423 |
+| 2026-09-17_221c2c90_pony-full.txt | 19 | 101 | 145 | full | 161,955 |
+| 2026-09-17_1ce5d68c_pony-full.txt | 9 | 31 | 131 | full | 132,009 |
+| 2026-09-18_721e8c65_pony-full.txt | 15 | 33 | 47 | full | 86,718 |
+| 2026-09-18_760bad35_pony-full.txt | 5 | 15 | 78 | full | 87,282 |
+| 2026-09-18_ecd308d8_pony-full.txt | 6 | 14 | 39 | full | 65,141 |
+| 2026-09-18_e795856d_pony-full.txt | 46 | 128 | 260 | full | 386,561 |
+| 2026-09-20_09922798_pony-full.txt | 2 | 2 | 10 | full | 13,112 |
+| 2026-09-20_68e0c52e_pony-full.txt | 352 | 501 | 413 | full | 1,782,766 |
+| 2026-09-21_6e49ec39_pony-full.txt | 2 | 2 | 6 | full | 10,410 |
+| 2026-09-22_3bf1108c_pony-full.txt | 173 | 293 | 465 | full | 842,570 |
+| 2026-09-22_1230fa60_pony-full.txt | 96 | 240 | 414 | full | 620,987 |
