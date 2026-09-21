@@ -1,4 +1,8 @@
 import { test, expect, type Page } from '@playwright/test'
+// TD-041/TD-043: the approval PIN is a bcrypt `pinHash` and nothing else is compared, so a
+// spec that seeds only a plaintext password logs in fine and then fails at the PIN box.
+// This is the seed's own constant hash of 1234, the same one MockData7 carries.
+const PIN_1234 = '$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm'
 
 // BL in the browser. Needs the emulator (slot 0). Seeds staff, tax config and two line snapshots through Firestore REST.
 const RID = 'res_e2e_all_on'
@@ -33,8 +37,8 @@ async function login(page: Page, draft: string, email: string) {
 let DRAFT = ''
 test.beforeEach(async () => {
   DRAFT = `pw_draft_${Date.now()}_${Math.floor(Math.random() * 1e6)}`
-  await seed('servers/till_manager', { name: 'Till Manager', role: 'MANAGER', status: 'active', email: 'till.manager@st.test', password: '1234' })
-  await seed('servers/till_captain', { name: 'Till Captain', role: 'SERVER', status: 'active', email: 'till.captain@st.test', password: '1234' })
+  await seed('servers/till_manager', { name: 'Till Manager', role: 'MANAGER', status: 'active', email: 'till.manager@st.test', password: '1234', pinHash: PIN_1234 })
+  await seed('servers/till_captain', { name: 'Till Captain', role: 'SERVER', status: 'active', email: 'till.captain@st.test', password: '1234', pinHash: PIN_1234 })
   await seed('config/settings', { tax: { blocks: { food: FOOD } }, seller: { name: 'PW Bar', taxId: 'GSTIN_PW' }, billing: { charges: [{ type: 'SERVICE_CHARGE', percentage: 10 }] }, approvals: {} })
   await seed(`lines/${DRAFT}_pizza`, line(`${DRAFT}_pizza`, 'Margherita', 50000, DRAFT))
   await seed(`lines/${DRAFT}_coke`, line(`${DRAFT}_coke`, 'Coke', 8000, DRAFT))
