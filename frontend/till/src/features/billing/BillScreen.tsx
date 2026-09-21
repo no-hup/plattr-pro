@@ -1,30 +1,30 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, type FormEvent } from 'react'
+import { useSays } from '../../ui/says'
 import { rupees, useBill, type Ctx } from './useBill'
 import { EstimateScreen } from '../offline/EstimateScreen'
 import { useOnline } from '../offline/useOnline'
 
 /** BL-S1..S10 on one screen: a table's draft, its blocks and totals, Generate bill, drop the service charge, Cancel. Print bytes are KT's. */
 export function BillScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
-  const { bill, busy, error, dropCharges, asOf, preview, issue, comp, cancel, toggleCharge } = useBill(ctx)
+  const { bill, busy, dropCharges, asOf, preview, issue, comp, cancel, toggleCharge } = useBill(ctx)
   const { offline } = useOnline()
-  const [msg, setMsg] = useState('')
+  const { say, node: msgNode } = useSays('bill-msg')
   useEffect(() => { preview() }, [dropCharges])   // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (error) setMsg(error.code === 'permission-denied' && !error.data.requires ? 'Not allowed' : error.message) }, [error])
 
   async function onCancel(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!bill?.billId) return
     const f = new FormData(e.currentTarget)
-    setMsg('')
+    say('')
     const r = await cancel(bill.billId, String(f.get('reason')), String(f.get('note') ?? ''))
-    if (r) setMsg(`Bill ${r.number} cancelled`)
+    if (r) say(`Bill ${r.number} cancelled`)
   }
   async function onComp(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const f = new FormData(e.currentTarget)
-    setMsg('')
+    say('')
     const r = await comp(String(f.get('reason')), String(f.get('note') ?? ''))
-    if (r) setMsg(`Bill ${r.number} comped to ₹0.00`)
+    if (r) say(`Bill ${r.number} comped to ₹0.00`)
   }
   const issued = !!bill?.number
   return (
@@ -51,7 +51,7 @@ export function BillScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
           {offline && !issued && asOf !== null && <EstimateScreen draftId={ctx.draftId} amountMinor={bill.payable} previewAt={asOf} />}
           {!issued && (
             <p>
-              <button data-testid="issue" onClick={() => issue().then(b => b && setMsg(`Bill ${b.number} issued`))} disabled={busy}>Generate bill</button>
+              <button data-testid="issue" onClick={() => issue().then(b => b && say(`Bill ${b.number} issued`))} disabled={busy}>Generate bill</button>
               {' '}
               {(bill.charges.length > 0 || dropCharges.length > 0) && (
                 <button data-testid="toggle-charge" onClick={() => toggleCharge('SERVICE_CHARGE')} disabled={busy}>
@@ -84,7 +84,7 @@ export function BillScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
           )}
         </>
       )}
-      <p data-testid="bill-msg">{msg}</p>
+      {msgNode}
     </section>
   )
 }

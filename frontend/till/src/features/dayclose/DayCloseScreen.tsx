@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, type FormEvent } from 'react'
+import { useSays } from '../../ui/says'
 import { fmt, toMinor, useDayClose, type Ctx } from './useDayClose'
 import { getConfig, openEstimates } from '../offline/cache'
 
@@ -8,34 +9,33 @@ import { getConfig, openEstimates } from '../offline/cache'
  * therefore cannot show one — the cashier counts first and sees the difference afterwards.
  */
 export function DayCloseScreen({ ctx }: { ctx: Ctx }) {
-  const { day, busy, error, load, move, close } = useDayClose(ctx)
-  const [msg, setMsg] = useState('')
+  const { day, busy, load, move, close } = useDayClose(ctx)
+  const { say, node: msgNode } = useSays('day-msg')
   useEffect(() => { load() }, [])   // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (error) setMsg(error.code === 'permission-denied' && !error.data.requires ? 'Not allowed' : error.message) }, [error])
 
   async function onMove(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = e.currentTarget          // React clears currentTarget across the await; keep the node
     const f = new FormData(form)
     const amount = toMinor(String(f.get('amount') ?? ''))
-    if (amount === null || amount === 0) { setMsg('Type an amount like 1200.00'); return }
-    setMsg('')
+    if (amount === null || amount === 0) { say('Type an amount like 1200.00'); return }
+    say('')
     const r = await move(f.get('kind') as 'float' | 'in' | 'out', amount, String(f.get('reason')), String(f.get('note') ?? ''))
-    if (r) { setMsg(`Drawer: ${fmt(amount)} recorded`); form.reset() }
+    if (r) { say(`Drawer: ${fmt(amount)} recorded`); form.reset() }
   }
 
   async function onClose(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const f = new FormData(e.currentTarget)
     const counted = toMinor(String(f.get('counted') ?? ''))
-    if (counted === null) { setMsg('Type what you counted, like 13166.00'); return }
+    if (counted === null) { say('Type what you counted, like 13166.00'); return }
     const leftText = String(f.get('left') ?? '').trim()
-    setMsg('')
+    say('')
     const doc = await close(counted, leftText === '' ? null : toMinor(leftText), String(f.get('note') ?? ''))
-    if (doc) setMsg(doc.difference === 0 ? 'Day closed, drawer exact' : `Day closed, ${doc.difference < 0 ? 'short' : 'over'} ${fmt(Math.abs(doc.difference))}`)
+    if (doc) say(doc.difference === 0 ? 'Day closed, drawer exact' : `Day closed, ${doc.difference < 0 ? 'short' : 'over'} ${fmt(Math.abs(doc.difference))}`)
   }
 
-  if (!day) return <section data-testid="dayclose"><p data-testid="day-msg">{msg || 'Loading…'}</p></section>
+  if (!day) return <section data-testid="dayclose">{msgNode}</section>
   const blocked = day.floor.issuedBills + day.floor.unbilledItems
   // OF R6 / OF-S10: an estimate still open on this till means cash the server has not seen. The server's own
   // gate (unbilled lines, DC R5) holds regardless; this one is the till's, and offline.reconcileBeforeClose turns it off.
@@ -102,7 +102,7 @@ export function DayCloseScreen({ ctx }: { ctx: Ctx }) {
           {day.movements.map(m => <li key={m.movementId} data-testid="movement">{m.kind} {fmt(m.amount)} · {m.reason}{m.void ? ' · VOIDED' : ''}</li>)}
         </ul>
       )}
-      <p data-testid="day-msg">{msg}</p>
+      {msgNode}
     </section>
   )
 }

@@ -632,6 +632,19 @@ describe('moveTable — one transaction, four writes, no price rewritten (R5)', 
     await expect(moveTable(party(), { ...MOVE, staffSessionId: 'nope' })).rejects.toMatchObject({ code: 'unauthenticated' });
   });
 
+  it('a refusal names the table the cashier reads, not its document id, and says why', async () => {
+    // "table tbl_meg_2 is not vacant" is a refusal nobody can act on: the cashier is looking at a
+    // tile that says 2, and "not vacant" does not say whether to wait, bill it or pick another.
+    const ports = fake({
+      tables: [
+        table({ tableId: 'tbl_meg_1', number: '1', status: 'active', hasSession: true }),
+        table({ tableId: 'tbl_meg_2', number: '2', status: 'pending' }),
+      ],
+    });
+    await expect(setMerge(ports, { ...REQ, parentTableId: 'tbl_meg_1', cid: 'c', childTableIds: ['tbl_meg_2'] }))
+      .rejects.toThrow('table 2 has a guest signing in');
+  });
+
   it('a table that does not exist is not-found on either side', async () => {
     await expect(moveTable(party(), { ...MOVE, toTableId: '99' })).rejects.toMatchObject({ code: 'not-found' });
     await expect(moveTable(party(), { ...MOVE, fromTableId: '99' })).rejects.toMatchObject({ code: 'not-found' });
@@ -762,7 +775,7 @@ describe('setMerge — the race and the release (R14, R16, OR-5a, FL-S32)', () =
     const ports = world();
     // the guest's OTP lands between the cashier tapping and the transaction running
     ports.world.tables.find(t => t.tableId === '6')!.status = 'pending';
-    await expect(setMerge(ports, { ...MERGE, childTableIds: ['6'] })).rejects.toThrow(/not vacant/);
+    await expect(setMerge(ports, { ...MERGE, childTableIds: ['6'] })).rejects.toThrow(/table 6 has a guest signing in/);
     expect(ports.world.tables.find(t => t.tableId === '6')!.mergedInto).toBeUndefined();
   });
 
@@ -822,6 +835,19 @@ describe('setMerge — the race and the release (R14, R16, OR-5a, FL-S32)', () =
     await expect(setMerge(retired, { ...MERGE, childTableIds: ['6'] })).rejects.toThrow(/out of service/);
     const child = world({ tables: [table({ tableId: '5', status: 'disabled', mergedInto: '4' }), table({ tableId: '6' })] });
     await expect(setMerge(child, { ...MERGE, childTableIds: ['6'] })).rejects.toThrow(/already merged into 4/);
+  });
+
+  it('a refusal names the table the cashier reads, not its document id, and says why', async () => {
+    // "table tbl_meg_2 is not vacant" is a refusal nobody can act on: the cashier is looking at a
+    // tile that says 2, and "not vacant" does not say whether to wait, bill it or pick another.
+    const ports = fake({
+      tables: [
+        table({ tableId: 'tbl_meg_1', number: '1', status: 'active', hasSession: true }),
+        table({ tableId: 'tbl_meg_2', number: '2', status: 'pending' }),
+      ],
+    });
+    await expect(setMerge(ports, { ...REQ, parentTableId: 'tbl_meg_1', cid: 'c', childTableIds: ['tbl_meg_2'] }))
+      .rejects.toThrow('table 2 has a guest signing in');
   });
 
   it('a table that does not exist is not-found on either side', async () => {

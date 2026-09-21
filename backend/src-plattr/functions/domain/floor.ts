@@ -27,6 +27,18 @@ export interface Bill {
   paid: number;
 }
 
+/** What a person calls the table. A refusal a cashier cannot act on is not a refusal. */
+const name = (t: Table): string => t.number ?? t.tableId;
+
+/** Why a table is not free, in the words the cashier would use. R6 refuses on the state, not the word. */
+const WHY: Record<Table['status'], string> = {
+  vacant: 'is free',
+  active: 'has a party at it',
+  pending: 'has a guest signing in',
+  disabled: 'is out of service',
+  reserved: 'is reserved',
+};
+
 /** A table document, only the fields a floor decision turns on. */
 export interface Table {
   tableId: string;
@@ -147,13 +159,11 @@ export function canMerge(parent: Table, child: Table, role: Role): Check {
   const allowed = mayAct(role);
   if (!allowed.ok) return allowed;
   if (parent.tableId === child.tableId) return no('a table cannot be merged into itself', 'invalid-argument');
-  if (parent.status === 'disabled' && !parent.mergedInto) return no(`table ${parent.tableId} is out of service`);
-  if (parent.mergedInto) return no(`table ${parent.tableId} is already merged into ${parent.mergedInto}`);
-  if (child.isParent) return no(`table ${child.tableId} already has tables merged into it`);
-  if (child.status !== 'vacant') return no(`table ${child.tableId} is not vacant`);
-  if (child.mergedInto) return no(`table ${child.tableId} is already in another group`);
-  if (child.hasSession) return no(`table ${child.tableId} has a party at it`);
-  return ok;
+  if (parent.status === 'disabled' && !parent.mergedInto) return no(`table ${name(parent)} is out of service`);
+  if (parent.mergedInto) return no(`table ${name(parent)} is already merged into ${parent.mergedInto}`);
+  // A child of a merge and a destination of a move have to be free in exactly the same way, so
+  // there is one list of reasons and one set of words for both.
+  return canReceive(child);
 }
 
 /**
@@ -172,12 +182,13 @@ export function canUnmerge(sitting: Sitting | null, role: Role): Check {
 
 /** R6. A destination is vacant on five counts, not one. Four of them have no session to check. */
 export function canReceive(dest: Table): Check {
-  if (dest.status === 'disabled' && !dest.mergedInto) return no(`table ${dest.tableId} is out of service`);
-  if (dest.mergedInto) return no(`table ${dest.tableId} is part of another group`);
-  if (dest.isParent) return no(`table ${dest.tableId} has tables merged into it`);
-  if (dest.currentOTP) return no(`table ${dest.tableId} has a guest signing in`);
-  if (dest.hasSession) return no(`table ${dest.tableId} has a party at it`);
-  if (dest.status !== 'vacant') return no(`table ${dest.tableId} is not vacant`);
+  if (dest.status === 'disabled' && !dest.mergedInto) return no(`table ${name(dest)} is out of service`);
+  if (dest.mergedInto) return no(`table ${name(dest)} is part of another group`);
+  if (dest.isParent) return no(`table ${name(dest)} has tables merged into it`);
+  if (dest.currentOTP) return no(`table ${name(dest)} has a guest signing in`);
+  if (dest.hasSession) return no(`table ${name(dest)} has a party at it`);
+  // Last, because every line above says something sharper than the status word can.
+  if (dest.status !== 'vacant') return no(`table ${name(dest)} ${WHY[dest.status]}`);
   return ok;
 }
 
@@ -186,7 +197,7 @@ export function canMove(from: Table, dest: Table, sitting: Sitting | null, role:
   const allowed = mayAct(role);
   if (!allowed.ok) return allowed;
   if (from.tableId === dest.tableId) return no('that party is already at this table', 'invalid-argument');
-  if (!sitting) return no(`table ${from.tableId} has no party to move`);
+  if (!sitting) return no(`table ${name(from)} has no party to move`);
   if (from.isParent || sitting.tableIds.length > 1) return no('release the merge first, then move the table');
   if (sitting.lines.some(l => l.billId)) return no('this table has a printed bill — cancel it before moving the party');
   return canReceive(dest);

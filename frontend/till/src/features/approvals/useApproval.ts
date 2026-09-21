@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { call, ApiError } from '../../api/client'
+import { call } from '../../api/client'
 import { putConfig, type OfflineConfig } from '../offline/cache'
 
 export interface LineSnapshot { listPrice: number; v: number; discount?: { amount: number; pct: number }; void?: unknown; countsTowardTotal: boolean }
@@ -14,16 +14,15 @@ export async function fetchReasons(restaurantId: string, sessionId: string): Pro
 /** One hook per screen that approves things. The PIN challenge itself lives in api/client.ts, not here. */
 export function useApproval() {
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<ApiError | null>(null)
+  // No error state: every failure is reported once, by ui/says, from the api client's one hook.
   async function apply(body: ApplyBody): Promise<LineSnapshot | null> {
-    setBusy(true); setError(null)
+    setBusy(true)
     try {
       const r = await call<{ data: { line?: LineSnapshot } }>('approvals-apply', body as unknown as Record<string, unknown>)
       return r.data.line ?? null
-    } catch (e) {
-      setError(e instanceof ApiError ? e : new ApiError('unknown', String(e)))
+    } catch {
       return null
     } finally { setBusy(false) }
   }
-  return { apply, busy, error }
+  return { apply, busy }
 }

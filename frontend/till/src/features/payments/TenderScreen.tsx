@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { useSays } from '../../ui/says'
 import { fmt, toMinor, useTender, type Ctx, type Tender } from './useTender'
 import { EstimateScreen } from '../offline/EstimateScreen'
 import { getBill } from '../offline/cache'
@@ -9,27 +10,23 @@ import { useOnline } from '../offline/useOnline'
 // KT's; here `opensDrawer` from the response flips a visible signal the browser test can assert.
 
 export function TenderScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
-  const { bill, busy, error, last, asOf, take, refund, voidRow } = useTender(ctx)
+  const { bill, busy, last, asOf, take, refund, voidRow } = useTender(ctx)
   const { offline } = useOnline()
   const [tender, setTender] = useState<Tender | null>(null)
   const [text, setText] = useState('')
   const [ref, setRef] = useState('')
   const [captured, setCaptured] = useState(false)
-  const [msg, setMsg] = useState('')
+  const { say, node: msgNode } = useSays('pay-msg')
   const [drawer, setDrawer] = useState(false)
 
   useEffect(() => { if (bill && !tender) setTender(bill.tenders[0] ?? null) }, [bill, tender])
   useEffect(() => {
-    if (!error) return
-    setMsg(error.code === 'permission-denied' && !error.data.requires ? 'Not allowed' : error.message)
-  }, [error])
-  useEffect(() => {
     if (!last) return
     setDrawer(last.opensDrawer)
-    if (last.retry) setMsg('Already recorded')
-    else if (last.row.void) setMsg('Voided')          // a voided row keeps its kind, so check the void block first
-    else if (last.row.kind === 'take') setMsg(last.row.change ? `Change ${fmt(last.row.change)}` : last.row.overpaid ? `Overpaid ${fmt(last.row.overpaid)}, recorded` : 'Recorded')
-    else setMsg('Refunded')
+    if (last.retry) say('Already recorded')
+    else if (last.row.void) say('Voided')          // a voided row keeps its kind, so check the void block first
+    else if (last.row.kind === 'take') say(last.row.change ? `Change ${fmt(last.row.change)}` : last.row.overpaid ? `Overpaid ${fmt(last.row.overpaid)}, recorded` : 'Recorded')
+    else say('Refunded')
     setText(''); setRef('')
   }, [last])
 
@@ -42,22 +39,22 @@ export function TenderScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) 
 
   async function onTake(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!tender || minor === null) { setMsg('Enter a whole amount, up to two decimals'); return }
-    setMsg('')
+    if (!tender || minor === null) { say('Enter a whole amount, up to two decimals'); return }
+    say('')
     await take(tender, minor, { ref: ref || undefined, captured })
   }
   async function onRefund(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const f = new FormData(e.currentTarget)
     const m = toMinor(String(f.get('amount') ?? ''))
-    if (m === null) { setMsg('Enter a whole amount, up to two decimals'); return }
-    setMsg('')
+    if (m === null) { say('Enter a whole amount, up to two decimals'); return }
+    say('')
     const note = String(f.get('creditNoteId') ?? '').trim()
     const row = String(f.get('refundsPaymentId') ?? '').trim()
     await refund(String(f.get('tender')), m, note ? { creditNoteId: note } : { refundsPaymentId: row }, String(f.get('reason')), String(f.get('note') ?? ''))
   }
 
-  if (!bill) return <p data-testid="pay-msg">{msg || 'Loading bill…'}</p>
+  if (!bill) return <>{msgNode}<p>Loading bill…</p></>
   return (
     <section>
       <p>
@@ -123,7 +120,7 @@ export function TenderScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) 
         <button type="submit" data-testid="refund" disabled={busy}>Refund</button>
       </form>
 
-      <p data-testid="pay-msg">{msg}</p>
+      {msgNode}
     </section>
   )
 }

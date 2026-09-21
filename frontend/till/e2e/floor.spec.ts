@@ -187,7 +187,8 @@ test.describe('picking mode — merge and move (R13, R16)', () => {
     await page.getByTestId('tile-5').getByRole('button').first().click()
     await page.getByTestId('tile-12').getByRole('button').first().click()
     await page.getByTestId('confirm-pick').click()
-    await expect(page.getByTestId('floor-msg')).toContainText(/not vacant/i)
+    // The refusal names the table the cashier is looking at, and says what is wrong with it.
+    await expect(page.getByTestId('floor-msg')).toContainText(/table 12 has a party at it/i)
   })
 
   test('FL-S8 Unmerge appears on the group tile and releases it when nothing is owed', async ({ page }) => {
