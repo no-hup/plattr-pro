@@ -32,6 +32,19 @@ class _PlatterLoginFormState<T extends BaseLoginProvider> extends State<PlatterL
   final _passwordController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // Prefill so a dev never types these. Debug builds only, and only the first entry —
+    // the cards below switch restaurant with one tap.
+    if (kDebugMode && widget.debugCredentials.isNotEmpty) {
+      final c = widget.debugCredentials.first;
+      _restaurantIdController.text = c.id;
+      _usernameController.text = c.username;
+      _passwordController.text = c.pass;
+    }
+  }
+
+  @override
   void dispose() {
     _restaurantIdController.dispose();
     _usernameController.dispose();
@@ -158,7 +171,7 @@ class _PlatterLoginFormState<T extends BaseLoginProvider> extends State<PlatterL
                       const SizedBox(height: 32),
                       const Divider(),
                       const Text(
-                        'Debug Credentials',
+                        'Seeded logins — tap to switch restaurant',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,

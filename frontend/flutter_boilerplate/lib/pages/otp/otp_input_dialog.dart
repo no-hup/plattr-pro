@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutterboilerplate/config/dev_guest.dart';
 import 'package:flutterboilerplate/config/otp_config.dart';
 // Import ApiResponse
 import 'package:flutterboilerplate/singletonGods/logger.dart';
@@ -93,6 +95,12 @@ class _OtpInputDialogState extends State<OtpInputDialog> {
     super.initState();
     if (widget.handleOtpApi) {
       _otpRepository = OtpRepository();
+    }
+    // Every seeded table shares one OTP, so typing it is pure friction in dev.
+    if (kDebugMode) {
+      _otpController.text = DevGuest.otp;
+      _nameController.text = DevGuest.name;
+      _phoneController.text = DevGuest.phone;
     }
   }
 

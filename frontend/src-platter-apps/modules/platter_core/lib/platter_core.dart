@@ -19,6 +19,7 @@ export 'src/auth/login_request.dart';
 export 'src/auth/login_response_data.dart';
 export 'src/auth/login_api_service.dart';
 export 'src/auth/base_login_provider.dart';
+export 'src/auth/dev_logins.dart';
 
 // Logger
 export 'src/logging/app_logger.dart';

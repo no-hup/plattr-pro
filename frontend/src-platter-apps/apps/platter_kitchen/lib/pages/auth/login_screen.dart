@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:platter_core/platter_core.dart';
 import 'login_provider.dart';
@@ -51,20 +50,7 @@ class _LoginScreenContent extends StatelessWidget {
           color: Theme.of(context).colorScheme.primary,
         ),
         onLoginSuccess: () => _onLoginSuccess(context),
-        debugCredentials: const [
-          DebugCredential(
-            name: 'Kitchen - All Features ON',
-            id: 'res_e2e_all_on',
-            username: 'kitchen1@e2e.com',
-            pass: '1234',
-          ),
-          DebugCredential(
-            name: 'Kitchen - Simple Menu',
-            id: 'res_e2e_simple_menu',
-            username: 'kitchen1@e2e-simple.com',
-            pass: '1234',
-          ),
-        ],
+        debugCredentials: DevLogins.forApp('kitchen'),
       ),
     );
   }
