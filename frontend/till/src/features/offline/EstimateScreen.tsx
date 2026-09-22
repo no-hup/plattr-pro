@@ -4,9 +4,11 @@ import { findEstimate, getConfig, getTenders, hhmm, stamp, upsertEstimate, type 
 
 /**
  * OF-S7 · the emergency bill. Shown only while the till is offline (OF-S16). Amount taken and tender come
- * first (R8), then a printable slip that says ESTIMATE, carries the cached total and its time, and has no
- * number and no tax split (R3). Nothing here talks to the server (OF-S14); once printed the slip is frozen
- * and a second tap reprints it (OF-S15). A preview older than estimateMaxAgeMinutes is refused (OF-S12).
+ * first (R8), then a slip ON SCREEN that says ESTIMATE, carries the cached total and its time, and has no
+ * number and no tax split (R3). It is never printed: the printer is driven through the server (KT-D6 as
+ * amended 2026-09-22), so the cashier turns the tablet round and the guest photographs it; the real bill
+ * prints when the till is back. Nothing here talks to the server (OF-S14); once shown the slip is frozen
+ * and a second tap shows it again (OF-S15). A preview older than estimateMaxAgeMinutes is refused (OF-S12).
  */
 export function EstimateScreen({ draftId, billId, amountMinor, previewAt }: { draftId?: string; billId?: string; amountMinor: number; previewAt: number }) {
   const key = draftId ? { draftId } : { billId }
@@ -31,7 +33,7 @@ export function EstimateScreen({ draftId, billId, amountMinor, previewAt }: { dr
   return (
     <section data-testid="estimate">
       {est ? (
-        <button data-testid="reprint" onClick={() => setShow(true)}>Reprint estimate {fmt(est.amountMinor)}</button>
+        <button data-testid="reprint" onClick={() => setShow(true)}>Show estimate again {fmt(est.amountMinor)}</button>
       ) : (
         <form onSubmit={onRecord} data-testid="estimate-form">
           <input name="taken" data-testid="est-taken" inputMode="decimal" placeholder="₹ taken" />
@@ -39,7 +41,7 @@ export function EstimateScreen({ draftId, billId, amountMinor, previewAt }: { dr
             <option value="" disabled>tender</option>
             {tenders.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
           </select>
-          <button type="submit" data-testid="est-print">Print estimate</button>
+          <button type="submit" data-testid="est-print">Show estimate</button>
         </form>
       )}
       {est && show && (

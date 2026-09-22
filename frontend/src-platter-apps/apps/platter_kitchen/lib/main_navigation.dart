@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:platter_core/platter_core.dart';
+
+import 'print/print_toggle.dart';
 import 'core/kitchen_repository.dart';
 import 'state/kitchen_live_provider.dart';
 import 'widgets/kitchen_app_bar_widget.dart';
@@ -65,6 +67,12 @@ class _MainNavigationState extends State<MainNavigation> {
   KitchenAppBarConfiguration _currentAppBarConfig =
       const KitchenAppBarConfiguration();
 
+  /// KT-5: "This tablet prints" lives in the app bar on every tab, whatever a child screen adds beside it.
+  late final Widget _printToggle = PrintToggle(
+      restaurantId: widget.restaurantId, sessionId: widget.sessionId);
+  KitchenAppBarConfiguration _withPrintToggle(KitchenAppBarConfiguration c) =>
+      c.copyWith(additionalActions: [_printToggle, ...?c.additionalActions]);
+
   /// Single repository instance owned by this navigation shell. Reused by
   /// both the live provider and the history screen so we never double-construct.
   late final KitchenRepository _repository;
@@ -74,13 +82,14 @@ class _MainNavigationState extends State<MainNavigation> {
     super.initState();
     _categories = widget.initialCategories;
     _repository = widget.repository ?? KitchenRepository();
+    _currentAppBarConfig = _withPrintToggle(_currentAppBarConfig);
   }
 
   /// Called by child screens to update the app bar configuration
   void updateAppBarConfiguration(KitchenAppBarConfiguration config) {
     if (mounted) {
       setState(() {
-        _currentAppBarConfig = config;
+        _currentAppBarConfig = _withPrintToggle(config);
       });
     }
   }
@@ -200,4 +209,3 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 }
-

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- KT R13: the print agent's install id lives in shared preferences and must NOT follow a backup onto another
+     tablet, or two tablets share one lease. Everything else backs up as before. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="FlutterSharedPreferences.xml"/>
+</full-backup-content>
