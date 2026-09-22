@@ -303,6 +303,12 @@ export type IdleCall = 'busy' | 'free' | 'money';
  * reported, because open money outranks a clock the same way it outranks a captain's COMPLETED (R14).
  * `busy`: touched inside the window, leave it alone.
  */
+// Signed 2026-09-22 (Shaurya), with the doubt written down:
+//  - "free after 60m with nothing owed" may end a sitting for a party that sat an hour without
+//    ordering or touching a phone; they get "session ended" and rescan. Threshold is a config key.
+//  - "a fully paid table nobody cleared is freed too" is the less certain half: it is the P1 fix
+//    (a paid table blocking every merge and move all night) against the risk of seating the next
+//    party on lingering guests. To flip it, return 'money' when sitting.bills.length > 0 here.
 export function idleCall(sitting: Sitting, touched: number[], now: number, idleMs: number): IdleCall {
   if (!(idleMs > 0)) return 'busy';                                   // a nonsense threshold frees nothing
   if (now - lastTouchedAt(sitting, touched, now) < idleMs) return 'busy';

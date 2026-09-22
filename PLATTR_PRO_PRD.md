@@ -185,6 +185,10 @@ whether the gate is on or off; confirmation controls only when the kitchen is to
 
 ### 10.1 Table State
 - Vacant → OTP Pending → Active → Vacant
+- Active → Vacant also happens by the clock: a sitting untouched for `floor.idleFreeAfterMinutes`
+  (60) that owes nothing is ended by a five-minute sweep with an audit row; a fully paid table nobody
+  cleared goes the same way. Open money is never freed by the clock (decided 2026-09-22, FL-S36). The
+  paid-table half is the less certain call and is one line to reverse.
 - Disabled is an admin override state
 - Reserved is a staff-held state, set and cleared by the waiter (decided 2026-09-08,
   see 16.1). It is outside the self-service lifecycle: a customer scanning a reserved
@@ -309,7 +313,9 @@ Plattr Pro alone. Six are built and tested; two are specified and not yet starte
   ₹200 gap is logged against her shift and the day still closes. *Without this there is no handover
   and no daily number the owner trusts.*
 - **Offline mode.** The internet drops at 20:40; the till still shows the bill, takes the tender and
-  prints an estimate from cache, and reconciles when it returns. *Without this the first outage on a
+  shows an estimate from cache on screen, and reconciles when it returns. The estimate is not printed:
+  the printer is driven through the server, so paper waits for the connection and the real bill
+  prints then (decided 2026-09-22, KT sheet Decisions). *Without this the first outage on a
   busy night is the last night they use us.*
 
 **Specified, not built**
@@ -334,12 +340,25 @@ Two consequences are decided and not negotiable inside the product:
   code. Fee avoidance designed into the product is very hard to remove once a restaurant depends on
   it. Recorded in `moonshot/SPEC_UQ_upi_dynamic_qr.md` Out of scope.
 
-**Printing needs hardware in the restaurant.** A browser cannot open a TCP socket, so the staff till
-cannot talk to a network printer directly. The chosen answer is a small box on the restaurant's own
-network that pulls print jobs from us and drives the existing printers. That means a piece of
-hardware per restaurant and an install step in onboarding — the first thing in this product that is
-not "open a browser". The upside is that the printers a restaurant already owns keep working, and no
-tablet has to stay awake for the kitchen to get its tickets.
+**Printing goes through the kitchen tablet.** A browser cannot open a TCP socket, so the staff till
+cannot talk to a network printer directly. The first print agent is the Flutter kitchen app already
+on a tablet in the kitchen: it pulls print jobs from us and drives the restaurant's existing LAN
+printers (decided 2026-09-18, KT-D1c). No hardware to ship, no install visit; the cost is that a
+tablet asleep or unplugged prints nothing until it wakes, and the till says so. A small box on the
+LAN remains the second implementation behind the same protocol for a restaurant with no kitchen
+tablet. Three product calls signed 2026-09-22 and not certain, so written down: paper-out is caught
+by a person and fixed with a Reprint until a printer that reports it is on the bench; a ticket older
+than 30 minutes when the tablet wakes is not printed by itself, it is counted on the till and printed
+by one tap; the offline estimate stays on screen. Each is one config key or one line to reverse.
+
+**Swiggy and Zomato orders are a receivable, not a sale we invoice.** Since January 2022 the platform,
+not the restaurant, pays the GST on food ordered through it (section 9(5)). So a Swiggy order gets a
+kitchen ticket and a line in the channel report, but it cannot take an invoice number, cannot be
+settled to cash or card, and its money arrives days later as a net payout after commission. The
+restaurant still reports the figure in its return; we store what the platform sent so the accountant
+never types it from the partner panel. We reach both platforms through UrbanPiper, because neither
+opens its API to a POS this size; that is a flat fee per outlet the restaurant pays, and the menu
+is pushed from us, which is why a dish gets an aggregator price.
 
 **Takeaway works but is not separately reportable.** Phone and counter orders run as ordinary tables
 named as counter tickets, so they bill, settle and close exactly like table 7 with no special cases.
