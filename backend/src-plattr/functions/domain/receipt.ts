@@ -6,11 +6,15 @@ import { Bill, BilledLine, Block } from './billing';
 import { PrintConfig, Row, Ticket, formatAmount, formatDate, formatMoney, formatTime, layout, lr } from './kot';
 export type { Ticket, Row };
 
+/** BL froze the blocks; the title follows them (KT-S14): an exempt block beside a taxed one is an invoice-cum-bill of supply. */
+export const titleFor = (blocks: { parts: unknown[] }[]): string =>
+  blocks.some(b => !b.parts.length) && blocks.some(b => b.parts.length) ? 'Invoice-cum-Bill of Supply' : blocks.every(b => !b.parts.length) ? 'Bill of Supply' : 'Tax Invoice';
+
 export interface ReceiptOptions {
   kind: 'bill' | 'duplicate';
   tzOffsetMinutes: number;
   tableLabel: string;      // what a person reads; the bill carries table ids
-  title?: string;          // BL's call: "Tax Invoice" or "Invoice-cum-Bill of Supply" (KT-S14)
+  title?: string;          // normally derived from the frozen blocks (titleFor); a caller may override
   at?: number;             // duplicate: when the copy was printed
 }
 
@@ -39,10 +43,13 @@ function header(sh: Sheet, bill: Bill, title: string, numberLabel: string, table
 
 /** One block: heading, its lines (with their own offer and discount rows), its charges, then Taxable and the parts — or Total when it has none. */
 function block(sh: Sheet, bill: Bill, b: Block) {
-  sh.add(b.id.toUpperCase(), { bold: true });
+  sh.add(b.label, { bold: true });   // the heading is the label BL froze, as stored — never a config key dressed up
   for (const l of bill.lines) {
     if (blockOf(l) !== b.id || l.countsTowardTotal === false) continue;
-    sh.lr(`${l.qty} x ${l.name}`, formatAmount(l.listPrice));
+    // Rule 46: the HSN/SAC frozen on the line reaches the paper. A credit note's qty is already negative in the
+    // amount column; printing it negative twice reads as a double minus, so the qty is shown as a count.
+    const hsn = l.components[0]?.taxCode;
+    sh.lr(`${Math.abs(l.qty)} x ${l.name}${hsn ? `  ${hsn}` : ''}`, formatAmount(l.listPrice));
     if (l.offer && l.offer.amount) sh.lr(`    ${(l.offer as { name?: string }).name ?? 'Offer'}`, formatAmount(-l.offer.amount));
     if (l.discount && l.discount.amount) sh.lr('    Discount', formatAmount(-l.discount.amount));
   }
@@ -79,7 +86,7 @@ export function billTicket(bill: Bill, cfg: PrintConfig, o: ReceiptOptions): Tic
   const s = counter(cfg);
   const sh = new Sheet(s.charsPerLine);
   if (o.kind === 'duplicate') sh.add(`${cfg.duplicateMarker}  ${formatTime(o.at ?? bill.issuedAt, o.tzOffsetMinutes)}`, { align: 'c', big: true, bold: true });
-  header(sh, bill, o.title ?? 'Tax Invoice', `Bill ${bill.number}`, o.tableLabel, o.tzOffsetMinutes);
+  header(sh, bill, o.title ?? titleFor(bill.blocks), `Bill ${bill.number}`, o.tableLabel, o.tzOffsetMinutes);
   body(sh, bill, cfg);
   return { kind: o.kind, stationId: cfg.counterStation, charsPerLine: s.charsPerLine, copies: cfg.billCopies, rows: sh.rows, cut: cfg.cutAfterTicket, drawer: false };
 }

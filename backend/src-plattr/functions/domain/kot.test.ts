@@ -84,7 +84,7 @@ describe('the ticket of a round (KT-S1, S2, S3)', () => {
     ]);
     expect(t.rows[0]).toMatchObject({ align: 'c', big: true, bold: true });
     expect(t.rows[3]).toMatchObject({ bold: true });
-    expect(JSON.stringify(t)).not.toMatch(/450|60\.00|Rs\.|₹/);
+    expect(JSON.stringify(t)).not.toMatch(/Rs\.|₹|\d+\.\d\d/);   // R11: no money, in any spelling
   });
 
   it('KT-S2 20:41 the same table adds two pints → one BAR ticket #42-2 with only the pints, at 32 columns', () => {
@@ -116,7 +116,7 @@ describe('the ticket of a round (KT-S1, S2, S3)', () => {
     expect(tickets.map(t => t.stationId)).toEqual(['kitchen', 'bar']);
   });
 
-  it('a station with enabled:false gets no ticket (R8, screen-only station); the other still prints as 1/1', () => {
+  it('a station with enabled:false gets no ticket (R8, screen-only station); the other prints alone, with no fraction', () => {
     const c = printConfigFrom({ print: { route: { cat_pizza: 'kitchen', cat_beer: 'bar' }, stations: { kitchen: { label: 'KITCHEN', enabled: false }, bar: { label: 'BAR' } } } });
     const tickets = kotTickets(round({ lines: [pizza, pints(1)] }), c, { kind: 'kot', at: T(20, 52), tzOffsetMinutes: IST });
     expect(tickets.map(t => t.stationId)).toEqual(['bar']);
@@ -257,6 +257,31 @@ describe('variants, add-ons, notes and wrapping (KT-S13, KT-S18)', () => {
     ]);
   });
 
+  it('every station disabled → no ticket at all, and no throw', () => {
+    const c = printConfigFrom({ print: { stations: { kitchen: { label: 'KITCHEN', enabled: false } } } });
+    expect(kotTickets(round(), c, { kind: 'kot', at: T(20, 14), tzOffsetMinutes: IST })).toEqual([]);
+  });
+
+  it('qty 10 and 100 print as written; at 32 the break moves with the longer prefix', () => {
+    const [t] = kotTickets(round({ lines: [{ ...biryani, qty: 100 } as Line] }), cfg, { kind: 'kot', at: T(20, 14), tzOffsetMinutes: IST });
+    expect(texts(t)[3]).toBe(W48('100 x Chicken Biryani'));
+    const long = line({ name: 'Hyderabadi Dum Gosht Biryani with Raita Extra', qty: 100, categoryId: 'cat_beer' });
+    expect(texts(kotTickets(round({ lines: [long] }), cfg, { kind: 'kot', at: T(20, 14), tzOffsetMinutes: IST })[0]).slice(3, 5)).toEqual([W32('100 x Hyderabadi Dum Gosht'), W32('    Biryani with Raita Extra')]);
+  });
+
+  it('an emoji is two code units and is never split by the hard cut; an empty name still prints "1 x "', () => {
+    expect(wrap('A'.repeat(30) + '🍕', 32, 4)).toEqual(['A'.repeat(30) + '🍕']);
+    expect(wrap('A'.repeat(31) + '🍕', 32, 4)).toEqual(['A'.repeat(31), '    🍕']);
+    expect(texts(kotTickets(round({ lines: [line({ name: '', qty: 1 })] }), cfg, { kind: 'kot', at: T(20, 14), tzOffsetMinutes: IST })[0])[3]).toBe(W48('1 x '));
+  });
+
+  it('a tab in a note is one space; a bidi override is dropped; an emoji stays', () => {
+    const at = { kind: 'kot' as const, at: T(20, 14), tzOffsetMinutes: IST };
+    expect(texts(kotTickets(round({ lines: [{ ...biryani, note: 'no\tonion' } as Line & { note: string }] }), cfg, at)[0])).toContain(W48('    ! no onion'));
+    expect(texts(kotTickets(round({ lines: [{ ...biryani, note: 'no\u202Eonion' } as Line & { note: string }] }), cfg, at)[0])).toContain(W48('    ! noonion'));
+    expect(texts(kotTickets(round({ lines: [{ ...biryani, note: 'extra 🧅' } as Line & { note: string }] }), cfg, at)[0])).toContain(W48('    ! extra 🧅'));
+  });
+
   it('a note with a newline or control character prints as spaces: no byte on a KOT comes from a guest', () => {
     const [t] = kotTickets(round({ lines: [{ ...tikka, note: 'no\nonion\x1bE' } as Line & { note: string }] }), cfg, { kind: 'kot', at: T(20, 14), tzOffsetMinutes: IST });
     expect(texts(t)).toContain(W48('    ! no onion E'));
@@ -278,6 +303,20 @@ describe('money and time formatting shared with the bill (KT-S21)', () => {
   });
   it('a crore groups as 1,00,00,000.00', () => {
     expect(formatMoney(1000000000, 'Rs.')).toBe('Rs. 1,00,00,000.00');
+  });
+  it('paise are never rounded to rupees: 1 → 0.01, 49 → 0.49, 50 → 0.50, -1 → -0.01; -0 is not a minus; minus and grouping together; the lakh boundary; a big safe integer', () => {
+    expect([1, 49, 50, -1].map(m => formatMoney(m, 'Rs.'))).toEqual(['Rs. 0.01', 'Rs. 0.49', 'Rs. 0.50', 'Rs. -0.01']);
+    expect(formatMoney(-0, 'Rs.')).toBe('Rs. 0.00');
+    expect(formatMoney(-10245000, 'Rs.')).toBe('Rs. -1,02,450.00');
+    expect(formatMoney(10000000, 'Rs.')).toBe('Rs. 1,00,000.00');
+    expect(formatMoney(999999999999, 'Rs.')).toBe('Rs. 9,99,99,99,999.99');
+  });
+  it('midnight, month end and year end on a fixed +330 offset, which has no DST', () => {
+    expect([formatTime(Date.UTC(2026, 8, 21, 18, 30), IST), formatDate(Date.UTC(2026, 8, 21, 18, 30), IST)]).toEqual(['00:00', '22-09-2026']);
+    expect([formatTime(Date.UTC(2026, 8, 21, 18, 29), IST), formatDate(Date.UTC(2026, 8, 21, 18, 29), IST)]).toEqual(['23:59', '21-09-2026']);
+    expect([formatTime(Date.UTC(2026, 8, 30, 19, 0), IST), formatDate(Date.UTC(2026, 8, 30, 19, 0), IST)]).toEqual(['00:30', '01-10-2026']);
+    expect(formatDate(Date.UTC(2026, 11, 31, 18, 30), IST)).toBe('01-01-2027');
+    expect([formatTime(Date.UTC(2026, 0, 15, 14, 44), IST), formatTime(Date.UTC(2026, 6, 15, 14, 44), IST)]).toEqual(['20:14', '20:14']);
   });
   it('the date on paper is dd-mm-yyyy in the restaurant\'s zone: 2026-09-22 22:10 IST', () => {
     expect(formatDate(T(22, 10), IST)).toBe('22-09-2026');
