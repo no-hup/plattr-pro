@@ -43,9 +43,9 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
     // Validate session (now mandatory)
     await validateCheckoutSession(restaurantId, tableId, sessionId);
 
-    // TODO: Set userId based on context (server/waiter or guest). If authenticated, use actual user ID.
-    // TODO: Review assignedServer logic: should this be the waiter/server assigned to the table? If so, fetch or pass it explicitly.
-    const userId = 'system';  // Default to system instead of checking auth
+    // OR-S1: the line snapshot names who placed it. addedBy is the staff tag ('staff:<id>') from
+    // table-openTable or the guest's own id; a caller without one is still 'system'.
+    const userId = addedBy || 'system';
 
     // Fix: Get the cart directly from Firestore instead of using getCart function
     const cartRef = db
