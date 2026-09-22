@@ -184,13 +184,16 @@ export function lr(left: string, right: string, width: number): string {
 
 // ── Routing (R9, KT-S3, KT-S19) ────────────────────────────────────────────
 
-/** Where a frozen line's ticket goes. Throws on a line with no categoryId (a writer bug) or a station config does not know. */
+/**
+ * Where a frozen line's ticket goes: category → tax block → the default station, never nowhere (KT-S19).
+ * A line with no categoryId at all is a writer gap, not a reason to refuse the round: R1 says printing never blocks
+ * an order, so it takes the tax-block and default path and the hook logs it (Decisions, 2026-09-22 — the
+ * "throw" signed earlier that day was reverted the same day when the checkout fixtures proved the cost).
+ * A mapped station that print.stations does not know IS a config bug and throws.
+ */
 export function route(line: Pick<Line, 'categoryId' | 'components' | 'lineId'>, cfg: PrintConfig): string {
-  if (line.categoryId === undefined || line.categoryId === null || line.categoryId === '') {
-    throw new Error(`line ${line.lineId} has no categoryId; routing reads the frozen line, and every placed line carries one`);
-  }
   const block = line.components[0]?.taxBlockId ?? null;
-  const st = cfg.route[line.categoryId] ?? (block ? cfg.routeByTaxBlock[block] : undefined) ?? cfg.defaultStation;
+  const st = (line.categoryId ? cfg.route[line.categoryId] : undefined) ?? (block ? cfg.routeByTaxBlock[block] : undefined) ?? cfg.defaultStation;
   if (!cfg.stations[st]) throw new Error(`station ${st} is not in print.stations`);
   return st;
 }

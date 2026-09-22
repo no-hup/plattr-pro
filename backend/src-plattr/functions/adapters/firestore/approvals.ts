@@ -1,5 +1,6 @@
 // ST · Firestore ports for app/approvals. The only place this module touches Firebase.
 // Runtime note: this file runs from functions/lib/adapters/firestore/, so existing JS is three levels up.
+import { Job as PrintJob } from '../../domain/print';
 import { Ports, Staff, Tx } from '../../app/approvals';
 import { AuditRow, Line, PinState } from '../../domain/approvals';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
@@ -74,6 +75,8 @@ export const ports: Ports = {
       setLine: (id, line: Line) => { t.set(lines(rid).doc(id), line); },
       createAudit: (id, row: AuditRow) => { t.create(audit(rid).doc(id), row); },
       getAudit: async id => { const s = await t.get(audit(rid).doc(id)); return s.exists ? (s.data() as AuditRow) : null; },
+      kotJobsOfCart: async cartId => (await t.get(rest(rid).collection('printJobs').where('cartId', '==', cartId))).docs.map(d => d.data() as PrintJob).filter(j => j.kind === 'kot'),
+      createPrintJob: job => { t.create(rest(rid).collection('printJobs').doc(job.jobId), job); },
     }));
   },
 };

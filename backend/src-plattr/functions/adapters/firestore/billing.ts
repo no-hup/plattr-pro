@@ -5,6 +5,7 @@ import { Staff, apply as approve } from '../../app/approvals';
 import { ports as approvalPorts } from './approvals';
 import { Bill } from '../../domain/billing';
 import { Line } from '../../domain/line';
+import { tableLabelOf } from './print';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 
 /* eslint-disable @typescript-eslint/no-var-requires */
@@ -16,6 +17,7 @@ const lines = (rid: string) => rest(rid).collection('lines');
 const bills = (rid: string) => rest(rid).collection('bills');
 const counters = (rid: string) => rest(rid).collection('counters');
 const audit = (rid: string) => rest(rid).collection('audit');
+const printJobs = (rid: string) => rest(rid).collection('printJobs');
 const minor = (rupees: unknown) => Math.round((Number(rupees) || 0) * 100);
 
 export const ports: Ports = {
@@ -68,6 +70,8 @@ export const ports: Ports = {
       setCounter: (key, c) => { t.set(counters(rid).doc(key), c); },
       createAudit: (id, row) => { t.create(audit(rid).doc(id), row); },
       newBillId: () => bills(rid).doc().id,
+      enqueuePrint: job => { t.create(printJobs(rid).doc(job.jobId), job); },
+      tableLabel: ids => tableLabelOf(rid, ids, t),
     }));
   },
 };

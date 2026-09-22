@@ -1,4 +1,5 @@
 // ST · apply(): role → config → decide → verify PIN → one transaction (line + audit). No Firestore here; ports only.
+import { Job as PrintJob, cancelJobsFor as cancelPrintJobs } from '../domain/print';
 import {
   Action, ApprovalsConfig, AuditRow, Line, PinState, Outcome, Sev, applyToLine, auditRow, decide, tooSoon, logLine,
   percentOf, recordWrongPin, toPaise, validateAmount, validateReason,
@@ -12,6 +13,8 @@ export interface Tx {
   setLine(lineId: string, line: Line): void;
   createAudit(id: string, row: AuditRow): void;   // must fail if the id exists
   getAudit(id: string): Promise<AuditRow | null>;
+  kotJobsOfCart(cartId: string): Promise<PrintJob[]>;   // KT-S12: which stations the voided line's ticket went to (read before writes)
+  createPrintJob(job: PrintJob): void;
 }
 export interface Ports {
   now(): number;
@@ -164,6 +167,8 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
       }
       const before = await t.getLine(String(lineId));
       if (!before) throw new ApprovalError('not-found', 'line not found', { lineId });
+      const cartId = (before as { cartId?: string }).cartId ?? null;
+      const kotJobs = action === 'void' && cartId ? await t.kotJobsOfCart(cartId) : [];   // read now: no reads after the writes below
       // BL-S8: once a bill is issued its lines are frozen. The fix is cancel (BL-S9) or a credit note (BL-S11).
       if ((before as { billId?: string | null }).billId) throw new ApprovalError('failed-precondition', 'bill already issued', { billId: (before as { billId?: string }).billId });
       // The line may have gone to the kitchen since the decision read. Decide again on the fresh doc:
@@ -176,6 +181,10 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
       const auditId = `${lineId}_v${applied.line.v}`;
       t.createAudit(auditId, auditRow({ ts, cid, action, staffId: staff.staffId, sev: fresh.sev, amount: amountPaise, pct, reason: reason as string, note, lineId: String(lineId), before, after: applied.line }));
       t.setLine(String(lineId), applied.line);
+      // KT-S11 / S12: a ticket the kitchen may have seen gets a cancel ticket at its station; a held one is not
+      // this door's to drop (the cart cancel path does that). Keyed on the line and its version, so a retry lands
+      // on the same document.
+      for (const j of cancelPrintJobs(kotJobs.filter(k => k.state !== 'held'), [String(lineId)], { v: `${lineId}_v${applied.line.v}`, reason: reason as string, by: staff.staffId, now: ts })) t.createPrintJob(j);
       return { line: applied.line, auditId } as ApplyResult;
     });
     emit(sev, needsPin, out.retry ? 'retry' : 'applied');

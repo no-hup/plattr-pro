@@ -14,6 +14,8 @@ const { calculateCharges, loadChargesConfig } = require('./calculateCharges');
 const { validateCart } = require('../cart/validateCart');
 const { calculateCartValue } = require('../cart/calculateCartValue');
 const { writeLineSnapshots, loadTaxConfig } = require('./lineSnapshots');
+// KT: one print job per station, created in the placing transaction (R1, R4). Compiled TypeScript in lib/.
+const print = require('../lib/adapters/firestore/print');
 
 
 /**
@@ -63,6 +65,7 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
   // BL: the tax blocks a placed line freezes. Read out-of-band for the same reason as the charges
   // config, and never re-read at billing time (SPEC_BL R12).
   const { blocks: taxBlocks, assign: taxAssign } = await loadTaxConfig(restaurantId);
+  const { print: printConfig } = await print.printConfig(restaurantId);   // KT: read once, outside the transaction, like the tax config
 
   // Waiter confirmation gate: read out-of-band like the two configs above. Decides the
   // fulfillment status a checked-out cart is BORN with, and nothing else.
@@ -229,7 +232,8 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
       // BL: one line snapshot per placed item, in this same transaction. A bill is summed from these,
       // so there must be no moment where the order exists and its lines do not (SPEC_BL, phase 4;
       // this is the real collection TD-008's staging doc was standing in for).
-      writeLineSnapshots(transaction, restaurantId, {
+      const placedNow = Date.now();
+      const placedLines = writeLineSnapshots(transaction, restaurantId, {
         cartSnapshot,
         orderId: orderResult.id,
         tableId,
@@ -237,8 +241,17 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
         placedBy: userId,
         blocks: taxBlocks,
         assign: taxAssign,
-        now: Date.now(),
+        now: placedNow,
         sent: linesAreSent,
+      });
+      // KT-S1..S4: a KOT job per station, in this same transaction. A line with no category routes to the
+      // default station (R1: printing never blocks an order); only a station config does not know throws.
+      // Held behind the waiter gate (R5): markLinesSent releases it when the waiter confirms.
+      print.enqueueRound(transaction, restaurantId, printConfig, placedLines, {
+        cid: orderResult.id, orderId: orderResult.id, cartId: cartSnapshot.cartId,
+        orderNumber: String(orderResult.orderNumber ?? ''), cartIndex: Array.isArray(orderResult.carts) ? orderResult.carts.length : 1,
+        tableLabel: (tableDoc && tableDoc.exists && tableDoc.data().number) ? String(tableDoc.data().number) : tableId,
+        placedBy: userId, placedAt: placedNow, now: placedNow, held: !linesAreSent,
       });
 
       // The cart becomes the order atomically — no window where both exist. When other diners
