@@ -136,7 +136,7 @@ export const formatTime = (epochMs: number, tzOffsetMinutes: number): string => 
 export const formatDate = (epochMs: number, tzOffsetMinutes: number): string => { const d = local(epochMs, tzOffsetMinutes); return `${two(d.getUTCDate())}-${two(d.getUTCMonth() + 1)}-${d.getUTCFullYear()}`; };
 
 /** Guest text never carries a control byte onto the wire. */
-export const clean = (s: string): string => s.replace(/[\x00-\x1f\x7f]/g, ' ');
+export const clean = (s: string): string => s.replace(/[\x00-\x1f\x7f]/g, ' ').replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '');   // controls → space; bidi overrides → gone
 
 /**
  * Word-wrap to `width`; continuation lines are indented by `hang` spaces. A word longer than the room it has is
@@ -151,7 +151,9 @@ export function wrap(text: string, width: number, hang: number): string[] {
     if (!word) continue;
     while (word.length > room() - (cur ? cur.length + 1 : 0)) {
       if (cur) { flush(); continue; }
-      const take = room();
+      let take = room();
+      const cut = word.charCodeAt(take - 1);
+      if (cut >= 0xd800 && cut <= 0xdbff) take -= 1;   // never split a surrogate pair (an emoji is two code units)
       out.push(out.length === 0 ? word.slice(0, take) : ' '.repeat(hang) + word.slice(0, take));
       word = word.slice(take);
     }

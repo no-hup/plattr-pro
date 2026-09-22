@@ -172,6 +172,4 @@ export function statusOf(jobs: Job[], now: number, cfg: PrintConfig): PrintStatu
 export const overdue = (jobs: Job[], now: number, cfg: PrintConfig): Job[] =>
   jobs.filter(j => isWaiting(j, now) && now - (j.queuedAt ?? j.createdAt) > cfg.unclaimedAfterSeconds * 1000);
 
-/** BL froze the blocks; the title follows them: an exempt block on the page makes it a bill of supply too (KT-S14). */
-export const titleFor = (blocks: { parts: unknown[] }[]): string =>
-  blocks.some(b => !b.parts.length) && blocks.some(b => b.parts.length) ? 'Invoice-cum-Bill of Supply' : blocks.every(b => !b.parts.length) ? 'Bill of Supply' : 'Tax Invoice';
+export { titleFor } from './receipt';

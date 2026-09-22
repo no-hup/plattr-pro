@@ -4,7 +4,6 @@
 import { Bill, BilledLine, Block } from './billing';
 import { billTicket, creditNoteTicket, Ticket } from './receipt';
 import { printConfigFrom } from './kot';
-import { Line } from './line';
 
 const IST = 330;
 const T = (h: number, m: number) => Date.UTC(2026, 8, 22, h - 5, m - 30);
@@ -16,14 +15,14 @@ const DASH = '-'.repeat(48);
 
 const seller = { name: 'Hotel Sample', address: '12 MG Road, the city 560001', taxId: '29ABCDE1234F1Z5', stateCode: '29', placeOfSupply: 'Karnataka (29)' };
 
-function bl(over: Partial<BilledLine> & { name: string; qty: number; listPrice: number; blockId: string }): BilledLine {
+function bl(over: Partial<BilledLine> & { name: string; qty: number; listPrice: number; blockId: string; hsn?: string }): BilledLine {
   const id = over.lineId ?? over.name.toLowerCase().replace(/\W+/g, '_');
-  const { blockId, ...rest } = over;
+  const { blockId, hsn, ...rest } = over;
   return {
     lineId: id, cid: 'cid_42', orderId: 'order_42', cartId: 'cart_42', cartItemId: id, tableId: 'table_7', sessionId: 's7',
     placedAt: T(20, 14), placedBy: 'staff:ramesh', menuItemId: 'mi_' + id, sent: true, v: 0, countsTowardTotal: true,
     draftId: 's7', billId: 'b_0417', categoryId: 'c', taxSource: 'category',
-    components: [{ id: id + '_item', kind: 'item', name: over.name, unitListPrice: Math.round(over.listPrice / over.qty), taxBlockId: blockId, taxCode: '' }],
+    components: [{ id: id + '_item', kind: 'item', name: over.name, unitListPrice: Math.round(over.listPrice / over.qty), taxBlockId: blockId, taxCode: hsn ?? '' }],
     taxBlocks: {}, billDiscount: 0, tax: {}, credited: { qty: 0 },
     ...rest,
   } as BilledLine;
@@ -37,10 +36,10 @@ const blocks: Block[] = [
 ];
 const bill0417: Bill = {
   lines: [
-    bl({ name: 'Chicken Biryani', qty: 1, listPrice: 45000, blockId: 'food' }),
-    bl({ name: 'Butter Naan', qty: 1, listPrice: 6000, blockId: 'food' }),
-    bl({ name: 'Margherita', qty: 1, listPrice: 50000, blockId: 'food' }),
-    bl({ name: 'Kingfisher Pint', qty: 2, listPrice: 52000, blockId: 'liquor' }),
+    bl({ name: 'Chicken Biryani', qty: 1, listPrice: 45000, blockId: 'food', hsn: '9963' }),
+    bl({ name: 'Butter Naan', qty: 1, listPrice: 6000, blockId: 'food', hsn: '9963' }),
+    bl({ name: 'Margherita', qty: 1, listPrice: 50000, blockId: 'food', hsn: '9963' }),
+    bl({ name: 'Kingfisher Pint', qty: 2, listPrice: 52000, blockId: 'liquor', hsn: '2203' }),
   ],
   blocks, charges: [], discount: null, subtotal: 153000, taxTotal: 5050, roundOff: -50, payable: 158000,
   billId: 'b_0417', number: 'A/0417', series: 'A', fiscalYear: '2026-27', cid: 'cid_42', tableIds: ['table_7'], sessionId: 's7', draftId: 's7',
@@ -50,19 +49,19 @@ const BODY_0417 = [
   W('Hotel Sample'),
   W('12 MG Road, the city 560001'),
   W('GSTIN 29ABCDE1234F1Z5'),
-  W('Tax Invoice'),
+  W('Invoice-cum-Bill of Supply'),
   LR('Bill A/0417', '22-09-2026 22:10'),
   W('Table 7'),
   DASH,
-  W('FOOD'),
-  LR('1 x Chicken Biryani', '450.00'),
-  LR('1 x Butter Naan', '60.00'),
-  LR('1 x Margherita', '500.00'),
+  W('GST'),
+  LR('1 x Chicken Biryani  9963', '450.00'),
+  LR('1 x Butter Naan  9963', '60.00'),
+  LR('1 x Margherita  9963', '500.00'),
   LR('Taxable', '1,010.00'),
   LR('CGST 2.5%', '25.25'),
   LR('SGST 2.5%', '25.25'),
-  W('LIQUOR'),
-  LR('2 x Kingfisher Pint', '520.00'),
+  W('Liquor'),
+  LR('2 x Kingfisher Pint  2203', '520.00'),
   LR('Total', '520.00'),
   DASH,
   LR('Round-off', '-0.50'),
@@ -74,7 +73,7 @@ const BODY_0417 = [
 ];
 
 describe('the bill at the counter (KT-S6, KT-S14, KT-S21)', () => {
-  it('KT-S6 bill A/0417 at 22:10: seller, GSTIN, blocks with their tax parts, round-off, TOTAL, place of supply, reverse charge No', () => {
+  it('KT-S6 bill A/0417 at 22:10: seller, GSTIN, the title the frozen blocks imply, block headings as BL labelled them, HSN on every line, tax parts, round-off, TOTAL, place of supply, reverse charge No', () => {
     const t = billTicket(bill0417, cfg, { kind: 'bill', tzOffsetMinutes: IST, tableLabel: '7' });
     expect(t).toMatchObject({ kind: 'bill', stationId: 'counter', charsPerLine: 48, copies: 1, cut: true, drawer: false });
     expect(texts(t)).toEqual(BODY_0417);
@@ -83,13 +82,14 @@ describe('the bill at the counter (KT-S6, KT-S14, KT-S21)', () => {
     expect(t.rows[19]).toMatchObject({ big: true, bold: true });
   });
 
-  it('KT-S14 an exempt block on the page makes the title "Invoice-cum-Bill of Supply", and the liquor block prints no tax line', () => {
-    // BL decides the title by what it froze; KT reads `blocks` only. A bill with liquor on it is the one above.
-    const t = billTicket(bill0417, cfg, { kind: 'bill', tzOffsetMinutes: IST, tableLabel: '7', title: 'Invoice-cum-Bill of Supply' });
+  it('KT-S14 the title follows the frozen blocks: food + liquor → Invoice-cum-Bill of Supply; food only → Tax Invoice; liquor only → Bill of Supply; the liquor block prints no tax line', () => {
+    const t = billTicket(bill0417, cfg, { kind: 'bill', tzOffsetMinutes: IST, tableLabel: '7' });
     expect(texts(t)[3]).toBe(W('Invoice-cum-Bill of Supply'));
-    const liquor = texts(t).slice(texts(t).indexOf(W('LIQUOR')), texts(t).indexOf(W('LIQUOR')) + 3);
-    expect(liquor).toEqual([W('LIQUOR'), LR('2 x Kingfisher Pint', '520.00'), LR('Total', '520.00')]);
+    const liquor = texts(t).slice(texts(t).indexOf(W('Liquor')), texts(t).indexOf(W('Liquor')) + 3);
+    expect(liquor).toEqual([W('Liquor'), LR('2 x Kingfisher Pint  2203', '520.00'), LR('Total', '520.00')]);
     expect(liquor.join('\n')).not.toMatch(/GST/);
+    expect(texts(billTicket({ ...bill0417, blocks: [blocks[0]] }, cfg, { kind: 'bill', tzOffsetMinutes: IST, tableLabel: '7' }))[3]).toBe(W('Tax Invoice'));
+    expect(texts(billTicket({ ...bill0417, blocks: [blocks[1]] }, cfg, { kind: 'bill', tzOffsetMinutes: IST, tableLabel: '7' }))[3]).toBe(W('Bill of Supply'));
   });
 
   it('KT-S21 payable 10245000 prints "TOTAL" right-aligned with Rs. and Indian grouping, never ₹', () => {
@@ -183,8 +183,8 @@ describe('the credit note (KT-S15)', () => {
       W('Against bill A/0417 of 22-09-2026'),
       W('Table 7'),
       DASH,
-      W('FOOD'),
-      LR('-1 x Coke', '-80.00'),
+      W('GST'),
+      LR('1 x Coke', '-80.00'),
       LR('Taxable', '-80.00'),
       LR('CGST 2.5%', '-2.00'),
       LR('SGST 2.5%', '-2.00'),
@@ -195,6 +195,16 @@ describe('the credit note (KT-S15)', () => {
       W('Reverse charge: No'),
       W('Thank you · FSSAI 12345678901234'),
     ]);
+  });
+
+  it('KT-S15 a note with two lines: both negative, taxable and parts summed as BL froze them, no double minus on the qty', () => {
+    const two: Bill = { ...note,
+      lines: [note.lines[0], bl({ name: 'Naan', qty: -2, listPrice: -12000, blockId: 'food' })],
+      blocks: [{ id: 'food', label: 'GST', mode: 'exclusive', taxable: -20000, parts: [{ label: 'CGST', rateBps: 250, amount: -500 }, { label: 'SGST', rateBps: 250, amount: -500 }], total: -21000 }],
+      subtotal: -20000, taxTotal: -1000, payable: -21000 };
+    const t = texts(creditNoteTicket(two, cfg, { tzOffsetMinutes: IST, tableLabel: '7' }));
+    expect(t.slice(t.indexOf(W('GST')), t.indexOf(W('GST')) + 6)).toEqual([W('GST'), LR('1 x Coke', '-80.00'), LR('2 x Naan', '-120.00'), LR('Taxable', '-200.00'), LR('CGST 2.5%', '-5.00'), LR('SGST 2.5%', '-5.00')]);
+    expect(t).toContain(LR('TOTAL', 'Rs. -210.00'));
   });
 
   it('a bill that is not a credit note is refused by creditNoteTicket: the caller chose the wrong renderer', () => {
@@ -219,8 +229,13 @@ describe('what the guest never sees', () => {
     const b = { ...bill0417, blocks: [{ ...blocks[0], taxable: 99900 }, blocks[1]] };
     expect(texts(billTicket(b, cfg, { kind: 'bill', tzOffsetMinutes: IST, tableLabel: '7' }))).toContain(LR('Taxable', '999.00'));
   });
-  it('a Line-typed input (not a BilledLine) is a compile error, so the KOT path cannot be handed to the bill renderer', () => {
-    const l: Line = bill0417.lines[0];
-    expect(l).toBeDefined();   // type-level check; nothing to run
+  it('a block with lines but zero taxable prints 0.00 as frozen, never rebuilt from the lines; a rate of 125 bps prints 1.25%, 200 bps prints 2%', () => {
+    const b: Bill = { ...bill0417, lines: [bl({ name: 'Dal Fry', qty: 1, listPrice: 8000, blockId: 'food' })], blocks: [{ id: 'food', label: 'GST', mode: 'exclusive', taxable: 0, parts: [{ label: 'CGST', rateBps: 125, amount: 0 }, { label: 'SGST', rateBps: 200, amount: 0 }], total: 0 }] };
+    const t = texts(billTicket(b, cfg, { kind: 'bill', tzOffsetMinutes: IST, tableLabel: '7' }));
+    expect(t.slice(t.indexOf(W('GST')), t.indexOf(W('GST')) + 5)).toEqual([W('GST'), LR('1 x Dal Fry', '80.00'), LR('Taxable', '0.00'), LR('CGST 1.25%', '0.00'), LR('SGST 2%', '0.00')]);
+  });
+  it('a round-off of -0 prints no row; billCopies 0 falls back to 1', () => {
+    expect(texts(billTicket({ ...bill0417, roundOff: -0 }, cfg, { kind: 'bill', tzOffsetMinutes: IST, tableLabel: '7' })).join('\n')).not.toMatch(/Round-off/);
+    expect(billTicket(bill0417, printConfigFrom({ print: { billCopies: 0 } }), { kind: 'bill', tzOffsetMinutes: IST, tableLabel: '7' }).copies).toBe(1);
   });
 });
