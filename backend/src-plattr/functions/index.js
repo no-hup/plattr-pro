@@ -24,6 +24,8 @@ exports.table = {
   ...tableFunctions,
   moveTable: require('./lib/api/floor').moveHandler,
   setMerge: require('./lib/api/floor').setMergeHandler,
+  // FL-S36 / TD-044: the idle sweep's manual trigger (emulator-only); the schedule is floor.releaseIdleTables.
+  cleanupInactiveSessions: require('./lib/api/floor').idleSweepHandler,
 };
 exports.server = serverFunctions;
 exports.customer = customerFunctions;
@@ -104,6 +106,7 @@ exports.floor = {
   get: require('./lib/api/floor').getHandler,
   open: require('./lib/api/floor').openHandler,
   clear: require('./lib/api/floor').clearHandler,
+  releaseIdleTables: require('./lib/api/floor').releaseIdleTables,   // FL-S36: every 5 minutes; the emulator never fires it
 };
 exports.billing = {
   preview: require('./lib/api/billing').previewHandler,
