@@ -9,7 +9,7 @@
 import {
   onTable, unpaid, draftCount, tile, tileWord, mayAct,
   canMerge, canUnmerge, canReceive, canMove, isReleasable, acceptsNewGuests, moveWriteSet,
-  Bill, Table, Sitting, Role, OrderState,
+  Bill, Table, Sitting, Role, OrderState, idleCall, lastTouchedAt, DEFAULTS,
 } from './floor';
 import { Line } from './line';
 
@@ -535,5 +535,65 @@ describe('who may act (R16)', () => {
       const r = mayAct(role);
       expect(r.ok === false && r.code).toBe('permission-denied');
     }
+  });
+});
+
+// ── FL-S36 · the table nobody frees (R21) ─────────────────────────────────
+
+describe('FL-S36 idle tables — the clock is derived from what the sitting did (R21)', () => {
+  const MIN = 60_000;
+  const NOW = 1_800_000_000_000;
+  const HOUR = DEFAULTS.idleFreeAfterMinutes * MIN;   // 60m
+  const sit = (over: Partial<Sitting> = {}): Sitting =>
+    ({ sessionId: 's4', tableIds: ['4'], openedAt: NOW - 2 * 60 * MIN, lines: [], bills: [], ...over });
+  const placed = (at: number, listPrice = 184000, billId: string | null = null): Line =>
+    ({ lineId: 'l', sessionId: 's4', placedAt: at, listPrice, countsTowardTotal: true, billId, draftId: 's4' } as unknown as Line);
+
+  it('FL-S36 21:10 scanned, nothing ordered, nothing touched for 120m → free', () => {
+    expect(idleCall(sit(), [], NOW, HOUR)).toBe('free');
+    expect(lastTouchedAt(sit(), [], NOW)).toBe(NOW - 120 * MIN);
+  });
+
+  it('FL-S36 a re-open at minute 110 (session updatedAt) is activity → busy, not freed at 120', () => {
+    expect(idleCall(sit(), [NOW - 10 * MIN], NOW, HOUR)).toBe('busy');
+  });
+
+  it('FL-S36 a round being built (cart written 5m ago) is activity → busy', () => {
+    expect(idleCall(sit(), [NOW - 5 * MIN], NOW, HOUR)).toBe('busy');
+  });
+
+  it('FL-S36 the newest line placed 30m ago outranks an opening 2h ago → busy', () => {
+    const s = sit({ lines: [placed(NOW - 30 * MIN, 184000, 'b1')], bills: [{ billId: 'b1', status: 'paid', payable: 184000, paid: 184000 }] });
+    expect(idleCall(s, [], NOW, HOUR)).toBe('busy');
+  });
+
+  it('FL-S36 unbilled food 184000p and idle 2h → money: reported, never freed', () => {
+    expect(idleCall(sit({ lines: [placed(NOW - 2 * 60 * MIN)] }), [], NOW, HOUR)).toBe('money');
+  });
+
+  it('FL-S36 an issued bill 184000p unpaid and idle 2h → money', () => {
+    const s = sit({ lines: [placed(NOW - 2 * 60 * MIN, 184000, 'b1')], bills: [{ billId: 'b1', status: 'issued', payable: 184000, paid: 0 }] });
+    expect(idleCall(s, [], NOW, HOUR)).toBe('money');
+  });
+
+  it('FL-S36 paid in full 2h ago, nobody tapped Clear → free (signed lazy default, see plan)', () => {
+    const s = sit({ lines: [placed(NOW - 2 * 60 * MIN, 184000, 'b1')], bills: [{ billId: 'b1', status: 'paid', payable: 184000, paid: 184000 }] });
+    expect(idleCall(s, [NOW - 2 * 60 * MIN], NOW, HOUR)).toBe('free');
+  });
+
+  it('FL-S36 exactly at the threshold (60m) is idle; 59m59s is busy', () => {
+    expect(idleCall(sit({ openedAt: NOW - HOUR }), [], NOW, HOUR)).toBe('free');
+    expect(idleCall(sit({ openedAt: NOW - HOUR + 1 }), [], NOW, HOUR)).toBe('busy');
+  });
+
+  it('FL-S36 fail closed: a sitting with no finite timestamp at all reads as touched now → busy', () => {
+    const s = sit({ openedAt: NaN });
+    expect(lastTouchedAt(s, [undefined as unknown as number, 0, -5], NOW)).toBe(NOW);
+    expect(idleCall(s, [], NOW, HOUR)).toBe('busy');
+  });
+
+  it('FL-S36 a zero or negative threshold frees nothing (a bad config key is never "free everything")', () => {
+    expect(idleCall(sit(), [], NOW, 0)).toBe('busy');
+    expect(idleCall(sit(), [], NOW, NaN)).toBe('busy');
   });
 });

@@ -74,6 +74,7 @@ A merged group draws as **one** tile with the parent's number and a "+6" mark. O
 | FL-S33 | **The destination is not as vacant as it looks.** Table 9 is `disabled` and `mergedInto: 10`, with no session. A move onto it must be refused. A destination must be `vacant`, hold no session, have no `currentOTP` in flight, point at no parent, and be nobody's parent. | Engine |
 | FL-S34 | **The session runs out under a long dinner.** Table 7 opened at 19:00 and the session expires after four hours (`sessionService.js:80`). At 23:05 the tile must still show the ₹1,840 that is on the table. An expired session is not an empty table. Extending it is TD-034's problem, not the floor's; showing the money is the floor's. | Engine |
 | FL-S35 | **A comp to zero.** A walk-out is comped to ₹0 and the bill settles. The tile reads settled with people possibly still in the chairs, exactly as a paid table does. | Engine |
+| FL-S36 | **The party that walked out.** 21:10 a couple scans table 4, signs in, orders nothing, and leaves. 22:10 nobody has touched table 4 for an hour and it owes nothing. The system ends the sitting, writes one audit row (`table.autoVacate`, by `system`, why `idle 60m, no open money`) and the tile reads free; the phone still open on that session gets "session ended" on its next call, not a crash. A table that owes ₹1,840 and has been idle two hours is **not** freed: one log line per sweep, the tile keeps its money, and day close is where a person meets it (it refuses on an unpaid bill and on unbilled lines). A round being built in the cart, a re-open, a re-scan, a line placed, a bill issued or a payment taken each count as the table being touched. A paid table nobody cleared is freed by the same clock. **Without this the table refuses every merge and move until a human notices, and there is nothing on the tile to say why** (TD-044). | Engine |
 
 **Without this:** the cashier works from shouted table numbers and a paper docket, bills the wrong table on a busy night, and nobody can move a party without losing their food.
 
@@ -98,6 +99,7 @@ A merged group draws as **one** tile with the parent's number and a "+6" mark. O
 - R17 A sitting with money on it always has a tile, even if its table was retired or disabled underneath it.
 - R18 Once every bill of a group is settled, the sitting **stops accepting new users and new checkouts**. Keeping the session alive to stop the next party being seated does the opposite if a scan can still join it.
 - R19 If the money cannot be summed, the floor **fails visibly** (R19). An occupied tile reading `₹0` is more dangerous than a floor that says it is down.
+- R21 **Idle is measured off everything the sitting did, never off one stored flag.** The clock is the newest of: the session's `createdAt` and `updatedAt` (a re-open, OR-S22), each table's cart `lastUpdated` and scan `lastActivity`, every line's `placedAt`, every bill's `issuedAt` and `paidAt`, every payment's `at`. Derived, not a rollup: `table.lastActivity` written by three callers and read by a job is the bug TD-044 was. A sitting that cannot be dated is never freed, and open money outranks the clock the way it outranks a captain's COMPLETED (R14). Only live sittings opened before the threshold are read at all (composite index `sessions: status, createdAt`), and the sweep runs every five minutes, not one: the threshold is an hour and the reads are the bill.
 
 ## Config keys (on `restaurants/{id}/config/settings`, field `floor`, with defaults)
 
@@ -105,6 +107,7 @@ A merged group draws as **one** tile with the parent's number and a "+6" mark. O
 |---|---|---|
 | `floor.pollSeconds` | 5 | FL-S1 |
 | `floor.staleAfterSeconds` | 20 | FL-S15 — when the grey kicks in if a poll hangs, which is not the same as the poll interval |
+| `floor.idleFreeAfterMinutes` | 60 | FL-S36 — how long a sitting may go untouched before the sweep ends it (was the literal `60 * 60 * 1000` in `table/table.js`). Zero or negative frees nothing |
 | ~~`floor.settledFreeAfterMinutes`~~ | ~~30~~ | **Not built, 2026-09-18.** FL-S14's timer half was removed with `releaseIfSettled` when the payment path was corrected to write nothing to the table. The key is gone from `FloorConfig`; this row stays struck rather than deleted so the gap is visible. See the FL-Q1 note below |
 
 ## Talks to
@@ -181,6 +184,11 @@ A merged group draws as **one** tile with the parent's number and a "+6" mark. O
 | 2026-09-17 | Fan-out (Grok). **Accepted:** drop the OF port row; the grey state is ten lines in `useFloor.ts` | Twenty over a hundred. `tileWord` and the totals stay pure because they carry money; ageing the last poll does not need a port |
 | 2026-09-17 | **SPEC_OR stands and is next.** FL owns merge, unmerge and move; OR's rows for them become a reference to this sheet | The go-live plan (`reviews/2026-09-17-go-live-plan.md`) already made this call in writing: "FL owns move and merge; OR drops them — two sheets owning one endpoint is how we get two implementations." FL is #1 because the till has no home screen at all; OR is #2. OR's seven decisions were signed the same morning and are not re-opened. TD-034 closed |
 | 2026-09-17 | OR's move write-set (OR-S15) is lifted into FL-S28 and R5 rather than rewritten | It was better than FL's first draft: it already re-pointed the open orders, which FL v1 missed. Taking the better text is not superseding the sheet it came from |
+| 2026-09-22 | **FL-S36 / TD-044: the idle sweep is `app/floor.ts releaseIdle` behind `floor-releaseIdleTables`, `onSchedule('every 5 minutes', maxInstances 1, no retry)`. Its own schedule, not a shared "housekeeping" door** | The contract says one caller means inline it; a print sweep, when KT builds one, has a one-minute cadence and its own failure domain. Cloud Scheduler bills per job (three free), so two jobs cost nothing; the Firestore reads are the bill, hence candidates-first and five minutes |
+| 2026-09-22 | **The old `cleanupInactiveSessions` body is deleted.** The name stays as the emulator-only manual trigger (`lib/api/floor.ts idleSweepHandler`, guard tested in `api/floor.test.ts`), because the emulator registers a schedule and never fires it | It judged idleness by `table.lastActivity`, which nothing in the order path writes, and ended sessions with no money check (R14). Its `pending` branch went with it: nothing writes `pending` since the 21st |
+| 2026-09-22 | **A paid table nobody cleared is freed by the clock** (lazy default, flagged must-decide in `reviews/2026-09-22-plan-paper-and-idle-tables.md`) | It is the P1 half of TD-044; the risk is seating the next party on lingering guests, which a 60-minute silence makes unlikely. Flip it by making `idleCall` return `money` on `bills.length > 0 && !unbilled` if Shaurya says so |
+| 2026-09-22 | Grok (plan review) proposed a `session.lastActivityAt` rollup written by every event; **refused** in favour of R21's derived clock | Same failure class as `table.lastActivity` with more writers. A derived max over timestamps that already exist cannot be forgotten by a new caller |
+| 2026-09-22 | The unpaid idle table is logged once per sweep (`table.idle.money`), not surfaced on the till | Day close already refuses on an unpaid bill and on unbilled lines (`domain/dayClose.ts:175,180`), so a person meets it at the only moment that matters; MN is not built |
 
 ## Out of scope
 
@@ -220,5 +228,6 @@ backend/src-plattr/functions/
 frontend/till/src/
   features/floor/FloorScreen.tsx  the screen shown when the URL carries no other param
   features/floor/useFloor.ts      poll, age the last answer, picking mode, route a tap through floor-open
-tests: domain/floor.test.ts · app/floor.test.ts · test/e2e/suites/floor.js · frontend/till/e2e/floor.spec.ts
+  api/floor.ts                   + releaseIdleTables (onSchedule, every 5 minutes) and idleSweepHandler (table-cleanupInactiveSessions, emulator-only)
+tests: domain/floor.test.ts · app/floor.test.ts · api/floor.test.ts · test/e2e/suites/floor.js · test/e2e/suites/housekeeping.js · frontend/till/e2e/floor.spec.ts
 ```

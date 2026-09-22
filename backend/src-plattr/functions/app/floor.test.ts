@@ -4,7 +4,7 @@
 // what the screen is handed when a port is down.
 
 import {
-  getFloor, openTable, moveTable, clearTable, setMerge, floorConfigFrom,
+  getFloor, openTable, moveTable, clearTable, setMerge, floorConfigFrom, releaseIdle, releaseIdleEverywhere,
   Ports, Tx, Order, SittingHead, ApprovalError,
 } from './floor';
 import { Bill, Table, OrderState } from '../domain/floor';
@@ -38,6 +38,8 @@ interface World {
   breakBills?: boolean;
   breakTables?: boolean;
   breakConfig?: boolean;
+  touched?: Record<string, number[]>;     // sessionId → extra timestamps the database knows (R21)
+  breakTouched?: string[];                // sessionIds whose read throws
 }
 
 function fake(over: Partial<World> = {}) {
@@ -70,7 +72,8 @@ function fake(over: Partial<World> = {}) {
     setLineTable(lid, tid) { writes.push(`line:${lid}=${tid}`); const l = w.lines.find(x => x.lineId === lid); if (l) (l as Line).tableId = tid; },
     setTable(tid, patch) { writes.push(`table:${tid}`); const t = tableOf(tid); if (t) Object.assign(t, patch); },
     async ordersOfSession(sid) { return w.orders[sid] ?? []; },
-    createAudit(id, row) { audits.set(id, row as Record<string, unknown>); },
+    createAudit(id, row) { if (audits.has(id)) throw new Error(`audit ${id} exists`); audits.set(id, row as Record<string, unknown>); },
+    async touchedAt(s) { if (w.breakTouched?.includes(s.sessionId)) throw new Error('cart unreadable'); return w.touched?.[s.sessionId] ?? []; },
   };
 
   const ports: Ports & { world: World; logs: object[]; audits: typeof audits; writes: string[]; tick(ms: number): void } = {
@@ -90,6 +93,8 @@ function fake(over: Partial<World> = {}) {
     async linesOfSessions(_rid, ids) { if (w.breakLines) throw new Error('lines unreadable'); return w.lines.filter(l => ids.includes(l.sessionId)); },
     async billsOfSessions(_rid, ids) { if (w.breakBills) throw new Error('bills unreadable'); return w.bills.filter(b => ids.includes(b.sessionId)); },
     async transact(_rid, fn) { return fn(tx); },
+    async idleCandidates(_rid, before) { return w.sittings.filter(s => s.openedAt < before); },
+    async restaurantIds() { return [RID]; },
   };
   return ports;
 }
@@ -407,14 +412,14 @@ describe('getFloor — what happens when a port is down (R19)', () => {
 
   it('config falls back to the defaults on a fresh restaurant rather than failing the floor', async () => {
     const { config } = await getFloor(busy(), REQ);
-    expect(config).toEqual({ pollSeconds: 5, staleAfterSeconds: 20 });
+    expect(config).toEqual({ pollSeconds: 5, staleAfterSeconds: 20, idleFreeAfterMinutes: 60 });
   });
 
   it('config keys are read from the restaurant doc and bad values fall back, never crash', () => {
     expect(floorConfigFrom({ floor: { pollSeconds: 10, staleAfterSeconds: 45 } }))
-      .toEqual({ pollSeconds: 10, staleAfterSeconds: 45 });
-    expect(floorConfigFrom({ floor: { pollSeconds: -1, staleAfterSeconds: 'soon' } }))
-      .toEqual({ pollSeconds: 5, staleAfterSeconds: 20 });
+      .toEqual({ pollSeconds: 10, staleAfterSeconds: 45, idleFreeAfterMinutes: 60 });
+    expect(floorConfigFrom({ floor: { pollSeconds: -1, staleAfterSeconds: 'soon', idleFreeAfterMinutes: 0 } }))
+      .toEqual({ pollSeconds: 5, staleAfterSeconds: 20, idleFreeAfterMinutes: 60 });
   });
 });
 
@@ -853,5 +858,107 @@ describe('setMerge — the race and the release (R14, R16, OR-5a, FL-S32)', () =
   it('a table that does not exist is not-found on either side', async () => {
     await expect(setMerge(world(), { ...MERGE, parentTableId: '99', childTableIds: ['6'] })).rejects.toMatchObject({ code: 'not-found' });
     await expect(setMerge(world(), { ...MERGE, childTableIds: ['99'] })).rejects.toMatchObject({ code: 'not-found' });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('releaseIdle — the table nobody frees (FL-S36, R21, TD-044)', () => {
+  const H = 60 * MIN;
+  const walked = (over: Partial<World> = {}) => fake({
+    tables: [table({ tableId: '4', status: 'active' })],
+    sittings: [head({ sessionId: 's4', tableIds: ['4'], openedAt: T0 - 2 * H })],
+    ...over,
+  });
+
+  it('FL-S36 scanned at 21:10, nothing since, 23:10 → freed with an audit row by "system" naming the clock', async () => {
+    const ports = walked();
+    const r = await releaseIdle(ports, RID);
+    expect(r).toMatchObject({ candidates: 1, freed: ['4'], money: [], skipped: [] });
+    expect(ports.world.tables[0].status).toBe('vacant');
+    expect(ports.writes).toContain('session:s4=ended');
+    expect(ports.audits.get('s4_autoVacate')).toMatchObject({ action: 'table.autoVacate', by: 'system', idleMinutes: 120, why: 'idle 120m, no open money' });
+    expect(ports.logs).toContainEqual(expect.objectContaining({ evt: 'table.autoVacate', cid: 's4', idleMinutes: 120 }));
+  });
+
+  it('FL-S36 a re-open 10 minutes ago (session updatedAt) keeps it: nothing written', async () => {
+    const ports = walked({ touched: { s4: [T0 - 10 * MIN] } });
+    const r = await releaseIdle(ports, RID);
+    expect(r.freed).toEqual([]);
+    expect(ports.writes).toEqual([]);
+    expect(ports.world.tables[0].status).toBe('active');
+  });
+
+  it('FL-S36 unbilled food 184000p idle 2h → left on the table, one money line, no audit row', async () => {
+    const ports = walked({ lines: [line({ lineId: 'l1', listPrice: 184000, sessionId: 's4', placedAt: T0 - 2 * H })] });
+    const r = await releaseIdle(ports, RID);
+    expect(r).toMatchObject({ freed: [], money: ['s4'] });
+    expect(ports.world.tables[0].status).toBe('active');
+    expect(ports.audits.size).toBe(0);
+    expect(ports.logs).toContainEqual(expect.objectContaining({ evt: 'table.idle.money', cid: 's4' }));
+  });
+
+  it('FL-S36 an unpaid bill 184000p idle 2h → money, not freed', async () => {
+    const ports = walked({ bills: [bill({ billId: 'b1', sessionId: 's4', payable: 184000 })], touched: { s4: [T0 - 2 * H] } });
+    expect((await releaseIdle(ports, RID)).money).toEqual(['s4']);
+    expect(ports.world.tables[0].status).toBe('active');
+  });
+
+  it('FL-S36 paid in full 2h ago and nobody tapped Clear → freed (the P1 half of TD-044)', async () => {
+    const ports = walked({ bills: [bill({ billId: 'b1', sessionId: 's4', payable: 184000, paid: 184000, status: 'paid' })], touched: { s4: [T0 - 2 * H] } });
+    expect((await releaseIdle(ports, RID)).freed).toEqual(['4']);
+  });
+
+  it('FL-S36 a merged group 5+6 walks out → both tables vacant and the child is unmerged', async () => {
+    const ports = walked({
+      tables: [table({ tableId: '5', status: 'active', isParent: true }), table({ tableId: '6', status: 'disabled', mergedInto: '5' })],
+      sittings: [head({ sessionId: 's5', tableIds: ['5', '6'], openedAt: T0 - 2 * H })],
+    });
+    expect((await releaseIdle(ports, RID)).freed).toEqual(['5', '6']);
+    expect(ports.world.tables.map(t => [t.status, t.mergedInto])).toEqual([['vacant', null], ['vacant', null]]);
+  });
+
+  it('FL-S36 a sitting opened 40 minutes ago is not even a candidate', async () => {
+    const ports = walked({ sittings: [head({ sessionId: 's4', tableIds: ['4'], openedAt: T0 - 40 * MIN })] });
+    expect(await releaseIdle(ports, RID)).toMatchObject({ candidates: 0, freed: [] });
+  });
+
+  it('FL-S36 fail closed: the cart read throws → skipped and logged, never freed; the next sitting still runs', async () => {
+    const ports = walked({
+      tables: [table({ tableId: '4', status: 'active' }), table({ tableId: '9', status: 'active' })],
+      sittings: [head({ sessionId: 's4', tableIds: ['4'], openedAt: T0 - 2 * H }), head({ sessionId: 's9', tableIds: ['9'], openedAt: T0 - 2 * H })],
+      breakTouched: ['s4'],
+    });
+    const r = await releaseIdle(ports, RID);
+    expect(r).toMatchObject({ skipped: ['s4'], freed: ['9'] });
+    expect(ports.world.tables[0].status).toBe('active');
+    expect(ports.logs).toContainEqual(expect.objectContaining({ evt: 'table.idle.skipped', cid: 's4' }));
+  });
+
+  it('FL-S36 an overlapping run finds the session already ended and writes nothing twice', async () => {
+    const ports = walked();
+    await releaseIdle(ports, RID);
+    const writes = ports.writes.length;
+    const again = await releaseIdle(ports, RID);       // the fake removes an ended sitting, like the live query does
+    expect(again.freed).toEqual([]);
+    expect(ports.writes.length).toBe(writes);
+    expect(ports.audits.size).toBe(1);
+  });
+
+  it('FL-S36 the threshold is config: floor.idleFreeAfterMinutes 30 frees a 40-minute sitting', async () => {
+    const ports = walked({ sittings: [head({ sessionId: 's4', tableIds: ['4'], openedAt: T0 - 40 * MIN })], configDoc: { floor: { idleFreeAfterMinutes: 30 } } });
+    expect((await releaseIdle(ports, RID)).freed).toEqual(['4']);
+  });
+
+  it('the sweep writes one heartbeat line per restaurant with counts, so a quiet run is visible', async () => {
+    const ports = walked({ sittings: [] });
+    await releaseIdleEverywhere(ports);
+    expect(ports.logs).toContainEqual({ evt: 'floor.idleSweep', restaurantId: RID, candidates: 0, freed: 0, money: 0, skipped: 0 });
+  });
+
+  it('a restaurant whose config cannot be read is logged and skipped; the sweep itself does not throw', async () => {
+    const ports = walked({ breakConfig: true });
+    await expect(releaseIdleEverywhere(ports)).resolves.toEqual([]);
+    expect(ports.logs).toContainEqual(expect.objectContaining({ evt: 'floor.idleSweep.failed', restaurantId: RID }));
   });
 });

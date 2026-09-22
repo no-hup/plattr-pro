@@ -68,7 +68,7 @@ export interface Sitting {
   bills: Bill[];
 }
 
-export const DEFAULTS = { pollSeconds: 5, staleAfterSeconds: 20 };
+export const DEFAULTS = { pollSeconds: 5, staleAfterSeconds: 20, idleFreeAfterMinutes: 60 };
 
 // ── The two numbers ────────────────────────────────────────────────────────
 
@@ -275,4 +275,36 @@ export function moveWriteSet(
     orderIds: orders.filter(o => !TERMINAL.includes(o.state)).map(o => o.orderId),
     lineIds: sitting.lines.filter(l => !l.billId).map(l => l.lineId),
   };
+}
+
+// ── The clock that frees a table nobody cleared (R21, FL-S36) ─────────────
+
+/**
+ * R21. Idle is measured off everything the sitting did, never off one stored flag. The newest of:
+ * when it opened, every line placed, and whatever else the caller knows moved — the session's own
+ * `updatedAt` (a re-open, OR-S22), the cart (a round being built), the table's scan stamp, a bill
+ * issued, a payment taken. Derived on purpose: a field written by every event is `table.lastActivity`
+ * again, and that field is the bug TD-044 is (nothing in the order path wrote it).
+ *
+ * Fail closed: a timestamp that is not a finite number is ignored, and a sitting with NOTHING finite
+ * on it is treated as touched just now — a sitting we cannot date is never freed.
+ */
+export function lastTouchedAt(sitting: Sitting, touched: number[], now: number): number {
+  const ts = [sitting.openedAt, ...sitting.lines.map(l => l.placedAt), ...touched]
+    .filter(t => typeof t === 'number' && Number.isFinite(t) && t > 0);
+  return ts.length ? Math.max(...ts) : now;
+}
+
+export type IdleCall = 'busy' | 'free' | 'money';
+
+/**
+ * FL-S36. `free`: idle past the threshold and owes nothing — the system may end it. `money`: idle
+ * past the threshold but still owing (unbilled food, or an unpaid bill) — never freed, only
+ * reported, because open money outranks a clock the same way it outranks a captain's COMPLETED (R14).
+ * `busy`: touched inside the window, leave it alone.
+ */
+export function idleCall(sitting: Sitting, touched: number[], now: number, idleMs: number): IdleCall {
+  if (!(idleMs > 0)) return 'busy';                                   // a nonsense threshold frees nothing
+  if (now - lastTouchedAt(sitting, touched, now) < idleMs) return 'busy';
+  return isReleasable(sitting) ? 'free' : 'money';
 }

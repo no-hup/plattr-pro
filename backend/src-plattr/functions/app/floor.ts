@@ -10,12 +10,12 @@
 import { Line } from '../domain/line';
 import {
   Bill, Sitting, Table, Tile, Role, OrderState, DEFAULTS,
-  canMerge, canMove, canReceive, canUnmerge, isReleasable, moveWriteSet, tile,
+  canMerge, canMove, canReceive, canUnmerge, isReleasable, moveWriteSet, tile, idleCall, lastTouchedAt,
 } from '../domain/floor';
 import { ApprovalError, Staff } from './approvals';
 export { ApprovalError };
 
-export interface FloorConfig { pollSeconds: number; staleAfterSeconds: number }
+export interface FloorConfig { pollSeconds: number; staleAfterSeconds: number; idleFreeAfterMinutes: number }
 
 export function floorConfigFrom(doc: unknown): FloorConfig {
   const f = (doc as { floor?: Partial<FloorConfig> } | undefined)?.floor ?? {};
@@ -23,6 +23,7 @@ export function floorConfigFrom(doc: unknown): FloorConfig {
   return {
     pollSeconds: num(f.pollSeconds, DEFAULTS.pollSeconds),
     staleAfterSeconds: num(f.staleAfterSeconds, DEFAULTS.staleAfterSeconds),
+    idleFreeAfterMinutes: num(f.idleFreeAfterMinutes, DEFAULTS.idleFreeAfterMinutes),
   };
 }
 
@@ -47,6 +48,12 @@ export interface Tx {
   endSession(sessionId: string): void;
   ordersOfSession(sessionId: string): Promise<Order[]>;
   createAudit(id: string, row: object): void;
+  /**
+   * R21. Every timestamp the database holds that says this sitting moved, beyond what the sitting
+   * itself carries: the session's `updatedAt`, each table's cart `lastUpdated` and scan
+   * `lastActivity`, each bill's `issuedAt`/`paidAt`, each payment's `at`. Millis; unknown → 0.
+   */
+  touchedAt(sitting: Sitting): Promise<number[]>;
 }
 
 export interface Ports {
@@ -59,6 +66,9 @@ export interface Ports {
   linesOfSessions(restaurantId: string, sessionIds: string[]): Promise<Line[]>;   // R2: by frozen sessionId
   billsOfSessions(restaurantId: string, sessionIds: string[]): Promise<Bill[]>;
   transact<T>(restaurantId: string, fn: (t: Tx) => Promise<T>): Promise<T>;
+  /** FL-S36. Live sittings opened before `openedBefore` — the only ones that can possibly be idle. */
+  idleCandidates(restaurantId: string, openedBefore: number): Promise<SittingHead[]>;
+  restaurantIds(): Promise<string[]>;
 }
 
 const fail = (code: string, message: string, details: Record<string, unknown> = {}): never => {
@@ -320,8 +330,7 @@ export async function clearTable(ports: Ports, req: ClearRequest): Promise<{ fre
 
     // The sitting ends with the table. Leaving the session active would keep painting the tile
     // as settled forever, and a passer-by scanning the QR would join a paid party's tab (R18).
-    t.endSession(s.sessionId);
-    for (const id of s.tableIds) t.setTable(id, { status: 'vacant', mergedInto: null, currentOTP: null });
+    endSitting(t, s);
     t.createAudit(`${req.cid}_clear`, {
       cid: req.cid, action: 'table.clear', sev: 'P2', at,
       by: staff.staffId, role: staff.role, sessionId: s.sessionId, tableIds: s.tableIds,
@@ -329,6 +338,78 @@ export async function clearTable(ports: Ports, req: ClearRequest): Promise<{ fre
     ports.log({ evt: 'table.clear', cid: req.cid, tableIds: s.tableIds, by: staff.staffId });
     return { freed: s.tableIds };
   });
+}
+
+/**
+ * What "vacant" writes, in one place: the session ends and every table of the sitting is reset —
+ * the merge, the scan hold and the older table module's party fields (`occupiedBy`,
+ * `primaryCustomer`, `activeOrderId`), which `tablesOf` still reads as "has a session".
+ */
+function endSitting(t: Tx, s: Sitting): void {
+  t.endSession(s.sessionId);
+  for (const id of s.tableIds) {
+    t.setTable(id, { status: 'vacant', mergedInto: null, mergedBy: null, currentOTP: null, occupiedBy: [], primaryCustomer: null, activeOrderId: null });
+  }
+}
+
+// ── The table nobody frees (FL-S36, R21, TD-044) ───────────────────────────
+
+export interface IdleReport { restaurantId: string; candidates: number; freed: string[]; money: string[]; skipped: string[] }
+
+/**
+ * The sweep. Candidates are the live sittings opened before the threshold; each is re-read inside
+ * its own transaction (a run that overlaps this one, or a Clear that landed meanwhile, finds the
+ * session ended and does nothing). `free` ends the sitting with an audit row that names the clock;
+ * `money` is logged and left — day close is where a person meets it (it refuses on open money).
+ * A sitting that cannot be read is skipped and logged, never freed: fail closed.
+ */
+export async function releaseIdle(ports: Ports, restaurantId: string): Promise<IdleReport> {
+  const cfg = await ports.config.floor(restaurantId);
+  const idleMs = cfg.idleFreeAfterMinutes * 60_000;
+  const now = ports.now();
+  const heads = await ports.idleCandidates(restaurantId, now - idleMs);
+  const report: IdleReport = { restaurantId, candidates: heads.length, freed: [], money: [], skipped: [] };
+
+  for (const h of heads) {
+    try {
+      await ports.transact(restaurantId, async t => {
+        const s = await t.getSitting(h.tableIds[0]);
+        if (!s || s.sessionId !== h.sessionId) return;                  // ended or replaced since the read
+        const touched = await t.touchedAt(s);
+        const call = idleCall(s, touched, now, idleMs);
+        if (call === 'busy') return;
+        const idleMinutes = Math.floor((now - lastTouchedAt(s, touched, now)) / 60_000);
+        if (call === 'money') {
+          report.money.push(s.sessionId);
+          ports.log({ evt: 'table.idle.money', cid: s.sessionId, tableIds: s.tableIds, idleMinutes });
+          return;
+        }
+        endSitting(t, s);
+        t.createAudit(`${s.sessionId}_autoVacate`, {
+          cid: s.sessionId, action: 'table.autoVacate', sev: 'P2', at: now,
+          by: 'system', role: 'SYSTEM', sessionId: s.sessionId, tableIds: s.tableIds,
+          idleMinutes, why: `idle ${idleMinutes}m, no open money`,
+        });
+        report.freed.push(...s.tableIds);
+        ports.log({ evt: 'table.autoVacate', cid: s.sessionId, tableIds: s.tableIds, idleMinutes });
+      });
+    } catch (e) {
+      report.skipped.push(h.sessionId);
+      ports.log({ evt: 'table.idle.skipped', cid: h.sessionId, error: String((e as Error)?.message ?? e) });
+    }
+  }
+  ports.log({ evt: 'floor.idleSweep', restaurantId, candidates: heads.length, freed: report.freed.length, money: report.money.length, skipped: report.skipped.length });
+  return report;
+}
+
+/** One restaurant failing never stops the others; the sweep line per restaurant is the heartbeat. */
+export async function releaseIdleEverywhere(ports: Ports): Promise<IdleReport[]> {
+  const out: IdleReport[] = [];
+  for (const rid of await ports.restaurantIds()) {
+    try { out.push(await releaseIdle(ports, rid)); }
+    catch (e) { ports.log({ evt: 'floor.idleSweep.failed', restaurantId: rid, error: String((e as Error)?.message ?? e) }); }
+  }
+  return out;
 }
 
 export { canReceive };

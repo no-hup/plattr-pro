@@ -5,6 +5,7 @@ import { Staff } from '../../app/approvals';
 import { Bill, Table, OrderState } from '../../domain/floor';
 import { Line } from '../../domain/line';
 import type { DocumentReference, Transaction, Query } from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
 
 /* eslint-disable @typescript-eslint/no-var-requires */
 const { db } = require('../../../admin/admin');
@@ -19,10 +20,13 @@ const bills = (rid: string) => rest(rid).collection('bills');
 const carts = (rid: string) => rest(rid).collection('carts');
 const orders = (rid: string) => rest(rid).collection('orders');
 const audit = (rid: string) => rest(rid).collection('audit');
+const payments = (rid: string) => rest(rid).collection('payments');
 
 const millis = (v: unknown): number => {
   if (!v) return 0;
   if (typeof v === 'number') return v;
+  if (typeof v === 'string') { const n = Date.parse(v); return Number.isFinite(n) ? n : 0; }   // the cart writes ISO strings
+  if (v instanceof Date) return v.getTime();
   const t = v as { toMillis?: () => number; _seconds?: number };
   if (typeof t.toMillis === 'function') return t.toMillis();
   if (typeof t._seconds === 'number') return t._seconds * 1000;
@@ -169,6 +173,33 @@ export const ports: Ports = {
   linesOfSessions: (rid, ids) => byIn(lines(rid), 'sessionId', ids, d => d.data() as Line),
   billsOfSessions: (rid, ids) => byIn(bills(rid), 'sessionId', ids, toBill),
 
+  async restaurantIds() {
+    const snap = await db.collection('restaurants').get();
+    return snap.docs.map((d: FirebaseFirestore.QueryDocumentSnapshot) => d.id);
+  },
+
+  /**
+   * FL-S36. Only a live session opened before the cutoff can be idle, so only those are read
+   * further (composite index on sessions: status, createdAt). A session with no `createdAt` never
+   * matches the range and is therefore never freed — fail closed by the query itself.
+   */
+  async idleCandidates(rid, openedBefore) {
+    const [snap, tableSnap] = await Promise.all([
+      sessions(rid).where('status', '==', 'active').where('createdAt', '<', Timestamp.fromMillis(openedBefore)).get(),
+      tables(rid).get(),
+    ]);
+    const children = new Map<string, string[]>();
+    for (const d of tableSnap.docs) {
+      const p = d.data().mergedInto;
+      if (p) children.set(String(p), [...(children.get(String(p)) ?? []), d.id]);
+    }
+    return snap.docs.map((d): SittingHead => {
+      const x = d.data();
+      const parent = String(x.tableId ?? '');
+      return { sessionId: d.id, tableIds: [parent, ...(children.get(parent) ?? [])], openedAt: millis(x.createdAt) };
+    });
+  },
+
   transact(rid, fn) {
     return db.runTransaction(async (t: Transaction) => {
       // Firestore forbids a read after a write in one transaction, so cart contents are read
@@ -227,6 +258,26 @@ export const ports: Ports = {
         async ordersOfSession(sessionId) {
           const snap = await t.get(orders(rid).where('sessionId', '==', sessionId));
           return snap.docs.map((d): Order => ({ orderId: d.id, state: String(d.data().status ?? '').toUpperCase() as OrderState }));
+        },
+
+        // R21. Reads only — it runs before endSitting's writes in the same transaction.
+        async touchedAt(s) {
+          const [sess, cartDocs, tableDocs, billSnap] = await Promise.all([
+            t.get(sessions(rid).doc(s.sessionId)),
+            Promise.all(s.tableIds.map(id => t.get(carts(rid).doc(id)))),
+            Promise.all(s.tableIds.map(id => t.get(tables(rid).doc(id)))),
+            t.get(bills(rid).where('sessionId', '==', s.sessionId)),
+          ]);
+          const out: number[] = [millis(sess.data()?.updatedAt)];
+          for (const c of cartDocs) out.push(millis(c.data()?.lastUpdated), millis(c.data()?.updatedAt));
+          for (const d of tableDocs) out.push(millis(d.data()?.lastActivity));
+          const billIds: string[] = [];
+          for (const b of billSnap.docs) { billIds.push(b.id); out.push(millis(b.data().issuedAt), millis(b.data().paidAt)); }
+          for (const part of chunk(billIds, 30)) {
+            const pay = await t.get(payments(rid).where('billId', 'in', part));
+            for (const p of pay.docs) out.push(millis(p.data().at));
+          }
+          return out;
         },
 
         setSessionTable(sessionId, tableId) {
