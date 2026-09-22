@@ -1,9 +1,13 @@
 # KT · Print path
 
-Status: **v3, 2026-09-18 — KT-D1c revises who the print agent is; see the Decisions table.** Nothing built. Written against BL (built), ST (built), OF (built, uncommitted),
-the live order code (`orders/createOrUpdateOrder.js`, `cart/updateCartStatus.js`) and the Flutter kitchen app.
-Fan-out and donor review not yet run. **All six Review calls were answered by Shaurya on 2026-09-17**
-and are now rows in Decisions; this sheet has been rewritten around them. The one that reshaped it:
+Status: **v4, 2026-09-22 — the sheet now says what KT-D1c decided: the kitchen tablet is the print agent, the
+server encodes, `bridge/` is an appendix.** Phase 1 (routing key on the line) is done since TD-038; nothing else
+built. Written against BL, ST, OF, FL (all built), the live order code and the Flutter kitchen app. The donor review
+(`reviews/2026-09-17-donor-KT.md`) and the Gemini fan-out (`reviews/2026-09-17-fanout-KT-gemini.md`) have run and
+are merged below; one blind Grok pass on the plan (`reviews/2026-09-22-plan-paper-and-idle-tables.md`) is merged
+too. **All six 2026-09-17 Review calls and the five 2026-09-22 calls are rows in Decisions.** v3's text was
+rewritten around a bridge box and then patched for the tablet without the patch reaching the layout, the config
+defaults, the rules or the phases; v4 is that patch applied everywhere. The one that reshaped it:
 **KT-D1 chose LAN printers behind a bridge**, so no browser holds a printer link and the "till is the
 print station" design in draft v1 is gone.
 
@@ -160,23 +164,23 @@ Restaurant is `res_meghana`: food block GST 2.5 + 2.5 exclusive, liquor block no
 | KT-S2 | **Second round, same table.** 20:41 the same table adds two Kingfisher pints. The bar printer produces `#42-2` with only the two pints on it. The biryani is not on this ticket, and nothing reprints. **Without this the kitchen re-cooks the first round every time the table orders again.** | Engine |
 | KT-S3 | **One round, two stations.** 20:52 a single Send carries a Margherita ₹500 and two Kingfisher pints ₹260. Two tickets: `#42-3 KITCHEN` with the pizza, `#42-3 BAR` with the pints. Each ticket says `1/2` and `2/2` so the captain can see one is missing. Neither ticket lists the other's items. **Without this the bar never hears about the beer, or the kitchen fires a pizza the bar already has.** | Engine |
 | KT-S4 | **Held until the waiter confirms.** The restaurant runs `ordering.requireWaiterConfirmation: true`. A guest's phone places two biryanis at 21:03. No ticket prints. The waiter confirms at 21:05 and both tickets print then, timed 21:05. A rejected round never prints at all. **Without this the kitchen cooks an order the restaurant had not accepted.** | Engine |
-| KT-S5 | **The chef lost the ticket.** 21:20 the ticket for `#42-3` is gone under a pan. The cashier taps Reprint on that round. The same ticket comes out with `REPRINT 2` in the header and the time of the reprint beside the original time. The job records who reprinted it and when. **Without this the kitchen phones the counter and reads items off a screen.** | Manual |
-| KT-S6 | **The bill at the counter.** 22:10 table 7 asks for the bill. Cashier issues it; the bill is queued for `print.counterStation` and the bridge prints it: 80 mm paper, restaurant name and address, `Tax Invoice`, GSTIN, bill `A/0417`, date and time, table, food block with taxable 1,010.00, CGST 25.25, SGST 25.25, liquor block 520.00 with no tax part, round-off −0.50, `TOTAL Rs. 1,580.00`, place of supply, reverse charge `No`. **Without this the guest gets no paper and nothing filed matches what was taken.** | Engine |
-| KT-S7 | **The printer is off.** 20:14 the bar printer is switched off at the wall. The pizza ticket prints; the beer ticket does not. The order is placed all the same. The bridge's TCP connect times out, it does not acknowledge, and the till shows a red line: `BAR printer not answering — 1 ticket waiting`. The job stays in the queue and the bar's own kitchen screen still has the round on it. When the printer comes on the waiting ticket prints by itself. **The same scenario covers the bridge itself being off or offline** — jobs queue, the till goes red, nothing is lost. **Without this an order silently half-exists and nobody knows which half.** | Engine |
-| KT-S8 | **Out of paper.** 21:35 the kitchen roll runs out mid-ticket. The link accepts the bytes; the paper sensor answers `paper out`, or does not answer at all. Either way the job is **not** acknowledged and the till says `KITCHEN printer out of paper — 2 tickets waiting`. The chef loads a roll; the bridge's next poll prints both in order, each marked `REPRINT`, and the cashier can force it sooner with Retry on the till. **Without this half a ticket on the floor counts as a printed ticket.** | Engine |
-| KT-S9 | **No internet at the till.** 20:45, the till's 4G is gone. Printing is unaffected: the bridge has its own connection and is still pulling and printing rounds placed by the guest app and the captain app. What the till loses is its status line and the ability to issue a bill. Table 12 wants to leave: the emergency estimate (OF-S7) is rendered by the till from its own cache and **queued locally on the till**, so it prints when either the till or the bridge can reach the server; if neither can, the cashier turns the tablet round and the guest photographs it. **Without this an outage takes away the one piece of paper the guest needs.** | Engine |
-| KT-S23 | **The bridge is unplugged.** 20:30 the cleaner unplugs the box. Rounds are placed, jobs queue, no paper anywhere and the kitchen screen carries every round as usual. The till's status line reads `No print agent has claimed a job since 20:28 — 6 tickets waiting`, and the same line goes to the log for MN. Plugged back in at 20:41, all six print in order, marked `REPRINT` only if they had been claimed before. **Without this the one component we cannot see fails silently and the first person to notice is a guest.** | Engine |
-| KT-S10 | **Two agents, one ticket.** A second bridge is installed at the bar, or a till is added to `print.agents` (KT-D3). Both poll at 20:52. Exactly one prints `#42-3 BAR`: the first to claim it holds a lease of `print.claimLeaseSeconds` (60), the second is told it is taken and prints nothing. If the first loses power before it acknowledges, the lease expires and the second prints it, marked `REPRINT`. **Without this every ticket comes out twice, and two chefs cook it twice.** | Engine |
+| KT-S5 | **The chef lost the ticket.** 21:20 the ticket for `#42-3` is gone under a pan. The cashier taps Reprint on that round. The same round comes out with `REPRINT 2` in the header and the time of the reprint beside the original time, rendered from the lines **as they are now** — a quantity cut since the original shows the cut quantity, because that is what the kitchen should cook and the cancel ticket already said so. The reprint is its own job (`reprint:…:2`) and records who asked and when. **Without this the kitchen phones the counter and reads items off a screen.** | Manual |
+| KT-S6 | **The bill at the counter.** 22:10 table 7 asks for the bill. Cashier issues it; the bill is queued for `print.counterStation` and the counter's agent prints it: 80 mm paper, restaurant name and address, `Tax Invoice`, GSTIN, bill `A/0417`, date and time, table, food block with taxable 1,010.00, CGST 25.25, SGST 25.25, liquor block 520.00 with no tax part, round-off −0.50, `TOTAL Rs. 1,580.00`, place of supply, reverse charge `No`. **Without this the guest gets no paper and nothing filed matches what was taken.** | Engine |
+| KT-S7 | **The printer is off.** 20:14 the bar printer is switched off at the wall. The pizza ticket prints; the beer ticket does not. The order is placed all the same. The agent's TCP connect times out inside `print.connectTimeoutMs`, it reports `fail`, and the till shows a red line: `BAR printer not answering — 1 ticket waiting`. The job stays queued and the bar's own kitchen screen still has the round on it. The printer comes on at 20:31: the waiting ticket prints by itself, because it is younger than `print.staleAfterMinutes` (30). Had the printer stayed off until 21:00 the ticket would **not** print by itself: the till counts it (`1 ticket not auto-printed`) and one tap on Reprint prints it, so a printer that comes back after the rush never dumps the rush onto the pass. **The same scenario covers the tablet itself being asleep** — jobs queue, the till goes red, nothing is lost. **Without this an order silently half-exists and nobody knows which half.** | Engine |
+| KT-S8 | **Out of paper.** 21:35 the kitchen roll runs out mid-ticket. The printer accepts every byte and closes cleanly, so the system sees a printed ticket: **the system cannot see paper in v1.** The chef sees half a ticket on the floor, loads a roll, and the cashier taps Reprint on that round: the same round prints with `REPRINT 2`. A printer whose `print.stations.<id>.statusQuery` is switched on (default off, not built in v1) answers `DLE EOT` after the write and a positive paper-out bit blocks the ack — then the till says `KITCHEN printer out of paper — 2 tickets waiting` and the reload prints both. No answer is never a reprint. **Without this a half ticket is silently a printed ticket and nobody is told which half.** Signed 2026-09-22, with the doubt written down in Decisions. | Manual (v1) |
+| KT-S9 | **No internet at the till.** 20:45, the till's 4G is gone. Kitchen and bar printing are unaffected: the kitchen tablet is on the shop's own internet and is still pulling and printing rounds placed by the guest app and the captain app. What the till loses is its status line and the ability to issue a bill — which was already true of bills, since the server issues them. Table 12 wants to leave: the emergency estimate (OF-S7) is rendered by the till from its own cache and **shown on screen**; the cashier turns the tablet round and the guest photographs it. It is never queued to print later: a slip with no bill number arriving twenty minutes after the guest left is not a bill. When the till is back the cashier issues the real bill and it prints (KT-S6). **Without this an outage takes away the one piece of paper the guest needs, or hands them a fake one later.** Signed 2026-09-22 (amends KT-D6). | Engine |
+| KT-S23 | **The tablet is asleep.** 20:30 the kitchen tablet goes into a drawer with the screen off and the "This tablet prints" toggle on. Rounds are placed, jobs queue, no paper anywhere and the kitchen screen carries every round as usual. Ninety seconds later the sweep logs it and the till's status line reads `No print agent has claimed a job since 20:28 — 6 tickets waiting`. Woken at 20:41, all six print in order (each younger than 30 minutes), marked `REPRINT` only if they had been claimed before. Woken at 21:15 instead, the six are counted as `not auto-printed` and print one tap each — the chef decides which are still wanted. A job stuck in `claimed` past its lease counts as waiting too: the sleeping tablet cannot be the thing that notices itself. **Without this the one component we cannot see fails silently and the first person to notice is a guest.** | Engine |
+| KT-S10 | **Two agents, one ticket.** A second tablet at the bar has the toggle on too. Both poll at 20:52. Exactly one prints `#42-3 BAR`: the first to claim it holds a lease of `print.claimLeaseSeconds` (60), the second is told it is taken and prints nothing. The **same** tablet asking again inside its lease — its claim landed but the answer was lost — is handed the bytes again, not refused. If the first loses power before it acknowledges, the lease expires and the second prints it, marked `REPRINT`. Two overlapping claims are decided in one transaction, never read-then-write. **Without this every ticket comes out twice, and two chefs cook it twice.** | Engine |
 | KT-S11 | **Cancelled after the ticket printed.** 21:40 the guest walks out. The manager cancels the round; its biryani is already on a spike in the kitchen. A **cancel ticket** prints at the same stations that got the original: `*** CANCELLED ***`, `#42-1`, `TABLE 7`, `1 × Chicken Biryani`, the reason, the name. Paper is never edited; a second ticket is how paper is corrected. **Without this the kitchen serves food for a table that left.** | Engine |
 | KT-S12 | **Two became one.** 21:44 a table cuts two biryanis to one on a sent line. ST already treats that as a void of one quantity. A cancel ticket prints for `1 × Chicken Biryani` only, and the remaining one is not reprinted. **Without this the kitchen plates two and the bill charges one.** | Engine |
 | KT-S13 | **Variant and add-ons on 80 mm.** `Paneer Tikka (Full) + Extra Cheese, no onion` at 48 characters a line prints as `1 x Paneer Tikka`, then `    (Full)`, then `    + Extra Cheese`, then `    ! no onion` in double height. Names longer than the line wrap with a four-space hang, never truncate. **Without this the chef reads half a dish name and guesses the rest.** | Engine |
 | KT-S14 | **Liquor on the guest's paper.** The same bill KT-S6: the liquor block prints its own heading and its own total with no tax lines under it, and the document title is `Invoice-cum-Bill of Supply` because an exempt block is on the page. BL decides that; KT only prints what BL says. **Without this the bill claims GST on alcohol.** | Engine |
 | KT-S15 | **Credit note.** 22:40 the coke was never served on the paid bill 0417. BL issues `CN-0007`. The printed note carries `Credit Note`, its own number, the original number and date, the reversed line as a negative, and the negative tax. **Without this the refund has no paper and the return does not tie.** | Engine |
 | KT-S16 | **The guest lost the bill.** 22:50 they ask for another copy. It prints with `DUPLICATE` across the header and writes an ST audit row, P1, amount = payable. The bill document is untouched. **Without this a second copy is indistinguishable from the first and the second-copy trick leaves no number.** | Manual |
-| KT-S17 | **The drawer.** A cash payment of ₹1,580 is taken: the drawer kicks off the counter printer's RJ11 the moment the payment succeeds. A no-sale open goes through ST first (PIN, P0) and only then kicks. **Without this the cashier props the drawer open all evening.** | Engine |
+| KT-S17 | **The drawer.** A cash payment of ₹1,580 is taken: a `drawer` job is queued and the counter tablet's next poll kicks the drawer off the printer's RJ11 — within `print.pollSeconds`. A no-sale open goes through ST first (PIN, P0) and only then queues the kick. A drawer job older than `print.drawerStaleSeconds` (60) is dropped, never kicked late onto an empty counter when a tablet wakes. **Without this the cashier props the drawer open all evening.** | Engine |
 | KT-S18 | **A 58 mm printer at the bar.** The bar has a cheaper 58 mm unit: 32 characters a line. The same round prints with columns recomputed, nothing overflowing and nothing cut off. One config key, no code. **Without this every ticket at the bar is a ragged mess and the totals do not line up.** | Config |
 | KT-S19 | **A dish nobody mapped.** A new "Mocktails" category is added in Admin and never mapped to a station. Its lemonade prints at `print.defaultStation` (kitchen), and the till says once, quietly, `Mocktails has no station`. It is **never** dropped. **Without this a new category silently stops reaching anyone, and the first person to notice is a guest at 22:00.** | Engine |
-| KT-S20 | **The agent restarted mid-ticket.** 20:53 the bridge reboots while `#42-3 BAR` is half-written — half a ticket is on the floor. Nothing was acknowledged, so after the lease the job is claimed again and printed in full, marked `REPRINT`. A ticket may print twice; a ticket may never print zero times (KT-D4, signed). **Without this a power blink eats an order.** | Engine |
+| KT-S20 | **The agent died mid-ticket.** 20:53 Android kills the kitchen app while `#42-3 BAR` is half-written — half a ticket is on the floor, because the printer prints whatever prefix it was handed. Nothing was acknowledged, so after the lease the job is claimed again and printed in full, marked `REPRINT`. A ticket may print twice; a ticket may never print *silently* zero times (KT-D4 as amended 2026-09-22). A fake socket in a Dart test proves the "write threw → no ack" half; only the room proves the printed prefix. **Without this a power blink eats an order.** | Engine |
 | KT-S21 | **Rupees on paper.** The bill total ₹1,02,450.00 prints as `TOTAL          Rs. 1,02,450.00`, right-aligned at 48 characters, with `Rs.` and not `₹`, because the printer's code page has no rupee glyph. Indian digit grouping is used. **Without this the total prints as `TOTAL ?1,02,450.00` and the guest queries every bill.** | Config |
 | KT-S22 | **Aggregator and label printing.** A Swiggy order needs a ticket, and a parcel needs a label. | No (out of scope, v1) |
 
@@ -193,25 +197,36 @@ and a guest who wants to pay by cash at 22:10 leaves with nothing in their hand.
 - **R2 A ticket's content is pure, its bytes are not.** `domain/kot.ts` turns line snapshots plus config into a
   **ticket**: an ordered list of already-padded text rows with style flags. It contains no ESC/POS byte, no vendor
   name and no currency symbol (R9 of BL applies here too). The encoder that turns rows into bytes is a vendor
-  adapter and lives in the **print agent** — the bridge, not a browser.
-- **R3 The server renders, the agent transmits.** The print agent receives tickets, not bills: it never lays out
-  a legal document, never formats money, never decides a station. It encodes rows into bytes and writes them. The one thing the till renders by itself is the
-  offline estimate, because by definition no server can be reached (OF-S7), and that is six rows of text with no
-  tax and no number.
-- **R4 A KOT is queued server-side, claimed with a lease, and acknowledged.** One job document per
-  (round × station), id `${cartId}_${stationId}`, so a retried write can never make a second job. A job is
-  `queued → claimed(by, until) → printed(at, by)`. An expired lease returns it to `queued`. **At least once, never
-  zero times**: a ticket printed twice is a chef's shrug, a ticket printed never is food that does not exist.
+  adapter and lives **server-side** in `adapters/printers/escpos.ts` (KT-D1c): one implementation, one jest test,
+  and the agent carries no ticket logic at all.
+- **R3 The server renders and encodes, the agent transmits.** The print agent receives **bytes**, not tickets and
+  not bills: it never lays out a legal document, never formats money, never decides a station, never encodes. It
+  opens a socket, writes, closes, acknowledges. The one thing the till renders by itself is the offline estimate,
+  because by definition no server can be reached (OF-S7), and it is shown on screen, never printed (KT-S9).
+- **R4 Every ticket is a job: queued server-side, claimed with a lease, acknowledged.** One job document per
+  (thing × station), with a deterministic id that **carries its kind**: `kot:${cartId}:${stationId}`,
+  `cancel:${cartId}:${stationId}:${v}`, `reprint:${cartId}:${stationId}:${n}`, `bill:${billId}`,
+  `credit:${creditNoteId}`, `duplicate:${billId}:${n}`, `drawer:${paymentId}`. A retried write lands on the same
+  document; a cancel can never overwrite the printed KOT it follows. States: `held → queued → claimed(by, until) →
+  printed | dropped`. Claim, ack and fail are **idempotent and holder-checked**: the holder re-claiming inside its
+  lease gets the bytes again; a different agent is refused; the holder acking a printed job is a no-op success;
+  `fail` from a non-holder is refused. A `claimed` job whose lease has passed is waiting again, for the pending
+  read, the status line and the sweep alike. **At least once, never *silently* zero**: a ticket printed twice is a
+  chef's shrug, a ticket printed never is food that does not exist — but a ticket older than
+  `print.staleAfterMinutes` is not printed by itself; it is counted on the till and printed by one tap (KT-S7).
 - **R5 A held round prints nothing.** A job for a cart behind the waiter-confirmation gate is created `held` and
   released by the same write that flips `line.sent` (`lineSnapshots.js markLinesSent`). A rejected round's jobs are
   dropped, never printed, because the kitchen was never told (the same reasoning ST used for a free void).
 - **R6 Paper is never edited, only added to.** A cancel, a quantity cut and a reprint are each a **new ticket**.
   Nothing on paper is ever amended, and any ticket that is not the original says so in its header (`REPRINT n`,
   `CANCELLED`, `DUPLICATE`).
-- **R7 Unknown is not success.** A job is acknowledged only when the write completed **and** the printer's status
-  query answered without an error flag. No answer inside `print.statusTimeoutMs` is `unknown`, and unknown leaves
-  the job queued and the till loud. Cheap clones that do not implement `DLE EOT` are the reason this is a config
-  key per station (`print.stations.<id>.statusQuery`, default true) rather than an assumption.
+- **R7 Accepted is the best the wire can say; unknown is never a reprint.** A job is acknowledged when the socket
+  accepted every byte and closed cleanly inside `print.writeTimeoutMs`. `flush` completing means Dart handed the
+  bytes off, not that the head printed them, so a printer that accepts and never reads must time out to `fail`
+  rather than hang the loop. The paper sensor (`DLE EOT`) stays a per-station key, `print.stations.<id>.statusQuery`,
+  **default false and not built in v1**: when on, it is asked after the write and only a *positive* paper-out bit
+  blocks the ack. No answer, or a clone that ignores the question, never starts another physical print — v3's
+  3-second timeout around the whole ticket was an infinite reprint loop on cheap printers.
 - **R8 The screen is the state, the paper is a notification.** The Flutter kitchen screen and the printed KOT are
   two views of one round, and the screen is the one that is true: it carries status, timers and voids live. The
   paper is a fire-and-forget copy of what the round was at the moment it was placed. A restaurant may run with
@@ -225,12 +240,17 @@ and a guest who wants to pay by cash at 22:10 leaves with nothing in their hand.
 - **R11 A KOT carries no money.** No prices, no offers, no totals. The kitchen does not need them, and a price on a
   kitchen ticket is a second place for the guest's money to be wrong.
 - **R12 One door for the printer, and no browser is behind it.** Every byte reaching a printer is written by the
-  print agent's `link.ts`. No screen opens a port, no page addresses the bridge, and `window.print()` is not used
-  for anything (a browser print dialog on an Android tablet at 22:10 is not a receipt path).
-- **R13 The agent pulls; nothing on the restaurant's network is addressable.** The bridge calls `print-pending`,
-  `print-claim` and `print-ack` outbound over HTTPS, authenticating as a device of that restaurant. We never open
-  a connection into a restaurant, so there is no inbound port, no certificate on the LAN and no mixed content.
-  It is also why the bridge needs its own internet: with none, it prints nothing, which is KT-S7's shape exactly.
+  kitchen app's `printer_link.dart`, the one file with `dart:io Socket` in it: connect within `connectTimeoutMs`,
+  write, flush, close, all under `writeTimeoutMs`; one job in flight per station; a station that wedges never
+  stops the other. No screen opens a port, no page addresses the tablet, and `window.print()` is not used for
+  anything (a browser print dialog on an Android tablet at 22:10 is not a receipt path).
+- **R13 The agent pulls, as a logged-in member of staff; nothing on the restaurant's network is addressable.** The
+  kitchen app calls `print-pending`, `print-claim`, `print-ack`, `print-fail` outbound over HTTPS with its **staff
+  session** — an install id is not a credential, and an unauthenticated ack would be a silent drop of food tickets.
+  It also sends `{ kind: 'kitchen', agentId }`: `print.agents` is a list of **kinds** allowed to claim; the install
+  id, minted once and excluded from Android auto-backup, becomes `claimedBy`. We never open a connection into a
+  restaurant, so there is no inbound port, no certificate on the LAN and no mixed content. With no internet on the
+  tablet it prints nothing, which is KT-S7's shape exactly.
 
 ---
 
@@ -254,61 +274,70 @@ type Ticket = {
 Rows arrive padded, so the encoder does no arithmetic. Two-column rows (`Chicken Biryani` … `450.00`) are built in
 the domain, where `charsPerLine` is known and a test can assert the exact string.
 
-**Print job** `restaurants/{id}/printJobs/{cartId}_{stationId}`
+**Print job** `restaurants/{id}/printJobs/{kind}:{…}` (ids per R4)
 
 | Field | What |
 |---|---|
-| `jobId, restaurantId, cid, orderId, cartId, stationId` | identity; `cid` is the order's correlation id, so the whole life of a round is one grep |
-| `kind` | `kot` or `cancel` |
-| `ticketNo` | `${orderNumber}-${cartIndex}`, what a human says out loud |
+| `jobId, restaurantId, cid, stationId` | identity; `cid` is the order's or bill's correlation id, so the whole life of a round is one grep |
+| `kind` | `kot` \| `cancel` \| `reprint` \| `bill` \| `credit` \| `duplicate` \| `drawer` |
+| `orderId, cartId` / `billId` / `paymentId` | whichever the kind is about |
+| `ticketNo` | `${orderNumber}-${cartIndex}` for a round, the bill number for paper with money, what a human says out loud |
 | `part, parts` | `1 of 2` when one round went to two stations |
-| `heldUntilSent` | true behind the waiter gate (R5) |
-| `state` | `queued` \| `claimed` \| `printed` \| `dropped` |
-| `claimedBy, claimedUntil` | the **print agent's** id (the bridge's `agentId`, or a till's register id) and the lease instant |
+| `state` | `held` \| `queued` \| `claimed` \| `printed` \| `dropped` |
+| `queuedAt` | epoch ms when it became claimable — set at placement, or at the waiter's confirm for a held round (R5). **The stale clock starts here**, not at `createdAt` |
+| `claimedBy, claimedUntil` | the agent's install id and the lease instant. Past `claimedUntil` the job is waiting again |
+| `force` | true once, set by Reprint/Retry, so the next claim skips the `staleAfterMinutes` check and clears it |
 | `prints[]` | `{at, by, marker}` — one row per time paper came out; length > 1 is a reprint |
 | `createdAt` | epoch ms, server clock |
 
-Nothing else. The ticket's **content** is not stored on the job: it is rendered server-side from the line
-snapshots at claim time, so a reprint at 23:30 shows the same round (lines are frozen) with an honest new header.
+Nothing else. **The bytes are not stored.** `print-claim` renders the ticket from the frozen lines or the frozen
+bill *at that moment*, encodes it, and answers `{ jobId, ticketNo, bytes }` (base64, already repeated
+`copies` times). Rendering is deterministic, which is what lets the holder be handed the same bytes again after a
+lost answer. A document can therefore never carry a stale ticket, and the job stays under a kilobyte.
 
-**A bill has a job too, now.** In draft v1 the till printed the bill itself because it had the bill in its hand.
-With no browser on the wire that is no longer possible: the bill is queued for the counter station like any other
-ticket, `kind: 'bill'`, and the bridge prints it. The cashier still sees it succeed or fail on the till's status
-line, and a dead counter printer is still recovered by a reprint from `billing-get` (KT-S16). This is the one
-place the bridge decision **added** work rather than removing it.
+**A bill has a job too.** The bill is queued for the counter station like any other ticket, `kind: 'bill'`, and the
+counter's agent prints it. Bills **ignore** `staleAfterMinutes` — a guest is waiting for it — so a counter printer
+that comes back prints the bill by itself. The cashier sees it succeed or fail on the till's status line, and a
+dead counter printer is recovered by a `duplicate` from `billing-get` (KT-S16). **A drawer kick is a job with no
+paper** (`kind: 'drawer'`, bytes = the pulse from `print.drawerPulseMs`), immediate or dropped (KT-S17).
 
 ---
 
 ## Config keys (on `restaurants/{id}/config/settings`, field `print`, with defaults)
 
-Served to the till through the existing `approvals-config` answer — the till's one config read. No new door.
+Served to the till through the existing `approvals-config` answer — the till's one config read. The kitchen app
+gets a **filtered** `print-config` (stations, poll and retry numbers, the agent kinds): `approvals-config` would
+hand the tablet the PIN and approval policy, and two callers justify the door.
 
 | Key | Default | Used by |
 |---|---|---|
-| `print.stations` | `{ kitchen: {label:'KITCHEN', charsPerLine:48, enabled:true, copies:1, statusQuery:true}, bar: {label:'BAR', …}, counter: {label:'COUNTER', …} }` | KT-S3, S18 |
-| `print.stations.<id>.address` | `''` — the printer's `host:port` on the restaurant LAN, e.g. `192.168.1.51:9100`. Read by the bridge only; never by a browser | KT-S7 |
+| `print.stations` | `{ kitchen: {label:'KITCHEN', charsPerLine:48, enabled:true, copies:1, statusQuery:false}, bar: {label:'BAR', …}, counter: {label:'COUNTER', …} }` | KT-S3, S18 |
+| `print.stations.<id>.address` | `''` — the printer's `host:port` on the restaurant LAN, e.g. `192.168.1.51:9100`. Read by the kitchen app's agent only; never by a browser | KT-S7 |
 | `print.stations.<id>.charsPerLine` | 48 (58 mm units set 32) | KT-S13, S18 |
-| `print.stations.<id>.copies` | 1 | KT-S1 |
+| `print.stations.<id>.copies` | 1 — applied server-side: the claim answer repeats the bytes | KT-S1 |
 | `print.stations.<id>.enabled` | true (false = screen-only station) | R8 |
-| `print.stations.<id>.statusQuery` | true | R7, KT-S8 |
+| `print.stations.<id>.statusQuery` | **false** — the `DLE EOT` paper query; not built in v1, the key is the hook | R7, KT-S8 |
 | `print.route` | `{}` — `categoryId → stationId` | KT-S3, S19 |
 | `print.routeByTaxBlock` | `{ liquor: 'bar' }` — the fallback when a category is unmapped | KT-S3 |
 | `print.defaultStation` | `kitchen` | KT-S19 |
 | `print.counterStation` | `counter` — where bills, credit notes and estimates go | KT-S6 |
 | `print.retryCount` | 2 | KT-S7 |
 | `print.retryDelayMs` | 2000 | KT-S7 |
-| `print.statusTimeoutMs` | 3000 | R7 |
+| `print.writeTimeoutMs` | 10000 — connect + write + flush + close, all of it; well under the lease | R7, R12 |
+| `print.staleAfterMinutes` | 30 — a `kot` or `cancel` older than this (from `queuedAt`) is not auto-printed; counted on the till, printed by one tap. Bills ignore it | KT-S7, S23 |
+| `print.unclaimedAfterSeconds` | 90 — a waiting job older than this is logged by the every-minute sweep and named on the till's red line | KT-S23 |
+| `print.drawerStaleSeconds` | 60 — a `drawer` job older than this is dropped, never kicked late | KT-S17 |
 | `print.pollSeconds` | 5 | KT-S1 |
 | `print.claimLeaseSeconds` | 60 | KT-S10, S20 |
-| `print.agents` | `['bridge']` — which agent kinds may claim a job. `['bridge','till']` lets a till claim too (KT-D3) | KT-S10, KT-D3 |
-| `print.connectTimeoutMs` | 3000 | KT-S7 — how long the bridge waits on a TCP connect before calling the printer unreachable |
+| `print.agents` | `['kitchen']` — which agent **kinds** may claim a job (`kitchen`, `bridge`, `till`). The install id is `claimedBy`, a different field | KT-S10, KT-D3, R13 |
+| `print.connectTimeoutMs` | 3000 | KT-S7 — how long the agent waits on a TCP connect before calling the printer unreachable |
 | `print.currencyText` | `Rs.` | KT-S21 |
 | `print.codePage` | 0 (PC437) | KT-S21 |
 | `print.kotShowsPrices` | false | R11 |
 | `print.billCopies` | 1 | KT-S6 |
 | `print.reprintMarker` / `print.cancelMarker` / `print.duplicateMarker` | `REPRINT` / `CANCELLED` / `DUPLICATE` | R6 |
 | `print.footer` | `''` (e.g. "Thank you · FSSAI 12345678901234") | KT-S6 |
-| `print.drawerPulseMs` | 25 | KT-S17 |
+| `print.drawerPulseMs` | 50 — `t1 = round(ms/2) = 25 = 0x19`, the pulse the old magic number gave; 25 ms made it weaker | KT-S17 |
 | `print.cutAfterTicket` | true | KT-S1 |
 
 Every number above is a key because a 58 mm bar printer, a slow clone and a kitchen that wants two copies are all
@@ -323,9 +352,10 @@ one restaurant's settings, not a branch. `restaurantId ===` remains a lint failu
 | ← OR / checkout | one print job per (round × station), written in the placing transaction | no round, no job; nothing to print |
 | ← ST | `line.sent` decides when a held job releases; `reprint` and `openDrawer` are ST actions with audit rows | ST refuses, no paper, no drawer |
 | ← BL | `billing-get` / `billing-issue` return the frozen bill; KT renders it | no bill, no bill print; the estimate path is OF's |
-| ← OF | the till's cached preview becomes the estimate ticket through the same encoder | the estimate prints from cache; that is the point |
-| ← Bridge | the print agent: outbound only, `print-pending` / `print-claim` / `print-ack` over HTTPS (R13) | jobs sit `queued`, the till's status line goes red, the kitchen screen is unaffected |
-| ← CF Config | the `print` block, on the same `approvals-config` read | defaults apply and the till warns; printing still works at 48 chars to the default station |
+| ← OF | the till's cached preview is the estimate, on screen only (KT-S9) | the estimate is shown from cache; the real bill prints when the till is back |
+| ← Kitchen app (agent) | outbound only, as a staff session: `print-pending` / `print-claim` / `print-ack` / `print-fail` over HTTPS (R13) | jobs sit `queued`, the till's status line goes red, the kitchen screen is unaffected |
+| ← CF Config | the `print` block, on `approvals-config` for the till and the filtered `print-config` for the kitchen app | defaults apply and the till warns; printing still works at 48 chars to the default station |
+| → its own sweep | `print-sweepJobs`, `onSchedule('every 1 minutes')`: waiting jobs older than `unclaimedAfterSeconds` → one log line each with `cid`, `jobId`, `stationId`, age. Prints nothing itself | the till's `print-status` still computes the same fact on demand |
 | → PY / DC | the drawer kick after a cash take and after a no-sale open | the drawer stays shut; the payment still recorded |
 | → LG Logs | one JSON line per job state change with `cid`, `jobId`, `stationId`, `from`, `to`, and the failure reason | never blocks |
 | → MN | a job queued longer than a few minutes is exactly the shape MN should shout about | – |
@@ -337,46 +367,47 @@ one restaurant's settings, not a branch. `restaurantId ===` remains a lint failu
 ```
 backend/src-plattr/functions/
   domain/kot.ts          lines + config → Ticket for a round (rows padded, station chosen). Pure.
-                         route(line, cfg) → stationId lives here too: a table lookup, no I/O.
+                         route(line, cfg) → stationId lives here too: a table lookup, no I/O. A line with no
+                         categoryId THROWS (the field is frozen on every placed line; a missing one is a writer bug).
   domain/receipt.ts      Bill | CreditNote + config → Ticket. Pure. Sums nothing (R10).
-  app/print.ts           pending() / claim() / ack() / fail() / ticket(billId, kind), through Ports.
-                         Role check, lease arithmetic on ports.now(), ST's door for the reprint audit row.
-  adapters/firestore/print.ts   printJobs read/claim/ack in one transaction; reads lines and bills.
-  api/print.ts           onCall wrappers: print-pending, print-claim, print-ack, print-ticket.
-  orders/createOrUpdateOrder.js   +1 call beside writeLineSnapshots: create the jobs in the same transaction
-  orders/lineSnapshots.js         markLinesSent also releases held jobs; voidCartLines also queues a cancel job
-  domain/line.ts         + `categoryId` on the placed line (KT-D2), frozen at placement
+  adapters/printers/escpos.ts   Ticket → Uint8Array. ~70 lines, no dependency. THE vendor adapter (R2), server-side.
+  app/print.ts           pending() / claim() / ack() / fail() / reprint() / status() / sweep(), through Ports.
+                         Staff check, lease arithmetic on ports.now(), stale and force rules, ST's door for the audit row.
+  adapters/firestore/print.ts   printJobs read/claim/ack in one transaction; enqueue(transaction, jobs) for the hooks.
+  api/print.ts           onCall wrappers print-pending/-claim/-ack/-fail/-reprint/-status/-config,
+                         and print-sweepJobs = onSchedule('every 1 minutes') (+ an emulator-only manual trigger).
+  orders/createOrUpdateOrder.js   +1 call beside writeLineSnapshots: enqueue the jobs in the SAME transaction (R1).
+                                  If the job write throws, the round fails — R1 means "never waits on a socket",
+                                  not "best-effort write".
+  orders/lineSnapshots.js         markLinesSent also releases held jobs and stamps queuedAt; voidCartLines queues a cancel job
+  domain/line.ts         `categoryId` on the placed line (KT-D2) — DONE, TD-038
 
-bridge/                              NEW, its own deployable. Node + TypeScript, no framework.
-  agent.ts      the loop: pending → claim → encode → write → status → ack; retry, backoff, give up
-  escpos.ts     Ticket → Uint8Array. ~70 lines, no dependency. The vendor adapter.
-  link.ts       THE ONE DOOR to the wire (R12): a TCP socket to `host:port`, write, DLE EOT, close
-  config.ts     restaurantId, agentId, credentials. Nothing business-shaped: the stations come from
-                the server's config answer, so a printer moves without touching the box.
+frontend/src-platter-apps/apps/platter_kitchen/lib/print/
+  print_agent.dart     the loop: pending → claim → decode → write → ack, else fail + backoff; one job in flight per
+                       station; the "This tablet prints" toggle (off by default); a stable install id, not backed up
+  printer_link.dart    THE ONE DOOR to the wire (R12): dart:io Socket, connect/write/flush/close under writeTimeoutMs
+  (+ a foreground service of a type that survives a six-hour dinner — Kotlin, see the spike)
 
 frontend/till/src/features/print/
-  PrintStatus.tsx   the red line: which station, how many tickets waiting, a Retry button
-  estimate.ts       the six rows of the offline slip (R3), rendered and queued locally
+  PrintStatus.tsx      the red line: which station, how many waiting, how many not auto-printed; Retry (force) and Reprint
 
-backend/src-plattr/functions/adapters/printers/   NOT CREATED — see Decisions. The bridge transmits;
-                                                  the backend only ever hands out a ticket.
+Appendix — bridge/ (implementation #2, NOT built): a Node box that speaks the identical protocol for a restaurant
+with no kitchen tablet. Same job document, same four calls, its own agentId of kind `bridge`. TD-032 is owed the day
+one ships.
 ```
 
-**Where the line falls, said plainly.** The bytes are a vendor concern and belong in an adapter; the adapter has to
-run on the machine that can reach the printer, and after KT-D1 that machine is the **bridge**, not a browser and
-not a Cloud Function. So `escpos.ts` and `link.ts` live in `bridge/`. `adapters/printers/` on the backend stays
-empty: the backend's whole job is to hand out a rendered ticket, and creating a folder to satisfy a diagram is
-exactly the "interface with one implementation" the contract bans.
+**Where the line falls, said plainly.** The bytes are a vendor concern and belong in an adapter; with a queue
+between the server and the printer, the adapter can live server-side, where it is one implementation with one
+jest test. The agent then has no ticket logic in it: pull, write, ack. That is what makes a second agent (the box)
+thirty lines in another language rather than a port of the encoder.
 
-**Who renders, queues and retries.** Renders: the server (`domain/kot.ts`, `domain/receipt.ts`), so layout and
-legal fields are jest-testable with no browser and no box. Queues: the server, always — a job exists because a
-round was placed or a bill was issued, and it does not matter which device caused it. Retries: the bridge, because
-only the bridge can see that the paper did not come out; the server-side lease is what makes it safe for the
-bridge to die mid-job.
+**Who renders, queues and retries.** Renders and encodes: the server. Queues: the server, always — a job exists
+because a round was placed or a bill was issued, and it does not matter which device caused it. Retries: the
+agent, because only the agent can see that the socket failed; the server-side lease is what makes it safe for the
+agent to die mid-job. Notices silence: the every-minute sweep, because a sleeping tablet cannot notice itself.
 
-**The till is no longer on the print path at all.** It shows status and it queues the offline estimate. That is the
-whole of its involvement, and it is why KT-D3 (both the till and the kitchen tablet can print) needed no code:
-neither of them prints. The bridge does.
+**The till is not on the print path.** It shows the status line, offers Retry and Reprint, and shows the offline
+estimate on screen. That is the whole of its involvement.
 
 ---
 
@@ -386,8 +417,9 @@ Bluetooth printing of any kind (rejected by KT-D1; the capability table above ke
 Aggregator tickets (Swiggy/Zomato KOTs) · label and sticker printers · replacing the kitchen screen with paper ·
 a KDS bump bar · logo bitmaps or a QR code on the bill · printing in Kannada, Hindi or any non-Latin script (the
 seed's names are Latin; a Devanagari dish name prints as `?` and that is accepted in v1) · USB-OTG and WebUSB ·
-Epson ePOS-Print XML · printing from the Flutter kitchen or captain apps (TD-003's cousin: those apps get no print
-path in v1) · a second till as a second print station beyond the lease that already makes it safe (TD-018) ·
+Epson ePOS-Print XML · printing from the captain app (the kitchen app IS the print agent since KT-D1c; the captain
+app causes jobs and prints nothing) · the `DLE EOT` paper query (key kept, default off, built when a printer that
+answers it is on the bench) · printing the offline estimate (screen only, KT-S9) · a second till as a second print station beyond the lease that already makes it safe (TD-018) ·
 duplicate-detection across restarts finer than the lease · printing a bill before it is issued (there is no draft
 document to print; a draft on paper is the estimate, and that is OF's, gated on a failed call).
 
@@ -432,15 +464,25 @@ document to print; a draft on paper is the estimate, and that is OF's, gated on 
 | 2026-09-17 | **Signed (KT-D6): the offline estimate goes through this path**, keeping a "show on screen" fallback in the same component | One path to paper, one thing to test. The fallback is three lines of JSX and it is what saves the cashier when the server and the bridge are both unreachable |
 | 2026-09-17 | **The bill is queued like every other ticket** | Consequence of KT-D1, not a separate call. Draft v1 had the till print the bill directly because it held the link; no browser holds a link now. It is the one place the bridge decision added work |
 | 2026-09-17 | **The till is not on the print path.** It shows the status line and queues the offline estimate | Follows from KT-D1b. Worth stating because draft v1 built a whole claim/lease/retry loop in the till, and a later reader will otherwise wonder where it went |
+| 2026-09-22 | **Signed (KT-D7): the status query is a key, default off, not built in v1; paper-out is a manual Reprint until a printer that answers is on the bench** | v3's default-on query with a 3 s timeout treated "no answer" as failure and failure as reprint — an infinite loop on the clones people buy. Deleting `DLE EOT` outright (the 09-18 manager pass) would have left no way back without a schema revival. **Doubt, written down:** a half ticket is caught by the chef's eyes, not the system, until the key is on for a printer that implements it. Reverse: build the read in `printer_link.dart` and flip the default |
+| 2026-09-22 | **Signed (KT-D4 amended): never *silently* zero. A `kot` or `cancel` older than `print.staleAfterMinutes` (30, from `queuedAt`) is not auto-printed; it is counted on the till and printed by one tap with `force`. Bills ignore it. No `expired` state** | A tablet back from a two-hour sleep must not print fifty tickets for food already served; but a terminal `expired` state would have silenced the 90-second alarm at the moment the ticket was oldest and fought the Retry button (pending expires it again before a socket opens). Staying `queued` and skipping keeps the alarm and makes Retry one flag. **Doubt:** the chef has to tap; a busy pass may not. Reverse: `staleAfterMinutes: 0` prints everything, always |
+| 2026-09-22 | **Signed (KT-D6 amended): the offline estimate is screen-only; it is never queued to print later; the real bill prints when the till is back (KT-S9)** | Under KT-D1c an offline till can reach neither the encoder nor the agent. Queueing the estimate would print a slip with no bill number twenty minutes after the guest left. KOTs from the guest and captain apps keep printing through the tablet's own uplink, so the outage costs till-originated paper only — which was already true of bills. **Doubt:** no paper at all during a till-only outage; the expensive way back is a box on the LAN, not worth it for the estimate |
+| 2026-09-22 | **Job ids carry their kind; claim/ack/fail are idempotent and holder-checked; a stuck `claimed` is waiting again; the stale clock starts at `queuedAt`; drawer is immediate or dropped** (R4) | From the Grok plan review, each verified against the sheet: `${cartId}_${stationId}` made a cancel overwrite the printed KOT and a reprint collide with it; "second claim inside the lease is refused" forbade the same tablet recovering a lost answer; a job in `claimed` past its lease was neither queued nor expired and invisible to the alarm; a held round confirmed at minute 40 would have been born stale; a drawer kick replayed an hour late opens the drawer onto an empty counter |
+| 2026-09-22 | **`print.agents` is a list of kinds; the install id is `claimedBy`; every print call is a staff-session call; the kitchen app reads a filtered `print-config`** (R13) | The plan had conflated kind and id, which would have failed every real tablet closed. An install id is not a credential. `approvals-config` on a kitchen tablet would leak the PIN policy |
+| 2026-09-22 | **A reprint renders the lines as they are now, with `REPRINT n`; KT-S5's "the same ticket" is "the same round"** | Grok asked for a facsimile of the original. After a quantity cut the kitchen should see the current quantity, and the cancel ticket already told them. Rendering from live frozen lines keeps "store nothing" true |
+| 2026-09-22 | **`route()` throws on a line with no `categoryId`** | The field is frozen on every placed line since TD-038 and there is no production data; a missing one is a writer bug, and routing it to the kitchen hides the regression. KT-S19 (an unmapped category, which still has an id) routes to the default as before |
+| 2026-09-22 | **Encoder: `1B 40` before `1B 74 n`, asserted in order; `क` (U+0915) must emit `0x3F`, never the low byte `0x15` (NAK); `drawerPulseMs` default 50** | Gemini's fan-out found the multi-byte hazard; the actual bug is `& 0xFF` on a BMP code point, not surrogates. Init resets the code page, so the code page after init is the only order that works. The sheet's 25 ms pulse gave `t1 = 13`, weaker than the `0x19` literal it replaced |
+| 2026-09-22 | **The stale-queue sweep is KT's own `every 1 minutes` schedule in `api/print.ts`, not a shared door with FL's idle sweep** | Different cadence (the idle threshold is an hour), separate failure domain (a bad KT deploy must not take TD-044's fix down with it), and the contract says one caller means inline it. Cloud Scheduler bills per job, three free; the second job is free |
+| 2026-09-22 | **Merged from the donor review and the Gemini pass**: cancel ticket back-links the original number (donor #2); a line the kitchen has seen is voided never deleted (donor #3 — `applyToLine` replaces the doc); ticket number is `${orderNumber}-${cartIndex}` already (donor #6). **Pushed back**: the Z-report (DC's), course firing (out of scope), a LAN fallback from till to tablet (the addressable-LAN design R13 rejects) | One line each, per the contract; neither review is re-run |
+| 2026-09-22 | **The hardware spike runs in parallel with this sheet, before KT-3 freezes the lease and the ack rule** | The lease length, the write deadline and whether a tablet can stay awake six hours are facts the room decides; freezing states in a sheet they then unwind is the expensive order. KT-1 and KT-2 do not wait for it |
 
 ## Known collisions with open debt
 
-- **TD-018 (one till, one drawer).** The print queue needs an identity to hold a lease. The bridge has its own
-  `agentId` from its config file, so the till no longer needs to mint a `registerId` for printing at all — TD-018
-  is left exactly where it was rather than being deepened by this module.
-- **TD-032 (new, this sheet).** The bridge is a second deployable with no update, monitoring or provisioning
-  story. It runs on hardware we do not own, in a room we cannot see, and today the only thing that would notice it
-  had died is KT-S23's status line. Filed P2 against KT-D1b.
+- **TD-018 (one till, one drawer).** The print queue needs an identity to hold a lease. The kitchen app mints its
+  own install id (R13), so the till never needs a `registerId` for printing — TD-018 is left exactly where it was
+  rather than being deepened by this module.
+- **TD-032.** Deferred, not solved: the bridge box is implementation #2 and is not shipped. The day one is, the
+  update, monitoring and provisioning story is owed.
 - **TD-003 (no PIN prompt in Flutter).** Untouched: nothing in KT asks a Flutter app for anything.
 - **TD-023 (cart cancel is not PIN-gated).** KT rides on `voidCartLines`, so a cancel ticket prints for a cancel
   that was not PIN-gated. That is TD-023's problem, not a new one, and the ticket is if anything the detection.
@@ -449,51 +491,63 @@ document to print; a draft on paper is the estimate, and that is OF's, gated on 
 
 ---
 
-## Phase plan (each phase is one commit)
+## Phase plan (each phase is one commit) — v4
 
 Definition of done applies to every phase: the failing test written **first** and proven red against the old code,
 `make check` green with the output pasted, e2e green where the path touches the emulator, `DEBT(TD-nnn)` rows filed,
-and the scenario ID in the commit message.
+and the scenario ID in the commit message. The plan with the reasoning is `reviews/2026-09-22-plan-paper-and-idle-tables.md`.
 
-**0. This sheet, plus Shaurya's answers.** **Answers done 2026-09-17; the sheet is rewritten around them.**
-Still owed before phase 1: fan-out (`/custom-fanout-consult`) and a donor review targeted at "how do they route a
-ticket, how do they know it printed, what do they do when the printer is off" — Odoo `pos_printer.py` and
-`pos_restaurant` need adding to the sparse clone first.
+**KT-0. This sheet (v4) — DONE 2026-09-22 — and the spike, same week.** On the real tablet, one throwaway Dart
+script, before any queue code: a foreground service of a type that survives a six-hour dinner (`specialUse`, not
+`dataSync`, which Android 15 caps at six hours a day — this is Kotlin, so it is an "ask before adding" item);
+screen-off Doze for 30 minutes with the poll still landing (`adb shell dumpsys deviceidle force-idle`); a write
+larger than the printer's buffer (> 4 KB) arriving whole with the cut; `nc -vz <printer> 9100` from the staff SSID
+(AP client isolation and the guest VLAN are two different walls); `targetSdkVersion` recorded. Android 16's
+local-network restriction is opt-in and enforcement is Android 17 / target SDK 37 with `ACCESS_LOCAL_NETWORK`; a
+denial looks like a connect timeout. Lease length and the ack rule are not frozen until the spike is back.
 
-**1. Routing key frozen on the line.** `categoryId` onto `CartItem` → `placeLine` → the line document, and
-`domain/kot.ts route()`. Characterization test on `createOrUpdateOrder` pinned **before** the change (the same way
-BL phase 4 did it), then `domain/line.test.ts` and `domain/kot.test.ts`. Tests: KT-S3, KT-S19, plus "a line placed
-before this change has no `categoryId` and routes to the default, never nowhere".
+**KT-1. The ticket, pure** (`domain/kot.ts`, `domain/receipt.ts`). Skeleton first: one `it()` per scenario with the
+expected string written by hand at 48 and 32 characters, body `todo`; one blind pass on the skeleton (Grok, per D3);
+merge; implement one at a time. `route(line, cfg)`: category → `print.route`, else `taxBlockId` →
+`print.routeByTaxBlock`, else `print.defaultStation`, never nowhere (KT-S19); no `categoryId` → throw. Tests:
+KT-S1, S2, S3, S5, S11, S12, S13, S14, S15, S16, S18, S19, S21. R10 enforced structurally: a test plants a wrong
+`payable` on the bill and asserts the paper prints the wrong number.
 
-**2. The ticket, pure.** `domain/kot.ts` and `domain/receipt.ts`: rows, padding, wrapping, markers, the cancel
-ticket, the two-column money rows. Every expected value is a hand-written string in the test, 48 and 32 characters
-both. Tests: KT-S1, S2, S5, S6, S11, S13, S14, S15, S16, S18, S21. No I/O, no emulator, milliseconds.
+**KT-2. The encoder** (`adapters/printers/escpos.ts`). Ticket → `Uint8Array`, hand-written byte arrays: `1B 40` head,
+`1B 74 n` after it, `1D 56 42 00` tail, `1B 61 01` centred, `1D 21 11` double, `1B 70 00 t1 t2` drawer with `t1`
+from config. Every char > 0x7F → `0x3F`, asserted at the byte with a Devanagari name. Tests: KT-S13, S17, S21.
 
-**3. The queue.** `adapters/firestore/print.ts`, `app/print.ts`, `api/print.ts` → `print-pending`, `print-claim`,
-`print-ack`, `print-ticket`; job creation inside the placing transaction; release on `markLinesSent`; a cancel job
-on `voidCartLines`. App tests with fake ports and a fake clock (leases are arithmetic on `ports.now()`, never a
-sleep). e2e `test/e2e/suites/print.js` on its own emulator slot with its own table. Tests: KT-S4, S7, S10, S20,
-plus "a second `print-claim` inside the lease is refused" and "an expired lease re-queues exactly once".
+**KT-3. The queue** (`adapters/firestore/print.ts`, `app/print.ts`, `api/print.ts`). Endpoints per the layout,
+all staff-session calls. Hooks into flat-dir code, each with a characterization test pinned first: enqueue in the
+placing transaction (a failed job write fails the round); `held` behind the waiter gate; `markLinesSent` releases
+and stamps `queuedAt`; `voidCartLines` queues a cancel at the stations the original went to; `billing-issue`
+queues a `bill`; credit note; ST's `reprint` → `duplicate` + its P1 audit row. App tests on fake ports and a fake
+clock: KT-S4, S7, S10, S20; "a second claim inside the lease **by a different agent** is refused"; "the holder
+re-claiming gets the bytes again"; "ack twice is one success"; "fail from a non-holder is refused"; "an expired
+lease is claimable again exactly once"; "a job past `staleAfterMinutes` is skipped by pending and claimable with
+`force`"; "a held round confirmed at minute 40 is not stale". e2e `suites/print.js` on its own slot: place a
+two-station round, pending, claim as `kitchen`, **two overlapping claims** (parallel calls, exactly one wins), ack,
+cancel → cancel job at the same station only. Red first by planting a wrong job id.
 
-**4. The encoder.** `bridge/escpos.ts`: Ticket → `Uint8Array`. Byte-level assertions against hand-written arrays —
-`1B 40` at the head, `1D 56 42 00` at the tail, `1B 61 01` for a centred row, `1D 21 11` for a double-size row,
-`1B 70 00 19 FA` for the drawer. Tests: KT-S13, S17, S21. Plain jest against a fake socket that records what was
-written; no hardware, no browser, no box.
+**KT-4. The sweep.** `api/print.ts print-sweepJobs = onSchedule('every 1 minutes', maxInstances 1)` calling
+`app/print.ts sweep(ports, now, cfg)`; an emulator-only manual trigger for the e2e, same pattern as FL's
+`table-cleanupInactiveSessions`. One unit test on the fake clock; one e2e assertion in `suites/print.js`.
 
-**5. The bridge.** `bridge/agent.ts`, `link.ts`, `config.ts`: the pull loop (pending → claim → encode → write →
-`DLE EOT` → ack), retry with backoff, give up and leave the job queued. Tested against a **fake TCP server in the
-test process** that can accept and echo, refuse the connection (printer off), answer a paper-out flag, or accept
-and never answer. Plus the till's `PrintStatus.tsx` and a Playwright spec for the status line and Retry, with the
-server's answers stubbed — no `navigator.serial` anywhere, because the browser is no longer on the path.
-Tests: KT-S7, S8, S10, S20, S23.
+**KT-5. The agent and the status line.** `print_agent.dart` / `printer_link.dart` per the layout, the toggle, the
+install id, the foreground service the spike chose. Dart tests with a fake socket factory: connect refused →
+`fail` with reason and the job stays queued; write throws mid-ticket → no ack (KT-S20's provable half); happy path →
+ack with the byte count; a socket that accepts and never reads → `fail` at `writeTimeoutMs`, and the other station's
+loop kept running. Till: `PrintStatus.tsx` on the existing poll — `BAR printer not answering — 1 ticket waiting`,
+`No print agent has claimed a job since 20:28 — 6 waiting`, `3 not auto-printed`, `no print agent` while every
+toggle is off — with Retry (`force`) and Reprint; Playwright spec with the server's answers seeded: KT-S7, S23, the
+stale case.
 
-**6. The bill, the estimate and the drawer at the counter.** Issue → queue a `bill` job for the counter station,
-reprint → `DUPLICATE` + ST audit row, credit note, OF's estimate rendered in the till and queued locally
-(deleting the `window.print()` div but **keeping a show-on-screen fallback**, KT-D6), the drawer kick after a cash
-take and after ST's no-sale. Tests: KT-S6, S9, S15, S16, S17, and OF-S7 re-run so it stays green.
+**KT-6. The counter.** `drawer` job after a cash `payments-take` and after ST's no-sale (KT-S17); OF's
+`EstimateScreen` stays a screen and loses its `window.print()` div (KT-S9); OF-S7 re-run green. (The till's offline
+sync replays estimate audit rows only, never `payments-take`, so a sync can never mint a stale drawer job.)
 
-**7. The room.** Not a commit — a morning in a restaurant with two printers, the bridge box, a real tablet and a real roll. What
-only hardware can tell us is listed below.
+**KT-7. The room.** Not a commit: the tablet, two printers, a roll. What only hardware can tell us is listed below,
+minus what the spike already answered. The one thing only the room proves is KT-S20's printed prefix.
 
 ### How a printer is tested without a printer
 
@@ -505,21 +559,19 @@ never see a byte at all — they compare strings.
 
 ### What genuinely needs the real hardware in the room
 
-1. **Does the bridge reach each printer on TCP 9100**, at the address the restaurant's router gives it — including
-   what happens when DHCP hands a printer a new IP overnight. This is the bridge's equivalent of the pairing
-   question and nothing else substitutes for it. (A static lease per printer is the likely answer, and it is a
-   setup-visit step, not code.)
-2. **Does the printer answer `DLE EOT`** and does its paper-out flag mean what the manual says. Cheap clones vary,
-   and R7's config key exists because of it.
+1. **Does the tablet reach each printer on TCP 9100**, at the address the restaurant's router gives it — including
+   what happens when DHCP hands a printer a new IP overnight (a static lease per printer is the likely answer, and it
+   is a setup step, not code), and whether the staff SSID has client isolation on (`nc -vz`).
+2. **The tablet stays awake and polling for a whole service** with the screen off and battery set to unrestricted —
+   the spike's answer, re-checked on the shipped device and its OEM skin.
 3. **The code page and the rupee.** Print `Rs. 1,02,450.00`, a long dish name, and an accented character, and look.
-4. **The cut.** Partial vs full cut, and whether the last two lines get eaten before the blade.
-5. **The drawer.** Whether this drawer's solenoid fires on a 25 ms pulse through this printer's RJ11.
-6. **Recovery after a power cut.** The box loses power at 21:00 with the restaurant full. Does it come back by
-   itself, reconnect and drain the queue with no one touching it? This is the failure most likely to be reported
-   as "printing stopped".
-7. **The restaurant's own network.** A guest wifi VLAN that cannot see the printers, a router that reboots
-   nightly, a printer on a different subnet. This is the class of problem the Bluetooth option did not have, and
-   it is the price of KT-D1.
+4. **The cut, and the buffered tail.** Partial vs full cut; whether a > 4 KB bill arrives whole; whether `close`
+   straight after `flush` eats the last two lines on this printer (KT-S20's prefix, R7's doubt).
+5. **The drawer.** Whether this drawer's solenoid fires on a 50 ms pulse (`t1 = 0x19`) through this printer's RJ11.
+6. **Paper-out.** Whether this printer answers `DLE EOT` at all and what its bit 5 means — the day the answer is yes,
+   `statusQuery` goes on for that station (KT-D7).
+7. **Recovery after a power cut.** The tablet reboots at 21:00 with the restaurant full. Does the agent come back by
+   itself, or does someone have to open the app?
 
 ---
 
@@ -528,9 +580,9 @@ never see a byte at all — they compare strings.
 - KT-Q1 Does the first restaurant want paper in the kitchen **at all**, or is the kitchen screen enough and only the
   bar and counter print? The answer halves the hardware bill and decides whether KT-S7 is a Friday-night emergency
   or a shrug.
-- KT-Q2 ~~One tablet or several?~~ **Closed by KT-D1b:** one bridge drives all three printers over the LAN, and
-  range is no longer a constraint. What replaces it: does the restaurant have a network the box can sit on, with
-  the printers reachable from it, or is that part of the install?
+- KT-Q2 One tablet or several? Under KT-D1c one kitchen tablet can drive all three printers over the LAN, or the bar
+  and counter can run their own with the toggle on (KT-S10 makes that safe). Does the restaurant have a network the
+  tablet and the printers share, or is that part of the install?
 - KT-Q3 Does the tandoor need its own ticket separate from the main kitchen at Meghana-sized volume, or is
   kitchen/bar/counter the whole truth for v1? `print.route` supports either; the question is whether to buy a
   fourth printer.
@@ -557,9 +609,16 @@ Two defaults were taken rather than asked, and stand: `Rs.` on paper with `print
 a real printer is here (KT-D5), and the offline estimate moving onto this path with a show-on-screen
 fallback kept in the same component (KT-D6).
 
-**Still owed before phase 1:** the fan-out, and the donor review — Odoo `pos_printer.py` and
-`pos_restaurant/models/restaurant_printer.py` are not in the local sparse clone and must be added first.
-The routing-by-category design in this sheet is deliberately ours before theirs is read.
+## Review — answered 2026-09-22
+
+Five calls put to Shaurya with the options and their costs, all signed on the recommended option, each with its
+doubt written into Decisions and mirrored in the PRD §17.2: **KT-D7** (paper-out: key kept, default off, manual
+Reprint in v1), **KT-D4 amended** (stale tickets skipped, counted, one tap), **KT-D6 amended** (offline estimate
+screen-only), and FL-S36's two (a silent table freed after 60 minutes; a paid uncleared table freed by the same
+clock). The job model (ids per kind, holder re-claim, idempotent ack/fail) was signed with them as one set.
+
+**Owed before KT-3 freezes the lease:** the hardware spike (KT-0). **Owed before KT-1's expected strings are
+written:** nothing — the skeleton starts now.
 
 ## Files (donors)
 
