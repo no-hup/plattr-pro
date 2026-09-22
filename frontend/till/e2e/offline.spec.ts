@@ -188,7 +188,7 @@ test('OF-S13 reload while cut → the open estimate ₹609.00 and the cached pre
   await login(page, `draft=${DRAFT}`)
   await expect(page.getByTestId('payable')).toContainText('Payable ₹609.00')
   await expect(page.getByTestId('as-of')).toBeVisible()
-  await expect(page.getByTestId('reprint')).toHaveText('Reprint estimate ₹609.00')
+  await expect(page.getByTestId('reprint')).toHaveText('Show estimate again ₹609.00')
 })
 
 test('OF-S10 one open estimate → ?day=1 shows "reconcile 1 estimate first", no close form', async ({ page }) => {
@@ -292,7 +292,7 @@ test('OF-S15 Emergency bill twice → one estimate, second tap is Reprint', asyn
   await openDraft(page)
   await printEstimate(page)
   await expect(page.getByTestId('estimate-form')).toHaveCount(0)
-  await expect(page.getByTestId('reprint')).toHaveText('Reprint estimate ₹609.00')
+  await expect(page.getByTestId('reprint')).toHaveText('Show estimate again ₹609.00')
   await page.getByTestId('reprint').click()
   await expect(page.getByTestId('estimate-print')).toBeVisible()
   const n = await page.evaluate(() => JSON.parse(localStorage.getItem('till.offline') ?? '{}').estimates.length)

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useFloor, rupees, type Ctx, type Tile } from './useFloor'
 import { useSays } from '../../ui/says'
+import { PrintStatus } from '../print/PrintStatus'
 
 // FL · the till's home screen. A cashier glances at it between bills, so a tile says two numbers
 // and a word, and nothing needs a tap to be read (FL-S1).
@@ -60,6 +61,7 @@ export function FloorScreen({ ctx, role }: { ctx: Ctx; role: string }) {
 
   return (
     <section data-testid="floor">
+      <PrintStatus ctx={ctx} role={role} />   {/* KT-S7/S23: the red line lives on the home screen, where the cashier glances */}
       {/* FL-S15: blind, not quiet. The last good answer stays on screen, greyed, with its time. */}
       {floor.stale && (
         <p data-testid="floor-stale">

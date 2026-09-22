@@ -12,13 +12,14 @@ function fakePorts(opts: { staff?: Partial<Staff>; config?: unknown; failAudit?:
     ['line_tikka', { listPrice: 32000, sent: true, v: 0, countsTowardTotal: true, offer: { id: 'happy_hour', amount: 6400 } }],
   ]);
   const audits = new Map<string, AuditRow>();
+  const printJobs: import('../domain/print').Job[] = [];
   const pins = new Map<string, PinState>();
   const logs: object[] = [];
   const warnings: string[] = [];
   let now = 1_000_000;
   const staff: Staff = { staffId: 'manager_st', role: 'MANAGER', status: 'active', pinHash: 'hash(1234)', ...opts.staff };
-  const ports: Ports & { lines: typeof lines; audits: typeof audits; pins: typeof pins; logs: typeof logs; warnings: typeof warnings; tick(ms: number): void; sessions: Set<string> } = {
-    lines, audits, pins, logs, warnings, sessions: new Set([`${RID}/s1`]),
+  const ports: Ports & { lines: typeof lines; audits: typeof audits; printJobs: typeof printJobs; pins: typeof pins; logs: typeof logs; warnings: typeof warnings; tick(ms: number): void; sessions: Set<string> } = {
+    lines, audits, printJobs, pins, logs, warnings, sessions: new Set([`${RID}/s1`]),
     tick: (ms: number) => { now += ms; },
     now: () => now,
     log: l => logs.push(l),
@@ -35,7 +36,7 @@ function fakePorts(opts: { staff?: Partial<Staff>; config?: unknown; failAudit?:
         createAudit: (id, row) => { if (opts.failAudit) throw new Error('firestore unavailable'); if (audits.has(id)) throw new Error('already exists'); pendingAudits.set(id, row); },
         getAudit: async id => audits.get(id) ?? null,
         kotJobsOfCart: async () => [],
-        createPrintJob: () => {},
+        createPrintJob: j => { printJobs.push(j); },
       };
       const out = await fn(t);
       for (const [k, v] of pendingLines) lines.set(k, v);
@@ -254,6 +255,7 @@ describe('app/approvals apply()', () => {
     expect(e.details).toMatchObject({ requires: 'pin', sev: 'P0' });
     await apply(p, { restaurantId: RID, sessionId: 's1', action: 'drawer', cid: 'c1', reason: 'other', pin: '1234' });
     expect([...p.audits.values()].filter(a => a.action === 'drawer')).toEqual([expect.objectContaining({ sev: 'P0' })]);
+    expect(p.printJobs.map(j => [j.kind, j.state, j.cid])).toEqual([['drawer', 'queued', 'c1']]);   // KT-S17: the kick rides the P0 row
   });
   it('ST-S5 void of a sent line with pin → void set, countsTowardTotal false, audit P0 amount 1250 pct 100', async () => {
     const p = fakePorts();

@@ -1,6 +1,7 @@
 // PY · take() / refund() / voidRow() / list(). Role → config → domain → ONE transaction
 // (row + bill stamp + note stamp + order mirror + audit). No Firestore here; ports only.
 // See moonshot/SPEC_PY_payments.md. Money is integer minor units on every field.
+import { Job as PrintJob, ids as printIds, newJob as newPrintJob } from '../domain/print';
 import {
   Bill, Note, Row, Tender, PaymentsConfig, businessDateFor, canRefund, canTake, canVoid, changeFor,
   outstanding, overpaidFor, paidTotalOf, isSettled, tenderById,
@@ -31,6 +32,7 @@ export interface Tx {
   stampNote(noteId: string, refundedTotal: number): void;
   mirrorOrder(orderId: string | null, status: Mirror): void;  // must throw on a null id (R4)
   createAudit(id: string, row: AuditRow): void;
+  createPrintJob(job: PrintJob): void;                        // KT-S17: the drawer kick, queued with the take
 }
 export interface Ports extends PinPorts {
   log(line: object): void;
@@ -149,6 +151,9 @@ export async function take(ports: Ports, req: TakeReq): Promise<WriteResult> {
       };
       t.createRow(paymentId, row);
       const s = stamp(t, bill, [...rows, row], at, staff.staffId, cfg);
+      // KT-S17: a tender that opens the drawer queues one kick, keyed on the payment so a retry never kicks twice.
+      // The counter tablet's next poll fires it; past print.drawerStaleSeconds it is dropped, never fired late.
+      if (tender.opensDrawer) t.createPrintJob(newPrintJob({ jobId: printIds.drawer(paymentId), cid, kind: 'drawer', ticketNo: billId, tableLabel: '', billId, paymentId, by: staff.staffId, now: at }));
       return { row, bill: s, retry: false, opensDrawer: tender.opensDrawer };
     });
     logLine(ports, { cid: out.row.cid, billId, kind: 'take', tenderId: out.row.tenderId, amount: out.row.amount, outstandingAfter: out.bill.outstanding, outcome: out.retry ? 'retry' : 'applied' });

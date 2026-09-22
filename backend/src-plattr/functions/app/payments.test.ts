@@ -14,7 +14,7 @@ const T0 = ist(2026, 9, 15, 21, 6);   // 21:06 on the 15th, businessDate 2026-09
 type BillDoc = { payable: number; status: 'draft' | 'issued' | 'paid' | 'cancelled'; cid: string; orderId: string | null; paidTotal: number; paidAt: number | null; paidBy: string | null };
 type Fail = 'row' | 'bill' | 'mirror' | 'note' | 'audit' | 'config' | 'day' | 'void';
 interface Opts { staff?: Partial<Staff>; config?: unknown; bill?: Partial<BillDoc> | null; note?: Partial<Note> | null; closed?: boolean | null; fail?: Fail; abortOnce?: boolean; hideFromQuery?: boolean; onTransact?: (n: number, p: Fake) => void; now?: number }
-type Fake = Ports & {
+type Fake = Ports & { printJobs: Map<string, import('../domain/print').Job>;
   rows: Map<string, StoredRow>; bills: Map<string, BillDoc>; notes: Map<string, Note>; orders: Map<string, Mirror>; audits: Map<string, AuditRow>;
   logs: object[]; warnings: string[]; calls: string[]; tick(ms: number): void; sessions: Set<string>; setClosed(v: boolean | null): void;
 };
@@ -32,11 +32,12 @@ function fakePorts(opts: Opts = {}): Fake {
   const audits = new Map<string, AuditRow>();
   const pins = new Map<string, PinState>();
   const logs: object[] = []; const warnings: string[] = []; const calls: string[] = [];
+  const printJobs = new Map<string, import('../domain/print').Job>();
   let now = opts.now ?? T0;
   let n = 0; let aborted = false;
   const staff: Staff = { staffId: 'manager_py', role: 'MANAGER', status: 'active', pinHash: 'hash(1234)', ...opts.staff };
   const p: Fake = {
-    rows, bills, notes, orders, audits, logs, warnings, calls, sessions: new Set([`${RID}/s1`]),
+    rows, bills, notes, orders, audits, logs, warnings, calls, printJobs, sessions: new Set([`${RID}/s1`]),
     tick: ms => { now += ms; },
     setClosed: v => { dayIsClosed = v; },
     now: () => now,
@@ -51,7 +52,7 @@ function fakePorts(opts: Opts = {}): Fake {
       opts.onTransact?.(n++, p);
       const run = async () => {
         const pr = new Map<string, StoredRow>(); const pv = new Map<string, NonNullable<Row['void']>>(); const pb = new Map<string, BillStamp>();
-        const pn = new Map<string, number>(); const po = new Map<string, Mirror>(); const pa = new Map<string, AuditRow>();
+        const pn = new Map<string, number>(); const po = new Map<string, Mirror>(); const pa = new Map<string, AuditRow>(); const pj = new Map<string, import('../domain/print').Job>();
         const t: Tx = {
           rowById: async id => { calls.push('rowById'); return rows.get(id) ?? null; },
           rowsForBill: async b => { calls.push('rowsForBill'); return opts.hideFromQuery ? [] : [...rows.values()].filter(r => r.billId === b); },
@@ -64,6 +65,7 @@ function fakePorts(opts: Opts = {}): Fake {
           stampNote: (id, r) => { calls.push('stampNote'); if (opts.fail === 'note') throw new Error('firestore unavailable'); pn.set(id, r); },
           mirrorOrder: (id, s) => { if (opts.fail === 'mirror') throw new Error('firestore unavailable'); if (!id || !orders.has(id)) throw new Error('order missing'); po.set(id, s); },
           createAudit: (id, r) => { if (opts.fail === 'audit') throw new Error('firestore unavailable'); if (audits.has(id)) throw new Error('already exists'); pa.set(id, r); },
+          createPrintJob: j => { pj.set(j.jobId, j); },   // staged like the row: an aborted attempt leaves nothing behind
         };
         const out = await fn(t);
         if (opts.abortOnce && !aborted) { aborted = true; throw Object.assign(new Error('aborted'), { retriable: true }); }
@@ -73,6 +75,7 @@ function fakePorts(opts: Opts = {}): Fake {
         for (const [k, v] of pn) notes.set(k, { ...(notes.get(k) as Note), refundedTotal: v });
         for (const [k, v] of po) orders.set(k, v);
         for (const [k, v] of pa) audits.set(k, v);
+        for (const [k, v] of pj) printJobs.set(k, v);
         return out;
       };
       // Firestore re-runs the transaction body on contention; the fake does the same once when asked.
@@ -823,5 +826,22 @@ describe('app/payments — what PY must never do', () => {
     const p = fakePorts({ bill: { payable: 0, status: 'paid' } });
     await fails(take(p, tk('p1', 1)));
     expect(p.rows.size).toBe(0);
+  });
+});
+
+describe('KT-S17 the drawer kick rides the cash take', () => {
+  it('a cash take (tender opensDrawer) queues drawer:<paymentId>, cid = the bill, in the same transaction; a card take queues nothing', async () => {
+    const p = fakePorts();
+    await take(p, tk('p1', 60900));
+    expect([...p.printJobs.values()].map(j => [j.jobId, j.kind, j.state, j.paymentId, j.cid])).toEqual([['drawer:p1', 'drawer', 'queued', 'p1', 'c417']]);
+    const q = fakePorts();
+    await take(q, ext('p2', 40000));
+    expect(q.printJobs.size).toBe(0);
+  });
+  it('a retried take (same paymentId) does not queue a second kick', async () => {
+    const p = fakePorts();
+    await take(p, tk('p1', 60900));
+    await take(p, tk('p1', 60900));
+    expect(p.printJobs.size).toBe(1);
   });
 });

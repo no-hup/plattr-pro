@@ -1,5 +1,5 @@
 // ST · apply(): role → config → decide → verify PIN → one transaction (line + audit). No Firestore here; ports only.
-import { Job as PrintJob, cancelJobsFor as cancelPrintJobs } from '../domain/print';
+import { Job as PrintJob, cancelJobsFor as cancelPrintJobs, ids as printIds, newJob as newPrintJob } from '../domain/print';
 import {
   Action, ApprovalsConfig, AuditRow, Line, PinState, Outcome, Sev, applyToLine, auditRow, decide, tooSoon, logLine,
   percentOf, recordWrongPin, toPaise, validateAmount, validateReason,
@@ -163,6 +163,8 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
         // Two drawer opens in one millisecond must both leave a row: the suffix keeps the ids apart.
         const auditId = `${cid}_${action}_${ts}_${Math.random().toString(36).slice(2, 8)}`;
         t.createAudit(auditId, auditRow({ ts, cid, action, staffId: staff.staffId, sev, reason: reason as string, note, lineId: null, before: null, after: null }));
+        // KT-S17: a no-sale open is a drawer kick too, queued with its P0 row and keyed on that row.
+        if (action === 'drawer') t.createPrintJob(newPrintJob({ jobId: printIds.drawer(auditId), cid, kind: 'drawer', ticketNo: cid, tableLabel: '', paymentId: auditId, by: staff.staffId, now: ts }));
         return { auditId } as ApplyResult;
       }
       const before = await t.getLine(String(lineId));

@@ -59,6 +59,7 @@ function tx(rid: string, t: Transaction): Tx {
       t.update(orders(rid).doc(orderId), { paymentStatus: status });
     },
     createAudit(id, row: AuditRow) { t.create(audit(rid).doc(id), row); },
+    createPrintJob(job) { t.create(rest(rid).collection('printJobs').doc(job.jobId), job); },
   };
 }
 
