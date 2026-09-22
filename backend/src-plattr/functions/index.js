@@ -102,6 +102,18 @@ exports.dayClose = {
   move: require('./lib/api/dayClose').moveHandler,
   voidMove: require('./lib/api/dayClose').voidMoveHandler,
 };
+// KT · the print path: the kitchen app's four calls, the till's status and reprint, the agent config, the sweep.
+exports.print = {
+  pending: require('./lib/api/print').pendingHandler,
+  claim: require('./lib/api/print').claimHandler,
+  ack: require('./lib/api/print').ackHandler,
+  fail: require('./lib/api/print').failHandler,
+  status: require('./lib/api/print').statusHandler,
+  reprint: require('./lib/api/print').reprintHandler,
+  config: require('./lib/api/print').configHandler,
+  sweepJobs: require('./lib/api/print').sweepJobs,       // onSchedule every 1 minute; the emulator never fires it
+  sweepNow: require('./lib/api/print').sweepNowHandler,  // emulator-only manual trigger
+};
 exports.floor = {
   get: require('./lib/api/floor').getHandler,
   open: require('./lib/api/floor').openHandler,

@@ -59,9 +59,9 @@ describe('route — the station is read off the frozen line (R9, KT-S3, KT-S19)'
   it('KT-S19 "Mocktails" mapped nowhere and taxed as food goes to the default station, never nowhere', () => {
     expect(route(line({ name: 'Virgin Mojito', qty: 1, categoryId: 'cat_mocktails' }), cfg)).toBe('kitchen');
   });
-  it('a line with NO categoryId at all throws: the field is frozen on every placed line, so a missing one is a writer bug', () => {
-    expect(() => route(line({ name: 'Ghost', qty: 1, categoryId: undefined }), cfg)).toThrow(/categoryId/);
-    expect(() => route(line({ name: 'Ghost', qty: 1, categoryId: null }), cfg)).toThrow(/categoryId/);
+  it('a line with NO categoryId at all still routes: by tax block (liquor → bar), else the default — R1, never nowhere', () => {
+    expect(route(line({ name: 'Ghost', qty: 1, categoryId: undefined }), cfg)).toBe('kitchen');
+    expect(route(line({ name: 'Ghost', qty: 1, categoryId: null, components: [{ id: 'g', kind: 'item', name: 'Ghost', unitListPrice: 0, taxBlockId: 'liquor', taxCode: '' }] }), cfg)).toBe('bar');
   });
   it('a mapped station that is not in print.stations is a config bug and throws, never a silent default', () => {
     const bad = printConfigFrom({ print: { route: { cat_pizza: 'oven' }, stations: { kitchen: {} } } });

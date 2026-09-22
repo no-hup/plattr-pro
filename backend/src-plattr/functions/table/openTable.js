@@ -11,7 +11,7 @@ const errorHandler = require('../singleton/ErrorHandler');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 const timestamp = require('../utils/timestamp');
 
-const SESSION_MS = 4 * 60 * 60 * 1000; // same literal as sessionService.js; ordering.sessionHours when someone asks
+const SESSION_MS = 4 * 60 * 60 * 1000; // DEBT(TD-049): same literal as sessionService.js; ordering.sessionHours when someone asks
 
 const openTable = functions.https.onCall(async (request) => {
   const data = request?.data || {};

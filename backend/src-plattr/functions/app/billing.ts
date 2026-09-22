@@ -1,5 +1,6 @@
 // BL · use-cases: preview / issue / cancel / creditNote / reprint / split / get. Domain does the money; ports do the I/O.
 // Every money figure is recomputed here from line snapshots (R2, R12); nothing the client sends is trusted.
+import { Job as PrintJob, ids as printIds, newJob as newPrintJob } from '../domain/print';
 import { Line } from '../domain/line';
 import {
   Bill, BillBody, BillDiscount, BillingConfig, BILLING_DEFAULTS, ChargeIn, Meta, Seller,
@@ -29,6 +30,8 @@ export interface Tx {
   getCounter(key: string): Promise<Counter | null>;
   setCounter(key: string, c: Counter): void;
   createAudit(id: string, row: object): void;
+  enqueuePrint(job: PrintJob): void;                 // KT: the bill's or the note's print job, in this same transaction
+  tableLabel(tableIds: string[]): Promise<string>;   // KT: "7" or "5+6", what the paper says
   newBillId(): string;
 }
 export interface Ports {
@@ -114,7 +117,7 @@ export async function issue(ports: Ports, req: IssueRequest): Promise<Bill> {
   const now = ports.now();
   const bill = await ports.transact(req.restaurantId, async t => {
     const draft = await ports.linesOfDraft(req.restaurantId, req.draftId);
-    const fresh = await t.getLines(draft.map(l => l.lineId));
+    const [fresh, tableLabel] = await Promise.all([t.getLines(draft.map(l => l.lineId)), t.tableLabel(req.tableIds)]);
     const taken = fresh.find(l => l.billId !== null);
     if (taken) throw new ApprovalError('failed-precondition', `already issued ${taken.billId}`, { billId: taken.billId });
     for (const l of fresh) if (req.expectedV[l.lineId] !== undefined && req.expectedV[l.lineId] !== l.v) throw new ApprovalError('failed-precondition', 'line changed, preview again', { lineId: l.lineId });
@@ -132,6 +135,8 @@ export async function issue(ports: Ports, req: IssueRequest): Promise<Bill> {
     t.setCounter(key, n.counter);
     t.setBill(meta.billId, r.value);
     for (const l of fresh) t.setLine(l.lineId, { billId: meta.billId });   // voided lines too: they sit in bill.lines[] and must not be re-billed
+    // KT-S6: the bill is paper at the counter, queued here so there is no moment where it exists and its job does not.
+    t.enqueuePrint(newPrintJob({ jobId: printIds.bill(meta.billId), cid: req.cid, kind: 'bill', ticketNo: meta.number, tableLabel, billId: meta.billId, now }));
     return r.value;
   });
   ports.log({ mod: 'billing', cid: req.cid, billId: bill.billId, from: 'draft', to: 'issued', number: bill.number, payable: bill.payable });
@@ -175,6 +180,7 @@ export async function creditNote(ports: Ports, req: CreditRequest): Promise<Bill
   const note = await ports.transact(req.restaurantId, async t => {
     const b = await t.getBill(req.billId);
     if (!b) throw new ApprovalError('not-found', 'bill not found');
+    const tableLabel = await t.tableLabel(b.tableIds);
     const cfg = await ports.config.billing(req.restaurantId);
     const key = counterKey(cfg.invoice.creditNoteSeries, now, cfg.invoice);
     const n = nextNumber(await t.getCounter(key), cfg.invoice);
@@ -187,6 +193,7 @@ export async function creditNote(ports: Ports, req: CreditRequest): Promise<Bill
     t.setCounter(key, n.counter);
     t.setBill(meta.billId, r.value.note);
     t.updateBill(req.billId, { lines: r.value.original.lines, creditNotes: r.value.original.creditNotes });
+    t.enqueuePrint(newPrintJob({ jobId: printIds.credit(meta.billId), cid: req.cid, kind: 'credit', ticketNo: meta.number, tableLabel, billId: meta.billId, now }));   // KT-S15
     return r.value.note;
   });
   ports.log({ mod: 'billing', cid: req.cid, billId: req.billId, from: 'paid', to: 'paid', creditNote: note.billId, number: note.number, payable: note.payable });

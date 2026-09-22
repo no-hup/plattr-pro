@@ -18,6 +18,7 @@ function fakePorts(opts: { role?: string; offer?: { id: string; name: string; am
   const lines = new Map<string, Line>([['pizza', line('pizza', 50000)], ['coke', line('coke', 8000)]]);
   const bills = new Map<string, Bill>();
   const counters = new Map<string, { next: number }>([['A_2026-27', { next: 417 }]]);
+  const printed: import('../domain/print').Job[] = [];
   const audits = new Map<string, object>();
   const logs: object[] = [];
   let ids = 0;
@@ -63,6 +64,8 @@ function fakePorts(opts: { role?: string; offer?: { id: string; name: string; am
         setCounter: (k, c) => { pc.set(k, c); },
         createAudit: (id, row) => { pa.set(id, row); },
         newBillId: () => `bill_${++ids}`,
+        enqueuePrint: job => { printed.push(job); },
+        tableLabel: async tableIds => tableIds.map(x => x.replace('table_', '')).join('+'),
       };
       const out = await fn(t);
       for (const [k, v] of pl) lines.set(k, { ...lines.get(k)!, ...v });
@@ -73,6 +76,7 @@ function fakePorts(opts: { role?: string; offer?: { id: string; name: string; am
       return out;
     },
   };
+  (ports as unknown as { printed: typeof printed }).printed = printed;
   return ports;
 }
 const base = { restaurantId: RID, sessionId: 's1', draftId: 's1', cid: 'o1' };
@@ -282,5 +286,14 @@ describe('app/billing settingsFrom', () => {
   });
   it('missing config → defaults, no charges', () => {
     expect(settingsFrom(undefined, undefined).billing).toEqual({ partRounding: 'independent', roundTo: 100, charges: [] });
+  });
+});
+
+describe('KT: paper is queued in the issuing transaction (KT-S6, KT-S15)', () => {
+  it('KT-S6 issue → one bill:<billId> job for the counter, ticketNo = the bill number, tableLabel from the table numbers', async () => {
+    const ports = fakePorts();
+    const bill = await issue(ports, issueReq());
+    const jobs = (ports as unknown as { printed: import('../domain/print').Job[] }).printed;
+    expect(jobs.map(j => [j.jobId, j.kind, j.ticketNo, j.state])).toEqual([[`bill:${bill.billId}`, 'bill', bill.number, 'queued']]);
   });
 });

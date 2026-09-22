@@ -34,6 +34,8 @@ function fakePorts(opts: { staff?: Partial<Staff>; config?: unknown; failAudit?:
         setLine: (id, line) => { pendingLines.set(id, line); },
         createAudit: (id, row) => { if (opts.failAudit) throw new Error('firestore unavailable'); if (audits.has(id)) throw new Error('already exists'); pendingAudits.set(id, row); },
         getAudit: async id => audits.get(id) ?? null,
+        kotJobsOfCart: async () => [],
+        createPrintJob: () => {},
       };
       const out = await fn(t);
       for (const [k, v] of pendingLines) lines.set(k, v);

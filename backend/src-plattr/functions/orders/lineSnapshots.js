@@ -2,6 +2,8 @@
 // See moonshot/SPEC_BL_billing_and_tax.md (Objects → Line, phase 4). The mapping itself is pure and
 // lives in domain/line.ts; everything here is reading config and old float money and calling it.
 const { db } = require("../admin/admin");
+// KT: held jobs release on the waiter's confirm (R5); a void drops or cancels them (KT-S11/S12). Compiled TS in lib/.
+const print = require("../lib/adapters/firestore/print");
 const { placeLine } = require("../lib/domain/line");
 const { applyToLine, auditRow } = require("../lib/domain/approvals");
 const errorHandler = require("../singleton/ErrorHandler");
@@ -98,9 +100,9 @@ function writeLineSnapshots(transaction, restaurantId, { cartSnapshot, orderId, 
     const lineId = `${cartId}_${item.cartItemId ?? 0}`;
     const line = placeLine(toCartItem(item, assign), ctx, lineId);
     transaction.set(db.collection("restaurants").doc(restaurantId).collection("lines").doc(lineId), line);
-    written.push(lineId);
+    written.push(line);
   }
-  return written;
+  return written;   // the placed lines themselves (KT routes them into print jobs in the same transaction)
 }
 
 /**
@@ -122,13 +124,15 @@ async function markLinesSent(transaction, restaurantId, cartSnapshot) {
     .map(item => db.collection("restaurants").doc(restaurantId)
       .collection("lines").doc(`${cartId}_${item.cartItemId ?? 0}`));
 
-  const docs = await Promise.all(refs.map(ref => transaction.get(ref)));
+  const [docs, kotJobs] = await Promise.all([Promise.all(refs.map(ref => transaction.get(ref))), print.kotJobsOfCart(transaction, restaurantId, cartId)]);
   const marked = [];
   docs.forEach((doc, i) => {
     if (!doc.exists || doc.data()?.sent === true) return;
     transaction.update(refs[i], { sent: true });
     marked.push(refs[i].id);
   });
+  // KT R5: the kitchen is being told now, so the tickets' clock starts now.
+  print.releaseHeld(transaction, restaurantId, kotJobs, Date.now());
   return marked;
 }
 
@@ -159,8 +163,9 @@ async function voidCartLines(transaction, restaurantId, cartSnapshot, { staffId,
     .map(item => db.collection("restaurants").doc(restaurantId)
       .collection("lines").doc(`${cartId}_${item.cartItemId ?? 0}`));
 
-  const docs = await Promise.all(refs.map(ref => transaction.get(ref)));
+  const [docs, kotJobs] = await Promise.all([Promise.all(refs.map(ref => transaction.get(ref))), print.kotJobsOfCart(transaction, restaurantId, cartId)]);
   const written = [];
+  const voidedLineIds = [];
   docs.forEach((doc, i) => {
     if (!doc.exists) return;
     const before = doc.data();
@@ -188,7 +193,13 @@ async function voidCartLines(transaction, restaurantId, cartSnapshot, { staffId,
     );
     transaction.set(refs[i], applied.line);
     written.push(auditId);
+    voidedLineIds.push(refs[i].id);
   });
+  // KT-S11 / R5: a held ticket is dropped (the kitchen was never told); a ticket the kitchen may have seen gets a
+  // cancel ticket at its station for exactly the lines voided there. Keyed on the cart's id and this void's clock.
+  if (voidedLineIds.length) {
+    print.cancelForVoid(transaction, restaurantId, kotJobs, voidedLineIds, { v: `cart_${now}`, reason: reason || 'guest left', by: staffId || 'system', now });
+  }
   return written;
 }
 
