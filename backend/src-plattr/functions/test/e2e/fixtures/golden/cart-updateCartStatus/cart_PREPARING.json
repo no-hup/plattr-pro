@@ -48,7 +48,9 @@
                 }
               ],
               "restaurantId": "res_meghana",
+              "taxCode": "996331",
               "menuItemId": "mi_chicken_bir",
+              "taxBlockId": "food",
               "lastUpdated": {
                 "_seconds": 1780000000,
                 "_nanoseconds": 0
@@ -118,6 +120,8 @@
               "discountAmount": 0
             },
             "cartItemId": 1,
+            "addedBy": null,
+            "note": "",
             "status": "PREPARING"
           },
           {
@@ -137,7 +141,9 @@
               "allergenTags": [],
               "variants": [],
               "restaurantId": "res_meghana",
+              "taxCode": "996331",
               "menuItemId": "mi_paneer65",
+              "taxBlockId": "food",
               "lastUpdated": {
                 "_seconds": 1780000000,
                 "_nanoseconds": 0
@@ -182,6 +188,8 @@
               "discountAmount": 36
             },
             "cartItemId": 2,
+            "addedBy": null,
+            "note": "",
             "status": "PREPARING"
           }
         ],
@@ -191,23 +199,17 @@
         "statusHistory": [
           {
             "status": "PENDING",
-            "timestamp": {
-              "_seconds": 1780000000,
-              "_nanoseconds": 0
-            },
+            "timestamp": 1780000000000,
             "userId": "system"
           },
           {
             "status": "PREPARING",
-            "timestamp": 1788824846773,
+            "timestamp": 1780000000000,
             "userId": "system",
             "notes": ""
           }
         ],
-        "checkoutTime": {
-          "_seconds": 1780000000,
-          "_nanoseconds": 0
-        },
+        "checkoutTime": 1780000000000,
         "notes": "",
         "estimatedPrepTime": 14,
         "assignedTo": "system"
@@ -254,11 +256,9 @@
           }
         ],
         "cartItemId": 1,
-        "checkoutTime": {
-          "_seconds": 1780000000,
-          "_nanoseconds": 0
-        },
-        "status": "PENDING"
+        "cartId": "res_meghana_tbl_meg_10_CART",
+        "checkoutTime": 1780000000000,
+        "status": "PREPARING"
       },
       {
         "menuItemId": "mi_paneer65",
@@ -275,11 +275,9 @@
         "selectedAddons": [],
         "selectedAddonsDetails": [],
         "cartItemId": 2,
-        "checkoutTime": {
-          "_seconds": 1780000000,
-          "_nanoseconds": 0
-        },
-        "status": "PENDING"
+        "cartId": "res_meghana_tbl_meg_10_CART",
+        "checkoutTime": 1780000000000,
+        "status": "PREPARING"
       }
     ],
     "priceInfo": {
@@ -301,7 +299,7 @@
       "_seconds": 1780000000,
       "_nanoseconds": 0
     },
-    "updatedAt": 1788824846773,
+    "updatedAt": 1780000000000,
     "isActive": true,
     "assignedServer": null,
     "notes": "",

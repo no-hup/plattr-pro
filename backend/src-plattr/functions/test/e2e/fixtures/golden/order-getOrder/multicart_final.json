@@ -103,7 +103,7 @@
     "notes": "",
     "carts": [
       {
-        "lastUpdated": 1788824854421,
+        "lastUpdated": 1780000000000,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -133,7 +133,9 @@
               "allergenTags": [],
               "variants": [],
               "restaurantId": "res_meghana",
+              "taxCode": "996331",
               "menuItemId": "mi_paneer65",
+              "taxBlockId": "food",
               "lastUpdated": {
                 "_seconds": 1780000000,
                 "_nanoseconds": 0
@@ -178,6 +180,8 @@
               "discountAmount": 36
             },
             "cartItemId": 1,
+            "addedBy": null,
+            "note": "",
             "status": "PENDING"
           }
         ],
@@ -196,7 +200,7 @@
         "assignedTo": null
       },
       {
-        "lastUpdated": 1788824855160,
+        "lastUpdated": 1780000000000,
         "priceInfo": {
           "basePrice": 620,
           "finalPrice": 620,
@@ -235,7 +239,9 @@
                 }
               ],
               "restaurantId": "res_meghana",
+              "taxCode": "996331",
               "menuItemId": "mi_chicken_bir",
+              "taxBlockId": "food",
               "lastUpdated": {
                 "_seconds": 1780000000,
                 "_nanoseconds": 0
@@ -305,6 +311,8 @@
               "discountAmount": 0
             },
             "cartItemId": 1,
+            "addedBy": null,
+            "note": "",
             "status": "PENDING"
           }
         ],
@@ -323,7 +331,7 @@
         "assignedTo": null
       },
       {
-        "lastUpdated": 1788824855252,
+        "lastUpdated": 1780000000000,
         "priceInfo": {
           "totalAddonBasePrice": 0,
           "totalDiscountAmount": 36,
@@ -353,7 +361,9 @@
               "allergenTags": [],
               "variants": [],
               "restaurantId": "res_meghana",
+              "taxCode": "996331",
               "menuItemId": "mi_paneer65",
+              "taxBlockId": "food",
               "lastUpdated": {
                 "_seconds": 1780000000,
                 "_nanoseconds": 0
@@ -398,6 +408,8 @@
               "discountAmount": 36
             },
             "cartItemId": 1,
+            "addedBy": null,
+            "note": "",
             "status": "PENDING"
           }
         ],

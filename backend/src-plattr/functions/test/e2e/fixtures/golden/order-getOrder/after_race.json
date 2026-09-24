@@ -13,7 +13,7 @@
       "_seconds": 1780000000,
       "_nanoseconds": 0
     },
-    "tableId": "tbl_meg_6",
+    "tableId": "tbl_meg_2",
     "restaurantId": "res_meghana",
     "sessionId": "SESSIONID_2",
     "total": 204,
@@ -55,7 +55,7 @@
           "totalVariantBasePrice": 0,
           "basePrice": 240
         },
-        "tableId": "tbl_meg_6",
+        "tableId": "tbl_meg_2",
         "sessionId": "SESSIONID_2",
         "restaurantId": "res_meghana",
         "items": [
@@ -76,7 +76,9 @@
               "allergenTags": [],
               "variants": [],
               "restaurantId": "res_meghana",
+              "taxCode": "996331",
               "menuItemId": "mi_paneer65",
+              "taxBlockId": "food",
               "lastUpdated": {
                 "_seconds": 1780000000,
                 "_nanoseconds": 0
@@ -121,11 +123,13 @@
               "discountAmount": 36
             },
             "cartItemId": 1,
+            "addedBy": null,
+            "note": "",
             "status": "PENDING"
           }
         ],
         "lastUpdated": "2026-01-01T00:00:00.000Z",
-        "cartId": "res_meghana_tbl_meg_6_CART",
+        "cartId": "res_meghana_tbl_meg_2_CART",
         "status": "PENDING",
         "statusHistory": [
           {

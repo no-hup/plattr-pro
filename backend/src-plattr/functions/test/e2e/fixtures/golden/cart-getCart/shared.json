@@ -6,7 +6,7 @@
       "tableId": "tbl_meg_12",
       "sessionId": "SESSIONID_1",
       "restaurantId": "res_meghana",
-      "lastUpdated": 1788824855453,
+      "lastUpdated": 1780000000000,
       "priceInfo": {
         "basePrice": 520,
         "finalPrice": 484,
@@ -33,7 +33,9 @@
             "allergenTags": [],
             "variants": [],
             "restaurantId": "res_meghana",
+            "taxCode": "996331",
             "menuItemId": "mi_paneer65",
+            "taxBlockId": "food",
             "lastUpdated": {
               "_seconds": 1780000000,
               "_nanoseconds": 0
@@ -78,6 +80,8 @@
             "discountAmount": 36
           },
           "cartItemId": 1,
+          "addedBy": null,
+          "note": "",
           "status": "PENDING"
         },
         {
@@ -97,7 +101,9 @@
             "allergenTags": [],
             "variants": [],
             "restaurantId": "res_meghana",
+            "taxCode": "996331",
             "menuItemId": "mi_chicken65",
+            "taxBlockId": "food",
             "lastUpdated": {
               "_seconds": 1780000000,
               "_nanoseconds": 0
@@ -142,6 +148,8 @@
             "discountAmount": 0
           },
           "cartItemId": 2,
+          "addedBy": null,
+          "note": "",
           "status": "PENDING"
         }
       ]

@@ -24,7 +24,9 @@
             "allergenTags": [],
             "variants": [],
             "restaurantId": "res_meghana",
+            "taxCode": "996331",
             "menuItemId": "mi_paneer65",
+            "taxBlockId": "food",
             "lastUpdated": {
               "_seconds": 1780000000,
               "_nanoseconds": 0
@@ -69,6 +71,8 @@
             "discountAmount": 36
           },
           "cartItemId": 1,
+          "addedBy": null,
+          "note": "",
           "status": "PENDING"
         }
       ],

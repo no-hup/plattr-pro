@@ -3,7 +3,7 @@
   "message": "Order retrieved successfully",
   "data": {
     "id": "ID_1",
-    "orderNumber": "ORD-00005",
+    "orderNumber": "ORD-00011",
     "orderStatus": "IN_PROGRESS",
     "createdAt": {
       "_seconds": 1780000000,
@@ -13,7 +13,7 @@
       "_seconds": 1780000000,
       "_nanoseconds": 0
     },
-    "tableId": "tbl_meg_7",
+    "tableId": "tbl_meg_9",
     "restaurantId": "res_meghana",
     "sessionId": "SESSIONID_2",
     "total": 724,
@@ -63,10 +63,10 @@
     "notes": "",
     "carts": [
       {
-        "tableId": "tbl_meg_7",
+        "tableId": "tbl_meg_9",
         "sessionId": "SESSIONID_2",
         "restaurantId": "res_meghana",
-        "lastUpdated": 1788824882564,
+        "lastUpdated": 1780000000000,
         "priceInfo": {
           "basePrice": 860,
           "finalPrice": 824,
@@ -102,7 +102,9 @@
                 }
               ],
               "restaurantId": "res_meghana",
+              "taxCode": "996331",
               "menuItemId": "mi_chicken_bir",
+              "taxBlockId": "food",
               "lastUpdated": {
                 "_seconds": 1780000000,
                 "_nanoseconds": 0
@@ -172,6 +174,8 @@
               "discountAmount": 0
             },
             "cartItemId": 1,
+            "addedBy": null,
+            "note": "",
             "status": "PENDING"
           },
           {
@@ -191,7 +195,9 @@
               "allergenTags": [],
               "variants": [],
               "restaurantId": "res_meghana",
+              "taxCode": "996331",
               "menuItemId": "mi_paneer65",
+              "taxBlockId": "food",
               "lastUpdated": {
                 "_seconds": 1780000000,
                 "_nanoseconds": 0
@@ -236,10 +242,12 @@
               "discountAmount": 36
             },
             "cartItemId": 2,
+            "addedBy": null,
+            "note": "",
             "status": "PENDING"
           }
         ],
-        "cartId": "res_meghana_tbl_meg_7_CART",
+        "cartId": "res_meghana_tbl_meg_9_CART",
         "status": "PENDING",
         "statusHistory": [
           {

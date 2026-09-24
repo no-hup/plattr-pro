@@ -8,75 +8,6 @@
     "orderNumber": "ORD-00001",
     "orderStatus": "IN_PROGRESS",
     "paymentStatus": "unpaid",
-    "items": [
-      {
-        "menuItemId": "mi_chicken_bir",
-        "name": "Chicken Dum Biryani",
-        "description": "Signature dum biryani",
-        "quantity": 1,
-        "priceInfo": {
-          "basePrice": 620,
-          "discount": 0,
-          "finalPrice": 620
-        },
-        "selectedVariants": {},
-        "selectedVariantsDetails": [
-          {
-            "id": "mv_bir_portion",
-            "name": "Portion",
-            "isMandatory": true,
-            "respectParentDiscount": true,
-            "selected_variant_id": "family",
-            "selected_variant_name": "Family (serves 3)",
-            "priceInfo": {
-              "basePrice": 260,
-              "finalPrice": 260,
-              "discount": 0
-            }
-          }
-        ],
-        "selectedAddons": [],
-        "selectedAddonsDetails": [
-          {
-            "id": "ma_extra_raita",
-            "name": "Extra Raita",
-            "priceInfo": {
-              "discount": 0,
-              "finalPrice": 40,
-              "basePrice": 40
-            },
-            "respectParentDiscount": false
-          }
-        ],
-        "cartItemId": 1,
-        "checkoutTime": {
-          "_seconds": 1780000000,
-          "_nanoseconds": 0
-        },
-        "status": "PENDING"
-      },
-      {
-        "menuItemId": "mi_paneer65",
-        "name": "Paneer 65",
-        "description": "",
-        "quantity": 1,
-        "priceInfo": {
-          "basePrice": 240,
-          "discount": 15,
-          "finalPrice": 204
-        },
-        "selectedVariants": {},
-        "selectedVariantsDetails": [],
-        "selectedAddons": [],
-        "selectedAddonsDetails": [],
-        "cartItemId": 2,
-        "checkoutTime": {
-          "_seconds": 1780000000,
-          "_nanoseconds": 0
-        },
-        "status": "PENDING"
-      }
-    ],
     "priceInfo": {
       "basePrice": 860,
       "finalPrice": 724,
@@ -148,7 +79,9 @@
                 }
               ],
               "restaurantId": "res_meghana",
+              "taxCode": "996331",
               "menuItemId": "mi_chicken_bir",
+              "taxBlockId": "food",
               "lastUpdated": {
                 "_seconds": 1780000000,
                 "_nanoseconds": 0
@@ -218,6 +151,8 @@
               "discountAmount": 0
             },
             "cartItemId": 1,
+            "addedBy": null,
+            "note": "",
             "status": "READY"
           },
           {
@@ -237,7 +172,9 @@
               "allergenTags": [],
               "variants": [],
               "restaurantId": "res_meghana",
+              "taxCode": "996331",
               "menuItemId": "mi_paneer65",
+              "taxBlockId": "food",
               "lastUpdated": {
                 "_seconds": 1780000000,
                 "_nanoseconds": 0
@@ -282,6 +219,8 @@
               "discountAmount": 36
             },
             "cartItemId": 2,
+            "addedBy": null,
+            "note": "",
             "status": "READY"
           }
         ],
@@ -291,34 +230,93 @@
         "statusHistory": [
           {
             "status": "PENDING",
-            "timestamp": {
-              "_seconds": 1780000000,
-              "_nanoseconds": 0
-            },
+            "timestamp": 1780000000000,
             "userId": "system"
           },
           {
             "status": "PREPARING",
-            "timestamp": 1788824846773,
+            "timestamp": 1780000000000,
             "userId": "system",
             "notes": ""
           },
           {
             "status": "READY",
-            "timestamp": 1788824846834,
+            "timestamp": 1780000000000,
             "userId": "system",
             "notes": ""
           }
         ],
-        "checkoutTime": {
-          "_seconds": 1780000000,
-          "_nanoseconds": 0
-        },
+        "checkoutTime": 1780000000000,
         "notes": "",
         "estimatedPrepTime": 14,
         "assignedTo": "system"
       }
     ],
-    "updatedAt": 1788824846834
+    "items": [
+      {
+        "menuItemId": "mi_chicken_bir",
+        "name": "Chicken Dum Biryani",
+        "description": "Signature dum biryani",
+        "quantity": 1,
+        "priceInfo": {
+          "basePrice": 620,
+          "discount": 0,
+          "finalPrice": 620
+        },
+        "selectedVariants": {},
+        "selectedVariantsDetails": [
+          {
+            "id": "mv_bir_portion",
+            "name": "Portion",
+            "isMandatory": true,
+            "respectParentDiscount": true,
+            "selected_variant_id": "family",
+            "selected_variant_name": "Family (serves 3)",
+            "priceInfo": {
+              "basePrice": 260,
+              "finalPrice": 260,
+              "discount": 0
+            }
+          }
+        ],
+        "selectedAddons": [],
+        "selectedAddonsDetails": [
+          {
+            "id": "ma_extra_raita",
+            "name": "Extra Raita",
+            "priceInfo": {
+              "discount": 0,
+              "finalPrice": 40,
+              "basePrice": 40
+            },
+            "respectParentDiscount": false
+          }
+        ],
+        "cartItemId": 1,
+        "cartId": "res_meghana_tbl_meg_10_CART",
+        "checkoutTime": 1780000000000,
+        "status": "READY"
+      },
+      {
+        "menuItemId": "mi_paneer65",
+        "name": "Paneer 65",
+        "description": "",
+        "quantity": 1,
+        "priceInfo": {
+          "basePrice": 240,
+          "discount": 15,
+          "finalPrice": 204
+        },
+        "selectedVariants": {},
+        "selectedVariantsDetails": [],
+        "selectedAddons": [],
+        "selectedAddonsDetails": [],
+        "cartItemId": 2,
+        "cartId": "res_meghana_tbl_meg_10_CART",
+        "checkoutTime": 1780000000000,
+        "status": "READY"
+      }
+    ],
+    "updatedAt": 1780000000000
   }
 }
