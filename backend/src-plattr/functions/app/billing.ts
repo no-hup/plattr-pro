@@ -42,6 +42,8 @@ export interface Ports {
   linesOfDraft(restaurantId: string, draftId: string): Promise<Line[]>;
   orderOffer(restaurantId: string, orderId: string): Promise<OrderOffer | null>;   // BL-S24: as evaluated at placement
   getBill(restaurantId: string, billId: string): Promise<Bill | null>;
+  /** BT: a table document may name the charge rows that apply to it (`charges: ['PACKING']` on a counter ticket); null = the table names none. */
+  tables(restaurantId: string, tableIds: string[]): Promise<{ tableId: string; charges: string[] | null }[]>;
   approve(req: ApplyRequest): Promise<ApplyResult>;   // ST's one door: role, reason, PIN, P0 audit row. Throws permission-denied {requires:'pin'} until the PIN arrives
   transact<T>(restaurantId: string, fn: (t: Tx) => Promise<T>): Promise<T>;
 }
@@ -70,13 +72,28 @@ async function compute(ports: Ports, req: PreviewRequest, lines?: Line[]) {
   const discount: BillDiscount | null = req.discount ?? (offer && offer.amount > 0
     ? { amount: offer.amount, pct: 0, source: { reason: offer.name, note: offer.id, approverId: 'offer' }, ...(offer.targets ? { targets: offer.targets } : {}) }
     : null);
-  const charges = cfg.billing.charges.filter(c => !(req.dropCharges ?? []).includes(c.type));
+  // BT: which charge rows this draft carries is the TABLE's say, as data, never a branch on what
+  // kind of table it is. A table naming `charges` takes exactly those rows (a counter ticket takes
+  // PACKING and not the service charge); a draft whose tables name nothing takes every row that is
+  // not `optIn` (packing is optIn: it never lands on a dine-in table by default). Merged tables
+  // that each name a list take the union.
+  const tables = await ports.tables(req.restaurantId, [...new Set(open.map(l => l.tableId))]);
+  const named = tables.filter(t => t.charges);
+  const allowed = named.length ? new Set(named.flatMap(t => t.charges as string[])) : null;
+  const charges = cfg.billing.charges.filter(c => (allowed ? allowed.has(c.type) : !c.optIn) && !(req.dropCharges ?? []).includes(c.type));
   const r = previewBody(open, discount, charges, cfg.billing);
   if (!r.ok) {
     if (r.lineIds) return { body: null, flagged: r.lineIds, message: r.message, offer, cfg, open };
     fail(r.code, r.message);
   }
   return { body: (r as { value: BillBody }).value, flagged: [] as string[], message: '', offer, cfg, open };
+}
+
+/** Both numbered documents take their number here, inside their transaction. */
+function numberOrRefuse(key: string, counter: Counter | null, cfg: InvoiceConfig) {
+  const n = nextNumber(counter, cfg);
+  if (!n) throw new ApprovalError('failed-precondition', `invoice counter ${key} is unreadable; refusing rather than risk a repeated number`, { counter: key });
+  return n;
 }
 
 export interface IssueRequest extends PreviewRequest { pin?: unknown; cid: string; tableIds: string[]; expectedV: Record<string, number> }
@@ -86,14 +103,10 @@ export async function issue(ports: Ports, req: IssueRequest): Promise<Bill> {
   const staff = await ports.staff.bySession(req.restaurantId, req.sessionId);
   if (!ISSUERS.includes(staff.role)) fail('permission-denied', 'Not allowed for your role');
   if (typeof req.cid !== 'string' || !req.cid) fail('invalid-argument', 'cid required');
-  // The stale-line guard below indexes this. Absent, it threw a TypeError inside the transaction
-  // and came back as a bare `internal`, which reads like our bug rather than a malformed request.
-  //
-  // It does NOT make the guard work. `expectedV` only checks the lines it names, and every real
-  // caller sends `{}` — useBill.ts twice, ReconcileScreen.tsx once — so "line changed, preview
-  // again" has never fired outside a unit test. Wiring it means the till sending the `v` it
-  // previewed at, and the offline replay having no preview to send one from. That is a decision,
-  // not a patch; this only stops a missing field looking like a crash.
+  // TD-040: `expectedV` is the preview the cashier is looking at — every open line of the draft and
+  // the `v` it was shown at. The transaction below refuses unless the draft is still exactly that set,
+  // so a dish voided, added or split away after the preview can never print a figure nobody saw.
+  // The offline replay (ReconcileScreen) previews first too, so it sends the same thing.
   if (!req.expectedV || typeof req.expectedV !== 'object') fail('invalid-argument', 'expectedV required: the line versions the preview was taken at, {} for none');
 
   // TD-019. A bill-level discount sent by a client is a person giving money away, so it goes
@@ -120,11 +133,14 @@ export async function issue(ports: Ports, req: IssueRequest): Promise<Bill> {
     const [fresh, tableLabel] = await Promise.all([t.getLines(draft.map(l => l.lineId)), t.tableLabel(req.tableIds)]);
     const taken = fresh.find(l => l.billId !== null);
     if (taken) throw new ApprovalError('failed-precondition', `already issued ${taken.billId}`, { billId: taken.billId });
-    for (const l of fresh) if (req.expectedV[l.lineId] !== undefined && req.expectedV[l.lineId] !== l.v) throw new ApprovalError('failed-precondition', 'line changed, preview again', { lineId: l.lineId });
+    // Moved off this draft, added or edited since the preview, or previewed and now gone.
+    const changed = fresh.find(l => l.draftId !== req.draftId || req.expectedV[l.lineId] !== l.v)
+      ?? Object.keys(req.expectedV).filter(id => !fresh.some(l => l.lineId === id)).map(lineId => ({ lineId }))[0];
+    if (changed) throw new ApprovalError('failed-precondition', 'the bill changed since the preview, preview again', { lineId: changed.lineId });
     const { body, flagged, cfg, message } = await compute(ports, req, fresh);
     if (!body) throw new ApprovalError('failed-precondition', message, { flagged });
     const key = counterKey(cfg.invoice.series, now, cfg.invoice);
-    const n = nextNumber(await t.getCounter(key), cfg.invoice);
+    const n = numberOrRefuse(key, await t.getCounter(key), cfg.invoice);
     const meta: Meta = {
       billId: t.newBillId(), number: n.number, series: cfg.invoice.series, fiscalYear: key.slice(cfg.invoice.series.length + 1),
       cid: req.cid, tableIds: req.tableIds, sessionId: req.sessionId, draftId: req.draftId, issuedAt: now, issuedBy: staff.staffId,
@@ -183,7 +199,7 @@ export async function creditNote(ports: Ports, req: CreditRequest): Promise<Bill
     const tableLabel = await t.tableLabel(b.tableIds);
     const cfg = await ports.config.billing(req.restaurantId);
     const key = counterKey(cfg.invoice.creditNoteSeries, now, cfg.invoice);
-    const n = nextNumber(await t.getCounter(key), cfg.invoice);
+    const n = numberOrRefuse(key, await t.getCounter(key), cfg.invoice);
     const meta: Meta = {
       billId: t.newBillId(), number: n.number, series: cfg.invoice.creditNoteSeries, fiscalYear: key.slice(cfg.invoice.creditNoteSeries.length + 1),
       cid: req.cid, tableIds: b.tableIds, sessionId: req.sessionId, draftId: b.draftId, issuedAt: now, issuedBy: staff.staffId, seller: b.seller, customer: b.customer ?? null,
@@ -236,7 +252,9 @@ export function settingsFrom(raw: unknown, info: { name?: string; address?: stri
   const charges = Array.isArray(b.charges) ? (b.charges as Record<string, unknown>[]).map(c => ({
     type: str(c.type, 'SERVICE_CHARGE'),
     pctBps: typeof c.pctBps === 'number' ? c.pctBps : Math.round(num(c.percentage, 0) * 100),   // old key stays a percent
+    flat: Math.max(0, Math.round(num(c.amount, 0))),   // BT: a flat row (packing) is `amount` in minor units; the old checkout ignores rows with no `percentage`
     taxBlockId: str(c.taxBlockId, 'food'),
+    ...(c.optIn === true ? { optIn: true } : {}),
   })) : [];
   return {
     billing: { partRounding: tax.partRounding === 'residualLast' ? 'residualLast' : BILLING_DEFAULTS.partRounding, roundTo: num(b.roundTo, BILLING_DEFAULTS.roundTo), charges },

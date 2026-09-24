@@ -10,12 +10,12 @@
 import { Line } from '../domain/line';
 import {
   Bill, Sitting, Table, Tile, Role, OrderState, DEFAULTS,
-  canMerge, canMove, canReceive, canUnmerge, isReleasable, moveWriteSet, tile, idleCall, lastTouchedAt,
+  canMerge, canMove, canReceive, canUnmerge, isReleasable, moveWriteSet, tile, idleCall, lastTouchedAt, onTable, unpaid,
 } from '../domain/floor';
 import { ApprovalError, Staff } from './approvals';
 export { ApprovalError };
 
-export interface FloorConfig { pollSeconds: number; staleAfterSeconds: number; idleFreeAfterMinutes: number }
+export interface FloorConfig { pollSeconds: number; staleAfterSeconds: number; idleFreeAfterMinutes: number; takeawayTableIds: string[] }
 
 export function floorConfigFrom(doc: unknown): FloorConfig {
   const f = (doc as { floor?: Partial<FloorConfig> } | undefined)?.floor ?? {};
@@ -24,6 +24,8 @@ export function floorConfigFrom(doc: unknown): FloorConfig {
     pollSeconds: num(f.pollSeconds, DEFAULTS.pollSeconds),
     staleAfterSeconds: num(f.staleAfterSeconds, DEFAULTS.staleAfterSeconds),
     idleFreeAfterMinutes: num(f.idleFreeAfterMinutes, DEFAULTS.idleFreeAfterMinutes),
+    // BT / OR-3: the counter tickets (`ordering.takeawayTableIds`), so the screen can draw them as a Parcels strip.
+    takeawayTableIds: (() => { const t = (doc as { ordering?: { takeawayTableIds?: unknown } } | undefined)?.ordering?.takeawayTableIds; return Array.isArray(t) ? t.filter((x): x is string => typeof x === 'string') : []; })(),
   };
 }
 
@@ -69,6 +71,8 @@ export interface Ports {
   /** FL-S36. Live sittings opened before `openedBefore` — the only ones that can possibly be idle. */
   idleCandidates(restaurantId: string, openedBefore: number): Promise<SittingHead[]>;
   restaurantIds(): Promise<string[]>;
+  /** ST's one door (app/approvals apply): role, reason, PIN, P0 audit row. Throws ApprovalError on refusal. */
+  approve(req: { restaurantId: string; sessionId: string; action: 'releaseUnpaid'; cid: string; amountMinor: number; reason?: unknown; note?: unknown; pin?: unknown }): Promise<unknown>;
 }
 
 const fail = (code: string, message: string, details: Record<string, unknown> = {}): never => {
@@ -312,32 +316,57 @@ export async function setMerge(ports: Ports, req: MergeRequest): Promise<{ paren
 
 // ── Freeing a settled table (FL-Q1) ────────────────────────────────────────
 
-export interface ClearRequest extends FloorRequest { tableId: string; cid: string }
+export interface ClearRequest extends FloorRequest { tableId: string; cid: string; pin?: unknown; reason?: unknown; note?: unknown }
 
-/** The cashier's Clear. Refused while anything is still open, so it can never hide money. */
+/**
+ * Freeing a table (Shaurya 2026-09-24). A table with no open money: anyone may free it — the
+ * captain's Vacant and the cashier's Clear alike. A table that still owes: only the cashier, and
+ * only through ST's door as `releaseUnpaid` — reason, PIN, and a P0 audit row naming the amount
+ * walked away from. No PIN, the refusal is the one it always was.
+ */
 export async function clearTable(ports: Ports, req: ClearRequest): Promise<{ freed: string[] }> {
   const staff = await actor(ports, req.restaurantId, req.staffSessionId);
   const at = ports.now();
+  const cashier = staff.role === 'MANAGER' || staff.role === 'ADMIN';
 
-  return ports.transact(req.restaurantId, async t => {
+  const release = (owedApproved: number | null) => ports.transact(req.restaurantId, async t => {
     const table = await t.getTable(req.tableId);
     if (!table) fail('not-found', `table ${req.tableId} does not exist`);
-    const s = await t.getSitting(req.tableId);
-    if (!s) return { freed: [] };                                     // already free; nothing to do
-    if (!isReleasable(s)) {
-      fail('failed-precondition', 'this table still has money on it — bill it and settle it first');
+    // TD-037: a merged child has no session of its own; its money is its group's. The waiter's manual
+    // Vacant reaches here for a child too, and must not detach table 6 from a party that still owes.
+    const s = await t.getSitting(table!.mergedInto ?? req.tableId);
+    if (!s) return { freed: [] as string[], owed: 0 };                // already free; nothing to do
+    const owed = isReleasable(s) ? 0 : onTable(s.lines) + unpaid(s.bills);
+    if (owed > 0 && owed !== owedApproved) {
+      if (!cashier) fail('permission-denied', 'only the cashier can free a table that still owes');
+      // Approved a different figure (a dish landed in between): the PIN covered that amount, not this one.
+      if (owedApproved !== null) fail('failed-precondition', 'the amount on this table changed, try again', { owed });
+      fail('failed-precondition', 'this table still has money on it — bill it and settle it first', { requires: 'pin', action: 'releaseUnpaid', owed });
     }
+    if (table!.mergedInto) return { freed: [] as string[], owed }; // the group owes nothing; the caller detaches the child, the party stays
 
     // The sitting ends with the table. Leaving the session active would keep painting the tile
     // as settled forever, and a passer-by scanning the QR would join a paid party's tab (R18).
     endSitting(t, s);
     t.createAudit(`${req.cid}_clear`, {
-      cid: req.cid, action: 'table.clear', sev: 'P2', at,
+      cid: req.cid, action: 'table.clear', sev: owed > 0 ? 'P0' : 'P2', at, owed,
       by: staff.staffId, role: staff.role, sessionId: s.sessionId, tableIds: s.tableIds,
     });
-    ports.log({ evt: 'table.clear', cid: req.cid, tableIds: s.tableIds, by: staff.staffId });
-    return { freed: s.tableIds };
+    ports.log({ evt: 'table.clear', cid: req.cid, tableIds: s.tableIds, by: staff.staffId, owed });
+    return { freed: s.tableIds, owed };
   });
+
+  if (!cashier || req.pin === undefined) return { freed: (await release(null)).freed };
+  // The cashier sent a PIN: learn what is owed, clear it through ST's door (which writes the P0 row
+  // with that amount), then free the table only if the amount is still exactly that.
+  const owed = await ports.transact(req.restaurantId, async t => {
+    const table = await t.getTable(req.tableId);
+    const s = table ? await t.getSitting(table.mergedInto ?? req.tableId) : null;
+    return s && !isReleasable(s) ? onTable(s.lines) + unpaid(s.bills) : 0;
+  });
+  if (owed === 0) return { freed: (await release(null)).freed };
+  await ports.approve({ restaurantId: req.restaurantId, sessionId: req.staffSessionId, action: 'releaseUnpaid', cid: req.cid, amountMinor: owed, reason: req.reason, note: req.note, pin: req.pin });
+  return { freed: (await release(owed)).freed };
 }
 
 /**

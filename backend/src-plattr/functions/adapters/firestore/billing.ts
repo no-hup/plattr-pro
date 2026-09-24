@@ -58,6 +58,15 @@ export const ports: Ports = {
     return { id: String(o.id ?? ''), name: String(o.title ?? o.name ?? 'Offer'), amount: minor(o.discountAmount), ...(Object.keys(targets).length ? { targets } : {}) };
   },
   async getBill(rid, id) { const s = await bills(rid).doc(id).get(); return s.exists ? (s.data() as Bill) : null; },
+  // BT: `charges` on a table document is a list of charge types; anything else reads as "names none".
+  async tables(rid, ids) {
+    if (!ids.length) return [];
+    const snaps = await db.getAll(...ids.map((id: string) => rest(rid).collection('tables').doc(id)));
+    return snaps.map((s: FirebaseFirestore.DocumentSnapshot, i: number) => {
+      const c = s.exists ? s.data()?.charges : null;
+      return { tableId: ids[i], charges: Array.isArray(c) ? c.filter((x: unknown): x is string => typeof x === 'string') : null };
+    });
+  },
   approve: req => approve(approvalPorts, req),
   transact(rid, fn) {
     return db.runTransaction((t: Transaction) => fn(<Tx>{
@@ -66,7 +75,7 @@ export const ports: Ports = {
       getBill: async id => { const s = await t.get(bills(rid).doc(id)); return s.exists ? (s.data() as Bill) : null; },
       setBill: (id, bill: Bill) => { t.create(bills(rid).doc(id), bill); },
       updateBill: (id, patch) => { t.update(bills(rid).doc(id), patch); },
-      getCounter: async key => { const s = await t.get(counters(rid).doc(key)); return s.exists ? { next: Number(s.data()?.next ?? 1) } : null; },
+      getCounter: async key => { const s = await t.get(counters(rid).doc(key)); return s.exists ? { next: s.data()?.next } : null; },   // raw: domain refuses a bad one rather than coercing it to 1
       setCounter: (key, c) => { t.set(counters(rid).doc(key), c); },
       createAudit: (id, row) => { t.create(audit(rid).doc(id), row); },
       newBillId: () => bills(rid).doc().id,

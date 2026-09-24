@@ -16,6 +16,7 @@ const PIN_1234 = '$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm';
  * reruns without a reset.
  */
 import { call } from '../lib/api.js';
+import { draftVersions } from '../lib/rest.mjs';
 import config from '../lib/config.js';
 
 const RID = config.RESTAURANT_ID;
@@ -124,6 +125,15 @@ export default async function dayCloseSuite() {
     check('DC-S20 a captain CAN read the day', g.status === 'success' && g.data?.businessDate === TODAY, g);
   }
 
+  // ── BT · NC: a staff meal comped whole shows at close as a discount by reason ──
+  {
+    // A paid ₹0 bill (BL-S22) with a 42000 bill discount under `staff meal`, issued now, so it sits on TODAY.
+    await seed('bills/bill_dc_nc', { billId: 'bill_dc_nc', cid: 'cid_dc', status: 'paid', number: 'NC1', series: 'A', issuedAt: Date.now(), issuedBy: 'manager_dc', tableIds: ['table_dc'], sessionId: 'sess_dc_nc', draftId: 'sess_dc_nc', payable: 0, subtotal: 0, taxTotal: 0, roundOff: 0, discount: { amount: 42000, pct: 100, source: { reason: 'staff meal', note: 'kitchen dinner', approverId: 'manager_dc' } }, lines: [{ lineId: 'dc_nc_1', countsTowardTotal: true, billDiscount: 42000 }], blocks: [], charges: [], creditNotes: [] });
+    const g = await dc('get', manager, { businessDate: TODAY });
+    const row = (g.data?.discounts || []).find(x => x.reason === 'staff meal');
+    check('BT-N staff meal 42000 shows on the open day under discounts, by reason, even blind', g.status === 'success' && row?.amount === 42000 && row?.count === 1, g.data?.discounts);
+  }
+
   // ── DC-S30 blind count is a server rule ────────────────────────────────────
   {
     const g = await dc('get', manager, { businessDate: TODAY });
@@ -193,7 +203,7 @@ export default async function dayCloseSuite() {
   {
     await seed('lines/dc_biryani', line('dc_biryani', 'Mutton Biryani', 50000));
     await seed('lines/dc_naan', line('dc_naan', 'Butter Naan', 8000));
-    const issued = await call('billing-issue', { restaurantId: RID, sessionId: manager, cid: 'cid_dc', draftId: 'draft_dc', tableIds: ['table_dc'], expectedV: {} });
+    const issued = await call('billing-issue', { restaurantId: RID, sessionId: manager, cid: 'cid_dc', draftId: 'draft_dc', tableIds: ['table_dc'], expectedV: await draftVersions(RID, 'draft_dc') });
     billId = issued.data?.billId;
     check('a bill is issued for ₹609.00 so the day has real money in it', issued.status === 'success' && issued.data?.payable === 60900, issued);
 
@@ -257,7 +267,7 @@ export default async function dayCloseSuite() {
 
     // The whole point of R6, and the reason PY changed in this session.
     await seed('lines/dc_late', { ...line('dc_late', 'Late Dosa', 20000, 'draft_dc_late'), orderId: 'order_dc_late' });
-    const issued = await call('billing-issue', { restaurantId: RID, sessionId: manager, cid: 'cid_dc', draftId: 'draft_dc_late', tableIds: ['table_dc'], expectedV: {} });
+    const issued = await call('billing-issue', { restaurantId: RID, sessionId: manager, cid: 'cid_dc', draftId: 'draft_dc_late', tableIds: ['table_dc'], expectedV: await draftVersions(RID, 'draft_dc_late') });
     const take = await call('payments-take', { restaurantId: RID, sessionId: manager, billId: issued.data?.billId, paymentId: 'dc_pay_late', tenderId: 'cash', tendered: 21000 });
     check('DC-S6 cash offered after the lid is on → failed-precondition, and NO payment row is written',
       codeOf(take) === 'failed-precondition' && /closed and counted/.test(take.message || '') && (await getDoc('payments/dc_pay_late')) === null, take);

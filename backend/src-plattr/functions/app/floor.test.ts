@@ -95,6 +95,12 @@ function fake(over: Partial<World> = {}) {
     async transact(_rid, fn) { return fn(tx); },
     async idleCandidates(_rid, before) { return w.sittings.filter(s => s.openedAt < before); },
     async restaurantIds() { return [RID]; },
+    // ST's door, reduced to what FL relies on: a wrong or missing PIN throws, a right one writes the P0 row.
+    async approve(r) {
+      if (r.pin !== '4321') throw new ApprovalError('permission-denied', r.pin === undefined ? 'PIN required' : 'Wrong PIN', { requires: 'pin' });
+      audits.set(`${r.cid}_releaseUnpaid`, { action: r.action, amount: r.amountMinor, reason: r.reason, sev: 'P0' });
+      return {};
+    },
   };
   return ports;
 }
@@ -412,14 +418,16 @@ describe('getFloor — what happens when a port is down (R19)', () => {
 
   it('config falls back to the defaults on a fresh restaurant rather than failing the floor', async () => {
     const { config } = await getFloor(busy(), REQ);
-    expect(config).toEqual({ pollSeconds: 5, staleAfterSeconds: 20, idleFreeAfterMinutes: 60 });
+    expect(config).toEqual({ pollSeconds: 5, staleAfterSeconds: 20, idleFreeAfterMinutes: 60, takeawayTableIds: [] });
   });
 
   it('config keys are read from the restaurant doc and bad values fall back, never crash', () => {
     expect(floorConfigFrom({ floor: { pollSeconds: 10, staleAfterSeconds: 45 } }))
-      .toEqual({ pollSeconds: 10, staleAfterSeconds: 45, idleFreeAfterMinutes: 60 });
+      .toEqual({ pollSeconds: 10, staleAfterSeconds: 45, idleFreeAfterMinutes: 60, takeawayTableIds: [] });
     expect(floorConfigFrom({ floor: { pollSeconds: -1, staleAfterSeconds: 'soon', idleFreeAfterMinutes: 0 } }))
-      .toEqual({ pollSeconds: 5, staleAfterSeconds: 20, idleFreeAfterMinutes: 60 });
+      .toEqual({ pollSeconds: 5, staleAfterSeconds: 20, idleFreeAfterMinutes: 60, takeawayTableIds: [] });
+    // BT: the counter tickets come from `ordering`, not `floor`; non-strings are dropped.
+    expect(floorConfigFrom({ ordering: { takeawayTableIds: ['tbl_p1', 7, 'tbl_p2'] } }).takeawayTableIds).toEqual(['tbl_p1', 'tbl_p2']);
   });
 });
 
@@ -723,6 +731,62 @@ describe('clearTable and releaseIfSettled — freeing a settled table (FL-Q1)', 
     // hold. A fully paid sitting reads settled from the data it already has, with no write.
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     expect(Object.keys(require('./floor'))).not.toContain('releaseIfSettled');
+  });
+
+  // TD-037 tail: the waiter's manual Vacant (table-updateTableStatus) runs this same rule. A merged child
+  // has no session of its own, so it is judged by its group's sitting — and never ends that sitting.
+  const group = (over: Partial<World> = {}) => settled({
+    tables: [table({ tableId: '5', status: 'active', isParent: true }), table({ tableId: '6', status: 'disabled', mergedInto: '5' })],
+    sittings: [head({ sessionId: 's5', tableIds: ['5', '6'] })],
+    bills: [bill({ billId: 'b1', sessionId: 's5', payable: 100000, paid: 100000, status: 'paid' })],
+    ...over,
+  });
+  it('TD-037 Vacant on child 6 while its group has 640000p unbilled → refused, nothing written', async () => {
+    const ports = group({ lines: [line({ lineId: 'thali', listPrice: 640000, sessionId: 's5' })] });
+    await expect(clearTable(ports, { ...CLEAR, tableId: '6' })).rejects.toThrow(/still has money on it/);
+    expect(ports.world.sittings).toHaveLength(1);
+  });
+  it('TD-037 Vacant on child 6 of a group that owes nothing frees no table itself and leaves the party\'s sitting alone', async () => {
+    const ports = group();
+    expect(await clearTable(ports, { ...CLEAR, tableId: '6' })).toEqual({ freed: [] });
+    expect(ports.world.sittings.map(s => s.sessionId)).toEqual(['s5']);
+    expect(ports.world.tables.find(t => t.tableId === '5')!.status).toBe('active');
+  });
+
+  // Shaurya 2026-09-24: who may free a table. Paid → anyone. Owing → the cashier, with a PIN, on the record.
+  const captain = { staffId: 'cap_1', role: 'SERVER', status: 'active' } as Staff;
+  const owing = (over: Partial<World> = {}) => settled({ lines: [line({ lineId: 'thali', listPrice: 234000, sessionId: 's7' })], ...over });
+  it('the captain frees a fully paid table (Vacant works without the cashier)', async () => {
+    const ports = settled({ staff: captain });
+    expect((await clearTable(ports, CLEAR)).freed).toEqual(['7']);
+  });
+  it('the captain on a table owing 234000p → permission-denied, nothing written', async () => {
+    const ports = owing({ staff: captain });
+    await expect(clearTable(ports, { ...CLEAR, pin: '4321', reason: 'guest left' })).rejects.toMatchObject({ code: 'permission-denied' });
+    expect(ports.world.tables[0].status).toBe('active');
+    expect(ports.audits.size).toBe(0);
+  });
+  it('the cashier on a table owing 234000p without a PIN → the old refusal, now naming the PIN and the amount', async () => {
+    const ports = owing();
+    await expect(clearTable(ports, CLEAR)).rejects.toMatchObject({ code: 'failed-precondition', details: { requires: 'pin', action: 'releaseUnpaid', owed: 234000 } });
+    expect(ports.world.tables[0].status).toBe('active');
+  });
+  it('the cashier with a wrong PIN → refused, table still owes', async () => {
+    const ports = owing();
+    await expect(clearTable(ports, { ...CLEAR, pin: '0000', reason: 'guest left' })).rejects.toThrow(/Wrong PIN/);
+    expect(ports.world.tables[0].status).toBe('active');
+  });
+  it('the cashier with the PIN → freed, one P0 approval row naming 234000p and the reason, and a P0 clear row', async () => {
+    const ports = owing();
+    expect((await clearTable(ports, { ...CLEAR, pin: '4321', reason: 'guest left' })).freed).toEqual(['7']);
+    expect(ports.world.tables[0].status).toBe('vacant');
+    expect(ports.audits.get('cid_clear_1_releaseUnpaid')).toMatchObject({ action: 'releaseUnpaid', amount: 234000, reason: 'guest left', sev: 'P0' });
+    expect(ports.audits.get('cid_clear_1_clear')).toMatchObject({ sev: 'P0', owed: 234000 });
+  });
+  it('the cashier with the PIN on a split owing 100000p of 200000p → the amount is the unpaid half only', async () => {
+    const ports = settled({ bills: [bill({ billId: 'b1', sessionId: 's7', payable: 100000, paid: 100000, status: 'paid' }), bill({ billId: 'b2', sessionId: 's7', payable: 100000 })] });
+    await clearTable(ports, { ...CLEAR, pin: '4321', reason: 'guest left' });
+    expect(ports.audits.get('cid_clear_1_releaseUnpaid')).toMatchObject({ amount: 100000 });
   });
 
   it('Clear asks only whether money is open; it reads no timer and no stored settled time', async () => {

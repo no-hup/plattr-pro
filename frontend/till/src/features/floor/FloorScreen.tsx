@@ -59,6 +59,41 @@ export function FloorScreen({ ctx, role }: { ctx: Ctx; role: string }) {
 
   const ready = mode === 'merge' ? picked.length >= 2 : picked.length === 2
 
+  const isParcel = (t: Tile) => t.tableIds.some(id => floor.config.takeawayTableIds.includes(id))
+  const tables = floor.tiles.filter(t => !isParcel(t))
+  const parcels = floor.tiles.filter(isParcel)
+  const tileList = (tiles: Tile[]) => (
+    <>
+        {tiles.map(t => (
+          <li key={t.tableIds.join('+')} data-testid={`tile-${t.label}`} data-word={t.word} data-picked={picked.includes(t.tableIds[0]) || undefined}>
+            <button onClick={() => tap(t)} disabled={floor.busy}>
+              <strong>{t.label}</strong>
+              {/* R11: two numbers on two axes. A billed table still ordering shows both. */}
+              {t.unpaid > 0 && <span data-testid={`due-${t.label}`}> {rupees(t.unpaid)} due</span>}
+              {t.onTable > 0 && <span data-testid={`on-${t.label}`}> {rupees(t.onTable)}</span>}
+              {t.drafts > 1 && <span data-testid={`drafts-${t.label}`}> · {t.drafts} drafts</span>}
+              {t.word === 'free' ? <span> free</span>
+                : t.word === 'holding' ? <span data-testid={`holding-${t.label}`}> signing in</span>
+                : t.word === 'reserved' ? <span data-testid={`reserved-${t.label}`}> reserved</span>
+                : <span> · {t.minutes} min</span>}
+              {t.word === 'settled' && <span data-testid={`settled-${t.label}`}> settled</span>}
+            </button>
+            {/* FL-S8/S27: unmerge lives on the group's own tile, because that is the thing it acts on. */}
+            {mayAct && !mode && t.tableIds.length > 1 && (
+              <button data-testid={`unmerge-${t.label}`} onClick={async () => { if (await floor.unmerge(t.tableIds[0])) say('Released') }} disabled={floor.busy || floor.stale}>Unmerge</button>
+            )}
+            {/* FL-Q1: Clear is the cashier's override; the table also frees itself later. */}
+            {mayAct && !mode && t.word === 'settled' && (
+              <button data-testid={`clear-${t.label}`} onClick={async () => { if (await floor.clear(t.tableIds[0])) say(`${t.label} cleared`) }} disabled={floor.busy || floor.stale}>Clear</button>
+            )}
+            {mayAct && !mode && t.onTable + t.unpaid > 0 && (
+              <button data-testid={`walkout-${t.label}`} onClick={async () => { if (window.confirm(`Free ${t.label} with ${rupees(t.onTable + t.unpaid)} unpaid?`) && await floor.walkOut(t.tableIds[0])) say(`${t.label} freed, unpaid`) }} disabled={floor.busy || floor.stale}>Walk-out</button>
+            )}
+          </li>
+        ))}
+    </>
+  )
+
   return (
     <section data-testid="floor">
       <PrintStatus ctx={ctx} role={role} />   {/* KT-S7/S23: the red line lives on the home screen, where the cashier glances */}
@@ -90,32 +125,15 @@ export function FloorScreen({ ctx, role }: { ctx: Ctx; role: string }) {
         </div>
       )}
 
-      <ul data-testid="tiles" className={floor.stale ? 'stale' : ''}>
-        {floor.tiles.map(t => (
-          <li key={t.tableIds.join('+')} data-testid={`tile-${t.label}`} data-word={t.word} data-picked={picked.includes(t.tableIds[0]) || undefined}>
-            <button onClick={() => tap(t)} disabled={floor.busy}>
-              <strong>{t.label}</strong>
-              {/* R11: two numbers on two axes. A billed table still ordering shows both. */}
-              {t.unpaid > 0 && <span data-testid={`due-${t.label}`}> {rupees(t.unpaid)} due</span>}
-              {t.onTable > 0 && <span data-testid={`on-${t.label}`}> {rupees(t.onTable)}</span>}
-              {t.drafts > 1 && <span data-testid={`drafts-${t.label}`}> · {t.drafts} drafts</span>}
-              {t.word === 'free' ? <span> free</span>
-                : t.word === 'holding' ? <span data-testid={`holding-${t.label}`}> signing in</span>
-                : t.word === 'reserved' ? <span data-testid={`reserved-${t.label}`}> reserved</span>
-                : <span> · {t.minutes} min</span>}
-              {t.word === 'settled' && <span data-testid={`settled-${t.label}`}> settled</span>}
-            </button>
-            {/* FL-S8/S27: unmerge lives on the group's own tile, because that is the thing it acts on. */}
-            {mayAct && !mode && t.tableIds.length > 1 && (
-              <button data-testid={`unmerge-${t.label}`} onClick={async () => { if (await floor.unmerge(t.tableIds[0])) say('Released') }} disabled={floor.busy || floor.stale}>Unmerge</button>
-            )}
-            {/* FL-Q1: Clear is the cashier's override; the table also frees itself later. */}
-            {mayAct && !mode && t.word === 'settled' && (
-              <button data-testid={`clear-${t.label}`} onClick={async () => { if (await floor.clear(t.tableIds[0])) say(`${t.label} cleared`) }} disabled={floor.busy || floor.stale}>Clear</button>
-            )}
-          </li>
-        ))}
-      </ul>
+      {/* BT / OR-3: the counter tickets are table documents too (`ordering.takeawayTableIds`); the floor draws
+          them in their own strip so a waiting parcel is seen, and never mistaken for a table (Shaurya 2026-09-23). */}
+      <ul data-testid="tiles" className={floor.stale ? 'stale' : ''}>{tileList(tables)}</ul>
+      {parcels.length > 0 && (
+        <section data-testid="parcels">
+          <h3>Parcels</h3>
+          <ul data-testid="parcels-list" className={floor.stale ? 'stale' : ''}>{tileList(parcels)}</ul>
+        </section>
+      )}
 
       {/* FL-S21: a split has several drafts and one issued bill can sit beside them. Never guess. */}
       {picker && (

@@ -5,7 +5,7 @@ const { calculateCartValue } = require("./calculateCartValue");
 const featureFlags = require('../singleton/FeatureFlags');
 const { compareArraysIgnoringOrder } = require('../utils/arrayUtils');
 const { sanitizeCart } = require('../utils/dataUtils');
-const { validateAddItemFields, validateSessionId, requireActiveTableSession } = require('./cartInputValidation');
+const { validateAddItemFields, validateCheckoutSession, cartOfSession } = require('./cartInputValidation');
 const timestamp = require('../utils/timestamp');
 const errorHandler = require('../singleton/ErrorHandler');
 const { BasicPriceInfo, CartItemPriceInfo, CartTotalPriceInfo } = require('../genericModels/priceinfo');
@@ -39,7 +39,8 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
     selectedVariants = {},
     selectedAddons = [],
     sessionId,
-    addedBy = null
+    addedBy = null,
+    note = ''
   } = data.data;
 
   // Additional validation for quantity
@@ -51,13 +52,9 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
     // A merged table shares the parent's cart, so resolve before we touch any doc.
     tableId = await resolveTableId(restaurantId, tableId);
 
-    // If sessionId is provided, validate it
-    if (sessionId) {
-      await validateSessionId(restaurantId, sessionId);
-    }
-    // Either way the table must have an active session — restaurantId/tableId
-    // alone (public, printed on the QR code) must not be enough to write a cart.
-    await requireActiveTableSession(restaurantId, tableId);
+    // TD-033: only the table's own live session writes its cart. restaurantId/tableId are printed on the
+    // QR code, and "some session is active somewhere" let a moved party's phones fill the next party's cart.
+    await validateCheckoutSession(restaurantId, tableId, sessionId);
 
     const cartRef = getCartsCollectionRef(db, restaurantId, tableId);
     const menuItemRef = getMenuItemRef(db, restaurantId, menuItemId);
@@ -73,9 +70,9 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
         errorHandler.internalError("Error accessing database.", { originalError: error.message });
       });
 
-      let cart = cartDoc.exists
-        ? cartDoc.data()
-        : createDefaultCart(restaurantId, tableId, sessionId);
+      // A cart left by an earlier sitting is not this party's: start a fresh one over it (TD-033).
+      let cart = cartOfSession(cartDoc.exists ? cartDoc.data() : null, sessionId)
+        || createDefaultCart(restaurantId, tableId, sessionId);
 
       if (!cart.items || !Array.isArray(cart.items)) {
         console.warn("Cart missing items array, initializing empty array");
@@ -119,6 +116,7 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
       const selectedAddonsDetails = await processSelectedAddons(
         db,
         restaurantId,
+        menuItem,
         selectedAddons,
         errorHandler
       );
@@ -157,7 +155,8 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
         quantity,
         itemPriceDetails,
         getNextCartItemId(cart.items),
-        addedBy
+        addedBy,
+        note
       );
 
       // Check if identical item (same variants + addons) already exists
