@@ -143,8 +143,10 @@ async function _updateCartStatus(
         // The waiter just told the kitchen. ST reads `sent` to price a later void (ST-S5).
         await markLinesSent(transaction, restaurantId, cart);
       } else if (isCancel) {
+        // TD-023: recorded, not PIN-gated (catch it, don't cage it; the PIN half waits on TD-003). The row
+        // names the real staff member from the session and never invents a reason it was not given.
         await voidCartLines(transaction, restaurantId, cart, {
-          staffId, reason: 'guest left', note: notes, now: Date.now(),
+          staffId, reason: 'other', note: notes ? `cart cancelled: ${notes}` : 'cart cancelled', now: Date.now(),
         });
       }
 

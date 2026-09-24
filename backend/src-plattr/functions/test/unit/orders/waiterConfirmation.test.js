@@ -329,6 +329,18 @@ describe('cart status moves the line snapshots too', () => {
       expect(rows[0].reason).toBeTruthy();
     });
 
+    // TD-023: the cancel does not know WHY (the kitchen ran out, the guest left, a wrong dish), so it
+    // must not claim one. 'other' is on ST's list, and the staff member's own words ride in the note.
+    test('the reason is never invented: "other", and the note carries what the staff typed', async () => {
+      seed(AWAITING);
+      await updateCartStatus.call(null, {
+        data: { restaurantId: 'rest001', orderId: 'order001', cartIndex: 0, newStatus: 'CANCELLED', sessionId: 'staff-session', notes: 'prawns ran out' },
+      }, context);
+      const rows = auditRows();
+      expect(rows.every(r => r.reason === 'other')).toBe(true);
+      expect(rows[0].note).toBe('cart cancelled: prawns ran out');
+    });
+
     // Severity is the same split ST uses: food the kitchen already started is the serious one.
     test('an unsent round is P1', async () => {
       seed(AWAITING);
