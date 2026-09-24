@@ -59,8 +59,9 @@ const item = (menuItemId, name, price, quantity, cartItemId) => ({
     menuItem: { meta: { name } },
     priceInfo: { itemBasePrice: price, itemFinalPrice: price, totalBasePrice: price * quantity, finalPrice: price * quantity, discount: 0, discountAmount: 0 },
 });
-const biryanis = () => ({ items: [item('mi_biryani', 'Biryani', 450, 2, 1)], priceInfo: { basePrice: 900, finalPrice: 900, totalDiscount: 0, totalDiscountAmount: 0 } });
-const coke = () => ({ items: [item('mi_coke', 'Coke', 80, 1, 2)], priceInfo: { basePrice: 80, finalPrice: 80, totalDiscount: 0, totalDiscountAmount: 0 } });
+// Carts are stamped with the session that filled them, as createDefaultCart writes them (TD-033).
+const biryanis = () => ({ sessionId: 'sess_t7', items: [item('mi_biryani', 'Biryani', 450, 2, 1)], priceInfo: { basePrice: 900, finalPrice: 900, totalDiscount: 0, totalDiscountAmount: 0 } });
+const coke = () => ({ sessionId: 'sess_t7', items: [item('mi_coke', 'Coke', 80, 1, 2)], priceInfo: { basePrice: 80, finalPrice: 80, totalDiscount: 0, totalDiscountAmount: 0 } });
 
 const ordersWritten = () => writes.set.filter(w => w.path.includes('/orders/'));
 const totalWrites = () => writes.set.length + writes.update.length + writes.delete.length;
@@ -128,7 +129,7 @@ describe('OF · checkout requestId (R1)', () => {
     });
 
     test('OF-S2 fingerprint ignores item order: [coke, biryani] and [biryani, coke] are the same cart', async () => {
-        const both = { items: [item('mi_coke', 'Coke', 80, 1, 2), item('mi_biryani', 'Biryani', 450, 2, 1)], priceInfo: { basePrice: 980, finalPrice: 980, totalDiscount: 0, totalDiscountAmount: 0 } };
+        const both = { sessionId: 'sess_t7', items: [item('mi_coke', 'Coke', 80, 1, 2), item('mi_biryani', 'Biryani', 450, 2, 1)], priceInfo: { basePrice: 980, finalPrice: 980, totalDiscount: 0, totalDiscountAmount: 0 } };
         db._seed['restaurants/res_1/carts/t7'] = both;
         const first = await createOrUpdateOrder('res_1', 't7', both, 'guest_1', '', 'sess_t7', 'req_t7_2041');
         publishOrders();

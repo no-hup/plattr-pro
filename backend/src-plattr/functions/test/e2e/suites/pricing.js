@@ -39,7 +39,7 @@ export default async function pricingSuite() {
    */
   async function addAndVerifyCartPrice(label, items, expectedFinalPrice) {
     // Clear any existing cart first
-    await call('cart-clearCart', { restaurantId: RESTAURANT_ID, tableId: TABLE_CLEAN_3 });
+    await call('cart-clearCart', base);   // TD-033: the clear names the table's session
 
     // Add items
     for (const item of items) {

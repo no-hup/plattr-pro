@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutterboilerplate/auth/auth_prompt.dart';
 import 'package:flutterboilerplate/networking/device_id.dart';
 import 'package:flutterboilerplate/networking/response_guard_interceptor.dart';
+import 'package:flutterboilerplate/session/services/session_storage_service.dart';
 import 'package:flutterboilerplate/singletonGods/api_constants.dart'; // Assuming ApiConfig is here
 import 'package:flutterboilerplate/singletonGods/logger.dart'; // Assuming AppLogger is here
 
@@ -56,7 +57,7 @@ class DioClient {
     dioInstance.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          stampDeviceId(options);
+          stampCartCall(options);
           AppLogger.log('🌐 API Request: ${options.method} ${options.path}');
           AppLogger.log('📦 Request Data: ${options.data}');
           return handler.next(options);
@@ -171,19 +172,27 @@ class DioClient {
 }
 
 /// The table's cart is one shared document, so every write to it says which phone
-/// made it. One place, not three repositories — the backend reads `data.addedBy`
-/// on exactly these calls and ignores it everywhere else.
+/// made it (`addedBy`) and which sitting it belongs to (`sessionId`, TD-033: the backend
+/// lets only the table's own live session write its cart). One place, not three
+/// repositories. A session the caller already named is never overwritten.
 @visibleForTesting
-void stampDeviceId(RequestOptions options) {
+void stampCartCall(RequestOptions options) {
   const cartEndpoints = {
     ApiConfig.addItemToCartEndpoint,
     ApiConfig.removeItemFromCartEndpoint,
     ApiConfig.checkoutCartEndpoint,
   };
-  final id = DeviceId.value;
-  if (id == null || !cartEndpoints.contains(options.path)) return;
+  if (!cartEndpoints.contains(options.path)) return;
   final body = options.data;
   if (body is! Map) return;
   final inner = body['data'];
-  if (inner is Map<String, dynamic>) inner['addedBy'] = id;
+  if (inner is! Map<String, dynamic>) return;
+  final id = DeviceId.value;
+  if (id != null) inner['addedBy'] = id;
+  final session = currentSessionId();
+  if (session != null && inner['sessionId'] == null) inner['sessionId'] = session;
 }
+
+/// The guest's stored session, read synchronously from the same store SessionProvider saves to.
+@visibleForTesting
+String? Function() currentSessionId = () => SessionStorageService().loadSession()?.sessionId;

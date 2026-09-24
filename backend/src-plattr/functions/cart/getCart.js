@@ -1,6 +1,7 @@
 const functions = require("firebase-functions");
 const { admin, db } = require("../admin/admin");
-const { validateGetCartFields, validateSessionId } = require('./cartInputValidation');
+const { validateGetCartFields, validateSessionId, cartOfSession } = require('./cartInputValidation');
+const sessionService = require('../session/sessionService');
 const timestamp = require('../utils/timestamp');
 const { calculateCartValue } = require('./calculateCartValue');
 const { BasicPriceInfo, CartItemPriceInfo, CartTotalPriceInfo } = require('../genericModels/priceinfo');
@@ -99,9 +100,10 @@ const getCart = functions.https.onCall(async (data, context) => {
       );
     });
 
-    let cart;
-    if (cartDoc.exists) {
-      cart = cartDoc.data();
+    // TD-033: the cart shown is the live sitting's; an earlier party's unsent cart reads as empty.
+    const live = await sessionService.validateTableSession(restaurantId, tableId, { throwError: false });
+    let cart = cartOfSession(cartDoc.exists ? cartDoc.data() : null, live && live.id);
+    if (cart) {
       // console.log("Cart found:", JSON.stringify(cart, null, 2));
     } else {
       cart = {

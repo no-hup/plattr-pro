@@ -102,13 +102,38 @@ describe('addItemToCart Tests (Phase 5 & 6)', () => {
         setDoc(`restaurants/${restaurantId}/menuItems/${item.id}`, item);
     };
 
+    // Seeded carts belong to the table's live sitting, as createDefaultCart stamps them (TD-033).
     const setupCart = (restaurantId = DEFAULT_RESTAURANT_ID, tableId = DEFAULT_TABLE_ID, cartData) => {
-        setDoc(`restaurants/${restaurantId}/carts/${tableId}`, cartData);
+        setDoc(`restaurants/${restaurantId}/carts/${tableId}`, { sessionId: DEFAULT_SESSION_ID, ...cartData });
     };
 
     const setupVariant = (restaurantId = DEFAULT_RESTAURANT_ID, variant) => {
         setDoc(`restaurants/${restaurantId}/variants/${variant.id}`, variant);
     };
+
+    // TD-033. Party A left a ₹250 Kingfisher in carts/table001 and the table was vacated; party B
+    // (session123, the table's live sitting) adds a ₹100 dish. B's cart is ₹100, not ₹350.
+    describe('TD-033 a cart belongs to the sitting that filled it', () => {
+        const payload = (extra = {}) => ({ restaurantId: DEFAULT_RESTAURANT_ID, tableId: DEFAULT_TABLE_ID, menuItemId: menuItemFixtures.simple.id, quantity: 1, sessionId: DEFAULT_SESSION_ID, ...extra });
+        test('a write naming no session is refused', async () => {
+            setupMenuItem(DEFAULT_RESTAURANT_ID, menuItemFixtures.simple);
+            await expect(invokeAddItem(payload({ sessionId: undefined }))).rejects.toMatchObject({ code: 'unauthenticated' });
+        });
+        test('an active session that is not this table\'s live one is refused', async () => {
+            setupMenuItem(DEFAULT_RESTAURANT_ID, menuItemFixtures.simple);
+            setupSession(DEFAULT_RESTAURANT_ID, 'session_table9');
+            await expect(invokeAddItem(payload({ sessionId: 'session_table9' }))).rejects.toMatchObject({ code: 'unauthenticated' });
+        });
+        test('an earlier sitting\'s unsent cart is replaced, not added to: ₹100, one line', async () => {
+            setupMenuItem(DEFAULT_RESTAURANT_ID, menuItemFixtures.simple);
+            setupSession(DEFAULT_RESTAURANT_ID, DEFAULT_SESSION_ID);
+            setDoc(`restaurants/${DEFAULT_RESTAURANT_ID}/carts/${DEFAULT_TABLE_ID}`, { ...cartFixtures.withOneItem, sessionId: 'session_partyA' });
+            const r = await invokeAddItem(payload());
+            expect(r.data.cart.items).toHaveLength(1);
+            expect(r.data.cart.sessionId).toBe(DEFAULT_SESSION_ID);
+            expect(r.data.cart.priceInfo.finalPrice).toBe(100);
+        });
+    });
 
     describe('Core Happy Path', () => {
         test('1. addItemToCart - empty cart - should create new cart with item', async () => {

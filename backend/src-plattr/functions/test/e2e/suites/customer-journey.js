@@ -211,7 +211,7 @@ export default async function customerJourneySuite() {
   // ── 11. Journey with offer: add items → apply offer → checkout ─
   if (orderId) {
     narrator.suite('customer-journey', 'Offer flow');
-    await call('cart-clearCart', { restaurantId: RESTAURANT_ID, tableId: TABLE_CLEAN_1 });
+    await call('cart-clearCart', { restaurantId: RESTAURANT_ID, tableId: TABLE_CLEAN_1, sessionId });
     await call('cart-addItemToCart', {
       restaurantId: RESTAURANT_ID, tableId: TABLE_CLEAN_1,
       menuItemId: ITEMS.TIRAMISU.id, quantity: 2, sessionId,
