@@ -123,6 +123,12 @@ describe('the bill at the counter (KT-S6, KT-S14, KT-S21)', () => {
     expect(texts(t)).toContain(LR('Service charge 10%', '101.00'));
   });
 
+  it('TD-050 a flat packing charge of 20.00 prints "Packing charge", never "Packing charge 0%"', () => {
+    const b: Bill = { ...bill0417, charges: [{ type: 'packing', pctBps: 0, taxBlockId: 'food', base: 101000, amount: 2000, tax: { taxable: 2000, parts: [{ label: 'CGST', rateBps: 250, amount: 50 }, { label: 'SGST', rateBps: 250, amount: 50 }] } }] };
+    const t = billTicket(b, cfg, { kind: 'bill', tzOffsetMinutes: IST, tableLabel: '7' });
+    expect(texts(t)).toContain(LR('Packing charge', '20.00'));
+  });
+
   it('a customer with a GSTIN prints a "Bill to" block under the table line', () => {
     const b: Bill = { ...bill0417, customer: { name: 'Acme Pvt Ltd', taxId: '29AAAAA0000A1Z5' } };
     const t = billTicket(b, cfg, { kind: 'bill', tzOffsetMinutes: IST, tableLabel: '7' });
