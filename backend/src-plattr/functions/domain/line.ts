@@ -21,6 +21,7 @@ export interface Line extends StLine {
   components: Component[];                                            // F
   taxBlocks: Record<string, TaxBlock>;                                // F, every block this line touches, snapshot at placement
   taxSource?: 'dish' | 'category' | null; categoryId?: string | null; // F, how the item's block was found (2026-09-18 decision)
+  note?: string;                                                      // F, the guest's instruction ("no onion"), '' when none. TD-048: the KOT prints it from here. Optional only so 18 fixture files need not change; placeLine always writes it
   draftId: string;                                                    // L
   billId: string | null;                                              // L → F at issue; cancel sets null in the same transaction
 }
@@ -33,6 +34,7 @@ export interface CartItem {
   taxBlockId?: string | null; taxCode?: string;            // resolved dish → category (tax.assign) → null, in lineSnapshots
   taxSource?: 'dish' | 'category' | null;                   // which of the two answered; null = neither, BL refuses (R10)
   categoryId?: string | null;
+  note?: string;                                            // TD-048, validated (≤ 120) at cart-addItemToCart
   itemBasePrice: number; itemFinalPrice: number;            // LINE totals in minor units, the base item only
   variants: CartComponent[]; addons: CartComponent[];       // per unit, minor units
 }
@@ -82,6 +84,7 @@ export function placeLine(item: CartItem, ctx: PlaceContext, lineId: string): Li
     tableId: ctx.tableId, sessionId: ctx.sessionId, placedAt: ctx.placedAt, placedBy: ctx.placedBy,
     menuItemId: item.menuItemId, name: item.name, qty, components, taxBlocks,
     taxSource: item.taxSource ?? (item.taxBlockId ? 'dish' : null), categoryId: item.categoryId ?? null,
+    note: item.note ?? '',
     listPrice, sent: ctx.sent, v: 0, countsTowardTotal: true, draftId: ctx.draftId, billId: null,
     offer: cut > 0 ? { id: 'menu', amount: cut } : null,
   };

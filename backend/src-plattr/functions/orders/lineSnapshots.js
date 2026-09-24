@@ -68,6 +68,7 @@ function toCartItem(item, assign = {}) {
     cartItemId: String(item.cartItemId ?? 0),
     taxBlockId, taxSource, categoryId,
     taxCode: item.menuItem?.taxCode ?? "",
+    note: typeof item.note === "string" ? item.note : "",   // TD-048: frozen here so the KOT can print it without the cart
     itemBasePrice: minor(p.itemBasePrice),
     itemFinalPrice: minor(p.itemFinalPrice),
     variants: (item.selectedVariantsDetails || []).map(pick),

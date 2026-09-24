@@ -156,6 +156,18 @@ export default async function orderEntrySuite() {
     check('opening a merged child answers the PARENT table and a session on it', r.data?.tableId === 'table_or_p' && r.data?.created === true, r);
     const s = r.data?.sessionId ? await getDoc(`sessions/${r.data.sessionId}`) : null;
     check('that session sits on table_or_p, opened by staff:manager_or', s?.tableId === 'table_or_p' && s?.openedBy === 'staff:manager_or', s);
+
+    // ── TD-048: the guest's note is frozen on the line so the KOT can print it ──
+    const ps = r.data?.sessionId, pBy = r.data?.addedBy;
+    const long = await call('cart-addItemToCart', { restaurantId: RID, tableId: 'table_or_p', sessionId: ps, addedBy: pBy, menuItemId: ITEM, quantity: 1, note: 'x'.repeat(121) });
+    check('TD-048 a 121-character note is refused invalid-argument', (codeOf(long) === 'invalid-argument' || long?.error?.status === 'INVALID_ARGUMENT'), long);
+    const a1 = await call('cart-addItemToCart', { restaurantId: RID, tableId: 'table_or_p', sessionId: ps, addedBy: pBy, menuItemId: ITEM, quantity: 1, note: 'no onion' });
+    const a2 = await call('cart-addItemToCart', { restaurantId: RID, tableId: 'table_or_p', sessionId: ps, addedBy: pBy, menuItemId: ITEM, quantity: 1 });
+    check('TD-048 a noted and a plain tiramisu are accepted', ok(a1) && ok(a2), { a1, a2 });
+    const c = await send('table_or_p', ps, pBy);
+    check('TD-048 the round places', ok(c), c);
+    const lines = (await listCol('lines')).filter(l => l.sessionId === ps).sort((x, y) => x.id.localeCompare(y.id));
+    check('TD-048 two lines, not one merged: "no onion" and plain are different lines', lines.length === 2 && lines.map(l => l.note).sort().join('|') === '|no onion', lines.map(l => ({ id: l.id, note: l.note, qty: l.qty })));
   }
 
   return results;

@@ -57,6 +57,7 @@ class OrderEntryApiService {
     required String menuItemId,
     required int quantity,
     Map<String, String> selectedVariants = const {},
+    String note = '',
   }) =>
       _post(ApiConstants.addItemToCart, {
         'restaurantId': restaurantId,
@@ -67,6 +68,8 @@ class OrderEntryApiService {
         'quantity': quantity,
         'selectedVariants': selectedVariants,
         'selectedAddons': const <String>[],
+        // TD-048: frozen on the line at checkout; the KOT prints it.
+        if (note.trim().isNotEmpty) 'note': note.trim(),
       }, (_) {}, 'addItemToCart');
 
   Future<ApiResponse<void>> checkout({

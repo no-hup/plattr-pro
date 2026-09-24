@@ -42,6 +42,11 @@ const muttonBiryani = (over = {}) => ({
 });
 
 describe('toCartItem — the shape, pinned', () => {
+    test('TD-048 the cart item note rides through as a string; absent or non-string is the empty string', () => {
+        expect(toCartItem(muttonBiryani({ note: 'no onion' })).note).toBe('no onion');
+        expect(toCartItem(muttonBiryani()).note).toBe('');
+        expect(toCartItem(muttonBiryani({ note: 7 })).note).toBe('');
+    });
     test('carries the identifiers, quantity and tax label straight through, in minor units', () => {
         const out = toCartItem(muttonBiryani());
         expect(out).toMatchObject({

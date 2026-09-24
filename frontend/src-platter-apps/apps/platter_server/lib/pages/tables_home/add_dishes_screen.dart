@@ -31,8 +31,9 @@ class _RoundLine {
   final Map<String, String>
       variants; // variantId → optionId, mandatory ones only
   int qty = 1;
+  String note = ''; // TD-048: "no onion". Part of the key: plain and no-onion are two lines.
   String get key =>
-      '${item.id}|${variants.entries.map((e) => '${e.key}=${e.value}').join(',')}';
+      '${item.id}|${variants.entries.map((e) => '${e.key}=${e.value}').join(',')}|$note';
 }
 
 class _AddDishesScreenState extends State<AddDishesScreen> {
@@ -208,6 +209,7 @@ class _AddDishesScreenState extends State<AddDishesScreen> {
         menuItemId: line.item.id,
         quantity: line.qty,
         selectedVariants: line.variants,
+        note: line.note,
       );
       if (!r.success) {
         failed = '${line.item.meta.name}: ${r.message ?? 'not added'}';
@@ -364,6 +366,39 @@ class _AddDishesScreenState extends State<AddDishesScreen> {
     );
   }
 
+  Future<void> _editNote(_RoundLine line) async {
+    final ctl = TextEditingController(text: line.note);
+    final note = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Note for ${line.item.meta.name}'),
+        content: TextField(
+          controller: ctl,
+          autofocus: true,
+          maxLength: 120,
+          decoration: const InputDecoration(hintText: 'no onion, less spicy…'),
+          onSubmitted: (v) => Navigator.of(ctx).pop(v),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(ctl.text), child: const Text('OK')),
+        ],
+      ),
+    );
+    if (note == null || !mounted) return;
+    setState(() {
+      // The note is part of the key, so re-file the line under its new one.
+      _round.remove(line.key);
+      line.note = note.trim();
+      final existing = _round[line.key];
+      if (existing != null) {
+        existing.qty += line.qty;
+      } else {
+        _round[line.key] = line;
+      }
+    });
+  }
+
   Widget _roundPane() {
     return Container(
       constraints: const BoxConstraints(maxHeight: 180),
@@ -377,12 +412,25 @@ class _AddDishesScreenState extends State<AddDishesScreen> {
             ListTile(
               dense: true,
               title: Text(line.item.meta.name),
-              subtitle: line.variants.isEmpty
+              subtitle: line.variants.isEmpty && line.note.isEmpty
                   ? null
-                  : Text(line.variants.values.join(', ')),
+                  : Text([
+                      ...line.variants.values,
+                      if (line.note.isNotEmpty) '! ${line.note}',
+                    ].join(', ')),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // TD-048: the guest's instruction for the kitchen ticket.
+                  Semantics(
+                    identifier: 'add-dishes-note',
+                    child: IconButton(
+                      icon: Icon(line.note.isEmpty
+                          ? Icons.edit_note
+                          : Icons.sticky_note_2),
+                      onPressed: () => _editNote(line),
+                    ),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.remove_circle_outline),
                     onPressed: () => setState(() {
