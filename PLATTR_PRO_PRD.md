@@ -189,6 +189,10 @@ whether the gate is on or off; confirmation controls only when the kitchen is to
   (60) that owes nothing is ended by a five-minute sweep with an audit row; a fully paid table nobody
   cleared goes the same way. Open money is never freed by the clock (decided 2026-09-22, FL-S36). The
   paid-table half is the less certain call and is one line to reverse.
+- Active → Vacant by hand: a table that owes nothing can be freed by anyone, the captain's Vacant or
+  the cashier's Clear. A table that still owes (unbilled food or an unpaid bill, the group's for a
+  merged child) can only be freed by the cashier, with a PIN and a reason, and the audit row names
+  the amount walked away from. A captain is refused outright (decided 2026-09-24, Shaurya).
 - Disabled is an admin override state
 - Reserved is a staff-held state, set and cleared by the waiter (decided 2026-09-08,
   see 16.1). It is outside the self-service lifecycle: a customer scanning a reserved
@@ -233,6 +237,10 @@ whether the gate is on or off; confirmation controls only when the kitchen is to
 
 ### 12.2 Ordering
 - Item goes out of stock mid-session: block add-to-cart and refresh menu state.
+- The same for an add-on: one switched off, not listed on the dish, or unknown is refused at add and
+  re-checked at checkout — never dropped silently, never billed at ₹0 (2026-09-23, TD-015).
+- A table's cart belongs to the sitting that filled it: the next party never sees, sends or pays for
+  the last party's unsent items, and only the table's own live session may write it (2026-09-23, TD-033).
 - Empty cart on checkout: block and prompt to add items.
 - Invalid customization: show error and reset to valid choices.
 
@@ -326,6 +334,11 @@ Plattr Pro alone. Six are built and tested; two are specified and not yet starte
 - **Till order entry.** Two walk-ins at 21:00 with no phone; the cashier punches their order, and it
   lands on the same bill as anything the table ordered by QR. *Without this every walk-in and phone
   order happens on paper and Plattr never sees that money.*
+- **Aggregator orders.** 20:14, a Swiggy order for two biryanis at ₹450 lands; the kitchen ticket
+  prints within seconds, the order is accepted before Swiggy gives up, and the ₹900 shows in the
+  night's sales under "Swiggy" with the payout owed, never on a GST bill and never in the cash
+  drawer. *Without this the restaurant keeps the Petpooja tablet next to us and we have replaced
+  nothing.* Added 2026-09-22; goes through UrbanPiper, see §17.2.
 
 ### 17.2 Three positions a reader of this PRD needs
 
@@ -349,7 +362,11 @@ LAN remains the second implementation behind the same protocol for a restaurant 
 tablet. Three product calls signed 2026-09-22 and not certain, so written down: paper-out is caught
 by a person and fixed with a Reprint until a printer that reports it is on the bench; a ticket older
 than 30 minutes when the tablet wakes is not printed by itself, it is counted on the till and printed
-by one tap; the offline estimate stays on screen. Each is one config key or one line to reverse.
+by one tap; the offline estimate stays on screen. Each is one config key or one line to reverse. Two limits
+added 2026-09-23 with the screen-off service: after a tablet reboots, printing resumes only when
+someone opens the kitchen app (Android does not let an app open itself at boot); and a staff login
+lasts 12 hours, so a tablet logged in at 10:30 stops printing at 22:30 until someone logs in again
+(TD-051). The till's red line catches both within 90 seconds.
 
 **Swiggy and Zomato orders are a receivable, not a sale we invoice.** Since January 2022 the platform,
 not the restaurant, pays the GST on food ordered through it (section 9(5)). So a Swiggy order gets a
@@ -362,12 +379,34 @@ is pushed from us, which is why a dish gets an aggregator price.
 
 **Takeaway works but is not separately reportable.** Phone and counter orders run as ordinary tables
 named as counter tickets, so they bill, settle and close exactly like table 7 with no special cases.
-What the owner cannot yet ask is "how much of last month was takeaway". That becomes one field and a
-report query when the split is worth having; until then no report separates them.
+Since 2026-09-23 a counter ticket carries the flat packing charge (₹20.00, taxed like a service charge)
+and not the service charge, because the ticket's own document names the charge rows it takes; the till
+draws the tickets in a Parcels strip under the floor. What the owner cannot yet ask is "how much of
+last month was takeaway". That becomes one field and a report query when the split is worth having.
+
+**The everyday bills that are not a plain table (built 2026-09-23).** A staff meal or a complimentary
+dish is a discount with a reason on a numbered bill — the whole table through the till's Comp (PIN
+every time), one dish through the line discount — and the day close lists what was given away by
+reason, so "staff meal ₹4,200 across 6 bills" is a line the owner reads every morning. "Put it on my
+account" is a tender of its own kind: the bill closes as money **owed**, never as cash, a receivable
+names who owes it, and the cashier collects it days later on cash or card from the till's account
+page; the day close shows the owed line apart from the drawer. A tip is typed by the cashier on the
+payment, never guessed from the change, never on the bill and never taxed; cash tips sit in the drawer
+until a `tip payout` movement takes them out, card tips are reported per staff. The guest's note
+("no onion") is frozen on the placed line so the kitchen ticket prints it.
 
 ### 17.3 After go-live
 
-The order the first month is expected to need: owner report pack, a readable audit trail, table floor
-tools (move, merge), and a Petpooja menu-and-history import so switching does not mean retyping the
-menu. Swiggy and Zomato orders, a card terminal, basic inventory and a Tally export are priced
-separately and are not go-live blockers.
+The order the first month is expected to need: owner report pack, a readable audit trail, and two
+imports. A card terminal, basic inventory and a Tally export are priced separately and are not
+go-live blockers. Swiggy and Zomato moved into the go-live blocks on 2026-09-22.
+
+- **Menu import.** The owner hands over the Petpooja menu export; 400 dishes, prices, categories and
+  tax buckets land in Plattr without retyping. *Without this the switch costs a weekend of data
+  entry and most owners will not start.*
+- **Sales-history import (parked, important).** The owner wants last Diwali's numbers next to this
+  one's. No vendor in this market has a standard export, so whatever spreadsheet arrives is
+  normalised by a cheap LLM call into one fixed shape, a human confirms the mapping, and we import
+  day totals and the 90-day item mix. Old bills are never imported as bills and the invoice series
+  is never touched. *Without this the owner loses year-on-year comparison, which is a reason to
+  delay switching, not a reason to refuse.*

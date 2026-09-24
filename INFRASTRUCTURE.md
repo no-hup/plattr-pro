@@ -175,3 +175,21 @@ bigger outage risk here than any cost overrun. Keep a valid payment method on th
   Fix at the console link in §5 as `maverick.shaurya@gmail.com`.
 - No landing page at the bare `plattrpro.web.app` root.
 - 62 separate functions → ~8 cold starts per flow. Fold into one HTTP router.
+
+---
+
+## Later, when we are live and scaling (parked 2026-09-24)
+
+Not needed for one outlet. Revisit before a few dozen outlets, or when the apps feel slow (TD-002).
+
+- **Staff login: database lookup → signed tokens.** Today every staff request reads its session
+  document from Firestore (one read, ~10–30 ms), via a helper inside each function
+  (`server/server_auth.js`, `adminApp/auth.js`). A busy device's session is extended on use,
+  writing only when under 25% of its window is left (TD-051, 2026-09-24).
+  The scaled way is **Firebase Auth custom tokens**: staff login mints a token carrying staff id,
+  role and restaurant; the apps' Firebase SDK refreshes it hourly; every callable reads
+  `request.auth` with no database read. Costs: all four Flutter apps and the till change how
+  they log in, and a revoked login keeps working until its token expires (up to 1 h). So
+  sensitive acts (void, refund, cancel bill, free an unpaid table) still re-check the database,
+  or keep a small revoked-token list.
+- **Cold starts.** See Open items: 62 functions → one HTTP router.
