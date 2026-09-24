@@ -226,3 +226,44 @@ test('PY-S24 a retry the server answers with the original row shows "Already rec
   expect(bodies[0].paymentId).toBe(bodies[1].paymentId)
   await expect(page.getByTestId('rows').locator('li')).toHaveCount(1)
 })
+
+// ── BT · on account (TD-012) and a tip ──────────────────────────────────────
+test('BT-A/T ₹609 put on account for "Acme Ltd" settles the bill with no drawer; a cash ₹700 with a ₹50 tip on the next bill gives change ₹41.00', async ({ page }) => {
+  // The account tender is config: set only `payments` on the settings doc, leaving every other module's keys alone.
+  const TENDERS = [{ id: 'cash', label: 'Cash', kind: 'cash', opensDrawer: true, needsRef: false }, { id: 'card', label: 'Card', kind: 'external', opensDrawer: false, needsRef: true }, { id: 'account', label: 'On account', kind: 'credit', opensDrawer: false, needsRef: true }]
+  const r = await fetch(`${FS}/config/settings?updateMask.fieldPaths=payments`, { method: 'PATCH', headers: H, body: JSON.stringify({ fields: { payments: enc({ tenders: TENDERS }) } }) })
+  if (!r.ok) throw new Error(`seed settings: ${r.status}`)
+  try {
+    await login(page, BILL, 'till.manager@st.test')
+    await page.getByTestId('tender-account').click()
+    await expect(page.getByTestId('take')).toHaveText('Put on account')
+    await page.getByTestId('amount').fill('609')
+    await page.getByTestId('ref').fill('Acme Ltd')
+    await page.getByTestId('take').click()
+    await expect(page.getByTestId('outstanding')).toHaveText('settled')
+    await expect(page.getByTestId('drawer')).toBeHidden()
+    await expect(page.getByTestId('rows')).toContainText('Acme Ltd')
+
+    // the receivables screen lists it and can collect on it
+    await page.goto(`/?r=${RID}&account=1`)   // a full navigation: the till keeps no session across it, so log in again
+    await page.getByTestId('email').fill('till.manager@st.test')
+    await page.getByTestId('password').fill('1234')
+    await page.getByTestId('login').click()
+    await expect(page.getByTestId('receivables')).toContainText('Acme Ltd')
+
+    // a fresh bill: cash 700 with a 50 tip
+    const BILL2 = `${BILL}_tip`
+    await seed(`bills/${BILL2}`, { payable: 60900, status: 'issued', cid: `cid_${BILL2}`, number: '0418', lines: [{ lineId: 'l1', orderId: 'pw_order', countsTowardTotal: true }] })
+    await login(page, BILL2, 'till.manager@st.test')
+    await page.getByTestId('tender-cash').click()
+    await page.getByTestId('amount').fill('700')
+    await page.getByTestId('tip').fill('50')
+    await expect(page.getByTestId('change')).toHaveText(/₹41\.00/)
+    await page.getByTestId('take').click()
+    await expect(page.getByTestId('pay-msg')).toContainText('Change ₹41.00')
+    await expect(page.getByTestId('rows')).toContainText('tip ₹50.00')
+  } finally {
+    await fetch(`${FS}/config/settings?updateMask.fieldPaths=payments`, { method: 'PATCH', headers: H, body: JSON.stringify({ fields: { payments: enc({ tenders: TENDERS.slice(0, 2).concat([{ id: 'upi', label: 'UPI', kind: 'external', opensDrawer: false, needsRef: true }]) }) } }) })
+  }
+})
+

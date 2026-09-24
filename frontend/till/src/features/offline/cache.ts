@@ -10,7 +10,7 @@ export const OFFLINE_DEFAULTS: OfflineConfig = { staleAfterSeconds: 15, estimate
 export interface Estimate {
   id: string                       // est_<draftId|billId>_<yyyymmddThhmm>: the audit cid on the server (OF-S20)
   draftId?: string; billId?: string
-  amountMinor: number; takenMinor: number; tenderId: string; tenderKind: 'cash' | 'external'
+  amountMinor: number; takenMinor: number; tenderId: string; tenderKind: 'cash' | 'external' | 'credit'
   previewAt: number; at: number
   synced: boolean                  // OF-S20: sent through approvals-apply on the first answered call
   issuedBillId?: string; paymentId?: string   // OF-S18: remembered between the steps so a retry resumes

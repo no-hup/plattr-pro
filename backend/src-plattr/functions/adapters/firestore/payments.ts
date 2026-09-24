@@ -1,7 +1,7 @@
 // PY · Firestore ports for app/payments. The only place this module touches Firebase.
 // Runtime note: this file runs from functions/lib/adapters/firestore/, so existing JS is three levels up.
 import { BillRead, Mirror, Ports, StoredRow, Tx, BillStamp } from '../../app/payments';
-import { Note, Row } from '../../domain/payments';
+import { Note, Receivable, Row } from '../../domain/payments';
 import { AuditRow } from '../../domain/approvals';
 import { ports as st } from './approvals';   // ST's real ports: the session door and the PIN streak (one door)
 import type { CollectionReference, DocumentReference, Transaction } from 'firebase-admin/firestore';
@@ -14,6 +14,8 @@ const payments = (rid: string): CollectionReference => rest(rid).collection('pay
 const bills = (rid: string): CollectionReference => rest(rid).collection('bills');
 const orders = (rid: string): CollectionReference => rest(rid).collection('orders');
 const audit = (rid: string): CollectionReference => rest(rid).collection('audit');
+// BT / TD-012. The same collection AG will write its platform receivables into (`{platform}_{id}`, kind 'platform').
+const receivables = (rid: string): CollectionReference => rest(rid).collection('receivables');
 // DC owns restaurants/{id}/dayClose/{businessDate}. Until DC ships, no document exists, so no day is closed.
 const dayClose = (rid: string): CollectionReference => rest(rid).collection('dayClose');
 
@@ -60,6 +62,9 @@ function tx(rid: string, t: Transaction): Tx {
     },
     createAudit(id, row: AuditRow) { t.create(audit(rid).doc(id), row); },
     createPrintJob(job) { t.create(rest(rid).collection('printJobs').doc(job.jobId), job); },
+    async readReceivable(id) { const s = await t.get(receivables(rid).doc(id)); return s.exists ? ({ ...(s.data() as Receivable), receivableId: s.id }) : null; },
+    createReceivable(id, r) { t.create(receivables(rid).doc(id), r); },
+    stampReceivable(id, patch) { t.update(receivables(rid).doc(id), patch); },
   };
 }
 
@@ -80,6 +85,10 @@ export const ports: Ports = {
       const q = await payments(rid).where('businessDate', '==', businessDate).get();
       return q.docs.map(x => asRow(x.id, x.data()));
     },
+  },
+
+  receivables: {
+    async open(rid) { const q = await receivables(rid).where('kind', '==', 'account').where('state', '==', 'open').get(); return q.docs.map(x => ({ ...(x.data() as Receivable), receivableId: x.id })); },
   },
 
   transact(rid, fn) { return db.runTransaction((t: Transaction) => fn(tx(rid, t))); },

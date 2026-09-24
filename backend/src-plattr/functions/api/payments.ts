@@ -1,7 +1,7 @@
 // PY · onCall wrappers. Exported from index.js as payments-take / -refund / -void / -list.
 // The trust boundary: integers only, no rounding, the server owns every computed number.
 // The PIN arrives once in the body and is handed straight to app; nothing here logs the body.
-import { take, refund, voidRow, list, PaymentError } from '../app/payments';
+import { take, refund, voidRow, list, collect, PaymentError } from '../app/payments';
 import { ports } from '../adapters/firestore/payments';
 
 /* eslint-disable @typescript-eslint/no-var-requires */
@@ -14,10 +14,11 @@ type Body = Record<string, unknown>;
 // businessDate is not here: the write ops already leave it out of KEEP, and for list it is the input (which day).
 const SERVER_OWNED = ['at', 'by', 'status', 'paidTotal', 'paidAt', 'paidBy', 'change', 'overpaid', 'void', 'cid'];
 const KEEP: Record<string, string[]> = {
-  take: ['restaurantId', 'sessionId', 'billId', 'paymentId', 'tenderId', 'amount', 'tendered', 'captured', 'ref'],
+  take: ['restaurantId', 'sessionId', 'billId', 'paymentId', 'tenderId', 'amount', 'tendered', 'captured', 'ref', 'tip'],
+  collect: ['restaurantId', 'sessionId', 'paymentId', 'receivableId', 'tenderId', 'amount', 'ref'],
   refund: ['restaurantId', 'sessionId', 'billId', 'paymentId', 'tenderId', 'amount', 'creditNoteId', 'refundsPaymentId', 'reason', 'note', 'pin'],
   void: ['restaurantId', 'sessionId', 'paymentId', 'reason', 'note', 'pin'],
-  list: ['restaurantId', 'sessionId', 'billId', 'businessDate'],
+  list: ['restaurantId', 'sessionId', 'billId', 'businessDate', 'receivables'],
 };
 
 const isInt = (v: unknown) => typeof v === 'number' && Number.isInteger(v) && v >= 0;
@@ -39,9 +40,9 @@ export function shape(op: keyof typeof KEEP, data: unknown): Body {
   }
   const body: Body = {};
   for (const k of KEEP[op]) if (k in raw && !SERVER_OWNED.includes(k)) body[k] = raw[k];
-  for (const k of ['amount', 'tendered']) if (k in body && !isInt(body[k])) bad(`${k} must be a non-negative integer in minor units`);
+  for (const k of ['amount', 'tendered', 'tip']) if (k in body && !isInt(body[k])) bad(`${k} must be a non-negative integer in minor units`);
   if ('captured' in body && typeof body.captured !== 'boolean') bad('captured must be a boolean');
-  if (op === 'take' || op === 'refund') checkPaymentId(body.paymentId);
+  if (op === 'take' || op === 'refund' || op === 'collect') checkPaymentId(body.paymentId);
   if (op === 'take' && raw.creditNoteId != null) bad('A take never reverses a credit note');   // read raw: KEEP has already dropped it
   if (op === 'refund' && (body.creditNoteId != null) === (body.refundsPaymentId != null)) bad('Name exactly one of creditNoteId or refundsPaymentId');
   if (op === 'void') checkPaymentId(body.paymentId);
@@ -64,3 +65,4 @@ export const takeHandler = wrap('take', b => take(ports, b as never), 'Payment r
 export const refundHandler = wrap('refund', b => refund(ports, b as never), 'Refund recorded');
 export const voidHandler = wrap('void', b => voidRow(ports, b as never), 'Payment voided');
 export const listHandler = wrap('list', b => list(ports, b as never), 'Payments');
+export const collectHandler = wrap('collect', b => collect(ports, b as never), 'Collection recorded');

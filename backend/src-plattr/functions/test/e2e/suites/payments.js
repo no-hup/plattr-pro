@@ -197,6 +197,40 @@ export default async function paymentsSuite() {
     check('PY-S18 a day with no rows → zeros for every configured tender, not an error', none.status === 'success' && none.data?.byTender?.cash?.taken === 0 && none.data?.cashNet === 0, none);
   }
 
+  // ── BT · on account (TD-012) and tips ──────────────────────────────────────
+  // Config gains the `account` tender for this block only; PY-S18/S19 above counted three tenders.
+  {
+    const settings = (await getDoc('config/settings')) || {};
+    const TENDERS = [{ id: 'cash', label: 'Cash', kind: 'cash', opensDrawer: true, needsRef: false }, { id: 'card', label: 'Card', kind: 'external', opensDrawer: false, needsRef: true }, { id: 'account', label: 'On account', kind: 'credit', opensDrawer: false, needsRef: true }];
+    await seed('config/settings', { ...settings, payments: { ...(settings.payments || {}), tenders: TENDERS } });
+    for (const id of ['py_bt_acc', 'py_bt_col', 'py_bt_tip']) { await delDoc(`payments/${id}`); await delDoc(`receivables/${id}`); await delDoc(`audit/${id}_onAccount`); await delDoc(`printJobs/drawer_${id}`); }
+    await freshBill();
+    const noRef = await takeAs(manager, { paymentId: 'py_bt_acc', tenderId: 'account', amount: 60900 });
+    check('BT-A on account without the account name → invalid-argument', errData(noRef).code === 'invalid-argument' || noRef?.error?.status === 'INVALID_ARGUMENT', noRef);
+    const r = await takeAs(manager, { paymentId: 'py_bt_acc', tenderId: 'account', amount: 60900, ref: 'Acme Ltd' });
+    check('BT-A ₹609 on account → bill paid, opensDrawer false, row amount 60900 with no change/overpaid', r.status === 'success' && r.data?.bill?.status === 'paid' && r.data?.opensDrawer === false && r.data?.row?.amount === 60900 && r.data?.row?.change === null, r);
+    const rec = await getDoc('receivables/py_bt_acc');
+    check('BT-A receivables/py_bt_acc: kind account, party Acme Ltd, amount 60900, open, same businessDate as the row', rec?.kind === 'account' && rec?.party === 'Acme Ltd' && rec?.amount === 60900 && rec?.state === 'open' && rec?.collectedTotal === 0 && rec?.businessDate === (await getDoc('payments/py_bt_acc'))?.businessDate, rec);
+    check('BT-A a P1 audit row names the account', (await getDoc('audit/py_bt_acc_onAccount'))?.sev === 'P1', await getDoc('audit/py_bt_acc_onAccount'));
+    const open = await listAs(manager, { receivables: true });
+    check('BT-A payments-list {receivables:true} lists it, with cash and card (never account) as collect tenders', open.status === 'success' && open.data?.receivables?.some(x => x.receivableId === 'py_bt_acc') && open.data?.tenders?.map(t => t.id).join(',') === 'cash,card', open);
+    const c = await call('payments-collect', { restaurantId: RID, sessionId: manager, paymentId: 'py_bt_col', receivableId: 'py_bt_acc', tenderId: 'cash', amount: 40000 });
+    check('BT-A collect ₹400 cash → row on bill 0417 with receivableId, drawer opens, receivable 40000 collected and still open', c.status === 'success' && c.data?.row?.receivableId === 'py_bt_acc' && c.data?.opensDrawer === true && c.data?.receivable?.collectedTotal === 40000 && c.data?.receivable?.state === 'open', c);
+    check('BT-A the bill is untouched by the collection: paidTotal still 60900, paid', (await getDoc('bills/0417'))?.paidTotal === 60900 && (await getDoc('bills/0417'))?.status === 'paid');
+    const over = await call('payments-collect', { restaurantId: RID, sessionId: manager, paymentId: 'py_bt_over', receivableId: 'py_bt_acc', tenderId: 'cash', amount: 20901 });
+    check('BT-A collecting more than is owed → failed-precondition', errData(over).code === 'failed-precondition', over);
+    const vc = await voidAs(manager, { paymentId: 'py_bt_acc', pin: '1234' });
+    check('BT-A voiding the credit take while ₹400 is collected on it → failed-precondition', errData(vc).code === 'failed-precondition', vc);
+    // tips — the account rows above sit on 0417 and freshBill() only clears the suite's own IDS, so clear them first
+    for (const id of ['py_bt_acc', 'py_bt_col']) { await delDoc(`payments/${id}`); await delDoc(`receivables/${id}`); }
+    await freshBill();
+    const t = await takeAs(manager, { paymentId: 'py_bt_tip', tenderId: 'cash', tendered: 70000, tip: 5000 });
+    check('BT-T cash 70000 with tip 5000 on the 60900 bill → amount 60900, tip 5000, change 4100, paid', t.status === 'success' && t.data?.row?.amount === 60900 && t.data?.row?.tip === 5000 && t.data?.row?.change === 4100 && t.data?.bill?.status === 'paid', t);
+    const day = await listAs(manager, { businessDate: (await getDoc('payments/py_bt_tip'))?.businessDate });
+    check('BT-T the day list carries tips by tender: cash tips ≥ 5000', (day.data?.byTender?.cash?.tips ?? 0) >= 5000, day.data?.byTender?.cash);
+    await seed('config/settings', settings);   // put the config back for whoever runs next
+  }
+
   // ── R16: the rules deny a client write; only the Admin SDK (Bearer owner) may touch payments/ ──
   {
     // An unsigned JWT: the emulator runs with skipTokenVerification, so this authenticates as uid `staff_1`
