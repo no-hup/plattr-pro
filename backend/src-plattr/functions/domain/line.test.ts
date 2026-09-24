@@ -15,6 +15,10 @@ const burger = (over: Partial<CartItem> = {}): CartItem => ({
 });
 
 describe('domain/line placeLine', () => {
+  it('TD-048 the guest\'s note is frozen on the line at placement; none → empty string, never undefined', () => {
+    expect(placeLine(burger({ note: 'no onion' }), ctx, 'L1').note).toBe('no onion');
+    expect(placeLine(burger(), ctx, 'L1').note).toBe('');
+  });
   it('components are additive and per unit: item 20000 + variant 5000 + addon 2000, qty 3 → listPrice 81000', () => {
     const l = placeLine(burger(), ctx, 'L1');
     expect(l.components.map(c => [c.kind, c.unitListPrice])).toEqual([['item', 20000], ['variant', 5000], ['addon', 2000]]);

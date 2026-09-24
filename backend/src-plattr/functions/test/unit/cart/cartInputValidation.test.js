@@ -115,6 +115,14 @@ describe('Cart Input Validation', () => {
             expect(() => validateAddItemFields(data)).toThrow('tableId, restaurantId, menuItemId, and quantity are required.');
         });
 
+        // TD-048: the guest's note, optional, a string of at most 120 characters.
+        test('TD-048 note absent or a short string passes; 121 chars or a non-string is invalid-argument', () => {
+            expect(() => validateAddItemFields({ ...validData, note: 'no onion' })).not.toThrow();
+            expect(() => validateAddItemFields({ ...validData, note: 'x'.repeat(120) })).not.toThrow();
+            expect(() => validateAddItemFields({ ...validData, note: 'x'.repeat(121) })).toThrow('note');
+            expect(() => validateAddItemFields({ ...validData, note: 42 })).toThrow('note');
+        });
+
         // Test #19
         test('selectedVariants not object - should handle gracefully', () => {
             // validateAddItemFields doesn't validate variants structure currently, so this should pass here

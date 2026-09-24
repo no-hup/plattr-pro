@@ -73,3 +73,14 @@ describe('cart item ownership', () => {
     expect(find([item(undefined)], item('dev_asha'))).toBe(-1);
   });
 });
+
+describe('TD-048 a note is part of a line\'s identity', () => {
+  test('the same dish with a different note is a different line; the same note merges', () => {
+    const plain = createCartItem('mi_margherita', MENU_ITEM, [], [], 1, null, 1, 'asha');
+    const noOnion = createCartItem('mi_margherita', MENU_ITEM, [], [], 1, null, 2, 'asha', 'no onion');
+    expect(noOnion.note).toBe('no onion');
+    expect(plain.note).toBe('');
+    expect(find([plain], noOnion)).toBe(-1);
+    expect(find([noOnion], createCartItem('mi_margherita', MENU_ITEM, [], [], 1, null, 3, 'asha', ' no onion '))).toBe(0);   // trimmed
+  });
+});
