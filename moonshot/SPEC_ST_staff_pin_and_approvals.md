@@ -57,6 +57,7 @@ Roles are the existing ones in `adminApp/auth.js`: ADMIN, MANAGER, SERVER, KITCH
 | Key | Default | Used by |
 |---|---|---|
 | `approvals.discountPinAbovePercent` | 10 | ST-S1, S2 |
+| `approvals.discountMaxPercent` | 50 (100 = no cap). Staff line discount only | TD-004, Shaurya 2026-09-24 |
 | `approvals.voidAfterKitchenNeedsPin` | true | ST-S5 |
 | `approvals.pinSlowAfterWrong` | 5 | ST-S3 |
 | `approvals.pinSlowWindowMinutes` | 10 | ST-S3 |
@@ -144,6 +145,9 @@ Same shape for `requires: 'otp'` or `'password'` later. Nothing per screen.
 | 2026-09-15 | Arch review 1, item 5: the till answers at most 10 challenges per call, then "Too many PIN attempts, start again". R7 never locks, so nothing server-side ended the loop | Playwright "arch-5" with a routed server that always asks |
 | 2026-09-15 | Arch review 1, item 3: the staging line doc is TD-008; TD-004 stays the no-ceiling row | Two rows shared one id |
 | 2026-09-15 | Arch review item 1 (gate on net, not list price): **not taken, accepted risk by Shaurya, 2026-09-15**. Tracked as TD-009 | A sheet rule is Shaurya's to change, not a reviewer's or mine |
+| 2026-09-24 | **Shaurya: TD-004 default is 50 %, and the cap is on the staff line discount only.** ₹2,040 off a ₹4,000 dish (51 %) is refused even with a PIN; ₹2,000 (50 %) goes with a PIN. The whole-bill comp (`billDiscount`: BL-S22 walkout, DC-S25 staff meal, NC) keeps its PIN-above-10 % rule and no ceiling, because a comp is a 100 % give-away by design. Automatic offers never reach this door | A manager's one-dish discount had no ceiling; the comp needed to stay whole |
+| 2026-09-24 | **`releaseUnpaid`: a new action through the one door.** Freeing a table that still owes is cashier-only (MANAGER/ADMIN), always a PIN, P0, reason from the list; the audit row's `amount` is what was owed. FL calls it from Clear (see FL Decisions 2026-09-24) | A walk-out needs one named person and a figure on the record |
+| 2026-09-23 | **TD-004 closed: `approvals.discountMaxPercent`, default 100 = no cap.** Above it a line or bill discount is refused `failed-precondition` "discount is above the N % limit", PIN or not, before any write. 100 is literally off, so the owner's walkout comp (BL-S22, DC-S25) keeps working and a discount larger than the line still gets applyToLine's own "cannot go below zero". Shaurya delegated the default | A restaurant with a manager who is not the owner sets it; nobody else pays for it |
 
 ## Out of scope
 
@@ -160,7 +164,7 @@ All three closed on 2026-09-15; see Decisions. ST-Q1 asked, PO-Q1 percent, ST-Q2
 | Call | Weight | Why it matters |
 |---|---|---|
 | Offer and manual discount are both cuts of the menu price, so 20% + 10% is 30% off, not 28% | **must decide** | Real money on every happy-hour ticket, and it is where we knowingly differ from Odoo. ST-S11 is the test; changing it later changes bills |
-| No ceiling on a PIN-approved discount: a manager can take a bill to zero (TD-004) | **must decide** | You delegated this and I took the simple road. The trail names them, nothing stops them |
+| No ceiling on a PIN-approved discount (TD-004) | settled 2026-09-24 | Your call: 50 % on a staff line discount; the whole-bill comp stays uncapped |
 | Over-limit PIN is the cashier's own, not a second person's | settled 2026-09-15 | Your call: caught in the trail, and a log-auditing agent is future scope |
 | Captain devices cannot request approval remotely | **must decide** | Changes how the floor works on a busy night |
 | Wrong PINs slow the next attempt instead of locking the account | fine to skip | Cheaper on a Friday, same defence against guessing |

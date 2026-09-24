@@ -179,6 +179,11 @@ is context missing when the module is half built.
 (`HANDOFF_<XX>_<topic>.md`), state, debt, reviews. The repo proper is the implementation. File names
 say what the file is; nobody should have to open one to know.
 
+Where a "later" goes, so it is found again: build order → `STATE.md` Next; a known flaw in code →
+`TECH_DEBT.md`; a module's out-of-scope call → its sheet; scaling, cost and infra once live →
+`INFRASTRUCTURE.md` "Later, when we are live and scaling"; a parked plan → `reviews/<date>-plan-*.md`,
+linked from a `STATE.md` row.
+
 ## Editing these docs
 They are short on purpose: an agent reads them whole, every session, and a rule nobody finishes
 is not a rule. When you change one:
@@ -242,6 +247,9 @@ check, each marked *must decide* or *fine to skip*. Shaurya reads that section o
 3. Browser sanity for any user-visible change, run by the agent, result pasted.
 4. Logs show the state transitions with the `cid`.
 5. Any `DEBT(...)` has its row. Donor review merged. `STATE.md` updated. Commit message carries the scenario ID.
+6. Before saying done, spawn one subagent that runs `.claude/skills/moonshot-review.md` on your own
+   uncommitted diff. Fix every P0, answer every P1, paste its verdict line. (Added 2026-09-24: no
+   reviewer ran on three sessions' work, and the first one that did found a cash-refund leak.)
 
 ## Talking to Shaurya
 Summary line first. Then short bullets, one idea each. Anything long goes on a page, not in chat.

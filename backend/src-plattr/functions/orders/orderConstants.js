@@ -2,7 +2,11 @@
  * Constants for order management
  */
 
-// Order status enum
+// Order status enum.
+// COMPLETED means "service finished" (set by the captain), NOT "paid". Payment is the separate
+// PAYMENT_STATUS below, and since 2026-09-20 COMPLETED frees nothing: open money keeps the table.
+// Two words for one visit confuses people (Shaurya, 2026-09-24). Simplify later: one lifecycle,
+// or derive "done" from paid + served. Not now; nothing is broken.
 exports.ORDER_STATUS = {
   PENDING: 'PENDING',
   IN_PROGRESS: 'IN_PROGRESS',
