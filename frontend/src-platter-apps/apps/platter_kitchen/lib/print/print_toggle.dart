@@ -1,4 +1,8 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:platter_core/platter_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,8 +12,8 @@ import 'print_agent.dart';
 /// owns the one [PrintAgent] for the app and stops it on logout or when the switch goes off. The choice is kept
 /// in shared preferences so a restart resumes printing without anyone remembering to tap.
 ///
-/// What this does NOT do yet: keep the app alive with the screen off. That is a foreground service (Kotlin), the
-/// hardware spike's first question, and an "ask before adding" item — see the sheet's KT-0 row 15.
+/// KT-5b · while it is on, Android's PrintService (Kotlin, `connectedDevice`) keeps the process alive and the CPU
+/// awake so the agent keeps polling with the screen off. Off, logout or the app going away stops both.
 class PrintToggle extends StatefulWidget {
   const PrintToggle(
       {super.key, required this.restaurantId, required this.sessionId});
@@ -17,6 +21,7 @@ class PrintToggle extends StatefulWidget {
   final String sessionId;
 
   static const prefsKey = 'print.enabled';
+  static const _service = MethodChannel('plattr/print_service');
 
   @override
   State<PrintToggle> createState() => _PrintToggleState();
@@ -44,8 +49,25 @@ class _PrintToggleState extends State<PrintToggle> {
     if (on) await _start(prefs);
   }
 
+  /// Android only: the web build has no socket and no service. A refused start is logged, never fatal — the agent
+  /// still prints while the app is on screen, and the till's red line catches a tablet that sleeps (KT-S23).
+  static Future<void> _keepAwake(bool on) async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    try {
+      await PrintToggle._service.invokeMethod<void>(on ? 'start' : 'stop');
+    } catch (e) {
+      AppLogger.warning(jsonEncode(
+          {'mod': 'print.agent', 'evt': 'service.failed', 'on': on, 'error': '$e'}));
+    }
+  }
+
   Future<void> _start(SharedPreferences prefs) async {
+    await _keepAwake(true);
     final id = await PrintAgent.installId(prefs);
+    if (!mounted) {
+      await _keepAwake(false); // logged out while the service was starting: no agent on a dead session
+      return;
+    }
     final agent = PrintAgent(
         restaurantId: widget.restaurantId,
         sessionId: widget.sessionId,
@@ -64,12 +86,14 @@ class _PrintToggleState extends State<PrintToggle> {
     } else {
       _agent?.stop();
       _agent = null;
+      await _keepAwake(false);
     }
     AppLogger.info('print agent ${on ? 'on' : 'off'}');
   }
 
   @override
   void dispose() {
+    if (_agent != null) _keepAwake(false);
     _agent?.stop();
     super.dispose();
   }

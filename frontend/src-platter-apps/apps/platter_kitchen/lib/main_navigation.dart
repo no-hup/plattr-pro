@@ -68,8 +68,11 @@ class _MainNavigationState extends State<MainNavigation> {
       const KitchenAppBarConfiguration();
 
   /// KT-5: "This tablet prints" lives in the app bar on every tab, whatever a child screen adds beside it.
+  /// Keyed so its state (the agent, the service) survives the dropdown before it appearing or not.
   late final Widget _printToggle = PrintToggle(
-      restaurantId: widget.restaurantId, sessionId: widget.sessionId);
+      key: const ValueKey('kitchen-print-toggle'),
+      restaurantId: widget.restaurantId,
+      sessionId: widget.sessionId);
   KitchenAppBarConfiguration _withPrintToggle(KitchenAppBarConfiguration c) =>
       c.copyWith(additionalActions: [_printToggle, ...?c.additionalActions]);
 
