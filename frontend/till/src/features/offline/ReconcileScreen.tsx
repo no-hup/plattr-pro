@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { call, ApiError } from '../../api/client'
-import type { Bill } from '../billing/useBill'
+import { seenAt, type Bill } from '../billing/useBill'
 import { fmt, freshPaymentId, type WriteResult } from '../payments/useTender'
 import { hhmm, openEstimates, stamp, upsertEstimate, type Estimate } from './cache'
 
@@ -40,8 +40,15 @@ export function ReconcileScreen({ ctx }: { ctx: { restaurantId: string; sessionI
   const issueAndTake = (e: Estimate) => run(async () => {
     let billId = e.issuedBillId
     if (!billId) {
-      const r = await call<{ data: Bill }>('billing-issue', { ...ctx, cid: `till_${e.draftId}`, draftId: e.draftId, dropCharges: [], tableIds: [], expectedV: {} })
-      billId = r.data.billId!
+      try {
+        const r = await call<{ data: Bill }>('billing-issue', { ...ctx, cid: `till_${e.draftId}`, draftId: e.draftId, dropCharges: [], tableIds: [], expectedV: seenAt(checked[e.id] ?? null) })
+        billId = r.data.billId!
+      } catch (err) {
+        // The issue landed and its answer was lost: the server names the bill these lines are on. Take
+        // against that one. Asking again can never mint a second number (BL-S7), so this only un-sticks the screen.
+        if (!(err instanceof ApiError) || err.code !== 'failed-precondition' || typeof err.data.billId !== 'string') throw err
+        billId = err.data.billId
+      }
       e = { ...e, issuedBillId: billId }; save(e)
     }
     await take(e, billId)

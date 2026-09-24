@@ -18,6 +18,7 @@
  *   KT-S23  print-status counts waiting; print-sweepNow logs an overdue job and answers a report
  */
 import { call } from '../lib/api.js';
+import { draftVersions } from '../lib/rest.mjs';
 import config from '../lib/config.js';
 
 const PIN_1234 = '$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm';
@@ -186,7 +187,7 @@ export default async function printSuite() {
       components: [{ id: 'kt_bill_line_item', kind: 'item', name: 'Chicken Biryani', unitListPrice: 45000, taxBlockId: 'food', taxCode: '9963' }],
       taxBlocks: { food: FOOD }, offer: null,
     });
-    const issued = await call('billing-issue', { restaurantId: RID, sessionId: manager, cid: 'cid_kt_bill', draftId: 'draft_kt_bill', tableIds: ['table_kt_1'], expectedV: {} });
+    const issued = await call('billing-issue', { restaurantId: RID, sessionId: manager, cid: 'cid_kt_bill', draftId: 'draft_kt_bill', tableIds: ['table_kt_1'], expectedV: await draftVersions(RID, 'draft_kt_bill') });
     const billId = issued.data?.billId;
     const job = billId ? await getDoc(`printJobs/bill:${billId}`) : null;
     check('KT-S6 billing-issue queued bill:<billId> for the counter with the bill number as ticketNo and tableLabel KT1', ok(issued) && job && job.kind === 'bill' && job.state === 'queued' && job.ticketNo === issued.data?.number && job.tableLabel === 'KT1', { issued, job });

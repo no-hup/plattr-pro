@@ -14,6 +14,7 @@
  * then: vacant table → OTP → cart → checkout → line snapshots → preview → issue → take → settled.
  */
 import config from './lib/config.js';
+import { draftVersions } from './lib/rest.mjs';
 
 const RID = process.argv[2]?.startsWith('--') ? 'res_meghana' : (process.argv[2] || 'res_meghana');
 const KEEP = process.argv.includes('--keep');
@@ -308,7 +309,7 @@ const foodBlock = b.blocks.find(x => x.id === 'food');
 if (foodBlock) check('CGST equals SGST (parts rounded independently)', foodBlock.parts[0]?.amount === foodBlock.parts[1]?.amount, foodBlock.parts);
 
 step('5 · generate the bill');
-const iss = await call('billing-issue', { restaurantId: RID, sessionId: staff.sessionId, draftId, cid: `journey_${Date.now()}`, tableIds: [table.id], expectedV: {} });
+const iss = await call('billing-issue', { restaurantId: RID, sessionId: staff.sessionId, draftId, cid: `journey_${Date.now()}`, tableIds: [table.id], expectedV: await draftVersions(RID, draftId) });
 check('bill issued', iss.status === 'success', iss.message || iss);
 if (iss.status !== 'success') die(`issue refused: ${iss.message}`);
 const bill = iss.data;
@@ -357,7 +358,7 @@ if (fin.status === 'success') {
 }
 
 step('8 · an issued bill cannot be billed twice');
-const again = await call('billing-issue', { restaurantId: RID, sessionId: staff.sessionId, draftId, cid: `journey_${Date.now()}_dup`, tableIds: [table.id], expectedV: {} });
+const again = await call('billing-issue', { restaurantId: RID, sessionId: staff.sessionId, draftId, cid: `journey_${Date.now()}_dup`, tableIds: [table.id], expectedV: await draftVersions(RID, draftId) });
 check('second issue refused', again.status !== 'success', again);
 
 step('9 · the owner counts the drawer and closes the day');
