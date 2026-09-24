@@ -5,7 +5,7 @@ import { Line, TaxBlock } from '../domain/line';
 import { Staff } from './approvals';
 
 const RID = 'r1';
-const REASONS = ['placard', 'regular', 'complaint', 'birthday', 'guest left', 'staff meal', 'other'];
+const REASONS = ['placard', 'regular', 'complaint', 'birthday', 'guest left', 'staff meal', 'complimentary', 'other'];
 const FOOD: TaxBlock = { label: 'GST', mode: 'exclusive', collect: true, parts: [{ label: 'CGST', rateBps: 250 }, { label: 'SGST', rateBps: 250 }] };
 const line = (lineId: string, list: number, block: TaxBlock | null = FOOD, extra: Partial<Line> = {}): Line => ({
   lineId, cid: 'o1', orderId: 'o1', cartId: 'k1', cartItemId: '1', tableId: 't7', sessionId: 's1', placedAt: 1, placedBy: 'g',
@@ -14,7 +14,7 @@ const line = (lineId: string, list: number, block: TaxBlock | null = FOOD, extra
   taxBlocks: block ? { food: block } : {}, offer: null, ...extra,
 });
 
-function fakePorts(opts: { role?: string; offer?: { id: string; name: string; amount: number } | null; configThrows?: boolean; charges?: { type: string; pctBps: number; taxBlockId: string }[] } = {}) {
+function fakePorts(opts: { role?: string; offer?: { id: string; name: string; amount: number } | null; configThrows?: boolean; charges?: { type: string; pctBps: number; amount?: number; taxBlockId: string; optIn?: boolean }[]; tables?: Record<string, string[] | null> } = {}) {
   const lines = new Map<string, Line>([['pizza', line('pizza', 50000)], ['coke', line('coke', 8000)]]);
   const bills = new Map<string, Bill>();
   const counters = new Map<string, { next: number }>([['A_2026-27', { next: 417 }]]);
@@ -33,6 +33,7 @@ function fakePorts(opts: { role?: string; offer?: { id: string; name: string; am
     linesOfDraft: async (_r, d) => [...lines.values()].filter(l => l.draftId === d),
     orderOffer: async () => opts.offer ?? null,
     getBill: async (_r, id) => bills.get(id) ?? null,
+    tables: async (_r, ids) => ids.map(tableId => ({ tableId, charges: opts.tables?.[tableId] ?? null })),
     // ST's door, faked: no pin → the challenge; wrong pin → wrong; else a P0 audit row like ST writes.
     approve: async req => {
       if (staff.role !== 'MANAGER' && staff.role !== 'ADMIN') throw new ApprovalError('permission-denied', 'Not allowed for your role');
@@ -80,7 +81,8 @@ function fakePorts(opts: { role?: string; offer?: { id: string; name: string; am
   return ports;
 }
 const base = { restaurantId: RID, sessionId: 's1', draftId: 's1', cid: 'o1' };
-const issueReq = (extra = {}) => ({ ...base, tableIds: ['t7'], expectedV: {}, ...extra });
+// TD-040: what the cashier's preview showed — both seeded lines at v0. A test that changes the draft says what it saw.
+const issueReq = (extra = {}) => ({ ...base, tableIds: ['t7'], expectedV: { pizza: 0, coke: 0 } as Record<string, number>, ...extra });
 const code = async (p: Promise<unknown>) => { try { await p; return 'ok'; } catch (e) { return (e as ApprovalError).code; } };
 
 describe('app/billing preview', () => {
@@ -104,6 +106,17 @@ describe('app/billing preview', () => {
     const p = fakePorts({ charges: [{ type: 'SERVICE_CHARGE', pctBps: 1000, taxBlockId: 'food' }] });
     expect((await preview(p, base)).charges[0]).toMatchObject({ base: 58000, amount: 5800 });
     expect((await preview(p, { ...base, dropCharges: ['SERVICE_CHARGE'] })).charges).toEqual([]);
+  });
+  it('BT-P4 a table naming its charges takes exactly those rows; one naming none takes every row', async () => {
+    const charges = [{ type: 'SERVICE_CHARGE', pctBps: 1000, taxBlockId: 'food' }, { type: 'PACKING', pctBps: 0, amount: 2000, taxBlockId: 'food', optIn: true }];   // config-doc shape: `amount` minor units
+    // t7 (the fixture's table) is a counter ticket: packing only, no service charge.
+    const parcel = await preview(fakePorts({ charges, tables: { t7: ['PACKING'] } }), base);
+    expect(parcel.charges.map(c => [c.type, c.amount])).toEqual([['PACKING', 2000]]);
+    // No table names anything → every row that is not optIn: the service charge, never packing.
+    const dinein = await preview(fakePorts({ charges }), base);
+    expect(dinein.charges.map(c => [c.type, c.amount])).toEqual([['SERVICE_CHARGE', 5800]]);
+    // dropCharges still applies on top of the table's list.
+    expect((await preview(fakePorts({ charges, tables: { t7: ['PACKING'] } }), { ...base, dropCharges: ['PACKING'] })).charges).toEqual([]);
   });
   it('R12 a config read failure refuses, never defaults', async () => {
     await expect(preview(fakePorts({ configThrows: true }), base)).rejects.toThrow('firestore down');
@@ -129,9 +142,40 @@ describe('app/billing issue', () => {
     await expect(issue(p, issueReq())).rejects.toMatchObject({ code: 'failed-precondition', message: expect.stringContaining('already issued') });
     expect(p.counters.get('A_2026-27')).toEqual({ next: 418 });
   });
+  it('BL-S7 a corrupt counter ({} with no next) refuses the issue: failed-precondition, no bill, counter untouched', async () => {
+    const p = fakePorts();
+    p.counters.set('A_2026-27', {} as never);
+    await expect(issue(p, issueReq())).rejects.toMatchObject({ code: 'failed-precondition', message: expect.stringContaining('A_2026-27') });
+    expect(p.bills.size).toBe(0); expect(p.counters.get('A_2026-27')).toEqual({});
+  });
+  it('BL-S11 a corrupt credit-note counter refuses the note the same way', async () => {
+    const p = fakePorts();
+    const b = await issue(p, issueReq());
+    p.bills.set(b.billId, { ...p.bills.get(b.billId)!, status: 'paid' });
+    p.counters.set('CN_2026-27', { next: 'x' } as never);
+    await expect(creditNote(p, { ...base, billId: b.billId, reason: 'complaint', pin: '1234', credits: [{ lineId: 'coke', qty: 1 }] })).rejects.toMatchObject({ code: 'failed-precondition' });
+  });
   it('BL-S7 a line that changed since preview (v) → failed-precondition, nothing written', async () => {
     const p = fakePorts();
     await expect(issue(p, issueReq({ expectedV: { pizza: 3 } }))).rejects.toMatchObject({ code: 'failed-precondition' });
+    expect(p.bills.size).toBe(0);
+  });
+  it('TD-040 a dish added after the preview → failed-precondition naming it, no number taken', async () => {
+    const p = fakePorts(); p.lines.set('naan', line('naan', 6000));
+    await expect(issue(p, issueReq())).rejects.toMatchObject({ code: 'failed-precondition', message: expect.stringContaining('preview again'), details: { lineId: 'naan' } });
+    expect(p.bills.size).toBe(0); expect(p.counters.get('A_2026-27')).toEqual({ next: 417 });
+  });
+  it('TD-040 a dish voided after the preview (v 0 → 1) → failed-precondition: the preview read ₹609.00, the bill would be ₹529.00', async () => {
+    const p = fakePorts(); p.lines.set('coke', line('coke', 8000, FOOD, { v: 1, countsTowardTotal: false }));
+    await expect(issue(p, issueReq())).rejects.toMatchObject({ code: 'failed-precondition', details: { lineId: 'coke' } });
+  });
+  it('TD-040 a dish split away after the preview → failed-precondition', async () => {
+    const p = fakePorts(); p.lines.set('coke', line('coke', 8000, FOOD, { draftId: 's2' }));
+    await expect(issue(p, issueReq())).rejects.toMatchObject({ code: 'failed-precondition', details: { lineId: 'coke' } });
+  });
+  it('TD-040 {} is no longer a way round the guard: the draft has lines, so it is refused', async () => {
+    const p = fakePorts();
+    await expect(issue(p, issueReq({ expectedV: {} }))).rejects.toMatchObject({ code: 'failed-precondition' });
     expect(p.bills.size).toBe(0);
   });
   it('BL-S7 a missing expectedV is a bad request, not a crash: invalid-argument, nothing written', async () => {
@@ -200,7 +244,7 @@ describe('app/billing issue', () => {
     it('BL-S24 the OFFER`s own discount is never gated: no PIN, no audit row, the guest just gets their offer', async () => {
       const p = fakePorts({ offer: { id: 'happy', name: 'Happy hour', amount: 10000 } });
       p.lines.delete('coke');
-      const b = await issue(p, issueReq());        // no discount in the body, no pin
+      const b = await issue(p, issueReq({ expectedV: { pizza: 0 } }));        // no discount in the body, no pin
       expect(b).toMatchObject({ number: '0417', payable: 42000 });
       expect(p.audits.size).toBe(0);
     });
@@ -264,8 +308,8 @@ describe('app/billing cancel / creditNote / split / get', () => {
   it('BL-S12 split moves lines to a second draft; each draft issues its own number; an issued line cannot move', async () => {
     const p = fakePorts();
     expect(await split(p, { ...base, moves: [{ lineId: 'coke', toDraftId: 'd2' }] })).toEqual({ moved: 1 });
-    const a = await issue(p, issueReq());
-    const b = await issue(p, issueReq({ draftId: 'd2' }));
+    const a = await issue(p, issueReq({ expectedV: { pizza: 0 } }));
+    const b = await issue(p, issueReq({ draftId: 'd2', expectedV: { coke: 0 } }));
     expect([a.number, a.payable, b.number, b.payable]).toEqual(['0417', 52500, '0418', 8400]);
     expect(await code(split(p, { ...base, moves: [{ lineId: 'coke', toDraftId: 's1' }] }))).toBe('failed-precondition');
   });
@@ -280,7 +324,9 @@ describe('app/billing cancel / creditNote / split / get', () => {
 describe('app/billing settingsFrom', () => {
   it('the old charges key stays a percent: percentage 5 → pctBps 500, block food; pctBps wins when present; seller falls back to the info doc', () => {
     const s = settingsFrom({ billing: { charges: [{ type: 'SERVICE_CHARGE', percentage: 5 }, { type: 'X', pctBps: 250, taxBlockId: 'liquor' }] } }, { name: 'Meghana Foods', address: 'Residency Road' });
-    expect(s.billing.charges).toEqual([{ type: 'SERVICE_CHARGE', pctBps: 500, taxBlockId: 'food' }, { type: 'X', pctBps: 250, taxBlockId: 'liquor' }]);
+    expect(s.billing.charges).toEqual([{ type: 'SERVICE_CHARGE', pctBps: 500, flat: 0, taxBlockId: 'food' }, { type: 'X', pctBps: 250, flat: 0, taxBlockId: 'liquor' }]);
+    // BT: a flat row is `amount` in minor units on the config doc; a percentage-only row reads flat 0.
+    expect(settingsFrom({ billing: { charges: [{ type: 'PACKING', amount: 2000, taxBlockId: 'food', optIn: true }] } }, undefined).billing.charges).toEqual([{ type: 'PACKING', pctBps: 0, flat: 2000, taxBlockId: 'food', optIn: true }]);
     expect(s.seller).toMatchObject({ name: 'Meghana Foods', address: 'Residency Road', taxId: '' });
     expect(s.invoice).toMatchObject({ series: 'A', width: 4, timezone: 'Asia/Kolkata' });
   });

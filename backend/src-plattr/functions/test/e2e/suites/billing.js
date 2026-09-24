@@ -8,6 +8,7 @@ const PIN_1234 = '$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm';
  * docs first so it reruns without a reset. Money is minor units on the line; pizza 50000 + coke 8000 → 60900.
  */
 import { call } from '../lib/api.js';
+import { draftVersions } from '../lib/rest.mjs';
 import config from '../lib/config.js';
 
 const RID = config.RESTAURANT_ID;
@@ -75,7 +76,28 @@ export default async function billingSuite() {
   const manager = await login('manager@bl.test');
   const captain = await login('captain@bl.test');
   if (!manager || !captain) { record(false, 'ABORT: staff login failed', { manager, captain }); return results; }
-  const as = (sessionId, fn, body) => call(`billing-${fn}`, { restaurantId: RID, sessionId, cid: 'cid_bl', draftId: 'draft_bl', tableIds: ['table_bl'], expectedV: {}, ...body });
+  // TD-040: an issue sends what the preview showed unless the check says otherwise.
+  const as = async (sessionId, fn, body = {}) => call(`billing-${fn}`, { restaurantId: RID, sessionId, cid: 'cid_bl', draftId: 'draft_bl', tableIds: ['table_bl'], ...(fn === 'issue' ? { expectedV: await draftVersions(RID, body.draftId ?? 'draft_bl') } : {}), ...body });
+
+  // ── BT parcel: a counter ticket carries the flat PACKING charge and not the service charge ──
+  // Seeded here, first, so the rest of the suite (which sets charges: []) is untouched: pizza 50000 on
+  // table_bl_p → packing 2000 taxed 50 + 50, food taxable 52000, payable 54600. The dine-in draft on
+  // table_bl carries the 10 % service charge instead: base 58000 → 5800 taxed 145 + 145; block 66990, round-off +10 (BL-S6), payable 67000.
+  {
+    await delDoc('lines/bl_parcel'); await delDoc('tables/table_bl_p');
+    await seed('tables/table_bl_p', { number: 'P1', capacity: 0, status: 'vacant', charges: ['PACKING'] });
+    await seed('config/settings', { ...(await getDoc('config/settings')), billing: { ...(settings.billing || {}), charges: [{ type: 'SERVICE_CHARGE', pctBps: 1000, taxBlockId: 'food' }, { type: 'PACKING', amount: 2000, taxBlockId: 'food', optIn: true }] } });
+    await seed('lines/bl_parcel', { ...line('bl_parcel', 'Margherita', 50000, 'food', 'draft_bl_p'), tableId: 'table_bl_p' });
+    const p = await as(manager, 'preview', { draftId: 'draft_bl_p', tableIds: ['table_bl_p'] });
+    const d = p.data || {};
+    check('BT-P parcel preview: PACKING 2000 only (no service charge), taxed 50 + 50, payable 54600', d.charges?.length === 1 && d.charges[0].type === 'PACKING' && d.charges[0].amount === 2000 && d.charges[0].tax?.parts?.map(x => x.amount).join(',') === '50,50' && d.payable === 54600, p);
+    const t = await as(manager, 'preview', {});
+    check('BT-P dine-in preview on the same config: SERVICE_CHARGE 5800 only, round-off +10, payable 67000', t.data?.charges?.length === 1 && t.data.charges[0].type === 'SERVICE_CHARGE' && t.data.charges[0].amount === 5800 && t.data.roundOff === 10 && t.data.payable === 67000, t);
+    const dropped = await as(manager, 'preview', { draftId: 'draft_bl_p', tableIds: ['table_bl_p'], dropCharges: ['PACKING'] });
+    check('BT-P dropCharges removes packing from the parcel: payable 52500', dropped.data?.charges?.length === 0 && dropped.data?.payable === 52500, dropped);
+    await seed('config/settings', { ...(await getDoc('config/settings')), billing: { ...(settings.billing || {}), charges: [] } });
+    await delDoc('lines/bl_parcel');
+  }
 
   // BL-S1 preview
   {
@@ -90,6 +112,16 @@ export default async function billingSuite() {
     const r = await as(manager, 'preview', {});
     check('BL-S14 a line with no tax block → failed-precondition naming Dal Tadka', errData(r).code === 'failed-precondition' && /Dal Tadka/.test(r.message || ''), r);
     await delDoc('lines/bl_dal');
+  }
+  // TD-040: the cashier previewed pizza + coke (₹609.00); a naan (₹60) lands before they press Issue.
+  // The issue carries the preview's versions, so it is refused and takes no number.
+  {
+    const seen = await draftVersions(RID, 'draft_bl');
+    await seed('lines/bl_naan', line('bl_naan', 'Butter Naan', 6000, 'food'));
+    const r = await as(manager, 'issue', { expectedV: seen });
+    check('TD-040 a dish added after the preview → failed-precondition "preview again" naming it', errData(r).code === 'failed-precondition' && /preview again/.test(r.message || '') && errData(r).lineId === 'bl_naan', r);
+    check('TD-040 …and no invoice number was taken', (await listCol('counters')).filter(k => /^A_/.test(k.id)).length === 0);
+    await delDoc('lines/bl_naan');
   }
   // BL-S7 issue
   let billId;
@@ -168,7 +200,7 @@ export default async function billingSuite() {
     const D = 'draft_bl_comp';
     await seed('lines/bl_comp', line('bl_comp', 'Walkout Biryani', 150000, 'food', D));
     const comp = { amount: 150000, pct: 100, source: { reason: 'guest left', note: 'left at 23:10', approverId: 'manager_bl' } };
-    const as2 = (sessionId, fn, body) => call(`billing-${fn}`, { restaurantId: RID, sessionId, cid: 'cid_bl', draftId: D, tableIds: ['table_bl'], expectedV: {}, ...body });
+    const as2 = async (sessionId, fn, body = {}) => call(`billing-${fn}`, { restaurantId: RID, sessionId, cid: 'cid_bl', draftId: D, tableIds: ['table_bl'], ...(fn === 'issue' ? { expectedV: await draftVersions(RID, D) } : {}), ...body });
 
     const pre = await as2(manager, 'preview', { discount: comp });
     check('TD-019 preview still shows what a comp would come to, with no PIN — looking costs nothing', pre.status === 'success' && pre.data?.payable === 0, pre);

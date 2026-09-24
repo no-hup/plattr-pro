@@ -18,14 +18,14 @@ export interface Tile {
   drafts: number
   minutes: number
 }
-export interface FloorConfig { pollSeconds: number; staleAfterSeconds: number; settledFreeAfterMinutes: number }
+export interface FloorConfig { pollSeconds: number; staleAfterSeconds: number; settledFreeAfterMinutes: number; takeawayTableIds: string[] }
 export interface Draft { draftId: string; onTable: number; lineIds: string[] }
 export interface OpenBill { billId: string; payable: number; paid: number; status: string }
 export interface Opened { tableIds: string[]; sessionId: string | null; drafts: Draft[]; bills: OpenBill[] }
 
 export const rupees = (minor: number) => `₹${(minor / 100).toFixed(2)}`
 
-const DEFAULTS: FloorConfig = { pollSeconds: 5, staleAfterSeconds: 20, settledFreeAfterMinutes: 30 }
+const DEFAULTS: FloorConfig = { pollSeconds: 5, staleAfterSeconds: 20, settledFreeAfterMinutes: 30, takeawayTableIds: [] }
 
 export interface Ctx { restaurantId: string; sessionId: string }
 
@@ -95,5 +95,8 @@ export function useFloor(ctx: Ctx) {
     move: (fromTableId: string, toTableId: string) =>
       act('table-moveTable', { fromTableId, toTableId, cid: cid() }),
     clear: (tableId: string) => act('floor-clear', { tableId, cid: cid() }),
+    // Shaurya 2026-09-24: a table that still owes frees only with the cashier's PIN. The server answers
+    // {requires:'pin'} and the client's PinPrompt asks; the P0 row records the amount abandoned.
+    walkOut: (tableId: string) => act('floor-clear', { tableId, cid: cid(), reason: 'guest left', note: 'walk-out' }),
   }
 }

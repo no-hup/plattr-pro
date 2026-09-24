@@ -5,13 +5,15 @@ import { getPreview, putPreview } from '../offline/cache'
 // Money on the wire is integer minor units (R8). The screen formats; nothing here does arithmetic.
 export interface Part { label: string; rateBps: number; amount: number }
 export interface Block { id: string; label: string; mode: string; taxable: number; parts: Part[]; total: number }
-export interface BillLine { lineId: string; name: string; qty: number; listPrice: number; countsTowardTotal: boolean; billDiscount: number; offer?: { amount: number } | null; discount?: { amount: number } }
-export interface Charge { type: string; pctBps: number; base: number; amount: number }
+export interface BillLine { lineId: string; v: number; name: string; qty: number; listPrice: number; countsTowardTotal: boolean; billDiscount: number; offer?: { amount: number } | null; discount?: { amount: number } }
+export interface Charge { type: string; pctBps: number; flat: number; base: number; amount: number }
 export interface Bill {
   billId?: string; number?: string; series?: string; status?: string
   lines: BillLine[]; blocks: Block[]; charges: Charge[]; subtotal: number; taxTotal: number; roundOff: number; payable: number
   flagged?: string[]; offer?: { name: string; amount: number } | null; seller?: { name: string; taxId: string }
 }
+/** TD-040: the preview the cashier is looking at, as the server checks it — every open line and its version. */
+export const seenAt = (b: Bill | null) => Object.fromEntries((b?.lines ?? []).map(l => [l.lineId, l.v]))
 export const rupees = (minor: number) => `₹${(minor / 100).toFixed(2)}`
 
 export interface Ctx { restaurantId: string; sessionId: string; draftId: string }
@@ -35,7 +37,7 @@ export function useBill(ctx: Ctx) {
     try { const r = await call<{ data: Bill }>('billing-preview', body()); setBill(r.data); setAsOf(null); putPreview(ctx.draftId, r.data); return r.data }
     catch (e) { const c = getPreview(ctx.draftId); if (c && !bill) setBill(c.bill); if (c) setAsOf(c.at); throw e }
   })
-  const issue = () => run(async () => { const r = await call<{ data: Bill }>('billing-issue', body({ tableIds: [], expectedV: {} })); setBill(r.data); return r.data })
+  const issue = () => run(async () => { const r = await call<{ data: Bill }>('billing-issue', body({ tableIds: [], expectedV: seenAt(bill) })); setBill(r.data); return r.data })
 
   /**
    * DC-S25a. Guests left without paying, so there is nothing to collect and the day close will not
@@ -49,7 +51,7 @@ export function useBill(ctx: Ctx) {
     const live = (bill?.lines ?? []).filter(l => l.countsTowardTotal)
     const net = live.reduce((n, l) => n + l.listPrice - (l.offer?.amount ?? 0) - (l.discount?.amount ?? 0), 0)
     if (net <= 0) throw new ApiError('failed-precondition', 'Nothing to comp')
-    const r = await call<{ data: Bill }>('billing-issue', body({ tableIds: [], expectedV: {}, discount: { amount: net, pct: 100, source: { reason, note } } }))
+    const r = await call<{ data: Bill }>('billing-issue', body({ tableIds: [], expectedV: seenAt(bill), discount: { amount: net, pct: 100, source: { reason, note } } }))
     setBill(r.data); return r.data
   })
   const cancel = (billId: string, reason: string, note: string) =>

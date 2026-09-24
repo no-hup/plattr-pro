@@ -9,6 +9,8 @@ const featureFlags = require('../singleton/FeatureFlags');
  * @param {Object} data - The input data object
  * @throws {HttpsError} If validation fails
  */
+const NOTE_MAX = 120;
+
 function validateAddItemFields(data) {
   if (!data) {
     throw new functions.https.HttpsError('invalid-argument', 'No data provided');
@@ -28,6 +30,12 @@ function validateAddItemFields(data) {
       'invalid-argument',
       'Quantity must be greater than 0.'
     );
+  }
+
+  // TD-048: the guest's note ("no onion"). Optional; a string of at most NOTE_MAX characters,
+  // because it is frozen on the line and printed on a 48-column ticket.
+  if (data.note !== undefined && data.note !== null && (typeof data.note !== 'string' || data.note.length > NOTE_MAX)) {
+    throw new functions.https.HttpsError('invalid-argument', `note must be a string of at most ${NOTE_MAX} characters.`);
   }
 }
 
@@ -59,6 +67,8 @@ function validateRemoveItemFields(data) {
  * @throws {functions.https.HttpsError} If session is invalid or missing
  * todo shaurya check for primary user, if table already auhenticated phone number and name not needed from user. only otp
  */
+// TD-033: every cart write (add, remove, clear) and checkout goes through this one check: the caller
+// holds the table's own live session, not merely some active session, and not none.
 async function validateCheckoutSession(restaurantId, tableId, sessionId) {
   if (!sessionId) {
     errorHandler.unauthorized("Authentication required", {
@@ -84,21 +94,13 @@ async function validateCheckoutSession(restaurantId, tableId, sessionId) {
 }
 
 /**
- * Requires that the table currently has an active session. Used by cart
- * mutations whose legacy consumer payloads don't carry sessionId yet — blocks
- * drive-by cart writes against vacant tables using only the public
- * restaurantId/tableId from a QR code.
- * @throws {HttpsError} If no active session exists for the table
+ * TD-033: carts/{tableId} is keyed by the table but belongs to the sitting that filled it. Vacant, Clear,
+ * the idle sweep and a session simply expiring all end a sitting without touching the cart, so a cart
+ * stamped with any other session is read as empty — by add, remove, checkout, getCart and offers alike.
+ * @returns {Object|null} the cart if it is this session's, else null
  */
-async function requireActiveTableSession(restaurantId, tableId) {
-  const session = await sessionService.validateTableSession(restaurantId, tableId, { throwError: false });
-  if (!session) {
-    throw new functions.https.HttpsError(
-      'unauthenticated',
-      'No active session for this table.'
-    );
-  }
-  return session;
+function cartOfSession(cart, sessionId) {
+  return cart && sessionId && cart.sessionId === sessionId ? cart : null;
 }
 
 /**
@@ -189,5 +191,5 @@ module.exports = {
   validateGetCartFields,
   validateSessionId,
   validateCheckoutSession,
-  requireActiveTableSession
+  cartOfSession
 }; 

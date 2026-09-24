@@ -243,6 +243,8 @@ function findIdenticalItemInCart(cartItems, newItem, compareArraysIgnoringOrder)
   return cartItems.findIndex(item => {
     if (item?.menuItemId !== menuItemId) return false;
     if ((item?.addedBy || null) !== owner) return false;
+    // TD-048: "no onion" and plain are two lines, or the kitchen gets one ticket saying both.
+    if ((item?.note || '') !== (newItem.note || '')) return false;
 
     // Compare variants regardless of order
     const variantsMatch = compareArraysIgnoringOrder(
@@ -343,14 +345,9 @@ async function processSelectedVariants(db, restaurantId, menuItem, selectedVaria
       errorHandler.badRequest("Selected option not found for the variant.", { variantId, optionId });
     }
 
-    // Validate price data for the option
+    // TD-015: broken price data refuses. Defaulting it to 0 billed the option free.
     if (!validatePriceData(selectedOption.priceInfo, `variant.${variant.id}.option.${selectedOption.id}`)) {
-      console.warn("Invalid price data in variant option, using defaults:", selectedOption);
-      selectedOption.priceInfo = {
-        basePrice: 0,
-        finalPrice: 0,
-        discount: 0
-      };
+      errorHandler.internalError("Variant option has invalid price data.", { variantId, optionId });
     }
 
     // Add processed variant to result array
@@ -378,69 +375,45 @@ async function processSelectedVariants(db, restaurantId, menuItem, selectedVaria
 }
 
 /**
- * Processes addon selections for a menu item
- * Retrieves addon documents, validates them, and prepares data
- * 
+ * Processes addon selections for a menu item. TD-015: every id must exist, be listed on this dish
+ * (`menuItem.addons`, the same list the guest menu is built from), be in stock and carry valid price
+ * data; anything else refuses the add rather than dropping the add-on or billing it at ₹0.
+ *
  * @param {Object} db - Firestore database instance
- * @param {string} restaurantId - ID of the restaurant 
+ * @param {string} restaurantId - ID of the restaurant
+ * @param {Object} menuItem - Menu item document data (its `addons` is the list of ids it offers)
  * @param {Array} selectedAddons - Array of selected addon IDs
  * @param {Object} errorHandler - Error handler for standardized errors
  * @returns {Promise<Array>} - Array of processed addon details
  */
-async function processSelectedAddons(db, restaurantId, selectedAddons, errorHandler) {
-  // If no addons selected, return empty array
+async function processSelectedAddons(db, restaurantId, menuItem, selectedAddons, errorHandler) {
   if (!selectedAddons || selectedAddons.length === 0) {
     return [];
   }
 
-  // Map addon IDs to Firebase promises
-  const addonPromises = selectedAddons.map((addonId) =>
-    db
-      .collection("restaurants")
-      .doc(restaurantId)
-      .collection("addons")
-      .doc(addonId)
-      .get()
-  );
+  const offered = (menuItem && menuItem.addons) || [];
+  const addonDocs = await Promise.all(selectedAddons.map((addonId) =>
+    db.collection("restaurants").doc(restaurantId).collection("addons").doc(addonId).get()
+  ));
 
-  // Wait for all promises to resolve
-  const addonDocs = await Promise.all(addonPromises);
-
-  // Filter out non-existent docs and extract data
-  const validAddons = addonDocs
-    .map((doc) => (doc.exists ? { id: doc.id, ...doc.data() } : null))
-    .filter(Boolean);
-
-  // Process each addon
-  const selectedAddonsDetails = validAddons.map((addon) => {
-    /* console.log("Processing Addon:", {
-      id: addon.id,
-      name: addon.meta?.name,
-      priceInfo: addon.priceInfo,
-      respectParentDiscount: addon.respectParentDiscount,
-    }); */
-
-    // Validate price data for the addon
+  return addonDocs.map((doc, i) => {
+    const addonId = selectedAddons[i];
+    if (!doc.exists) errorHandler.badRequest("Add-on not found.", { addonId });
+    if (!offered.includes(addonId)) errorHandler.badRequest("Add-on is not offered on this dish.", { addonId });
+    const addon = { id: doc.id, ...doc.data() };
+    const name = addon.meta?.name || addonId;
+    // `=== true`, the same test the menu read filters on: a missing flag is not "in stock".
+    if (addon.isInStock !== true) errorHandler.preconditionFailed(`Add-on ${name} is currently out of stock.`, { addonId });
     if (!validatePriceData(addon.priceInfo, `addon.${addon.id}`)) {
-      console.warn("Invalid price data in addon, using defaults:", addon);
-      addon.priceInfo = {
-        basePrice: 0,
-        finalPrice: 0,
-        discount: 0
-      };
+      errorHandler.internalError("Add-on has invalid price data.", { addonId });
     }
-
-    // Return processed addon data
     return {
-      id: addon.id || "N/A",
-      name: addon.meta?.name || "N/A",
-      priceInfo: addon.priceInfo || {},
+      id: addon.id,
+      name,
+      priceInfo: addon.priceInfo,
       respectParentDiscount: addon.respectParentDiscount || false,
     };
   });
-
-  // console.log("Processed addons:", JSON.stringify(selectedAddonsDetails, null, 2));
-  return selectedAddonsDetails;
 }
 
 /**
@@ -506,7 +479,7 @@ function buildCartItemPriceInfoForQuantity(menuItem, selectedVariantsDetails, se
   }).toObject();
 }
 
-function createCartItem(menuItemId, menuItem, selectedVariantsDetails, selectedAddonsDetails, quantity, priceDetails, cartItemId, addedBy) {
+function createCartItem(menuItemId, menuItem, selectedVariantsDetails, selectedAddonsDetails, quantity, priceDetails, cartItemId, addedBy, note = '') {
   // priceDetails is kept in the signature for backward compatibility with the
   // one caller (addItemToCart.js), but we deliberately re-derive the priceInfo
   // from `menuItem` so createCartItem and the increment/decrement recalc paths
@@ -555,6 +528,8 @@ function createCartItem(menuItemId, menuItem, selectedVariantsDetails, selectedA
     // Who put this on the table's list. A device id from the guest app, not an account:
     // it says "this phone", which is all a QR guest ever tells us. null = unowned/legacy.
     addedBy: addedBy || null,
+    // TD-048: the guest's instruction, trimmed; frozen onto the line at checkout for the KOT.
+    note: typeof note === 'string' ? note.trim() : '',
     status: FULFILLMENT_STATUS.PENDING
   };
 }
