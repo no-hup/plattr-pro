@@ -2,7 +2,7 @@ const functions = require('firebase-functions');
 const { admin, db, Timestamp } = require('../admin/admin');
 const getCartFunction = require('./getCart');
 const createOrUpdateOrder = require('../orders/createOrUpdateOrder').createOrUpdateOrder;
-const { validateCheckoutFields, validateCheckoutSession } = require('./cartInputValidation');
+const { validateCheckoutFields, validateCheckoutSession, cartOfSession } = require('./cartInputValidation');
 const errorHandler = require('../singleton/ErrorHandler');
 const { validateCart } = require('./validateCart');
 const { calculateCartValue } = require('./calculateCartValue');
@@ -55,7 +55,7 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
       .doc(tableId);
 
     const cartDoc = await cartRef.get();
-    const cart = cartDoc.exists ? cartDoc.data() : null;
+    const cart = cartOfSession(cartDoc.exists ? cartDoc.data() : null, sessionId);   // TD-033
     const hasItems = !!(cart && Array.isArray(cart.items) && cart.items.length > 0);
     // OF R1: with a requestId the cart may already be gone because the first tap landed; the
     // order transaction decides (retry → the existing order, else the same refusal as below).
@@ -88,19 +88,22 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
     }
 
     // Verify stock availability for all items in the cart
+    // Only the lines this diner is actually sending. The table shares one cart doc, so an
+    // unscoped check let Bhanu's sold-out Caesar Salad refuse Asha's Pasta — her round was
+    // blocked by food she never ordered. A caller without addedBy still checks the whole cart.
+    const sending = addedBy ? (cart?.items || []).filter(i => (i?.addedBy || null) === addedBy) : cart?.items;
+    let outOfStockItems;
     try {
-      // Only the lines this diner is actually sending. The table shares one cart doc, so an
-      // unscoped check let Bhanu's sold-out Caesar Salad refuse Asha's Pasta — her round was
-      // blocked by food she never ordered. A caller without addedBy still checks the whole cart.
-      const sending = addedBy ? (cart?.items || []).filter(i => (i?.addedBy || null) === addedBy) : cart?.items;
-      const outOfStockItems = await validateMenuItemsStock(restaurantId, sending);
-      if (outOfStockItems.length > 0) {
-        const itemNames = outOfStockItems.map(item => item.name || item.menuItemId).join(', ');
-        errorHandler.preconditionFailed(`Cannot checkout. The following items are out of stock: ${itemNames}`);
-      }
+      outOfStockItems = await validateMenuItemsStock(restaurantId, sending);
     } catch (stockError) {
       console.error('Error validating item stock:', stockError);
       errorHandler.internalError('Failed to validate item stock: ' + stockError.message);
+    }
+    // Outside the try: the refusal used to be caught above and re-thrown as `internal`, so the guest
+    // read "something went wrong" instead of which dish ran out.
+    if (outOfStockItems.length > 0) {
+      const itemNames = outOfStockItems.map(item => item.name || item.menuItemId).join(', ');
+      errorHandler.preconditionFailed(`Cannot checkout. The following items are out of stock: ${itemNames}`);
     }
 
     // Create/Update Order and clear the cart — one transaction (see createOrUpdateOrder)
@@ -193,7 +196,19 @@ async function validateMenuItemsStock(restaurantId, cartItems) {
     }
   });
 
+  // TD-015: the add-ons riding on those lines, re-read now. One switched off since it was added
+  // must stop the round exactly as a sold-out dish does. `=== true`, as the add path and the menu read.
+  const addonIds = [...new Set(cartItems.flatMap(item => (item.selectedAddonsDetails || []).map(a => a.id)))];
+  const addonsRef = db.collection('restaurants').doc(restaurantId).collection('addons');
+  const addonDocs = await Promise.all(addonIds.map(id => addonsRef.doc(id).get()));
+  const soldOut = new Map(addonDocs.filter(d => !d.exists || d.data().isInStock !== true)
+    .map(d => [d.id, (d.exists && d.data().meta?.name) || d.id]));
+  cartItems.forEach(item => (item.selectedAddonsDetails || []).forEach(a => {
+    if (soldOut.has(a.id)) outOfStockItems.push({ menuItemId: item.menuItemId, addonId: a.id, name: soldOut.get(a.id) });
+  }));
+
   return outOfStockItems;
 }
 
 module.exports = checkoutCart;
+module.exports.validateMenuItemsStock = validateMenuItemsStock;

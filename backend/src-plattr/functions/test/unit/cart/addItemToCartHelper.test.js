@@ -111,53 +111,45 @@ describe('addItemToCartBoilerplateHelper', () => {
         });
     });
 
+    // TD-015. Hand-computed: the Veg Biryani lists raita (₹40, in stock) and prawn (₹120, sold out);
+    // Extra Cheese (₹20) exists in the restaurant but is not listed on this dish.
     describe('processSelectedAddons', () => {
-        // Test #35
-        test('addon not found - should return empty or throw depending on impl?', async () => {
-            // Impl line 81 in fetchAddons: checks missing.
-            // But processSelectedAddons calls fetchAddons? No, it implements its own logic in line 379.
-            // Line 386: Map addon IDs to promises.
-            // Line 399: Filter out non-existent.
-            // It does NOT throw if addon is missing, it just filters it out?
-            // Wait, look at line 403: "Process each addon". 
-            // It uses validAddons.
-            // So if I select 'invalidAddon', it silently ignores it?
-            // Let's check the code I read earlier.
-            // helper.js line 399: validAddons = filters Boolean.
-            // Then returns mapped validAddons.
-            // So currently it ignores missing addons. 
-            // The plan says "addon not found - should throw not-found".
-            // So the code might be incomplete or I missed something.
-            // Ah, there is `fetchAddons` function (lines 59-92) which DOES throw notFound.
-            // But `processSelectedAddons` (lines 379-433) does NOT call `fetchAddons`. It does its own fetching.
-            // And it DOES NOT throw.
-            // This is a discrepancy. I will write the test to expect success (empty array) and note it, or just test `fetchAddons` instead if that was the intent.
-            // `addItemToCart` calls `processSelectedAddons`. 
-            // So currently `addItemToCart` silently ignores invalid addon IDs.
-            // I will test `processSelectedAddons` behavior as is (silently ignore).
-            // OR I can test `fetchAddons` if I want to follow the plan which implies validation.
-            // But `addItemToCart` doesn't use `fetchAddons`! It uses `processSelectedAddons`.
-            // So `addItemToCart` logic is likely "permissive".
-            // I'll test that it returns empty array for invalid addon.
-
-            const result = await helper.processSelectedAddons(
-                mockDbInstance,
-                'rest001',
-                ['invalidAddon'],
-                mockErrorHandler
-            );
-            expect(result).toEqual([]);
+        const dish = { id: 'mi_veg_bir', addons: ['ma_raita', 'ma_prawn', 'ma_badprice'] };
+        const db = mockFirestoreDb({
+            'restaurants/rest001/addons/ma_raita': { meta: { name: 'Raita' }, priceInfo: { basePrice: 40, finalPrice: 40, discount: 0 }, isInStock: true },
+            'restaurants/rest001/addons/ma_prawn': { meta: { name: 'Prawn' }, priceInfo: { basePrice: 120, finalPrice: 120, discount: 0 }, isInStock: false },
+            'restaurants/rest001/addons/ma_badprice': { meta: { name: 'Ghee' }, priceInfo: { basePrice: 30 }, isInStock: true },
+            'restaurants/rest001/addons/addon1': { ...mockAddonDoc, isInStock: true },
         });
+        const eh = { ...mockErrorHandler, preconditionFailed: jest.fn((msg) => { throw new Error(`PreconditionFailed: ${msg}`); }) };
+        const run = (ids) => helper.processSelectedAddons(db, 'rest001', dish, ids, eh);
 
-        test('valid addon - should return details', async () => {
-            const result = await helper.processSelectedAddons(
-                mockDbInstance,
-                'rest001',
-                ['addon1'],
-                mockErrorHandler
-            );
-            expect(result).toHaveLength(1);
-            expect(result[0].id).toBe('addon1');
+        test('TD-015 a listed, in-stock add-on comes back with its price: raita ₹40', async () => {
+            const r = await run(['ma_raita']);
+            expect(r).toEqual([expect.objectContaining({ id: 'ma_raita', name: 'Raita', priceInfo: { basePrice: 40, finalPrice: 40, discount: 0 } })]);
+        });
+        test('TD-015 a sold-out add-on is refused, not billed: prawn → PreconditionFailed naming it', async () => {
+            await expect(run(['ma_raita', 'ma_prawn'])).rejects.toThrow(/PreconditionFailed: .*Prawn/);
+        });
+        test('TD-015 an add-on id that does not exist is refused, never silently dropped', async () => {
+            await expect(run(['ma_raita', 'invalidAddon'])).rejects.toThrow(/BadRequest: Add-on not found/);
+        });
+        test('TD-015 an add-on that exists but is not listed on this dish is refused', async () => {
+            await expect(run(['addon1'])).rejects.toThrow(/BadRequest: .*not offered/);
+        });
+        test('TD-015 an add-on with broken price data is refused, never billed at ₹0', async () => {
+            await expect(run(['ma_badprice'])).rejects.toThrow(/InternalError: .*invalid price/);
+        });
+        test('no add-ons selected → []', async () => {
+            expect(await run([])).toEqual([]);
+        });
+    });
+
+    describe('processSelectedVariants price data (TD-015)', () => {
+        test('an option with broken price data is refused, never billed at ₹0', async () => {
+            const db = mockFirestoreDb({ 'restaurants/rest001/variants/v1': { ...mockVariantDoc, options: [{ id: 'opt3', name: 'Huge', priceInfo: { basePrice: 'x' } }] } });
+            await expect(helper.processSelectedVariants(db, 'rest001', { variants: [{ id: 'v1' }] }, { v1: 'opt3' }, mockErrorHandler))
+                .rejects.toThrow(/InternalError: .*invalid price/);
         });
     });
 });
