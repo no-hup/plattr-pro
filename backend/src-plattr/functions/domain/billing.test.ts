@@ -538,3 +538,23 @@ describe('domain/billing against mock/goldenBills.json', () => {
     });
   }
 });
+
+describe('domain/billing — BT parcel: a flat charge (packing) beside the percentage ones', () => {
+  // Pizza 50000 in the food block. Packing is ₹20.00 flat, taxed in the food block like a service charge.
+  it('BT-P1 packing 2000 flat on a 50000 pizza: base 50000, amount 2000, tax 50 + 50; food taxable 52000, payable 54600', () => {
+    const v = ok(preview([line('pizza', 50000)], null, [{ type: 'PACKING', pctBps: 0, flat: 2000, taxBlockId: 'food' }], cfg));
+    expect(v.charges[0]).toMatchObject({ base: 50000, amount: 2000, tax: { taxable: 2000, parts: [{ amount: 50 }, { amount: 50 }] } });
+    expect(amounts(v, 'food')).toEqual({ taxable: 52000, parts: [1300, 1300], total: 54600 });
+    expect(v.payable).toBe(54600);
+  });
+  it('BT-P2 a row may carry both: 10 % + 2000 flat on 50000 → 5000 + 2000 = 7000; no flat key means 0', () => {
+    expect(ok(preview([line('pizza', 50000)], null, [{ type: 'X', pctBps: 1000, flat: 2000, taxBlockId: 'food' }], cfg)).charges[0].amount).toBe(7000);
+    expect(ok(preview([line('pizza', 50000)], null, [{ type: 'X', pctBps: 1000, taxBlockId: 'food' }], cfg)).charges[0].amount).toBe(5000);
+  });
+  it('BT-P3 a flat charge in a block no counted line touches is refused, naming the charge (C6b: nothing is ever levied untaxed)', () => {
+    const r = preview([line('beer', 49900, { block: LIQ })], null, [{ type: 'PACKING', pctBps: 0, flat: 2000, taxBlockId: 'food' }], cfg);
+    expect(r).toMatchObject({ ok: false, code: 'failed-precondition' });
+    expect((r as { message: string }).message).toMatch(/PACKING/);
+  });
+});
+
