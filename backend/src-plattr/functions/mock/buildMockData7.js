@@ -173,6 +173,15 @@ function standardTables(R, slug, n = 10) {
   defTable(R, `tbl_${slug}_4`, '4', 6, 'reserved', { otp: 'code' });
   defTable(R, `tbl_${slug}_5`, '5', 4, 'disabled', { otp: 'none' }); // edge
   for (let i = 6; i <= n; i++) defTable(R, `tbl_${slug}_${i}`, String(i), i % 2 ? 2 : 4, 'vacant', { otp: 'code' });
+  // BT / OR-3: two counter tickets for parcels and phone orders. Ordinary table docs named in
+  // `ordering.takeawayTableIds`; they carry the flat PACKING charge (₹20.00) and not the service
+  // charge. The floor draws them in a Parcels strip. PACKING is added to the settings doc only,
+  // not `_charges`: the old checkout (`orders/calculateCharges.js`) ignores a row with no
+  // `percentage`, so the golden order totals do not move.
+  defTable(R, `tbl_${slug}_p1`, 'P1', 0, 'vacant', { otp: 'none', charges: ['PACKING'] });
+  defTable(R, `tbl_${slug}_p2`, 'P2', 0, 'vacant', { otp: 'none', charges: ['PACKING'] });
+  R.config.settings.ordering = { ...(R.config.settings.ordering || {}), takeawayTableIds: [`tbl_${slug}_p1`, `tbl_${slug}_p2`] };
+  R.config.settings.billing = { ...(R.config.settings.billing || {}), charges: [...((R.config.settings.billing || {}).charges || []), { type: 'PACKING', amount: 2000, taxBlockId: 'food', optIn: true }] };
 }
 
 const restaurants = {};
