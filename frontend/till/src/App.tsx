@@ -5,6 +5,7 @@ import { PinPrompt } from './features/approvals/PinPrompt'
 import { fetchReasons, useApproval, type LineSnapshot } from './features/approvals/useApproval'
 import { BillScreen } from './features/billing/BillScreen'
 import { TenderScreen } from './features/payments/TenderScreen'
+import { ReceivablesScreen } from './features/payments/ReceivablesScreen'
 import { DayCloseScreen } from './features/dayclose/DayCloseScreen'
 import { ReconcileScreen } from './features/offline/ReconcileScreen'
 import { FloorScreen } from './features/floor/FloorScreen'
@@ -27,6 +28,7 @@ const DRAFT = q.get('draft') ?? ''
 const BILL = q.get('bill') ?? ''
 const DAY = q.get('day') ?? ''
 const RECONCILE = q.get('reconcile') ?? ''
+const ACCOUNT = q.get('account') ?? ''   // BT / TD-012: ?account=1 → what accounts owe, and collecting it
 
 export default function App() {
   // FL-S29: the role comes back with the login, so the floor can leave Merge and Move off the
@@ -75,6 +77,8 @@ export default function App() {
         </form>
       ) : RECONCILE ? (
         <ReconcileScreen ctx={{ restaurantId: RESTAURANT, sessionId: session.sessionId }} />
+      ) : ACCOUNT ? (
+        <ReceivablesScreen ctx={{ restaurantId: RESTAURANT, sessionId: session.sessionId }} />
       ) : DAY ? (
         <DayCloseScreen ctx={{ restaurantId: RESTAURANT, sessionId: session.sessionId, ...(DAY === '1' ? {} : { businessDate: DAY }) }} />
       ) : BILL ? (

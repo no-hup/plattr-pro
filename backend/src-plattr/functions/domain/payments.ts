@@ -1,7 +1,8 @@
 // PY · Payments — pure. No I/O, no clock, no Firestore, no currency symbol, no tender name.
 // Money is integer minor units everywhere. See moonshot/SPEC_PY_payments.md.
 
-export type TenderKind = 'cash' | 'external';
+/** BT / TD-012: `credit` settles the bill as money OWED (an account, a company), never in the drawer, never overpaid. */
+export type TenderKind = 'cash' | 'external' | 'credit';
 export interface Tender { id: string; label: string; kind: TenderKind; opensDrawer: boolean; needsRef: boolean }
 export interface PaymentsConfig { tenders: Tender[]; maxTendersPerBill: number; settleWithin: number; dayCloseHour: number; dayCloseMinute: number; timezoneOffsetMinutes: number }
 
@@ -19,7 +20,16 @@ export interface Row {
   overpaid?: number | null;
   creditNoteId?: string | null;
   refundsPaymentId?: string | null;
+  /** BT: a voluntary tip riding this take. Never bill money, never taxable, never in `amount` or paidTotal. */
+  tip?: number | null;
+  /** BT: on a collection row, the receivable being paid down; such a row settles the receivable, not the bill. */
+  receivableId?: string | null;
   void?: VoidBlock | null;
+}
+/** BT / TD-012: what an account owes. Born with the credit take, paid down by `collect`, cancelled by voiding the take. */
+export interface Receivable {
+  receivableId: string; kind: 'account'; party: string; billId: string; cid: string; businessDate: string;
+  amount: number; collectedTotal: number; state: 'open' | 'collected' | 'cancelled'; at: number; by: string;
 }
 export interface Note { creditNoteId: string; billId: string; total: number; refundedTotal: number; status?: string }
 
@@ -61,10 +71,11 @@ export function configFrom(raw: unknown): { config: PaymentsConfig; warnings: st
   if (Array.isArray(src.tenders)) {
     const kept = (src.tenders as unknown[]).filter((t): t is Tender => {
       const r = t as Record<string, unknown>;
-      const ok = !!r && typeof r.id === 'string' && r.id !== '' && (r.kind === 'cash' || r.kind === 'external');
+      const ok = !!r && typeof r.id === 'string' && r.id !== '' && (r.kind === 'cash' || r.kind === 'external' || r.kind === 'credit');
       if (!ok) warnings.push(`tender row ignored: ${JSON.stringify(t)}`);
       return ok;
-    }).map((t) => ({ id: t.id, label: typeof t.label === 'string' ? t.label : t.id, kind: t.kind, opensDrawer: t.opensDrawer === true, needsRef: t.needsRef === true }));
+    // A credit tender always needs its ref: the ref IS the account (who owes). Config cannot switch that off.
+    }).map((t) => ({ id: t.id, label: typeof t.label === 'string' ? t.label : t.id, kind: t.kind, opensDrawer: t.kind === 'cash' && t.opensDrawer === true, needsRef: t.kind === 'credit' || t.needsRef === true }));
     // An empty list after filtering is a real configuration, not a reason to invent cash (Decisions).
     tenders = kept;
   } else if (src.tenders !== undefined) {
@@ -105,6 +116,8 @@ const live = (rows: Row[]): Row[] => (rows || []).filter((r) => !r.void);
 /** R2. Net receipts over non-void rows. `overpaid` and `tendered` are never in it. */
 export function paidTotalOf(rows: Row[]): number {
   return live(rows).reduce((n, r) => {
+    // BT: a collection pays down the receivable, not the bill — the credit take already settled the bill.
+    if (r.receivableId) return n;
     if (r.kind === 'take') return n + r.amount;
     // R7: an overpay refund returns money that was never in paidTotal, so it does not move it.
     return r.refundsPaymentId ? n : n - r.amount;
@@ -179,7 +192,9 @@ export function businessDayWindow(businessDate: string, config: PaymentsConfig):
 }
 
 // ── the gates ───────────────────────────────────────────────────────────────
-export interface TakeRequest { role?: string; tenderId?: unknown; amount?: unknown; tendered?: unknown; captured?: unknown; ref?: unknown; creditNoteId?: unknown }
+export interface TakeRequest { role?: string; tenderId?: unknown; amount?: unknown; tendered?: unknown; captured?: unknown; ref?: unknown; creditNoteId?: unknown; tip?: unknown }
+/** BT: the tip on a take, 0 when none. A non-money value is refused by canTake. */
+export const tipOf = (req: { tip?: unknown }): number => (isMoney(req.tip) ? req.tip : 0);
 
 const STAFF = ['MANAGER', 'ADMIN'];
 
@@ -194,15 +209,20 @@ export function canTake(bill: Bill | null, rows: Row[], req: TakeRequest, config
   if (tender.needsRef && blank(req.ref)) return no('invalid-argument', `${tender.label} needs a reference`);
 
   const cash = tender.kind === 'cash';
-  if (cash && req.captured === true) return no('invalid-argument', 'Cash is never already captured');
-  const sent = cash ? req.tendered : req.amount;
-  if (!isMoney(sent) || sent === 0) return no('invalid-argument', 'Amount must be a positive integer in minor units');
+  if (tender.kind !== 'external' && req.captured === true) return no('invalid-argument', `${tender.label} is never already captured`);
+  if (req.tip !== undefined && req.tip !== null && !isMoney(req.tip)) return no('invalid-argument', 'tip must be a non-negative integer in minor units');
+  const tip = tipOf(req);
+  // BT: the tip is typed, never inferred from change. On cash the guest hands over tendered and the
+  // tip is the part of it they are not taking back, so what settles the bill is tendered − tip.
+  const sent = cash ? (isMoney(req.tendered) ? req.tendered - tip : req.tendered) : req.amount;
+  if (!isMoney(sent) || sent === 0) return no('invalid-argument', cash && tip > 0 ? 'Tip cannot be the whole of the cash tendered' : 'Amount must be a positive integer in minor units');
 
   const out = outstanding(bill, rows);
   if (out <= config.settleWithin) return no('failed-precondition', 'Nothing outstanding');
 
   // R6: an external tender chosen at the till can still be corrected, so an overshoot is refused.
   // One that has already reached us cannot be un-sent, so it is recorded (PY-S28).
+  // BT: a credit tender is always chosen at the till (nothing has moved), so it is refused the same way — never `overpaid`.
   if (!cash && sent > out && req.captured !== true) return no('invalid-argument', 'More than the bill outstanding');
 
   const liveTakes = live(rows).filter((r) => r.kind === 'take').length;
@@ -238,6 +258,9 @@ export function canRefund(bill: Bill | null, rows: Row[], note: Note | null, tar
   // resort. A tender that never paid this bill is not a route back out of it.
   const paidOn = new Set(live(rows).filter((r) => r.kind === 'take').map((r) => r.tender.id));
   const back = tenderById(config, req.tenderId) as Tender;
+  // BT: money cannot be handed back onto an account. A bill settled on account and then credited is
+  // refunded in cash, or the receivable is voided before anything was collected on it.
+  if (back.kind === 'credit') return no('failed-precondition', `${back.label} is an account, not a way to hand money back; refund in cash`);
   if (!paidOn.has(back.id) && back.kind !== 'cash') {
     return no('failed-precondition', `${back.label} was not used to pay this bill; refund to a tender that was, or to cash`);
   }
@@ -247,7 +270,9 @@ export function canRefund(bill: Bill | null, rows: Row[], note: Note | null, tar
   if (note.status === 'cancelled') return no('failed-precondition', 'That credit note is cancelled');
   // PY-S25: BL owns the precondition, PY checks it too. "Fully paid" is what the guest handed over (the takes);
   // refunds already given never make a bill unpaid again for this purpose, or a note could never be refunded in parts.
-  const taken = live(rows).filter((r) => r.kind === 'take').reduce((n, r) => n + r.amount, 0);
+  // BT (arch P1): an on-account take is a promise, not money. Only what arrived counts — cash, card, UPI,
+  // and collections against the account — so a bill nobody has paid yet can never be refunded in cash.
+  const taken = live(rows).filter((r) => r.kind === 'take' && r.tender.kind !== 'credit').reduce((n, r) => n + r.amount, 0);
   if (bill.payable - taken > config.settleWithin) return no('failed-precondition', 'Bill is not fully paid');
   if (note.refundedTotal + req.amount > note.total) return no('failed-precondition', 'More than the credit note');
   return yes;
@@ -268,3 +293,21 @@ export function canVoid(row: Row | null, dateClosed: boolean | null, req: VoidRe
   if (dateClosed !== false) return no('failed-precondition', dateClosed === null ? 'Day close state unknown' : 'That day is closed');
   return yes;
 }
+
+// ── BT / TD-012: collecting what an account owes ────────────────────────────
+export interface CollectRequest { role?: string; tenderId?: unknown; amount?: unknown; ref?: unknown }
+
+/** A collection is a take against the receivable: cash or an external tender, never another account; never past what is owed. */
+export function canCollect(rec: Receivable | null, req: CollectRequest, config: PaymentsConfig): Verdict {
+  if (!STAFF.includes(String(req.role))) return no('permission-denied', 'Manager or admin required');
+  if (!rec) return no('failed-precondition', 'No such receivable');
+  if (rec.state !== 'open') return no('failed-precondition', `That account entry is ${rec.state}`);
+  const tender = tenderById(config, req.tenderId);
+  if (!tender) return no('invalid-argument', `Unknown tender ${String(req.tenderId)}`);
+  if (tender.kind === 'credit') return no('invalid-argument', 'An account is not settled onto another account');
+  if (tender.needsRef && blank(req.ref)) return no('invalid-argument', `${tender.label} needs a reference`);
+  if (!isMoney(req.amount) || req.amount === 0) return no('invalid-argument', 'Amount must be a positive integer in minor units');
+  if (req.amount > rec.amount - rec.collectedTotal) return no('failed-precondition', 'More than the account owes');
+  return yes;
+}
+

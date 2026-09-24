@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import {
   DEFAULTS, configFrom, outstanding, isSettled, paidTotalOf, changeFor, overpaidFor,
-  canTake, canRefund, canVoid, statusFor, tenderById, businessDateFor, Bill, Row, Tender, Note,
+  canTake, canRefund, canVoid, canCollect, statusFor, tenderById, businessDateFor, Bill, Row, Tender, Note, Receivable,
 } from './payments';
 
 const cfg = DEFAULTS;
@@ -438,3 +438,53 @@ describe('domain/payments tenderById + configFrom — R10, PY-S19, portability',
     }
   });
 });
+
+describe('BT · credit tender, collect, tips (domain)', () => {
+  const account = { id: 'account', label: 'On account', kind: 'credit', opensDrawer: true, needsRef: false } as Tender;   // config tried to make it drawer + ref-free
+  const cfg4 = { ...DEFAULTS, tenders: [...DEFAULTS.tenders, account] };
+  it('BT-A configFrom: a credit tender never opens the drawer and always needs its ref (the account), whatever config says', () => {
+    const { config } = configFrom({ payments: { tenders: [{ id: 'account', label: 'On account', kind: 'credit', opensDrawer: true, needsRef: false }] } });
+    expect(config.tenders[0]).toEqual({ id: 'account', label: 'On account', kind: 'credit', opensDrawer: false, needsRef: true });
+  });
+  it('BT-A canTake on account: ref required, overshoot refused, captured refused, exact amount accepted; paidTotalOf counts it and the bill settles', () => {
+    const c = { ...cfg4, tenders: [...DEFAULTS.tenders, { ...account, opensDrawer: false, needsRef: true }] };
+    expect(code(canTake(bill, [], { role: 'MANAGER', tenderId: 'account', amount: 60900 }, c))).toBe('invalid-argument');
+    expect(code(canTake(bill, [], { role: 'MANAGER', tenderId: 'account', amount: 70000, ref: 'Acme' }, c))).toBe('invalid-argument');
+    expect(code(canTake(bill, [], { role: 'MANAGER', tenderId: 'account', amount: 60900, ref: 'Acme', captured: true }, c))).toBe('invalid-argument');
+    expect(code(canTake(bill, [], { role: 'MANAGER', tenderId: 'account', amount: 60900, ref: 'Acme' }, c))).toBe('ok');
+    const rows = [take(60900, { ...account, opensDrawer: false, needsRef: true })];
+    expect(paidTotalOf(rows)).toBe(60900);
+    expect(statusFor(bill, rows)).toBe('paid');
+  });
+  it('BT-A a collection row (receivableId) never counts toward the bill; a refund onto a credit tender is refused', () => {
+    expect(paidTotalOf([take(60900, account), take(40000, cash, { receivableId: 'p1' })])).toBe(60900);
+    const note: Note = { creditNoteId: 'CN-0007', billId: '0417', total: 8400, refundedTotal: 0 };
+    expect(code(canRefund(billOf(60900, 'paid'), [take(60900, account)], note, null, { role: 'MANAGER', tenderId: 'account', amount: 8400, creditNoteId: 'CN-0007', reason: 'wrong dish' }, cfg4))).toBe('failed-precondition');
+  });
+  it('BT-A arch P1: a bill on account is not money received, so no cash refund until the party has paid; once collected, it refunds', () => {
+    const note: Note = { creditNoteId: 'CN-0007', billId: '0417', total: 8400, refundedTotal: 0 };
+    const req = { role: 'MANAGER', tenderId: 'cash', amount: 8400, creditNoteId: 'CN-0007', reason: 'wrong dish' };
+    expect(code(canRefund(billOf(60900, 'paid'), [take(60900, account)], note, null, req, cfg4))).toBe('failed-precondition');
+    expect(code(canRefund(billOf(60900, 'paid'), [take(60900, account), take(40000, cash, { receivableId: 'p1' })], note, null, req, cfg4))).toBe('failed-precondition');
+    expect(code(canRefund(billOf(60900, 'paid'), [take(60900, account), take(60900, cash, { receivableId: 'p1' })], note, null, req, cfg4))).toBe('ok');
+  });
+  it('BT-A canCollect: open receivable, cash or external only, not past what is owed, MANAGER/ADMIN', () => {
+    const rec: Receivable = { receivableId: 'p1', kind: 'account', party: 'Acme', billId: '0417', cid: 'c', businessDate: '2026-09-23', amount: 60900, collectedTotal: 40000, state: 'open', at: 1, by: 'm' };
+    expect(code(canCollect(rec, { role: 'MANAGER', tenderId: 'cash', amount: 20900 }, cfg4))).toBe('ok');
+    expect(code(canCollect(rec, { role: 'MANAGER', tenderId: 'cash', amount: 20901 }, cfg4))).toBe('failed-precondition');
+    expect(code(canCollect(rec, { role: 'MANAGER', tenderId: 'account', amount: 100, ref: 'x' }, cfg4))).toBe('invalid-argument');
+    expect(code(canCollect(rec, { role: 'MANAGER', tenderId: 'card', amount: 100 }, cfg4))).toBe('invalid-argument');   // needs a ref
+    expect(code(canCollect({ ...rec, state: 'collected' }, { role: 'MANAGER', tenderId: 'cash', amount: 1 }, cfg4))).toBe('failed-precondition');
+    expect(code(canCollect(null, { role: 'MANAGER', tenderId: 'cash', amount: 1 }, cfg4))).toBe('failed-precondition');
+    expect(code(canCollect(rec, { role: 'SERVER', tenderId: 'cash', amount: 1 }, cfg4))).toBe('permission-denied');
+  });
+  it('BT-T canTake with a tip: cash settles with tendered − tip (70000 − 5000 covers 60900); a tip that swallows all the cash is refused; a non-integer tip is refused; a tip on card never touches the amount check', () => {
+    expect(code(canTake(bill, [], tk({ tendered: 70000, tip: 5000 }), cfg))).toBe('ok');
+    expect(code(canTake(bill, [], tk({ tendered: 70000, tip: 70000 }), cfg))).toBe('invalid-argument');
+    expect(code(canTake(bill, [], tk({ tendered: 70000, tip: 5.5 }), cfg))).toBe('invalid-argument');
+    expect(code(canTake(bill, [], ext({ amount: 60900, tip: 5000 }), cfg))).toBe('ok');
+    expect(code(canTake(bill, [], ext({ amount: 60901, tip: 0 }), cfg))).toBe('invalid-argument');
+    expect(paidTotalOf([take(60900, cash, { tip: 5000 })])).toBe(60900);
+  });
+});
+

@@ -15,6 +15,7 @@ export function TenderScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) 
   const [tender, setTender] = useState<Tender | null>(null)
   const [text, setText] = useState('')
   const [ref, setRef] = useState('')
+  const [tipText, setTipText] = useState('')   // BT: the tip, typed; never derived from the change
   const [captured, setCaptured] = useState(false)
   const { say, node: msgNode } = useSays('pay-msg')
   const [drawer, setDrawer] = useState(false)
@@ -27,21 +28,23 @@ export function TenderScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) 
     else if (last.row.void) say('Voided')          // a voided row keeps its kind, so check the void block first
     else if (last.row.kind === 'take') say(last.row.change ? `Change ${fmt(last.row.change)}` : last.row.overpaid ? `Overpaid ${fmt(last.row.overpaid)}, recorded` : 'Recorded')
     else say('Refunded')
-    setText(''); setRef('')
+    setText(''); setRef(''); setTipText('')
   }, [last])
 
   const minor = toMinor(text)
+  const tip = tipText.trim() === '' ? 0 : toMinor(tipText)
   const outstanding = bill?.outstanding ?? 0
-  const change = tender?.kind === 'cash' && minor !== null && minor > outstanding ? minor - outstanding : 0
+  // BT: on cash the tip comes out of what was handed over, so the change previewed is tendered − tip − outstanding.
+  const change = tender?.kind === 'cash' && minor !== null && tip !== null && minor - tip > outstanding ? minor - tip - outstanding : 0
   const settled = !!bill && bill.status === 'paid'
   // The figure on screen was answered before the cut (asOf null) or read from the cache after it: its time either way.
   const cachedAt = asOf ?? getBill(ctx.billId)?.at ?? null
 
   async function onTake(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!tender || minor === null) { say('Enter a whole amount, up to two decimals'); return }
+    if (!tender || minor === null || tip === null) { say('Enter a whole amount, up to two decimals'); return }
     say('')
-    await take(tender, minor, { ref: ref || undefined, captured })
+    await take(tender, minor, { ref: ref || undefined, captured, tip: tip || undefined })
   }
   async function onRefund(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -83,18 +86,19 @@ export function TenderScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) 
           <input name="amount" inputMode="decimal" placeholder={tender?.kind === 'cash' ? 'cash tendered' : 'amount'} value={text} onChange={e => setText(e.target.value)} data-testid="amount" maxLength={13} />
           <span data-testid="minor">{minor === null ? (text ? 'invalid' : '') : String(minor)}</span>
           {tender?.kind === 'cash' && change > 0 && <span data-testid="change"> change {fmt(change)}</span>}
-          {tender?.needsRef && <input name="ref" placeholder="slip / reference" value={ref} onChange={e => setRef(e.target.value)} data-testid="ref" maxLength={64} />}
+          {tender?.needsRef && <input name="ref" placeholder={tender.kind === 'credit' ? 'account name (who owes)' : 'slip / reference'} value={ref} onChange={e => setRef(e.target.value)} data-testid="ref" maxLength={64} />}
+          <input name="tip" inputMode="decimal" placeholder="tip (optional)" value={tipText} onChange={e => setTipText(e.target.value)} data-testid="tip" maxLength={13} />
           {tender?.kind === 'external' && (
             <label><input type="checkbox" checked={captured} onChange={e => setCaptured(e.target.checked)} data-testid="captured" /> money already received</label>
           )}
-          <button type="submit" data-testid="take" disabled={busy || !tender || minor === null || minor === 0 || (tender.needsRef && !ref.trim())}>Take</button>
+          <button type="submit" data-testid="take" disabled={busy || !tender || minor === null || minor === 0 || tip === null || (tender.needsRef && !ref.trim())}>{tender?.kind === 'credit' ? 'Put on account' : 'Take'}</button>
         </form>
       )}
 
       <ul data-testid="rows">
         {bill.rows.map(r => (
           <li key={r.paymentId} data-testid={`row-${r.paymentId}`} style={r.void ? { textDecoration: 'line-through' } : undefined}>
-            {r.kind} {fmt(r.amount)} {r.tender.label}{r.change ? ` (change ${fmt(r.change)})` : ''}{r.overpaid ? ` (overpaid ${fmt(r.overpaid)})` : ''}
+            {r.kind} {fmt(r.amount)} {r.tender.label}{r.ref && r.tender.kind === 'credit' ? ` · ${r.ref}` : ''}{r.change ? ` (change ${fmt(r.change)})` : ''}{r.overpaid ? ` (overpaid ${fmt(r.overpaid)})` : ''}{r.tip ? ` (tip ${fmt(r.tip)})` : ''}{r.receivableId ? ' (collected on account)' : ''}
             {!r.void && (
               <select data-testid={`void-${r.paymentId}`} defaultValue="" disabled={busy} onChange={e => { const v = e.target.value; if (v) { e.target.value = ''; void voidRow(r.paymentId, v) } }}>
                 <option value="" disabled>void…</option>

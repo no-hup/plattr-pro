@@ -5,10 +5,10 @@ import { getBill, putBill } from '../offline/cache'
 // PY · the till side of payments. Money is integer minor units on the wire (R8); the PIN
 // challenge for refunds and voids lives in api/client.ts, not here.
 
-export interface Tender { id: string; label: string; kind: 'cash' | 'external'; opensDrawer: boolean; needsRef: boolean }
+export interface Tender { id: string; label: string; kind: 'cash' | 'external' | 'credit'; opensDrawer: boolean; needsRef: boolean }   // credit: BT / TD-012, settles as money owed
 export interface PaymentRow {
   paymentId: string; kind: 'take' | 'refund'; tenderId: string; tender: Tender; amount: number
-  tendered: number | null; change: number | null; overpaid: number | null; at: number; by: string; ref: string | null
+  tendered: number | null; change: number | null; overpaid: number | null; tip?: number | null; receivableId?: string | null; at: number; by: string; ref: string | null
   creditNoteId: string | null; refundsPaymentId: string | null; void: { at: number; by: string; reason: string } | null
 }
 export interface BillState { billId: string; payable: number; paidTotal: number; outstanding: number; status: string; rows: PaymentRow[]; tenders: Tender[] }
@@ -79,12 +79,14 @@ export function useTender(ctx: Ctx) {
     } finally { setBusy(false) }
   }
 
-  /** Cash sends `tendered`; an external tender sends `amount`, plus `captured` when the money already arrived (PY-S28). */
-  const take = (tender: Tender, minor: number, opts: { ref?: string; captured?: boolean } = {}) =>
+  /** Cash sends `tendered`; an external or credit tender sends `amount`, plus `captured` when the money already arrived (PY-S28).
+   *  BT: `tip` is typed by the cashier and sent as its own integer; the server never infers it from change. */
+  const take = (tender: Tender, minor: number, opts: { ref?: string; captured?: boolean; tip?: number } = {}) =>
     write('payments-take', {
       billId: ctx.billId, paymentId: currentPaymentId(), tenderId: tender.id,
-      ...(tender.kind === 'cash' ? { tendered: minor } : { amount: minor, captured: opts.captured === true }),
+      ...(tender.kind === 'cash' ? { tendered: minor } : { amount: minor, ...(tender.kind === 'external' ? { captured: opts.captured === true } : {}) }),
       ...(opts.ref ? { ref: opts.ref } : {}),
+      ...(opts.tip ? { tip: opts.tip } : {}),
     })
   const refund = (tenderId: string, minor: number, against: { creditNoteId?: string; refundsPaymentId?: string }, reason: string, note = '') =>
     write('payments-refund', { billId: ctx.billId, paymentId: currentPaymentId(), tenderId, amount: minor, ...against, reason, note })

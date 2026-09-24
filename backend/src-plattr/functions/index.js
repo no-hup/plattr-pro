@@ -95,6 +95,7 @@ exports.payments = {
   refund: require('./lib/api/payments').refundHandler,
   void: require('./lib/api/payments').voidHandler,
   list: require('./lib/api/payments').listHandler,
+  collect: require('./lib/api/payments').collectHandler,   // BT / TD-012: collecting what an account owes
 };
 exports.dayClose = {
   close: require('./lib/api/dayClose').closeHandler,

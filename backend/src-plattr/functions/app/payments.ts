@@ -3,8 +3,8 @@
 // See moonshot/SPEC_PY_payments.md. Money is integer minor units on every field.
 import { Job as PrintJob, ids as printIds, newJob as newPrintJob } from '../domain/print';
 import {
-  Bill, Note, Row, Tender, PaymentsConfig, businessDateFor, canRefund, canTake, canVoid, changeFor,
-  outstanding, overpaidFor, paidTotalOf, isSettled, tenderById,
+  Bill, Note, Row, Tender, PaymentsConfig, Receivable, businessDateFor, canCollect, canRefund, canTake, canVoid, changeFor,
+  outstanding, overpaidFor, paidTotalOf, isSettled, tenderById, tipOf,
 } from '../domain/payments';
 import { ApprovalError, Staff, PinPorts, pinGate, pinOutcome } from './approvals';
 import { AuditRow, auditRow } from '../domain/approvals';
@@ -33,6 +33,10 @@ export interface Tx {
   mirrorOrder(orderId: string | null, status: Mirror): void;  // must throw on a null id (R4)
   createAudit(id: string, row: AuditRow): void;
   createPrintJob(job: PrintJob): void;                        // KT-S17: the drawer kick, queued with the take
+  // BT / TD-012: the receivable born with a credit take, paid down by collect, cancelled by voiding the take.
+  readReceivable(id: string): Promise<Receivable | null>;
+  createReceivable(id: string, r: Receivable): void;         // must fail if the id exists
+  stampReceivable(id: string, patch: { collectedTotal: number; state: Receivable['state'] }): void;
 }
 export interface Ports extends PinPorts {
   log(line: object): void;
@@ -40,14 +44,16 @@ export interface Ports extends PinPorts {
   staff: { bySession(restaurantId: string, sessionId: string): Promise<Staff> };   // throws unauthenticated
   config: { settings(restaurantId: string): Promise<unknown> };                    // the whole settings doc; throws refuse
   ledger: { forDay(restaurantId: string, businessDate: string): Promise<StoredRow[]> };
+  receivables: { open(restaurantId: string): Promise<Receivable[]> };   // BT: what is owed, for the till's collect screen
   transact<T>(restaurantId: string, fn: (t: Tx) => Promise<T>): Promise<T>;
 }
 
 interface Base { restaurantId: string; sessionId: string; billId: string; [k: string]: unknown }
-export interface TakeReq extends Base { paymentId: string; tenderId: string; amount?: number; tendered?: number; captured?: boolean; ref?: string }
+export interface TakeReq extends Base { paymentId: string; tenderId: string; amount?: number; tendered?: number; captured?: boolean; ref?: string; tip?: number }
+export interface CollectReq { restaurantId: string; sessionId: string; paymentId: string; receivableId: string; tenderId: string; amount: number; ref?: string; [k: string]: unknown }
 export interface RefundReq extends Base { paymentId: string; tenderId: string; amount: number; creditNoteId?: string; refundsPaymentId?: string; reason: string; note?: string; pin?: unknown }
 export interface VoidReq { restaurantId: string; sessionId: string; paymentId: string; reason: string; note?: string; pin?: unknown; [k: string]: unknown }
-export interface ListReq { restaurantId: string; sessionId: string; billId?: string; businessDate?: string }
+export interface ListReq { restaurantId: string; sessionId: string; billId?: string; businessDate?: string; receivables?: boolean }
 
 export interface BillState { billId: string; payable: number; paidTotal: number; outstanding: number; status: Bill['status']; mirror: Mirror }
 export interface WriteResult { row: StoredRow; bill: BillState; retry: boolean; opensDrawer: boolean }
@@ -129,7 +135,7 @@ export async function take(ports: Ports, req: TakeReq): Promise<WriteResult> {
       const b = await t.readBill(billId);
       const rows = await t.rowsForBill(billId);
       if (existing) {
-        const same = existing.kind === 'take' && existing.billId === billId && existing.tenderId === req.tenderId
+        const same = existing.kind === 'take' && existing.billId === billId && existing.tenderId === req.tenderId && (existing.tip ?? 0) === tipOf(req)
           && (existing.tender.kind === 'cash' ? existing.tendered === req.tendered : existing.amount + (existing.overpaid ?? 0) === req.amount);
         if (!same) throw new ApprovalError('failed-precondition', 'paymentId already used for a different payment');
         if (!b) throw new ApprovalError('failed-precondition', 'No bill');
@@ -141,15 +147,27 @@ export async function take(ports: Ports, req: TakeReq): Promise<WriteResult> {
       cid = bill.cid;
       const tender = tenderById(cfg, req.tenderId) as Tender;
       const out = outstanding(bill.bill, rows);
+      const tip = tipOf(req);   // BT: typed at the till, never inferred; cash settles with tendered − tip
       const money = tender.kind === 'cash'
-        ? { ...changeFor(tender, req.tendered as number, out), tendered: req.tendered as number, overpaid: null as number | null }
-        : { ...overpaidFor(tender, req.amount as number, out), tendered: null as number | null, change: null as number | null };
+        ? { ...changeFor(tender, (req.tendered as number) - tip, out), tendered: req.tendered as number, overpaid: null as number | null }
+        : tender.kind === 'external'
+          ? { ...overpaidFor(tender, req.amount as number, out), tendered: null as number | null, change: null as number | null }
+          // credit: canTake refused an overshoot, so the amount is the amount; nothing moved, nothing to give back.
+          : { amount: req.amount as number, tendered: null as number | null, change: null as number | null, overpaid: null as number | null };
       const row: StoredRow = {
         paymentId, billId, cid, businessDate, kind: 'take', tenderId: tender.id, tender: { ...tender },
         amount: money.amount, tendered: money.tendered, change: money.change, captured: tender.kind === 'external' ? req.captured === true : false,
         overpaid: money.overpaid, at, by: staff.staffId, ref: str(req.ref) ? req.ref : null, creditNoteId: null, refundsPaymentId: null, void: null,
+        tip, receivableId: null,
       };
       t.createRow(paymentId, row);
+      if (tender.kind === 'credit') {
+        // BT / TD-012: the bill closes as money OWED. One receivable per credit take, same id, same transaction,
+        // and a P1 audit row: money left the till's control on someone's word, which is exactly what the
+        // morning read is for (catch it, don't cage it).
+        t.createReceivable(paymentId, { receivableId: paymentId, kind: 'account', party: row.ref as string, billId, cid, businessDate, amount: money.amount + tip, collectedTotal: 0, state: 'open', at, by: staff.staffId });
+        t.createAudit(`${paymentId}_onAccount`, auditRow({ ts: at, cid, action: 'onAccount', staffId: staff.staffId, sev: 'P1', amount: money.amount + tip, reason: 'on account', note: `${row.ref} bill ${billId}`.slice(0, 200), lineId: null, before: null, after: null }));
+      }
       const s = stamp(t, bill, [...rows, row], at, staff.staffId, cfg);
       // KT-S17: a tender that opens the drawer queues one kick, keyed on the payment so a retry never kicks twice.
       // The counter tablet's next poll fires it; past print.drawerStaleSeconds it is dropped, never fired late.
@@ -268,10 +286,16 @@ export async function voidRow(ports: Ports, req: VoidReq): Promise<WriteResult> 
       const note = r.kind === 'refund' && r.creditNoteId ? await t.readNote(r.creditNoteId) : null;
       if ('retry' in v2) return { row: r, bill: state(b, rows, cfg), retry: true, opensDrawer: false };
 
+      // BT: a voided collection gives the account its amount back; a voided credit take cancels the
+      // receivable, unless money has already been collected on it — then the collection is voided first.
+      const rec = r.receivableId ? await t.readReceivable(r.receivableId) : r.tender.kind === 'credit' ? await t.readReceivable(r.paymentId) : null;
+      if (r.tender.kind === 'credit' && rec && rec.collectedTotal > 0) throw new ApprovalError('failed-precondition', `${rec.party} has already paid ${rec.collectedTotal} on this; void that collection first`);
       const v3 = { at, by: staff.staffId, reason: req.reason, note: typeof req.note === 'string' ? req.note : '' };
       t.setVoid(paymentId, v3);
       const after = rows.map(x => (x.paymentId === paymentId ? { ...x, void: v3 } : x));
       if (note) t.stampNote(note.creditNoteId, Math.max(0, note.refundedTotal - r.amount));   // a voided refund gives the note its amount back
+      if (rec && r.receivableId) t.stampReceivable(rec.receivableId, { collectedTotal: Math.max(0, rec.collectedTotal - r.amount), state: 'open' });
+      if (rec && r.tender.kind === 'credit') t.stampReceivable(rec.receivableId, { collectedTotal: 0, state: 'cancelled' });
       const s = stamp(t, b, after, at, staff.staffId, cfg);
       t.createAudit(`${paymentId}_void`, auditRow({ ts: at, cid: r.cid, action: 'voidPayment', staffId: staff.staffId, sev: 'P0', amount: r.amount, reason: req.reason, note: v3.note, lineId: null, before: null, after: null }));
       return { row: { ...r, void: v3 }, bill: s, retry: false, opensDrawer: false };   // R15: a void never opens the drawer
@@ -286,14 +310,16 @@ export async function voidRow(ports: Ports, req: VoidReq): Promise<WriteResult> 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-export interface TenderTotals { taken: number; refunded: number; overpaid: number; count: number; net: number }
+export interface TenderTotals { taken: number; refunded: number; overpaid: number; tips: number; owed: number; count: number; net: number }   // owed: BT arch P2, see domain/dayClose totalsFrom
 export interface DayList { businessDate: string; byTender: Record<string, TenderTotals>; byStaff: Record<string, TenderTotals>; cashNet: number; rows: StoredRow[] }
 export interface BillList extends BillState { rows: StoredRow[]; tenders: Tender[] }   // tenders: what the till may offer (PY-S19)
 
 /** PY-S18 / R19: what DC and RP read. Any role may look (who-can row 1); only take, refund and void are gated. */
-export async function list(ports: Ports, req: ListReq): Promise<DayList | BillList> {
+export interface ReceivableList { receivables: Receivable[]; tenders: Tender[] }   // BT: what is owed, and what it may be collected on
+export async function list(ports: Ports, req: ListReq): Promise<DayList | BillList | ReceivableList> {
   await staffFor(ports, req);
   const cfg = await cfgFor(ports, req.restaurantId);
+  if (req.receivables === true) return { receivables: await ports.receivables.open(req.restaurantId), tenders: cfg.tenders.filter(t => t.kind !== 'credit') };
   if (str(req.billId)) {
     const billId = req.billId;
     const { b, rows } = await ports.transact(req.restaurantId, async t => ({ b: await t.readBill(billId), rows: await t.rowsForBill(billId) }));
@@ -305,11 +331,12 @@ export async function list(ports: Ports, req: ListReq): Promise<DayList | BillLi
   try { rows = await ports.ledger.forDay(req.restaurantId, req.businessDate as string); }
   catch { throw new ApprovalError('unavailable', 'ledger unavailable'); }   // never zeros for a broken day
 
-  const empty = (): TenderTotals => ({ taken: 0, refunded: 0, overpaid: 0, count: 0, net: 0 });
+  const empty = (): TenderTotals => ({ taken: 0, refunded: 0, overpaid: 0, tips: 0, owed: 0, count: 0, net: 0 });
   const byTender: Record<string, TenderTotals> = Object.fromEntries(cfg.tenders.map(t => [t.id, empty()]));
   const byStaff: Record<string, TenderTotals> = {};
   const add = (g: TenderTotals, r: StoredRow) => {
-    if (r.kind === 'take') { g.taken += r.amount; g.overpaid += r.overpaid ?? 0; } else g.refunded += r.amount;
+    if (r.kind === 'take' && r.tender.kind === 'credit') g.owed += r.amount + (r.tip ?? 0);
+    else if (r.kind === 'take') { g.taken += r.amount; g.overpaid += r.overpaid ?? 0; g.tips += r.tip ?? 0; } else g.refunded += r.amount;
     g.count += 1; g.net = g.taken - g.refunded;
   };
   let cashNet = 0;
@@ -321,3 +348,57 @@ export async function list(ports: Ports, req: ListReq): Promise<DayList | BillLi
   }
   return { businessDate: req.businessDate as string, byTender, byStaff, cashNet, rows };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * BT / TD-012. Collecting what an account owes, days later. A take row on the ORIGINAL bill carrying
+ * `receivableId`, so the money lands on the day it arrives (its own businessDate, its own tender, the
+ * drawer if cash) while the bill, already settled on account, is untouched: paidTotalOf skips it.
+ */
+export async function collect(ports: Ports, req: CollectReq): Promise<{ row: StoredRow; receivable: Receivable; retry: boolean; opensDrawer: boolean }> {
+  const staff = await staffFor(ports, req);
+  need(str(req.receivableId) && str(req.paymentId), 'receivableId and paymentId required');
+  const { restaurantId: rid, receivableId, paymentId } = req;
+  const cfg = await cfgFor(ports, rid);
+  const at = ports.now();
+  const businessDate = businessDateFor(at, cfg);
+  const fail = (code: string, message: string, cid = ''): never => {
+    logLine(ports, { cid, billId: receivableId, kind: 'collect', tenderId: str(req.tenderId) ? req.tenderId : null, amount: 0, outstandingAfter: null, outcome: code });
+    throw new ApprovalError(code, message);
+  };
+  let cid = '';
+  try {
+    const out = await ports.transact(rid, async t => {
+      const existing = await t.rowById(paymentId);
+      const rec = await t.readReceivable(receivableId);
+      if (existing) {
+        const same = existing.receivableId === receivableId && existing.amount === req.amount && existing.tenderId === req.tenderId;
+        if (!same || !rec) throw new ApprovalError('failed-precondition', 'paymentId already used for a different payment');
+        return { row: existing, receivable: rec, retry: true, opensDrawer: false };
+      }
+      await dayOpenOrThrow(t, businessDate);
+      refuse(canCollect(rec, { ...req, role: staff.role }, cfg));
+      const r = rec as Receivable;
+      cid = r.cid;
+      const tender = tenderById(cfg, req.tenderId) as Tender;
+      const row: StoredRow = {
+        paymentId, billId: r.billId, cid: r.cid, businessDate, kind: 'take', tenderId: tender.id, tender: { ...tender },
+        amount: req.amount, tendered: null, change: null, captured: false, overpaid: null, at, by: staff.staffId,
+        ref: str(req.ref) ? req.ref : null, creditNoteId: null, refundsPaymentId: null, tip: 0, receivableId, void: null,
+      };
+      t.createRow(paymentId, row);
+      const collectedTotal = r.collectedTotal + req.amount;
+      const receivable: Receivable = { ...r, collectedTotal, state: collectedTotal >= r.amount ? 'collected' : 'open' };
+      t.stampReceivable(receivableId, { collectedTotal, state: receivable.state });
+      if (tender.opensDrawer) t.createPrintJob(newPrintJob({ jobId: printIds.drawer(paymentId), cid: r.cid, kind: 'drawer', ticketNo: r.billId, tableLabel: '', billId: r.billId, paymentId, by: staff.staffId, now: at }));
+      return { row, receivable, retry: false, opensDrawer: tender.opensDrawer };
+    });
+    logLine(ports, { cid: out.row.cid, billId: out.row.billId, kind: 'collect', tenderId: out.row.tenderId, amount: out.row.amount, outstandingAfter: out.receivable.amount - out.receivable.collectedTotal, outcome: out.retry ? 'retry' : 'applied' });
+    return out;
+  } catch (e) {
+    if (e instanceof ApprovalError) fail(e.code, e.message, cid);
+    fail('unavailable', 'Could not record the collection, try again', cid);
+    throw e;
+  }
+}
+

@@ -2,8 +2,8 @@
 // Bill 0417 throughout: payable 60900 (₹609.00). See domain/payments.test.ts for the arithmetic.
 // These tests are about ORDERING and PARTIAL FAILURE: what lands together, what rolls back,
 // and what a second caller sees. The maths is domain's.
-import { take, refund, voidRow, list, PaymentError, Ports, Tx, StoredRow, BillRead, BillStamp, Mirror, DayList, BillList } from './payments';
-import { Note, Row } from '../domain/payments';
+import { take, refund, voidRow, list, collect, PaymentError, Ports, Tx, StoredRow, BillRead, BillStamp, Mirror, DayList, BillList } from './payments';
+import { Note, Row, Receivable } from '../domain/payments';
 import { AuditRow, PinState } from '../domain/approvals';
 import { Staff } from './approvals';
 
@@ -13,8 +13,11 @@ const T0 = ist(2026, 9, 15, 21, 6);   // 21:06 on the 15th, businessDate 2026-09
 
 type BillDoc = { payable: number; status: 'draft' | 'issued' | 'paid' | 'cancelled'; cid: string; orderId: string | null; paidTotal: number; paidAt: number | null; paidBy: string | null };
 type Fail = 'row' | 'bill' | 'mirror' | 'note' | 'audit' | 'config' | 'day' | 'void';
-interface Opts { staff?: Partial<Staff>; config?: unknown; bill?: Partial<BillDoc> | null; note?: Partial<Note> | null; closed?: boolean | null; fail?: Fail; abortOnce?: boolean; hideFromQuery?: boolean; onTransact?: (n: number, p: Fake) => void; now?: number }
-type Fake = Ports & { printJobs: Map<string, import('../domain/print').Job>;
+interface Opts { staff?: Partial<Staff>; config?: unknown; bill?: Partial<BillDoc> | null; note?: Partial<Note> | null; closed?: boolean | null; fail?: Fail; abortOnce?: boolean; hideFromQuery?: boolean; onTransact?: (n: number, p: Fake) => void; now?: number;
+  receivables?: Record<string, Receivable>;
+}
+type Fake = Ports & {
+  recs: Map<string, Receivable>; printJobs: Map<string, import('../domain/print').Job>;
   rows: Map<string, StoredRow>; bills: Map<string, BillDoc>; notes: Map<string, Note>; orders: Map<string, Mirror>; audits: Map<string, AuditRow>;
   logs: object[]; warnings: string[]; calls: string[]; tick(ms: number): void; sessions: Set<string>; setClosed(v: boolean | null): void;
 };
@@ -33,11 +36,12 @@ function fakePorts(opts: Opts = {}): Fake {
   const pins = new Map<string, PinState>();
   const logs: object[] = []; const warnings: string[] = []; const calls: string[] = [];
   const printJobs = new Map<string, import('../domain/print').Job>();
+  const receivables = new Map<string, Receivable>(Object.entries(opts.receivables ?? {}));
   let now = opts.now ?? T0;
   let n = 0; let aborted = false;
   const staff: Staff = { staffId: 'manager_py', role: 'MANAGER', status: 'active', pinHash: 'hash(1234)', ...opts.staff };
   const p: Fake = {
-    rows, bills, notes, orders, audits, logs, warnings, calls, printJobs, sessions: new Set([`${RID}/s1`]),
+    rows, bills, notes, orders, audits, logs, warnings, calls, printJobs, recs: receivables, sessions: new Set([`${RID}/s1`]),
     tick: ms => { now += ms; },
     setClosed: v => { dayIsClosed = v; },
     now: () => now,
@@ -48,11 +52,13 @@ function fakePorts(opts: Opts = {}): Fake {
     pinState: { get: async (_r, id) => pins.get(id) ?? { wrongAt: [] }, update: async (_r, id, fn) => { const r = fn(pins.get(id) ?? { wrongAt: [] }); pins.set(id, r.state); if (r.audit) audits.set(`${id}_streak_${now}`, r.audit); return r.state; } },
     config: { settings: async () => { if (opts.fail === 'config') throw new Error('firestore unavailable'); return opts.config; } },
     ledger: { forDay: async (_r, d) => { if (opts.fail === 'day') throw new Error('firestore unavailable'); return [...rows.values()].filter(r => r.businessDate === d); } },
+    receivables: { open: async () => [...receivables.values()].filter(r => r.state === 'open') },
     transact: async (_rid, fn) => {
       opts.onTransact?.(n++, p);
       const run = async () => {
         const pr = new Map<string, StoredRow>(); const pv = new Map<string, NonNullable<Row['void']>>(); const pb = new Map<string, BillStamp>();
         const pn = new Map<string, number>(); const po = new Map<string, Mirror>(); const pa = new Map<string, AuditRow>(); const pj = new Map<string, import('../domain/print').Job>();
+        const prc = new Map<string, Receivable>(); const prs = new Map<string, { collectedTotal: number; state: Receivable['state'] }>();
         const t: Tx = {
           rowById: async id => { calls.push('rowById'); return rows.get(id) ?? null; },
           rowsForBill: async b => { calls.push('rowsForBill'); return opts.hideFromQuery ? [] : [...rows.values()].filter(r => r.billId === b); },
@@ -66,6 +72,9 @@ function fakePorts(opts: Opts = {}): Fake {
           mirrorOrder: (id, s) => { if (opts.fail === 'mirror') throw new Error('firestore unavailable'); if (!id || !orders.has(id)) throw new Error('order missing'); po.set(id, s); },
           createAudit: (id, r) => { if (opts.fail === 'audit') throw new Error('firestore unavailable'); if (audits.has(id)) throw new Error('already exists'); pa.set(id, r); },
           createPrintJob: j => { pj.set(j.jobId, j); },   // staged like the row: an aborted attempt leaves nothing behind
+          readReceivable: async id => { calls.push('readReceivable'); return receivables.get(id) ?? null; },
+          createReceivable: (id, r) => { if (receivables.has(id) || prc.has(id)) throw new Error('already exists'); prc.set(id, r); },
+          stampReceivable: (id, patch) => { calls.push('stampReceivable'); prs.set(id, patch); },
         };
         const out = await fn(t);
         if (opts.abortOnce && !aborted) { aborted = true; throw Object.assign(new Error('aborted'), { retriable: true }); }
@@ -76,6 +85,8 @@ function fakePorts(opts: Opts = {}): Fake {
         for (const [k, v] of po) orders.set(k, v);
         for (const [k, v] of pa) audits.set(k, v);
         for (const [k, v] of pj) printJobs.set(k, v);
+        for (const [k, v] of prc) receivables.set(k, v);
+        for (const [k, v] of prs) receivables.set(k, { ...(receivables.get(k) as Receivable), ...v });
         return out;
       };
       // Firestore re-runs the transaction body on contention; the fake does the same once when asked.
@@ -746,7 +757,7 @@ describe('app/payments list() — PY-S18, what DC and RP read', () => {
   it('PY-S18 a day with no rows → zeros for every configured tender, not an empty object', async () => {
     const d = await day(fakePorts());
     expect(Object.keys(d.byTender).sort()).toEqual(['card', 'cash', 'upi']);
-    expect(d.byTender.cash).toEqual({ taken: 0, refunded: 0, overpaid: 0, count: 0, net: 0 });
+    expect(d.byTender.cash).toEqual({ taken: 0, refunded: 0, overpaid: 0, tips: 0, owed: 0, count: 0, net: 0 });
     expect(d.cashNet).toBe(0);
   });
   it('R12 list() reads rows only; it never touches a table, a line, or an order', async () => {
@@ -845,3 +856,114 @@ describe('KT-S17 the drawer kick rides the cash take', () => {
     expect(p.printJobs.size).toBe(1);
   });
 });
+
+// ═══ BT · on account (TD-012) and tips ═══════════════════════════════════════
+const ACCOUNT = { id: 'account', label: 'On account', kind: 'credit', opensDrawer: false, needsRef: true };
+const CFG4 = { payments: { tenders: [{ id: 'cash', label: 'Cash', kind: 'cash', opensDrawer: true, needsRef: false }, { id: 'card', label: 'Card', kind: 'external', opensDrawer: false, needsRef: true }, ACCOUNT] } };
+const base4 = { restaurantId: RID, sessionId: 's1', billId: '0417' };
+
+describe('BT · bill to company: a credit tender settles the bill as money owed', () => {
+  it('BT-A1 ₹609.00 on account for "Acme Ltd": bill paid, no drawer, no change, no overpay; a receivable of 60900 open and a P1 audit row', async () => {
+    const p = fakePorts({ config: CFG4 });
+    const r = await take(p, { ...base4, paymentId: 'p1', tenderId: 'account', amount: 60900, ref: 'Acme Ltd' });
+    expect(r.bill.status).toBe('paid');
+    expect(r.opensDrawer).toBe(false);
+    expect(r.row).toMatchObject({ amount: 60900, tendered: null, change: null, overpaid: null, tip: 0, ref: 'Acme Ltd' });
+    expect(p.recs.get('p1')).toMatchObject({ kind: 'account', party: 'Acme Ltd', billId: '0417', amount: 60900, collectedTotal: 0, state: 'open' });
+    expect(p.audits.get('p1_onAccount')).toMatchObject({ action: 'onAccount', sev: 'P1', amount: 60900 });
+    expect(p.printJobs.size).toBe(0);
+  });
+  it('BT-A2 without the account name → invalid-argument; ₹700 on account for a ₹609 bill → invalid-argument; captured → invalid-argument', async () => {
+    const p = fakePorts({ config: CFG4 });
+    await expect(take(p, { ...base4, paymentId: 'p1', tenderId: 'account', amount: 60900 })).rejects.toMatchObject({ code: 'invalid-argument' });
+    await expect(take(p, { ...base4, paymentId: 'p2', tenderId: 'account', amount: 70000, ref: 'Acme' })).rejects.toMatchObject({ code: 'invalid-argument' });
+    await expect(take(p, { ...base4, paymentId: 'p3', tenderId: 'account', amount: 60900, ref: 'Acme', captured: true })).rejects.toMatchObject({ code: 'invalid-argument' });
+    expect(p.rows.size).toBe(0);
+  });
+  it('BT-A3 collect ₹400 cash a week later: a take row on the same bill carrying receivableId, the drawer opens, the receivable reads 40000 collected and stays open; the bill is untouched', async () => {
+    const p = fakePorts({ config: CFG4 });
+    await take(p, { ...base4, paymentId: 'p1', tenderId: 'account', amount: 60900, ref: 'Acme Ltd' });
+    p.tick(7 * 86_400_000);
+    const c = await collect(p, { restaurantId: RID, sessionId: 's1', paymentId: 'c1', receivableId: 'p1', tenderId: 'cash', amount: 40000 });
+    expect(c.opensDrawer).toBe(true);
+    expect(c.row).toMatchObject({ billId: '0417', receivableId: 'p1', amount: 40000, kind: 'take' });
+    expect(c.receivable).toMatchObject({ collectedTotal: 40000, state: 'open' });
+    expect(p.bills.get('0417')).toMatchObject({ status: 'paid', paidTotal: 60900 });   // paidTotalOf skips the collection
+    const c2 = await collect(p, { restaurantId: RID, sessionId: 's1', paymentId: 'c2', receivableId: 'p1', tenderId: 'card', amount: 20900, ref: 'slip' });
+    expect(c2.receivable).toMatchObject({ collectedTotal: 60900, state: 'collected' });
+    await expect(collect(p, { restaurantId: RID, sessionId: 's1', paymentId: 'c3', receivableId: 'p1', tenderId: 'cash', amount: 1 })).rejects.toMatchObject({ code: 'failed-precondition' });
+    const same = await collect(p, { restaurantId: RID, sessionId: 's1', paymentId: 'c1', receivableId: 'p1', tenderId: 'cash', amount: 40000 });
+    expect(same.retry).toBe(true);
+  });
+  it('BT-A4 collecting past what is owed, onto another account, or on a SERVER session is refused', async () => {
+    const p = fakePorts({ config: CFG4 });
+    await take(p, { ...base4, paymentId: 'p1', tenderId: 'account', amount: 60900, ref: 'Acme Ltd' });
+    await expect(collect(p, { restaurantId: RID, sessionId: 's1', paymentId: 'c1', receivableId: 'p1', tenderId: 'cash', amount: 60901 })).rejects.toMatchObject({ code: 'failed-precondition' });
+    await expect(collect(p, { restaurantId: RID, sessionId: 's1', paymentId: 'c2', receivableId: 'p1', tenderId: 'account', amount: 100, ref: 'x' })).rejects.toMatchObject({ code: 'invalid-argument' });
+    await expect(collect(fakePorts({ config: CFG4, staff: { role: 'SERVER' }, receivables: { p1: p.recs.get('p1') as Receivable } }), { restaurantId: RID, sessionId: 's1', paymentId: 'c3', receivableId: 'p1', tenderId: 'cash', amount: 100 })).rejects.toMatchObject({ code: 'permission-denied' });
+  });
+  it('BT-A5 voiding the credit take cancels the receivable and reopens the bill; once money was collected it is refused until that collection is voided', async () => {
+    const p = fakePorts({ config: CFG4 });
+    await take(p, { ...base4, paymentId: 'p1', tenderId: 'account', amount: 60900, ref: 'Acme Ltd' });
+    await collect(p, { restaurantId: RID, sessionId: 's1', paymentId: 'c1', receivableId: 'p1', tenderId: 'cash', amount: 40000 });
+    await expect(voidRow(p, { restaurantId: RID, sessionId: 's1', paymentId: 'p1', reason: 'wrong tender', pin: '1234' })).rejects.toMatchObject({ code: 'failed-precondition' });
+    await voidRow(p, { restaurantId: RID, sessionId: 's1', paymentId: 'c1', reason: 'wrong tender', pin: '1234' });
+    expect(p.recs.get('p1')).toMatchObject({ collectedTotal: 0, state: 'open' });
+    const v = await voidRow(p, { restaurantId: RID, sessionId: 's1', paymentId: 'p1', reason: 'wrong tender', pin: '1234' });
+    expect(v.bill.status).toBe('issued');
+    expect(p.recs.get('p1')).toMatchObject({ state: 'cancelled' });
+  });
+  it('BT-A6 a refund onto the account tender is refused; cash is the way back', async () => {
+    const p = fakePorts({ config: CFG4, bill: { status: 'paid', paidTotal: 60900 } });
+    p.rows.set('p1', { paymentId: 'p1', billId: '0417', cid: 'c417', businessDate: '2026-09-15', kind: 'take', tenderId: 'account', tender: ACCOUNT as never, amount: 60900, tendered: null, change: null, captured: false, overpaid: null, at: T0, by: 'm', ref: 'Acme', creditNoteId: null, refundsPaymentId: null, void: null });
+    await expect(refund(p, { ...base4, paymentId: 'r1', tenderId: 'account', amount: 8400, creditNoteId: 'CN-0007', reason: 'wrong dish', pin: '1234' })).rejects.toMatchObject({ code: 'failed-precondition' });
+    // arch P1: nothing has been collected yet, so there is no money to hand back in cash either
+    await expect(refund(p, { ...base4, paymentId: 'r2', tenderId: 'cash', amount: 8400, creditNoteId: 'CN-0007', reason: 'wrong dish', pin: '1234' })).rejects.toMatchObject({ code: 'failed-precondition' });
+    p.rows.set('c1', { paymentId: 'c1', billId: '0417', cid: 'c417', businessDate: '2026-09-16', kind: 'take', tenderId: 'cash', tender: CFG4.payments.tenders[0] as never, amount: 60900, tendered: null, change: null, captured: false, overpaid: null, at: T0, by: 'm', ref: null, creditNoteId: null, refundsPaymentId: null, receivableId: 'p1', void: null });
+    const ok = await refund(p, { ...base4, paymentId: 'r3', tenderId: 'cash', amount: 8400, creditNoteId: 'CN-0007', reason: 'wrong dish', pin: '1234' });
+    expect(ok.row.amount).toBe(8400);
+  });
+  it('BT-A7 list({receivables: true}) answers the open ones and the tenders they may be collected on (never the account tender)', async () => {
+    const p = fakePorts({ config: CFG4 });
+    await take(p, { ...base4, paymentId: 'p1', tenderId: 'account', amount: 60900, ref: 'Acme Ltd' });
+    const l = await list(p, { restaurantId: RID, sessionId: 's1', receivables: true }) as { receivables: Receivable[]; tenders: { id: string }[] };
+    expect(l.receivables.map(r => r.party)).toEqual(['Acme Ltd']);
+    expect(l.tenders.map(t => t.id)).toEqual(['cash', 'card']);
+  });
+});
+
+describe('BT · tips: typed, never inferred, never bill money', () => {
+  it('BT-T1 cash: guest hands ₹700 for ₹609, cashier types tip ₹50 → amount 60900, tip 5000, change 4100; paidTotal 60900', async () => {
+    const p = fakePorts({ config: CFG4 });
+    const r = await take(p, { ...base4, paymentId: 'p1', tenderId: 'cash', tendered: 70000, tip: 5000 });
+    expect(r.row).toMatchObject({ amount: 60900, tendered: 70000, tip: 5000, change: 4100 });
+    expect(r.bill).toMatchObject({ status: 'paid', paidTotal: 60900 });
+  });
+  it('BT-T2 cash "keep the change": ₹700 tendered, tip ₹91 → change 0, settled; tip ₹100 would leave ₹0.09 short and is refused (tip cannot eat the bill)', async () => {
+    const p = fakePorts({ config: CFG4 });
+    const r = await take(p, { ...base4, paymentId: 'p1', tenderId: 'cash', tendered: 70000, tip: 9100 });
+    expect(r.row).toMatchObject({ amount: 60900, tip: 9100, change: 0 });
+    expect(r.bill.status).toBe('paid');
+    const q = fakePorts({ config: CFG4 });
+    // 70000 − 10000 = 60000 settles 60000 of 60900: not an error, a partial (the tip is the cashier's typed word); outstanding 900 stays.
+    const s = await take(q, { ...base4, paymentId: 'p2', tenderId: 'cash', tendered: 70000, tip: 10000 });
+    expect(s.row).toMatchObject({ amount: 60000, tip: 10000, change: 0 });
+    expect(s.bill).toMatchObject({ status: 'issued', outstanding: 900 });
+  });
+  it('BT-T3 card: amount 60900 + tip 5000 → the terminal charged 65900; the bill sees 60900; a tip that is not money is invalid-argument; a retry with a different tip is a different payment', async () => {
+    const p = fakePorts({ config: CFG4 });
+    const r = await take(p, { ...base4, paymentId: 'p1', tenderId: 'card', amount: 60900, tip: 5000, ref: 'slip' });
+    expect(r.row).toMatchObject({ amount: 60900, tip: 5000, overpaid: 0 });
+    expect(r.bill.paidTotal).toBe(60900);
+    await expect(take(p, { ...base4, paymentId: 'p1', tenderId: 'card', amount: 60900, tip: 6000, ref: 'slip' })).rejects.toMatchObject({ code: 'failed-precondition' });
+    await expect(take(fakePorts({ config: CFG4 }), { ...base4, paymentId: 'p3', tenderId: 'card', amount: 60900, tip: 5.5 as never, ref: 'slip' })).rejects.toMatchObject({ code: 'invalid-argument' });
+  });
+  it('BT-T4 the day list carries tips by tender and by staff, outside net', async () => {
+    const p = fakePorts({ config: CFG4 });
+    await take(p, { ...base4, paymentId: 'p1', tenderId: 'cash', tendered: 70000, tip: 5000 });
+    const d = await list(p, { restaurantId: RID, sessionId: 's1', businessDate: p.rows.get('p1')!.businessDate }) as DayList;
+    expect(d.byTender.cash).toMatchObject({ taken: 60900, tips: 5000, net: 60900 });
+    expect(d.byStaff.manager_py.tips).toBe(5000);
+  });
+});
+
