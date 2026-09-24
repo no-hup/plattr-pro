@@ -3,9 +3,11 @@ import { call } from '../../api/client'
 export { toMinor, fmt } from '../payments/useTender'   // one money parser in the till, not two
 
 // Money on the wire is integer minor units. The screen formats; nothing here does arithmetic.
-export interface TenderTotal { tenderId: string; label: string; kind: 'cash' | 'external'; taken: number; refunded: number; overpaid: number; count: number; net: number; counted?: number; difference?: number }
+export interface TenderTotal { tenderId: string; label: string; kind: 'cash' | 'external' | 'credit'; taken: number; refunded: number; tips: number; owed: number; overpaid: number; count: number; net: number; counted?: number; difference?: number }
 export interface Movement { movementId: string; kind: 'float' | 'in' | 'out'; amount: number; reason: string; note?: string; by: string; void?: { reason: string } | null }
+export interface DiscountTotal { reason: string; amount: number; count: number }
 export interface DayView {
+  discounts: DiscountTotal[]   // BT: NC, staff meal, comps and offers by reason; not cash, so shown blind
   businessDate: string; closed: boolean; blindCount: boolean; reasons: string[]
   byTender: TenderTotal[]; byStaff?: { staffId: string; net: number }[]; movements?: Movement[]
   openingFloat?: number; expectedCash?: number; countedCash?: number; difference?: number; leftInDrawer?: number | null

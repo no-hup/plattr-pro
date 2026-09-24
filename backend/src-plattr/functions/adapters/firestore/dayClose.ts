@@ -1,7 +1,7 @@
 // DC · Firestore ports for app/dayClose. The only place this module touches Firebase.
 // Runtime note: this file runs from functions/lib/adapters/firestore/, so existing JS is three levels up.
 import { CloseDoc, Ports, StoredMovement, Tx } from '../../app/dayClose';
-import { Floor, IssuedBill, LedgerRow, UnbilledLine, VoidBlock, businessDateFor } from '../../domain/dayClose';
+import { DayBill, Floor, IssuedBill, LedgerRow, UnbilledLine, VoidBlock, businessDateFor } from '../../domain/dayClose';
 import { PaymentsConfig, businessDayWindow, configFrom as paymentsConfigFrom } from '../../domain/payments';
 import { AuditRow } from '../../domain/approvals';
 import { ports as st } from './approvals';   // ST's real ports: the session door and the PIN streak (one door)
@@ -40,6 +40,12 @@ const issuedQuery = (rid: string, businessDate: string, cfg: PaymentsConfig): Qu
   const { start, end } = businessDayWindow(businessDate, cfg);
   return bills(rid).where('status', '==', 'issued').where('issuedAt', '>=', start).where('issuedAt', '<', end);
 };
+// BT: every bill issued in the date's window, any status; the domain drops cancelled ones and credit notes.
+const billsQuery = (rid: string, businessDate: string, cfg: PaymentsConfig): Query => {
+  const { start, end } = businessDayWindow(businessDate, cfg);
+  return bills(rid).where('issuedAt', '>=', start).where('issuedAt', '<', end);
+};
+const asDayBill = (d: FirebaseFirestore.DocumentData): DayBill => ({ status: String(d.status ?? ''), creditNoteOf: d.creditNoteOf ?? undefined, discount: d.discount ?? null, lines: Array.isArray(d.lines) ? d.lines : [] });
 const unbilledQuery = (rid: string, businessDate: string, cfg: PaymentsConfig): Query => {
   const { start, end } = businessDayWindow(businessDate, cfg);
   return lines(rid).where('billId', '==', null).where('placedAt', '>=', start).where('placedAt', '<', end);
@@ -76,6 +82,7 @@ function tx(rid: string, cfg: PaymentsConfig, t: Transaction): Tx {
     async rowsForDay(bd) { const q = await t.get(rowsQuery(rid, bd)); return q.docs.map(d => asRow(d.data())); },
     async movementsForDay(bd) { const q = await t.get(movesQuery(rid, bd)); return q.docs.map(d => asMovement(d.id, d.data())); },
     async floorOn(bd) { const [b, l] = await Promise.all([t.get(issuedQuery(rid, bd, cfg)), t.get(unbilledQuery(rid, bd, cfg))]); return toFloor(cfg, b.docs, l.docs); },
+    async billsForDay(bd) { const q = await t.get(billsQuery(rid, bd, cfg)); return q.docs.map(d => asDayBill(d.data())); },
     async movementById(id) { const s = await t.get(drawer(rid).doc(id)); return s.exists ? asMovement(s.id, s.data() as FirebaseFirestore.DocumentData) : null; },
     createMovement(id, m: StoredMovement) { t.create(drawer(rid).doc(id), m); },
     setMovementVoid(id, v: VoidBlock) { t.update(drawer(rid).doc(id), { void: v }); },
@@ -102,6 +109,7 @@ export const ports: Ports = {
       const [b, l] = await Promise.all([issuedQuery(rid, bd, cfg).get(), unbilledQuery(rid, bd, cfg).get()]);
       return toFloor(cfg, b.docs, l.docs);
     },
+    async bills(rid, bd) { const q = await billsQuery(rid, bd, await payConfig(rid)).get(); return q.docs.map(d => asDayBill(d.data())); },
   },
 
   async transact(rid, fn) {

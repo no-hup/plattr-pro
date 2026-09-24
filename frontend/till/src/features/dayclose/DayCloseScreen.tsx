@@ -54,11 +54,21 @@ export function DayCloseScreen({ ctx }: { ctx: Ctx }) {
       <table><tbody>
         {day.byTender.map(t => (
           <tr key={t.tenderId} data-testid={`tender-${t.tenderId}`}>
-            <td>{t.label}</td><td>{fmt(t.net)}</td><td>{t.overpaid ? `over ${fmt(t.overpaid)}` : ''}</td>
+            {/* BT: a credit tender is money OWED, not taken; tips ride beside the net and never inside it. */}
+            <td>{t.label}{t.kind === 'credit' ? ' (owed, counts when collected)' : ''}</td><td>{fmt(t.kind === 'credit' ? t.owed : t.net)}</td><td>{t.overpaid ? `over ${fmt(t.overpaid)}` : ''}{t.tips ? ` tips ${fmt(t.tips)}` : ''}</td>
             <td>{t.counted !== undefined ? `counted ${fmt(t.counted)} (${fmt(t.difference ?? 0)})` : ''}</td>
           </tr>
         ))}
       </tbody></table>
+
+      {/* BT: what the day gave away — a staff meal, a comped table, an offer — each a reason on a numbered bill. */}
+      {day.discounts.length > 0 && (
+        <table data-testid="discounts"><tbody>
+          {day.discounts.map(d => (
+            <tr key={d.reason} data-testid={`discount-${d.reason}`}><td>{d.reason}</td><td>{fmt(d.amount)}</td><td>{d.count} {d.count === 1 ? 'bill or line' : 'bills or lines'}</td></tr>
+          ))}
+        </tbody></table>
+      )}
 
       {day.closed ? (
         <p data-testid="day-result">

@@ -27,7 +27,7 @@ export interface Movement {
  */
 export interface LedgerRow {
   kind: 'take' | 'refund'; amount: number; tenderId: string;
-  tender: Pick<Tender, 'label' | 'kind'>; overpaid?: number | null; by: string; void?: unknown | null;
+  tender: Pick<Tender, 'label' | 'kind'>; overpaid?: number | null; tip?: number | null; by: string; void?: unknown | null;
 }
 
 /** A bill BL still reads as `issued`, with the business date derived from its issuedAt (R5). */
@@ -41,6 +41,42 @@ export interface UnbilledLine { lineId: string; name: string; businessDate: stri
 
 /** Everything on the floor that is not finished, for the one date being closed. */
 export interface Floor { issued: IssuedBill[]; unbilled: UnbilledLine[] }
+
+/**
+ * BT: the part of a BL bill this module reads to say what the day gave away. Structural, so BL's
+ * Bill satisfies it. A line's own discount (ST: a birthday dessert) carries its reason; the bill-level
+ * one (BL-S22 a comp, BL-S24 an offer) carries the bill's. Both are frozen at issue and never re-priced.
+ */
+export interface DayBill {
+  status: string; creditNoteOf?: unknown;
+  discount?: DayDiscount | null;
+  lines: { countsTowardTotal?: boolean; discount?: DayDiscount | null }[];
+}
+export interface DayDiscount { amount: number; pct?: number; source?: { reason?: string; note?: string; approverId?: string } }
+export interface DiscountTotal { reason: string; amount: number; count: number }
+
+/**
+ * BT / NC. What the day gave away, grouped by reason, from the bills BL froze. This is where a staff
+ * meal, a complimentary dessert or a comped table shows up at close: each is a discount with a reason
+ * on a numbered bill, never a bill that was not written. Cancelled bills and credit notes are not the
+ * day's giving; a voided line is not either. Biggest first, ties by name.
+ */
+export function discountsFrom(bills: DayBill[]): DiscountTotal[] {
+  const by = new Map<string, DiscountTotal>();
+  const add = (d: DayBill['discount']) => {
+    if (!d || !(d.amount > 0)) return;
+    const reason = d.source?.reason || 'other';
+    const g = by.get(reason) ?? { reason, amount: 0, count: 0 };
+    g.amount += d.amount; g.count += 1;
+    by.set(reason, g);
+  };
+  for (const b of bills || []) {
+    if (b.status === 'cancelled' || b.creditNoteOf) continue;
+    add(b.discount);
+    for (const l of b.lines || []) if (l.countsTowardTotal !== false) add(l.discount);
+  }
+  return [...by.values()].sort((a, b) => b.amount - a.amount || (a.reason < b.reason ? -1 : 1));
+}
 
 export interface DayCloseConfig { blindCount: boolean; overShortP0Above: number; reasons: string[] }
 
@@ -112,9 +148,10 @@ export const openingFloatOf = (movements: Movement[]): number =>
  * A cash take moves the drawer by `amount`, never by `tendered`: the change went back (PY-S2).
  */
 export function expectedCashFrom(rows: LedgerRow[], movements: Movement[]): number {
+  // BT: a cash tip is in the drawer until a `tip payout` movement takes it out (Shaurya 2026-09-23).
   const cash = liveRows(rows)
     .filter(r => r.tender?.kind === 'cash')
-    .reduce((n, r) => n + (r.kind === 'take' ? r.amount : -r.amount), 0);
+    .reduce((n, r) => n + (r.kind === 'take' ? r.amount + (r.tip ?? 0) : -r.amount), 0);
   const moved = liveMoves(movements).reduce((n, m) => n + (m.kind === 'out' ? -m.amount : m.amount), 0);
   return cash + moved;
 }
@@ -126,18 +163,23 @@ export const differenceOf = (countedCash: number, expectedCash: number): number 
 export const severityOf = (difference: number, config: DayCloseConfig): Sev =>
   difference === 0 ? 'P2' : Math.abs(difference) > config.overShortP0Above ? 'P0' : 'P1';
 
-export interface TenderTotal { tenderId: string; label: string; kind: Tender['kind']; taken: number; refunded: number; overpaid: number; count: number; net: number; counted?: number; difference?: number }
-export interface StaffTotal { staffId: string; taken: number; refunded: number; overpaid: number; count: number; net: number }
+export interface TenderTotal { tenderId: string; label: string; kind: Tender['kind']; taken: number; refunded: number; overpaid: number; tips: number; owed: number; count: number; net: number; counted?: number; difference?: number }
+export interface StaffTotal { staffId: string; taken: number; refunded: number; overpaid: number; tips: number; owed: number; count: number; net: number }
 
-/** R17, R19. Card and UPI stay apart so each reconciles against its own statement; staff stay apart so two cashiers on one drawer are two numbers. */
+/**
+ * R17, R19. Card and UPI stay apart so each reconciles against its own statement; staff stay apart so two cashiers on one drawer are two numbers.
+ * BT (arch P2): money counts on the day it arrives. An on-account take is `owed` on the sale day, never `taken`
+ * or `net`; its collection is `taken` on the day it is collected. So any sum of `net` over days counts it once.
+ */
 export function totalsFrom(rows: LedgerRow[]): { byTender: TenderTotal[]; byStaff: StaffTotal[] } {
   const tenders = new Map<string, TenderTotal>();
   const staff = new Map<string, StaffTotal>();
   for (const r of liveRows(rows)) {
-    const t = tenders.get(r.tenderId) ?? { tenderId: r.tenderId, label: r.tender?.label ?? r.tenderId, kind: r.tender?.kind ?? 'external', taken: 0, refunded: 0, overpaid: 0, count: 0, net: 0 };
-    const s = staff.get(r.by) ?? { staffId: r.by, taken: 0, refunded: 0, overpaid: 0, count: 0, net: 0 };
-    for (const g of [t, s] as { taken: number; refunded: number; overpaid: number; count: number; net: number }[]) {
-      if (r.kind === 'take') { g.taken += r.amount; g.overpaid += r.overpaid ?? 0; } else g.refunded += r.amount;
+    const t = tenders.get(r.tenderId) ?? { tenderId: r.tenderId, label: r.tender?.label ?? r.tenderId, kind: r.tender?.kind ?? 'external', taken: 0, refunded: 0, overpaid: 0, tips: 0, owed: 0, count: 0, net: 0 };
+    const s = staff.get(r.by) ?? { staffId: r.by, taken: 0, refunded: 0, overpaid: 0, tips: 0, owed: 0, count: 0, net: 0 };
+    for (const g of [t, s] as { taken: number; refunded: number; overpaid: number; tips: number; owed: number; count: number; net: number }[]) {
+      if (r.kind === 'take' && r.tender?.kind === 'credit') g.owed += r.amount + (r.tip ?? 0);   // a tip on account is owed too
+      else if (r.kind === 'take') { g.taken += r.amount; g.overpaid += r.overpaid ?? 0; g.tips += r.tip ?? 0; } else g.refunded += r.amount;
       g.count += 1;
       g.net = g.taken - g.refunded;
     }
