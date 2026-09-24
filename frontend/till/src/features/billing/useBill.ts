@@ -37,7 +37,7 @@ export function useBill(ctx: Ctx) {
     try { const r = await call<{ data: Bill }>('billing-preview', body()); setBill(r.data); setAsOf(null); putPreview(ctx.draftId, r.data); return r.data }
     catch (e) { const c = getPreview(ctx.draftId); if (c && !bill) setBill(c.bill); if (c) setAsOf(c.at); throw e }
   })
-  const issue = () => run(async () => { const r = await call<{ data: Bill }>('billing-issue', body({ tableIds: [], expectedV: seenAt(bill) })); setBill(r.data); return r.data })
+  const issue = () => run(async () => { const r = await call<{ data: Bill }>('billing-issue', body({ expectedV: seenAt(bill) })); setBill(r.data); return r.data })
 
   /**
    * DC-S25a. Guests left without paying, so there is nothing to collect and the day close will not
@@ -51,7 +51,7 @@ export function useBill(ctx: Ctx) {
     const live = (bill?.lines ?? []).filter(l => l.countsTowardTotal)
     const net = live.reduce((n, l) => n + l.listPrice - (l.offer?.amount ?? 0) - (l.discount?.amount ?? 0), 0)
     if (net <= 0) throw new ApiError('failed-precondition', 'Nothing to comp')
-    const r = await call<{ data: Bill }>('billing-issue', body({ tableIds: [], expectedV: seenAt(bill), discount: { amount: net, pct: 100, source: { reason, note } } }))
+    const r = await call<{ data: Bill }>('billing-issue', body({ expectedV: seenAt(bill), discount: { amount: net, pct: 100, source: { reason, note } } }))
     setBill(r.data); return r.data
   })
   const cancel = (billId: string, reason: string, note: string) =>

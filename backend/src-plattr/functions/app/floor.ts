@@ -10,7 +10,7 @@
 import { Line } from '../domain/line';
 import {
   Bill, Sitting, Table, Tile, Role, OrderState, DEFAULTS,
-  canMerge, canMove, canReceive, canUnmerge, isReleasable, moveWriteSet, tile, idleCall, lastTouchedAt, onTable, unpaid,
+  canMerge, canMove, canReceive, canUnmerge, isReleasable, moveWriteSet, tile, idleCall, lastTouchedAt, onTable, unpaid, sittingOf,
 } from '../domain/floor';
 import { ApprovalError, Staff } from './approvals';
 export { ApprovalError };
@@ -106,7 +106,7 @@ export async function getFloor(ports: Ports, req: FloorRequest): Promise<FloorRe
     ports.billsOfSessions(req.restaurantId, ids),
   ]);
 
-  const sittings = heads.map(h => attach(h, lines, bills));
+  const sittings = heads.map(h => sittingOf(h, lines, bills));
   const now = ports.now();
   const byTable = new Map<string, Sitting>();
   for (const s of sittings) for (const t of s.tableIds) byTable.set(t, s);
@@ -142,13 +142,6 @@ export async function getFloor(ports: Ports, req: FloorRequest): Promise<FloorRe
   return { tiles, config, at: now };
 }
 
-function attach(head: SittingHead, lines: Line[], bills: Bill[]): Sitting {
-  return {
-    ...head,
-    lines: lines.filter(l => l.sessionId === head.sessionId),
-    bills: bills.filter(b => (b as Bill & { sessionId?: string }).sessionId === head.sessionId),
-  };
-}
 
 // ── The tap ────────────────────────────────────────────────────────────────
 
@@ -174,7 +167,7 @@ export async function openTable(ports: Ports, req: OpenRequest): Promise<OpenRes
     ports.linesOfSessions(req.restaurantId, [head.sessionId]),
     ports.billsOfSessions(req.restaurantId, [head.sessionId]),
   ]);
-  const s = attach(head, lines, bills);
+  const s = sittingOf(head, lines, bills);
 
   const drafts = new Map<string, { draftId: string; onTable: number; lineIds: string[] }>();
   for (const l of s.lines) {
@@ -325,6 +318,8 @@ export interface ClearRequest extends FloorRequest { tableId: string; cid: strin
  * walked away from. No PIN, the refusal is the one it always was.
  */
 export async function clearTable(ports: Ports, req: ClearRequest): Promise<{ freed: string[] }> {
+  // A blank id reached Firestore once and came back as "An unexpected error occurred" (sanity run 1).
+  if (typeof req.tableId !== 'string' || !req.tableId) fail('invalid-argument', 'tableId required: which table to clear');
   const staff = await actor(ports, req.restaurantId, req.staffSessionId);
   const at = ports.now();
   const cashier = staff.role === 'MANAGER' || staff.role === 'ADMIN';

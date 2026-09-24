@@ -155,3 +155,19 @@ describe('toCartItem — respectParentDiscount (TD-014)', () => {
         expect(toCartItem(odd).variants[0].finalPrice).toBe(8499);
     });
 });
+
+// Sanity run 1 (2026-09-22): the floor and the bill find a table's money by the guest sitting on
+// each line. A line written with no sitting used to fall back to "" / the table id, which glues two
+// parties at one table into one draft. Checkout always has a session, so a missing one is a bug.
+describe('writeLineSnapshots — every line belongs to a guest sitting', () => {
+    const { writeLineSnapshots } = require('../../../orders/lineSnapshots');
+    const tx = { set: jest.fn(), create: jest.fn() };
+    const args = (sessionId) => ({ cartSnapshot: { cartId: 'c1', items: [] }, orderId: 'o1', tableId: 'tbl_meg_6', sessionId, placedBy: 'guest', blocks: {}, now: 1 });
+    test.each([[undefined], [null], ['']])('sessionId %p is refused before anything is written', (sid) => {
+        expect(() => writeLineSnapshots(tx, 'res_meghana', args(sid))).toThrow(/guest sitting/);
+        expect(tx.set).not.toHaveBeenCalled();
+    });
+    test('with a sitting, an empty cart writes nothing and throws nothing', () => {
+        expect(writeLineSnapshots(tx, 'res_meghana', args('ses_6'))).toEqual([]);
+    });
+});

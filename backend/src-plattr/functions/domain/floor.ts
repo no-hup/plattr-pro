@@ -22,6 +22,8 @@ const no = (message: string, code: RefusalCode = 'failed-precondition'): Check =
 /** A bill as the floor needs it. `paid` is the sum of takes; a cancelled bill owes nothing. */
 export interface Bill {
   billId: string;
+  sittingId: string;           // the guest session the bill was issued for, read off its lines at issue
+  note?: boolean;              // a credit note: a refund on a paid bill, never an open bill on the floor
   status: 'issued' | 'paid' | 'cancelled';
   payable: number;
   paid: number;
@@ -66,6 +68,25 @@ export interface Sitting {
   openedAt: number;
   lines: Line[];
   bills: Bill[];
+}
+
+/**
+ * A sitting from its head and the lines and bills read for it. R19 for the second axis: a line
+ * stamped with a bill the read did not bring back means the join is broken. Painting that table
+ * ₹0 owed is how a paid-looking tile hid an unpaid ₹258 in sanity run 1, so it throws instead.
+ */
+export class BrokenSitting extends Error {
+  readonly code = 'failed-precondition';
+  constructor(message: string, readonly details: Record<string, unknown>) { super(message); }
+}
+
+export function sittingOf(head: { sessionId: string; tableIds: string[]; openedAt: number }, lines: Line[], bills: Bill[]): Sitting {
+  const mine = lines.filter(l => l.sessionId === head.sessionId);
+  const theirs = bills.filter(b => b.sittingId === head.sessionId && !b.note);
+  const known = new Set(theirs.map(b => b.billId));
+  const lost = mine.find(l => l.billId && !known.has(l.billId));
+  if (lost) throw new BrokenSitting(`table ${head.tableIds.join('+')}: line ${lost.lineId} is on bill ${lost.billId}, which could not be read`, { tableIds: head.tableIds, lineId: lost.lineId, billId: lost.billId });
+  return { ...head, lines: mine, bills: theirs };
 }
 
 export const DEFAULTS = { pollSeconds: 5, staleAfterSeconds: 20, idleFreeAfterMinutes: 60, takeawayTableIds: [] as string[] };

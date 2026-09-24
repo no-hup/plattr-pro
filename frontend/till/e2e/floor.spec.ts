@@ -75,7 +75,7 @@ async function reset() {
   await seed('lines/flui_7', line('flui_7', 'Dosa', 100000, 'sess_ui_7', { tableId: 'tbl_ui_7', billId: 'flui_0701' }))
   await seed('lines/flui_4', line('flui_4', 'Biryani', 168000, 'sess_ui_4', { tableId: 'tbl_ui_4' }))
   await seed('lines/flui_p1', line('flui_p1', 'Masala Dosa', 18000, 'sess_ui_p1', { tableId: 'tbl_ui_p1' }))
-  await seed('bills/flui_0701', { billId: 'flui_0701', sessionId: 'sess_ui_7', payable: 100000, paidTotal: 40000, status: 'issued', cid: 'cid_flui7', number: 'flui_0701', tableIds: ['tbl_ui_7'] })
+  await seed('bills/flui_0701', { billId: 'flui_0701', sittingId: 'sess_ui_7', payable: 100000, paidTotal: 40000, status: 'issued', cid: 'cid_flui7', number: 'flui_0701', tableIds: ['tbl_ui_7'] })
 
   // The screen's own clock, turned down so the grey arrives inside a test's patience rather than
   // after the twenty seconds a real Friday would want.
@@ -265,7 +265,7 @@ test.describe('who may act (R16)', () => {
 
 test.describe('FL-Q1 a settled table, and Clear', () => {
   test('a settled table reads settled and offers Clear; Clear frees it', async ({ page }) => {
-    await seed('bills/flui_0701', { billId: 'flui_0701', sessionId: 'sess_ui_7', payable: 100000, paidTotal: 100000, status: 'paid', cid: 'cid_flui7', number: 'flui_0701', tableIds: ['tbl_ui_7'] })
+    await seed('bills/flui_0701', { billId: 'flui_0701', sittingId: 'sess_ui_7', payable: 100000, paidTotal: 100000, status: 'paid', cid: 'cid_flui7', number: 'flui_0701', tableIds: ['tbl_ui_7'] })
     await login(page)
     await expect(page.getByTestId('settled-7')).toBeVisible()
     await page.getByTestId('clear-7').click()

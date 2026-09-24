@@ -42,7 +42,7 @@ const bill0417: Bill = {
     bl({ name: 'Kingfisher Pint', qty: 2, listPrice: 52000, blockId: 'liquor', hsn: '2203' }),
   ],
   blocks, charges: [], discount: null, subtotal: 153000, taxTotal: 5050, roundOff: -50, payable: 158000,
-  billId: 'b_0417', number: 'A/0417', series: 'A', fiscalYear: '2026-27', cid: 'cid_42', tableIds: ['table_7'], sessionId: 's7', draftId: 's7',
+  billId: 'b_0417', number: 'A/0417', series: 'A', fiscalYear: '2026-27', cid: 'cid_42', tableIds: ['table_7'], sittingId: 's7', draftId: 's7',
   issuedAt: T(22, 10), issuedBy: 'staff:priya', seller, status: 'issued', creditNotes: [],
 };
 const BODY_0417 = [
@@ -172,7 +172,7 @@ describe('the credit note (KT-S15)', () => {
     lines: [bl({ name: 'Coke', qty: -1, listPrice: -8000, blockId: 'food', tax: { coke_item: { taxable: -8000, parts: [{ label: 'CGST', rateBps: 250, amount: -200 }, { label: 'SGST', rateBps: 250, amount: -200 }] } } })],
     blocks: [{ id: 'food', label: 'GST', mode: 'exclusive', taxable: -8000, parts: [{ label: 'CGST', rateBps: 250, amount: -200 }, { label: 'SGST', rateBps: 250, amount: -200 }], total: -8400 }],
     charges: [], discount: null, subtotal: -8000, taxTotal: -400, roundOff: 0, payable: -8400,
-    billId: 'cn_0007', number: 'CN-0007', series: 'CN', fiscalYear: '2026-27', cid: 'cid_42', tableIds: ['table_7'], sessionId: 's7', draftId: 's7',
+    billId: 'cn_0007', number: 'CN-0007', series: 'CN', fiscalYear: '2026-27', cid: 'cid_42', tableIds: ['table_7'], sittingId: 's7', draftId: 's7',
     issuedAt: T(22, 40), issuedBy: 'staff:priya', seller, status: 'paid', creditNotes: [],
     creditNoteOf: { billId: 'b_0417', number: 'A/0417', issuedAt: T(22, 10) },
   };

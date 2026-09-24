@@ -7,7 +7,7 @@ import {
   getFloor, openTable, moveTable, clearTable, setMerge, floorConfigFrom, releaseIdle, releaseIdleEverywhere,
   Ports, Tx, Order, SittingHead, ApprovalError,
 } from './floor';
-import { Bill, Table, OrderState } from '../domain/floor';
+import { Bill, Table, OrderState, sittingOf } from '../domain/floor';
 import { Line } from '../domain/line';
 import { Staff } from './approvals';
 
@@ -29,7 +29,7 @@ interface World {
   tables: Table[];
   sittings: SittingHead[];
   lines: Line[];
-  bills: (Bill & { sessionId: string })[];
+  bills: Bill[];
   orders: Record<string, Order[]>;
   carts: Record<string, string[]>;
   staff: Staff;
@@ -58,7 +58,7 @@ function fake(over: Partial<World> = {}) {
   const sittingAt = (id: string) => {
     const h = headAt(id);
     if (!h) return null;
-    return { ...h, lines: w.lines.filter(l => l.sessionId === h.sessionId), bills: w.bills.filter(b => b.sessionId === h.sessionId) };
+    return sittingOf(h, w.lines, w.bills);   // the same constructor the adapter uses
   };
 
   const tx: Tx = {
@@ -91,7 +91,7 @@ function fake(over: Partial<World> = {}) {
     async tablesOf() { if (w.breakTables) throw new Error('tables unreadable'); return w.tables; },
     async sittingsOf() { return w.sittings; },
     async linesOfSessions(_rid, ids) { if (w.breakLines) throw new Error('lines unreadable'); return w.lines.filter(l => ids.includes(l.sessionId)); },
-    async billsOfSessions(_rid, ids) { if (w.breakBills) throw new Error('bills unreadable'); return w.bills.filter(b => ids.includes(b.sessionId)); },
+    async billsOfSessions(_rid, ids) { if (w.breakBills) throw new Error('bills unreadable'); return w.bills.filter(b => ids.includes(b.sittingId)); },
     async transact(_rid, fn) { return fn(tx); },
     async idleCandidates(_rid, before) { return w.sittings.filter(s => s.openedAt < before); },
     async restaurantIds() { return [RID]; },
@@ -108,7 +108,7 @@ function fake(over: Partial<World> = {}) {
 const table = (over: Partial<Table> & { tableId: string }): Table => ({ status: 'vacant', ...over });
 const head = (over: Partial<SittingHead> & { sessionId: string; tableIds: string[] }): SittingHead =>
   ({ openedAt: T0 - 48 * MIN, ...over });
-const bill = (over: Partial<Bill> & { billId: string; sessionId: string }): Bill & { sessionId: string } =>
+const bill = (over: Partial<Bill> & { billId: string; sittingId: string }): Bill =>
   ({ status: 'issued', payable: 0, paid: 0, ...over });
 
 const REQ = { restaurantId: RID, staffSessionId: 'staff_ok' };
@@ -311,7 +311,7 @@ describe('getFloor — one read that paints every tile (R1, R2, R3)', () => {
 });
 
 describe('getFloor — the two axes and the word on the tile (R11)', () => {
-  const one = (lines: Line[], bills: (Bill & { sessionId: string })[] = []) =>
+  const one = (lines: Line[], bills: Bill[] = []) =>
     fake({ tables: [table({ tableId: '12', status: 'active' })], sittings: [head({ sessionId: 's12', tableIds: ['12'] })], lines, bills });
 
   it('FL-S19 unbilled 147000p and nothing issued reads "ordered", never a money word', async () => {
@@ -328,7 +328,7 @@ describe('getFloor — the two axes and the word on the tile (R11)', () => {
   it('FL-S20 issued 200000p unpaid AND 30000p ordered after issue reads both', async () => {
     const ports = one(
       [line({ lineId: 'billed', listPrice: 200000, sessionId: 's12', billId: 'b1' }), line({ lineId: 'jamun', listPrice: 30000, sessionId: 's12' })],
-      [bill({ billId: 'b1', sessionId: 's12', payable: 200000 })],
+      [bill({ billId: 'b1', sittingId: 's12', payable: 200000 })],
     );
     const t = (await getFloor(ports, REQ)).tiles[0];
     expect(t.unpaid).toBe(200000);
@@ -336,19 +336,19 @@ describe('getFloor — the two axes and the word on the tile (R11)', () => {
   });
 
   it('FL-S22 an issued 100000p bill with 40000p taken reads due 60000p, never "paid"', async () => {
-    const ports = one([], [bill({ billId: 'b1', sessionId: 's12', payable: 100000, paid: 40000 })]);
+    const ports = one([], [bill({ billId: 'b1', sittingId: 's12', payable: 100000, paid: 40000 })]);
     const t = (await getFloor(ports, REQ)).tiles[0];
     expect(t.unpaid).toBe(60000);
     expect(t.word).toBe('billed');
   });
 
   it('FL-S35 a bill comped to 0p and settled reads "settled", exactly as a paid one does', async () => {
-    const ports = one([], [bill({ billId: 'b1', sessionId: 's12', payable: 0, paid: 0, status: 'paid' })]);
+    const ports = one([], [bill({ billId: 'b1', sittingId: 's12', payable: 0, paid: 0, status: 'paid' })]);
     expect((await getFloor(ports, REQ)).tiles[0].word).toBe('settled');
   });
 
   it('FL-S17 a cancelled 234000p bill puts the money back on the ordered axis', async () => {
-    const ports = one([line({ lineId: 'l', listPrice: 234000, sessionId: 's12' })], [bill({ billId: 'b1', sessionId: 's12', payable: 234000, status: 'cancelled' })]);
+    const ports = one([line({ lineId: 'l', listPrice: 234000, sessionId: 's12' })], [bill({ billId: 'b1', sittingId: 's12', payable: 234000, status: 'cancelled' })]);
     const t = (await getFloor(ports, REQ)).tiles[0];
     expect(t.onTable).toBe(234000);
     expect(t.unpaid).toBe(0);
@@ -356,8 +356,8 @@ describe('getFloor — the two axes and the word on the tile (R11)', () => {
 
   it('FL-S17 a cancelled bill with a second issued bill still open keeps showing that second bill', async () => {
     const ports = one([], [
-      bill({ billId: 'b1', sessionId: 's12', payable: 234000, status: 'cancelled' }),
-      bill({ billId: 'b2', sessionId: 's12', payable: 90000 }),
+      bill({ billId: 'b1', sittingId: 's12', payable: 234000, status: 'cancelled' }),
+      bill({ billId: 'b2', sittingId: 's12', payable: 90000 }),
     ]);
     expect((await getFloor(ports, REQ)).tiles[0].unpaid).toBe(90000);
   });
@@ -367,7 +367,7 @@ describe('getFloor — the two axes and the word on the tile (R11)', () => {
       tables: [table({ tableId: '12', status: 'active' }), table({ tableId: '7', status: 'active' })],
       sittings: [head({ sessionId: 's12', tableIds: ['12'] }), head({ sessionId: 's7', tableIds: ['7'] })],
       lines: [line({ lineId: 'a', listPrice: 100000, sessionId: 's12' }), line({ lineId: 'b', listPrice: 50000, sessionId: 's7' })],
-      bills: [bill({ billId: 'b1', sessionId: 's7', payable: 50000 })],
+      bills: [bill({ billId: 'b1', sittingId: 's7', payable: 50000 })],
     });
     const by = Object.fromEntries((await getFloor(ports, REQ)).tiles.map(t => [t.label, t]));
     expect(by['12'].onTable).toBe(100000);
@@ -455,7 +455,7 @@ describe('openTable — the tap is a read of the truth, not of the poll (R1, R12
       tables: [table({ tableId: '7', status: 'active' })],
       sittings: [head({ sessionId: 's7', tableIds: ['7'] })],
       lines: [line({ lineId: 'l', listPrice: 86000, sessionId: 's7', billId: 'b1' })],
-      bills: [bill({ billId: 'b1', sessionId: 's7', payable: 86000 })],
+      bills: [bill({ billId: 'b1', sittingId: 's7', payable: 86000 })],
     });
     const r = await openTable(ports, { ...REQ, tableId: '7' });
     expect(r.drafts).toHaveLength(0);
@@ -474,7 +474,7 @@ describe('openTable — the tap is a read of the truth, not of the poll (R1, R12
       tables: [table({ tableId: '12', status: 'active' })],
       sittings: [head({ sessionId: 's12', tableIds: ['12'] })],
       lines: nine.map(l => ({ ...l, billId: 'b1' })),
-      bills: [bill({ billId: 'b1', sessionId: 's12', payable: 90000 })],
+      bills: [bill({ billId: 'b1', sittingId: 's12', payable: 90000 })],
     });
     const stale = (await getFloor(ports, REQ)).tiles[0];
     expect(stale.word).toBe('billed');
@@ -514,7 +514,7 @@ describe('openTable — the tap is a read of the truth, not of the poll (R1, R12
     const ports = fake({
       tables: [table({ tableId: '12', status: 'active' })],
       sittings: [head({ sessionId: 's12', tableIds: ['12'] })],
-      bills: [bill({ billId: 'b1', sessionId: 's12', payable: 90000, status: 'cancelled' })],
+      bills: [bill({ billId: 'b1', sittingId: 's12', payable: 90000, status: 'cancelled' })],
     });
     expect((await openTable(ports, { ...REQ, tableId: '12' })).bills).toHaveLength(0);
   });
@@ -595,7 +595,7 @@ describe('moveTable — one transaction, four writes, no price rewritten (R5)', 
   });
 
   it('FL-S24 a sitting with any line carrying a billId is refused, and nothing is written', async () => {
-    const ports = party({ lines: [line({ lineId: 'l', listPrice: 168000, sessionId: 's4', billId: 'b1' })] });
+    const ports = party({ lines: [line({ lineId: 'l', listPrice: 168000, sessionId: 's4', billId: 'b1' })], bills: [bill({ billId: 'b1', sittingId: 's4', payable: 168000 })] });
     await expect(moveTable(ports, MOVE)).rejects.toThrow(/printed bill/);
     expect(ports.writes).toHaveLength(0);
     expect(ports.audits.size).toBe(0);
@@ -679,10 +679,14 @@ describe('clearTable and releaseIfSettled — freeing a settled table (FL-Q1)', 
   const settled = (over: Partial<World> = {}) => fake({
     tables: [table({ tableId: '7', status: 'active' })],
     sittings: [head({ sessionId: 's7', tableIds: ['7'] })],
-    bills: [bill({ billId: 'b1', sessionId: 's7', payable: 100000, paid: 100000, status: 'paid' })],
+    bills: [bill({ billId: 'b1', sittingId: 's7', payable: 100000, paid: 100000, status: 'paid' })],
     ...over,
   });
   const CLEAR = { ...REQ, tableId: '7', cid: 'cid_clear_1' };
+
+  it('a blank table id is refused by name, never sent to Firestore (sanity run 1 got a 500 here)', async () => {
+    await expect(clearTable(settled(), { ...CLEAR, tableId: '' })).rejects.toMatchObject({ code: 'invalid-argument' });
+  });
 
   it('Clear frees a settled table immediately, whatever the timer says', async () => {
     const ports = settled();
@@ -701,8 +705,8 @@ describe('clearTable and releaseIfSettled — freeing a settled table (FL-Q1)', 
   it('Clear is refused while one half of a split still owes 100000p', async () => {
     const ports = settled({
       bills: [
-        bill({ billId: 'b1', sessionId: 's7', payable: 100000, paid: 100000, status: 'paid' }),
-        bill({ billId: 'b2', sessionId: 's7', payable: 100000 }),
+        bill({ billId: 'b1', sittingId: 's7', payable: 100000, paid: 100000, status: 'paid' }),
+        bill({ billId: 'b2', sittingId: 's7', payable: 100000 }),
       ],
     });
     await expect(clearTable(ports, CLEAR)).rejects.toThrow(/still has money on it/);
@@ -717,7 +721,7 @@ describe('clearTable and releaseIfSettled — freeing a settled table (FL-Q1)', 
     const ports = settled({
       tables: [table({ tableId: '5', status: 'active', isParent: true }), table({ tableId: '6', status: 'disabled', mergedInto: '5' })],
       sittings: [head({ sessionId: 's5', tableIds: ['5', '6'] })],
-      bills: [bill({ billId: 'b1', sessionId: 's5', payable: 100000, paid: 100000, status: 'paid' })],
+      bills: [bill({ billId: 'b1', sittingId: 's5', payable: 100000, paid: 100000, status: 'paid' })],
     });
     const r = await clearTable(ports, { ...CLEAR, tableId: '5' });
     expect(r.freed).toEqual(['5', '6']);
@@ -738,7 +742,7 @@ describe('clearTable and releaseIfSettled — freeing a settled table (FL-Q1)', 
   const group = (over: Partial<World> = {}) => settled({
     tables: [table({ tableId: '5', status: 'active', isParent: true }), table({ tableId: '6', status: 'disabled', mergedInto: '5' })],
     sittings: [head({ sessionId: 's5', tableIds: ['5', '6'] })],
-    bills: [bill({ billId: 'b1', sessionId: 's5', payable: 100000, paid: 100000, status: 'paid' })],
+    bills: [bill({ billId: 'b1', sittingId: 's5', payable: 100000, paid: 100000, status: 'paid' })],
     ...over,
   });
   it('TD-037 Vacant on child 6 while its group has 640000p unbilled → refused, nothing written', async () => {
@@ -784,7 +788,7 @@ describe('clearTable and releaseIfSettled — freeing a settled table (FL-Q1)', 
     expect(ports.audits.get('cid_clear_1_clear')).toMatchObject({ sev: 'P0', owed: 234000 });
   });
   it('the cashier with the PIN on a split owing 100000p of 200000p → the amount is the unpaid half only', async () => {
-    const ports = settled({ bills: [bill({ billId: 'b1', sessionId: 's7', payable: 100000, paid: 100000, status: 'paid' }), bill({ billId: 'b2', sessionId: 's7', payable: 100000 })] });
+    const ports = settled({ bills: [bill({ billId: 'b1', sittingId: 's7', payable: 100000, paid: 100000, status: 'paid' }), bill({ billId: 'b2', sittingId: 's7', payable: 100000 })] });
     await clearTable(ports, { ...CLEAR, pin: '4321', reason: 'guest left' });
     expect(ports.audits.get('cid_clear_1_releaseUnpaid')).toMatchObject({ amount: 100000 });
   });
@@ -869,7 +873,7 @@ describe('setMerge — the race and the release (R14, R16, OR-5a, FL-S32)', () =
     const ports = world({
       tables: [table({ tableId: '5', status: 'active', isParent: true }), table({ tableId: '6', status: 'disabled', mergedInto: '5' })],
       sittings: [head({ sessionId: 's5', tableIds: ['5', '6'] })],
-      bills: [bill({ billId: 'b1', sessionId: 's5', payable: 412000 })],
+      bills: [bill({ billId: 'b1', sittingId: 's5', payable: 412000 })],
     });
     await expect(setMerge(ports, { ...MERGE, merge: false })).rejects.toThrow(/settle it or move it first/);
   });
@@ -963,13 +967,13 @@ describe('releaseIdle — the table nobody frees (FL-S36, R21, TD-044)', () => {
   });
 
   it('FL-S36 an unpaid bill 184000p idle 2h → money, not freed', async () => {
-    const ports = walked({ bills: [bill({ billId: 'b1', sessionId: 's4', payable: 184000 })], touched: { s4: [T0 - 2 * H] } });
+    const ports = walked({ bills: [bill({ billId: 'b1', sittingId: 's4', payable: 184000 })], touched: { s4: [T0 - 2 * H] } });
     expect((await releaseIdle(ports, RID)).money).toEqual(['s4']);
     expect(ports.world.tables[0].status).toBe('active');
   });
 
   it('FL-S36 paid in full 2h ago and nobody tapped Clear → freed (the P1 half of TD-044)', async () => {
-    const ports = walked({ bills: [bill({ billId: 'b1', sessionId: 's4', payable: 184000, paid: 184000, status: 'paid' })], touched: { s4: [T0 - 2 * H] } });
+    const ports = walked({ bills: [bill({ billId: 'b1', sittingId: 's4', payable: 184000, paid: 184000, status: 'paid' })], touched: { s4: [T0 - 2 * H] } });
     expect((await releaseIdle(ports, RID)).freed).toEqual(['4']);
   });
 

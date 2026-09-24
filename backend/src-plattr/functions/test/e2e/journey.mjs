@@ -99,7 +99,7 @@ async function makeBillable() {
     const cfg = await getDoc('config/settings');
     const items = await listCol('menuItems');
     check('seed carries tax blocks', Object.keys(cfg?.tax?.blocks || {}).length > 0, cfg?.tax);
-    check('seed carries tenders', (cfg?.tenders || []).length > 0, cfg?.tenders);
+    check('seed carries tenders', (cfg?.payments?.tenders || []).length > 0, cfg?.payments);   // PY reads them under payments (BT seed, 2026-09-23)
     check('every menu item carries a tax block', items.every(i => !!i.taxBlockId), items.filter(i => !i.taxBlockId).map(i => i.menuItemId));
     info('charges in seed', ((cfg?.billing || {}).charges || []).map(c => `${c.type} ${c.percentage}%`).join(', ') || 'none');
     return items;
@@ -272,7 +272,8 @@ check('COMPLETED left the order UNPAID — the kitchen does not settle bills', S
 // TD-013/TD-036 closed 2026-09-20: COMPLETED no longer touches the table. Only Clear (FL) or the
 // waiter's manual Vacant frees it, so an unpaid bill can never sit on a vacant table.
 const tbl = await getDoc(`tables/${table.id}`);
-check('COMPLETED left the table occupied with its session — the bill is still unpaid', tbl?.status !== 'vacant' && !!tbl?.currentSessionId, `${tbl?.status}, session ${tbl?.currentSessionId ?? 'ended'}`);
+const sess = await getDoc(`sessions/${guest}`);   // tables carry status + occupiedBy; the sitting lives on its session doc
+check('COMPLETED left the table occupied with its session — the bill is still unpaid', tbl?.status !== 'vacant' && sess?.status === 'active', `table ${tbl?.status}, session ${sess?.status ?? 'missing'}`);
 
 step('4 · cashier previews the bill');
 const pv = await call('billing-preview', { restaurantId: RID, sessionId: staff.sessionId, draftId });
@@ -309,7 +310,7 @@ const foodBlock = b.blocks.find(x => x.id === 'food');
 if (foodBlock) check('CGST equals SGST (parts rounded independently)', foodBlock.parts[0]?.amount === foodBlock.parts[1]?.amount, foodBlock.parts);
 
 step('5 · generate the bill');
-const iss = await call('billing-issue', { restaurantId: RID, sessionId: staff.sessionId, draftId, cid: `journey_${Date.now()}`, tableIds: [table.id], expectedV: await draftVersions(RID, draftId) });
+const iss = await call('billing-issue', { restaurantId: RID, sessionId: staff.sessionId, draftId, cid: `journey_${Date.now()}`, expectedV: await draftVersions(RID, draftId) });
 check('bill issued', iss.status === 'success', iss.message || iss);
 if (iss.status !== 'success') die(`issue refused: ${iss.message}`);
 const bill = iss.data;
@@ -320,6 +321,19 @@ check('issued payable equals the preview', bill.payable === b.payable, { issued:
 check('a number was assigned only now', !!bill.number && bill.status === 'issued', bill);
 const relines = (await listCol('lines')).filter(l => l.orderId === orderId);
 check('lines are stamped with the billId', relines.every(l => l.billId === bill.billId), relines.map(l => l.billId));
+// Sanity run 1: a real bill carried the cashier's login as its sitting and no tables, so the floor never
+// found it. The till sends no tables and no sitting; the bill must read both off its own lines.
+check('the bill names the guest sitting, not the cashier login', bill.sittingId === guest && bill.sittingId !== staff.sessionId, { sittingId: bill.sittingId, guest, staff: staff.sessionId });
+check('the bill names the table from its lines', JSON.stringify(bill.tableIds) === JSON.stringify([table.id]), bill.tableIds);
+const tileOf = async () => {
+  const f = await call('floor-get', { restaurantId: RID, staffSessionId: staff.sessionId });
+  if (f.status !== 'success') return { error: f.message || f };
+  const tiles = f.data.tiles || [];
+  return { tile: tiles.find(t => (t.tableIds || []).includes(table.id)), blank: tiles.filter(t => !t.label || !(t.tableIds || []).every(Boolean)) };
+};
+const onFloor = await tileOf();
+check('the floor reads the table billed, owing the payable', onFloor.tile?.word === 'billed' && onFloor.tile?.unpaid === bill.payable, onFloor.tile ?? onFloor.error);
+check('no staff login is drawn as a blank tile', (onFloor.blank || []).length === 0, onFloor.blank);
 
 step('6 · take the money (part card, rest cash)');
 const half = Math.round(bill.payable / 2 / 100) * 100;
@@ -356,9 +370,15 @@ if (fin.status === 'success') {
   check('status is paid', s.status === 'paid', s.status);
   check('two live payment rows', (s.rows || []).filter(r => !r.void).length === 2, s.rows);
 }
+const paidFloor = await tileOf();
+check('the floor reads the table settled, owing nothing', paidFloor.tile?.word === 'settled' && paidFloor.tile?.unpaid === 0, paidFloor.tile ?? paidFloor.error);
+const cleared = await call('floor-clear', { restaurantId: RID, staffSessionId: staff.sessionId, tableId: table.id, cid: `journey_clear_${Date.now()}` });
+check('Clear frees the settled table', cleared.status === 'success' && (cleared.data?.freed || []).includes(table.id), cleared.message || cleared.data);
+const blankClear = await call('floor-clear', { restaurantId: RID, staffSessionId: staff.sessionId, tableId: '', cid: `journey_clear_blank_${Date.now()}` });
+check('Clear with no table is refused by name, not a 500', blankClear.status !== 'success' && /tableId required/.test(blankClear.message || ''), blankClear);
 
 step('8 · an issued bill cannot be billed twice');
-const again = await call('billing-issue', { restaurantId: RID, sessionId: staff.sessionId, draftId, cid: `journey_${Date.now()}_dup`, tableIds: [table.id], expectedV: await draftVersions(RID, draftId) });
+const again = await call('billing-issue', { restaurantId: RID, sessionId: staff.sessionId, draftId, cid: `journey_${Date.now()}_dup`, expectedV: await draftVersions(RID, draftId) });
 check('second issue refused', again.status !== 'success', again);
 
 step('9 · the owner counts the drawer and closes the day');

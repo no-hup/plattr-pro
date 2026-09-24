@@ -85,10 +85,15 @@ const loadTaxBlocks = async (restaurantId) => (await loadTaxConfig(restaurantId)
 
 function writeLineSnapshots(transaction, restaurantId, { cartSnapshot, orderId, tableId, sessionId, placedBy, blocks, assign = {}, now, sent = true }) {
   const cartId = cartSnapshot.cartId;
+  // Every line belongs to a guest sitting: the floor finds a table's money by it and a bill takes its
+  // sitting from it. The only caller (checkout) has already refused a missing session. The old
+  // `|| ""` / `|| tableId` fallbacks glued two parties at one table into one draft, so they are gone;
+  // an order channel with no guest (the till punching a walk-in, OR) opens a sitting of its own first.
+  if (!sessionId) errorHandler.throwError("failed-precondition", "a line needs the guest sitting it belongs to", { orderId, tableId });
   const ctx = {
     cid: orderId, orderId, cartId, tableId,
-    sessionId: sessionId || "",
-    draftId: sessionId || tableId,          // one draft per sitting; BL-S12 splits by rewriting it
+    sessionId,
+    draftId: sessionId,                    // the sitting's first draft; BL-S12 splits by rewriting it
     placedAt: now, placedBy: placedBy || "system", blocks,
     // Placing a round normally IS telling the kitchen. False only behind the waiter-confirmation
     // gate, where markLinesSent flips it when the waiter confirms.
