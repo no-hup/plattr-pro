@@ -212,8 +212,10 @@ export default async function errorCasesSuite() {
   narrator.errorCase('Apply offer wrong restaurant', 'offer not found');
 
   // ── 25. Remove item not in cart ───────────────────────────────
-  expectError(
-    await call('cart-removeItemFromCart', { restaurantId: RESTAURANT_ID, tableId: 'table_clean_2', menuItemId: 'nonexistent_item_xyz', cartItemId: 'nonexistent_cart_item' }),
+  // TD-033: a remove names the table's own session, so this uses the real TABLE_2 session and is
+  // refused for the item, not for the missing session.
+  expectErrorPastAuth(
+    await call('cart-removeItemFromCart', { restaurantId: RESTAURANT_ID, tableId: TABLE_2, sessionId: tableSession, menuItemId: 'nonexistent_item_xyz', cartItemId: 'nonexistent_cart_item' }),
     '25. Remove item not in cart'
   );
   narrator.errorCase('Remove nonexistent item', 'item not found');

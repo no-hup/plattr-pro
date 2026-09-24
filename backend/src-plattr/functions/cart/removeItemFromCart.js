@@ -1,6 +1,6 @@
 const functions = require("firebase-functions");
 const { admin, db } = require('../admin/admin');
-const { validateRemoveItemFields, requireActiveTableSession } = require('./cartInputValidation');
+const { validateRemoveItemFields, validateCheckoutSession, cartOfSession } = require('./cartInputValidation');
 const timestamp = require('../utils/timestamp');
 const { calculateCartValue } = require('./calculateCartValue');
 const { CartTotalPriceInfo } = require('../genericModels/priceinfo');
@@ -16,7 +16,7 @@ const { resolveTableId } = require('../table/mergedTables');
  */
 const removeItemFromCart = functions.https.onCall(async (data, context) => {
   // console.log("removeItemFromCart called with data:", JSON.stringify(data.data));
-  let { tableId, restaurantId, menuItemId, cartItemId, addedBy = null } = data.data;
+  let { tableId, restaurantId, menuItemId, cartItemId, addedBy = null, sessionId } = data.data;
 
   // Input validation
   validateRemoveItemFields(data.data);
@@ -25,8 +25,8 @@ const removeItemFromCart = functions.https.onCall(async (data, context) => {
     // A merged table shares the parent's cart, so resolve before we touch any doc.
     tableId = await resolveTableId(restaurantId, tableId);
 
-    // Public restaurantId/tableId must not be enough to mutate a cart.
-    await requireActiveTableSession(restaurantId, tableId);
+    // TD-033: only the table's own live session touches its cart.
+    await validateCheckoutSession(restaurantId, tableId, sessionId);
 
     const cartRef = db.collection("restaurants").doc(restaurantId).collection("carts").doc(tableId);
 
@@ -35,7 +35,7 @@ const removeItemFromCart = functions.https.onCall(async (data, context) => {
     const cart = await db.runTransaction(async (transaction) => {
       const cartDoc = await transaction.get(cartRef);
 
-      if (!cartDoc.exists) {
+      if (!cartOfSession(cartDoc.exists ? cartDoc.data() : null, sessionId)) {   // an earlier sitting's cart is not this one's (TD-033)
         console.error("Cart not found for the table:", { tableId, restaurantId });
         throw new functions.https.HttpsError("not-found", "Cart not found for the table.");
       }

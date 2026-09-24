@@ -71,15 +71,16 @@ describe('removeItemFromCart Tests (Phase 2.5 decrement pricing)', () => {
     mockData[path] = JSON.parse(JSON.stringify(data));
   };
 
+  // Seeded carts belong to the table's live sitting (session001), as createDefaultCart stamps them (TD-033).
   const setupCart = (cartData, restaurantId = DEFAULT_RESTAURANT_ID, tableId = DEFAULT_TABLE_ID) => {
-    setDoc(`restaurants/${restaurantId}/carts/${tableId}`, cartData);
+    setDoc(`restaurants/${restaurantId}/carts/${tableId}`, { sessionId: 'session001', ...cartData });
   };
 
   const setupMenuItem = (item, restaurantId = DEFAULT_RESTAURANT_ID) => {
     setDoc(`restaurants/${restaurantId}/menuItems/${item.id}`, item);
   };
 
-  const invoke = async (payload) => removeItemFromCart.call(null, { data: payload }, context);
+  const invoke = async (payload) => removeItemFromCart.call(null, { data: { sessionId: 'session001', ...payload } }, context);
 
   // Builds a priceInfo object in the "× quantity" schema the rest of the
   // backend expects — mirrors what `createCartItem` produces on initial add.
@@ -504,6 +505,18 @@ describe('removeItemFromCart Tests (Phase 2.5 decrement pricing)', () => {
         cartItemId: 1,
       });
       expect(cart.data.cart.items).toHaveLength(1);
+    });
+  });
+
+  describe('TD-033 a cart belongs to the sitting that filled it', () => {
+    test('a remove naming no session is refused', async () => {
+      await expect(removeItemFromCart.call(null, { data: { restaurantId: DEFAULT_RESTAURANT_ID, tableId: DEFAULT_TABLE_ID, menuItemId: 'item001' } }, context))
+        .rejects.toMatchObject({ code: 'unauthenticated' });
+    });
+    test('an earlier sitting\'s cart reads as not found; nothing in it changes', async () => {
+      setDoc(`restaurants/${DEFAULT_RESTAURANT_ID}/carts/${DEFAULT_TABLE_ID}`, { sessionId: 'session_partyA', items: [{ menuItemId: 'item001', quantity: 2, cartItemId: 1 }] });
+      await expect(invoke({ restaurantId: DEFAULT_RESTAURANT_ID, tableId: DEFAULT_TABLE_ID, menuItemId: 'item001' })).rejects.toMatchObject({ code: 'not-found' });
+      expect(mockData[`restaurants/${DEFAULT_RESTAURANT_ID}/carts/${DEFAULT_TABLE_ID}`].items[0].quantity).toBe(2);
     });
   });
 });

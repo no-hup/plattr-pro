@@ -20,6 +20,7 @@ const timestamp = require('../utils/timestamp');
 const { validateOfferApplication } = require('./offerEngine');
 const { isOffersEnabled } = require('./offerFeatureGuard');
 const { resolveTableId } = require('../table/mergedTables');
+const { cartOfSession } = require('../cart/cartInputValidation');
 
 /**
  * Evaluates if an offer's conditions are met
@@ -117,7 +118,8 @@ const getApplicableOffers = functions.https.onCall(async (data, context) => {
         }
 
         // Fetch cart if not provided
-        const cart = providedCart || await fetchCartIfNeeded(restaurantId, tableId);
+        // TD-033: only this session's cart is judged; an earlier sitting's leftovers are not.
+        const cart = providedCart || cartOfSession(await fetchCartIfNeeded(restaurantId, tableId), sessionId);
 
         // Fetch session data for user history based offers
         const sessionData = await getSessionData(restaurantId, sessionId);

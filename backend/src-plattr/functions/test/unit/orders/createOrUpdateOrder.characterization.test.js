@@ -49,6 +49,7 @@ const { createOrUpdateOrder } = require('../../../orders/createOrUpdateOrder');
 
 // One pizza ₹500 (no discount) and one beer ₹499, quantity 1 each.
 const cart = {
+    sessionId: 'sess_1',   // the sitting that filled it, as createDefaultCart stamps it (TD-033)
     items: [
         {
             menuItemId: 'mi_pizza', quantity: 1, cartItemId: 1,

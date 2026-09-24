@@ -7,7 +7,8 @@
  */
 import { call } from '../lib/api.js';
 import { assertSuccess, assertError, assertField, assertFieldExists, assertArrayLength } from '../lib/assert.js';
-import { customerLogin } from '../lib/auth.js';
+import { customerLogin, serverLogin } from '../lib/auth.js';
+import { fsFor } from '../lib/rest.mjs';
 import config from '../lib/config.js';
 
 const { RESTAURANT_ID, TABLE_CLEAN_2, ITEMS, VARIANTS, ADDONS } = config;
@@ -141,8 +142,8 @@ export default async function cartSuite() {
   }
 
   // ── 8. Add item with invalid addon ID ───────────────────────
-  // Backend silently ignores unknown addon IDs (they are filtered out
-  // during processing, not validated upfront). This is current behavior.
+  // TD-015: an unknown add-on id is refused. It used to be silently dropped, so the guest was
+  // shown their burger "with cheese" and served one without.
   {
     const resp = await call('cart-addItemToCart', {
       ...cartParams,
@@ -152,8 +153,7 @@ export default async function cartSuite() {
       selectedVariants: { [VARIANTS.BURGER_SIZE.id]: VARIANTS.BURGER_SIZE.options.REGULAR.id },
       selectedAddons: ['fake_addon_id'],
     });
-    // Backend ignores unknown addons — item adds successfully without them
-    record(assertSuccess(resp, '8. Add with fake addon ID (backend ignores unknown addons)'));
+    record(assertError(resp, null, '8. Add with fake addon ID is refused (TD-015)'));
   }
 
   // ── 9. Get cart ────────────────────────────────────────────────
@@ -167,6 +167,7 @@ export default async function cartSuite() {
     const resp = await call('cart-removeItemFromCart', {
       ...cartParams,
       menuItemId: ITEMS.TIRAMISU.id,
+      sessionId,   // TD-033: only the table's own session touches its cart
     });
     record(assertSuccess(resp, '10. Remove tiramisu (decrement qty 2→1)'));
   }
@@ -174,7 +175,7 @@ export default async function cartSuite() {
   // ── 11. Clear cart ─────────────────────────────────────────────
   // clearCart returns { message: "..." } without status field (doesn't use ResponseBuilder)
   {
-    const resp = await call('cart-clearCart', cartParams);
+    const resp = await call('cart-clearCart', { ...cartParams, sessionId });
     const ok = resp.status === 'success' || resp._httpStatus === 200 || resp.message?.includes('cleared');
     record({
       pass: ok,
@@ -240,6 +241,41 @@ export default async function cartSuite() {
       message: `15. Missing tableId → ${isError ? 'error as expected' : 'unexpectedly succeeded'}`,
       actual: isError ? undefined : resp,
     });
+  }
+
+  // ── TD-033: a cart belongs to the sitting that filled it ─────────────────
+  // Party A puts a Tiramisu (₹200) on table_cart_td033 and never sends it. The captain marks the table
+  // Vacant (allowed: an unsent cart is not money). Party B sits and orders a Tiramisu. B's order must be
+  // ONE Tiramisu, not two — and no phone but B's may write into that cart.
+  {
+    const T = 'table_cart_td033';
+    const { getDoc, setDoc, patchDoc } = fsFor(RESTAURANT_ID);
+    const arm = () => patchDoc(`tables/${T}`, { status: 'vacant', currentOTP: { code: config.TABLE_OTP, createdAt: new Date(), expiresAt: new Date(Date.now() + 30 * 60_000) } });
+    const tpl = await getDoc(`tables/${TABLE_CLEAN_2}`);
+    await setDoc(`tables/${T}`, { ...tpl, tableId: T, number: 'TD33', status: 'vacant', mergedInto: null, occupiedBy: [], primaryCustomer: null });
+    await fetch(`http://${config.FIRESTORE_HOST}/v1/projects/${config.PROJECT_ID}/databases/(default)/documents/restaurants/${RESTAURANT_ID}/carts/${T}`, { method: 'DELETE', headers: { Authorization: 'Bearer owner' } });
+    await arm();
+    const t = { restaurantId: RESTAURANT_ID, tableId: T };
+    const add = sid => call('cart-addItemToCart', { ...t, menuItemId: ITEMS.TIRAMISU.id, quantity: 1, ...(sid ? { sessionId: sid } : {}) });
+
+    const a = await customerLogin(RESTAURANT_ID, T, config.TABLE_OTP, config.CUSTOMER_PHONE, config.CUSTOMER_NAME);
+    record(assertSuccess(await add(a), 'TD-033 party A adds a Tiramisu and does not send it'));
+    record(assertError(await add(null), null, 'TD-033 a write naming no session is refused'));
+    record(assertError(await add(sessionId), null, 'TD-033 a live session of ANOTHER table cannot write this table\'s cart'));
+
+    const staff = await serverLogin();
+    record(assertSuccess(await call('table-updateTableStatus', { ...t, status: 'vacant', sessionId: staff }), 'TD-033 captain marks the table Vacant (unsent cart, no money)'));
+    await arm();
+    const b = await customerLogin(RESTAURANT_ID, T, config.TABLE_OTP, config.CUSTOMER_PHONE_2, config.CUSTOMER_NAME_2);
+    const seen = await call('cart-getCart', { ...t, sessionId: b });
+    const seenItems = seen?.data?.cart?.items ?? seen?.data?.items ?? [];
+    record({ pass: seenItems.length === 0, message: `TD-033 party B opens the menu to an empty cart, not A's Tiramisu → ${seenItems.length} item(s)`, actual: seenItems.length ? seen : undefined });
+    record(assertError(await add(a), null, 'TD-033 party A\'s old phone can no longer write here'));
+    record(assertSuccess(await add(b), 'TD-033 party B adds one Tiramisu'));
+    const co = await call('cart-checkoutCart', { ...t, sessionId: b });
+    const order = (await getDoc(`orders/${co?.data?.orderId}`)) || {};
+    const qty = (order.carts ?? []).flatMap(c => c.items ?? []).reduce((n, i) => n + (i.quantity ?? 0), 0);
+    record({ pass: (co?.status === 'success' || co?.success === true) && qty === 1, message: `TD-033 B's order carries exactly 1 Tiramisu, not A's too → ${qty}`, actual: qty === 1 ? undefined : co });
   }
 
   return results;

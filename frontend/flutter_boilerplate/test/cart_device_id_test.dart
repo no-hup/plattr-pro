@@ -29,7 +29,7 @@ void main() {
       final options = req(path, {
         'data': <String, dynamic>{'tableId': 't7'},
       });
-      stampDeviceId(options);
+      stampCartCall(options);
       expect((options.data as Map)['data']['addedBy'], id, reason: path);
     }
   });
@@ -40,14 +40,42 @@ void main() {
     final options = req(ApiConfig.fetchCartEndpoint, {
       'data': <String, dynamic>{'tableId': 't7'},
     });
-    stampDeviceId(options);
+    stampCartCall(options);
     expect((options.data as Map)['data'].containsKey('addedBy'), isFalse);
+  });
+
+  // TD-033: the backend lets only the table's own live session write its cart, so add and
+  // remove carry the session the way checkout always has.
+  test('stamps the stored session on add and remove, not on reads', () async {
+    currentSessionId = () => 'sess_t7';
+    for (final path in [ApiConfig.addItemToCartEndpoint, ApiConfig.removeItemFromCartEndpoint]) {
+      final options = req(path, {'data': <String, dynamic>{'tableId': 't7'}});
+      stampCartCall(options);
+      expect((options.data as Map)['data']['sessionId'], 'sess_t7', reason: path);
+    }
+    final read = req(ApiConfig.fetchCartEndpoint, {'data': <String, dynamic>{'tableId': 't7'}});
+    stampCartCall(read);
+    expect((read.data as Map)['data'].containsKey('sessionId'), isFalse);
+  });
+
+  test('a session the caller already named is never overwritten', () async {
+    currentSessionId = () => 'sess_stored';
+    final options = req(ApiConfig.checkoutCartEndpoint, {'data': <String, dynamic>{'sessionId': 'sess_named'}});
+    stampCartCall(options);
+    expect((options.data as Map)['data']['sessionId'], 'sess_named');
+  });
+
+  test('no stored session → nothing stamped; the server answers 401 and the OTP prompt runs', () async {
+    currentSessionId = () => null;
+    final options = req(ApiConfig.addItemToCartEndpoint, {'data': <String, dynamic>{'tableId': 't7'}});
+    stampCartCall(options);
+    expect((options.data as Map)['data'].containsKey('sessionId'), isFalse);
   });
 
   test('a body that is not the usual envelope is left untouched', () async {
     await DeviceId.load();
     final options = req(ApiConfig.addItemToCartEndpoint, 'raw');
-    stampDeviceId(options);
+    stampCartCall(options);
     expect(options.data, 'raw');
   });
 }

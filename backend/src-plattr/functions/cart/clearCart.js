@@ -1,6 +1,6 @@
 const functions = require("firebase-functions");
 const { admin, db } = require('../admin/admin');
-const { validateCheckoutFields, requireActiveTableSession } = require('./cartInputValidation');
+const { validateCheckoutFields, validateCheckoutSession } = require('./cartInputValidation');
 const errorHandler = require('../singleton/ErrorHandler');
 const { resolveTableId } = require('../table/mergedTables');
 
@@ -37,14 +37,14 @@ async function clearCartInternal(restaurantId, tableId) {
  */
 const clearCart = functions.https.onCall(async (data, context) => {
   validateCheckoutFields(data.data);
-  let { tableId, restaurantId } = data.data;
+  let { tableId, restaurantId, sessionId } = data.data;
 
   try {
     // A merged table shares the parent's cart, so resolve before we touch any doc.
     tableId = await resolveTableId(restaurantId, tableId);
 
-    // Public restaurantId/tableId must not be enough to wipe a cart.
-    await requireActiveTableSession(restaurantId, tableId);
+    // TD-033: only the table's own live session wipes its cart.
+    await validateCheckoutSession(restaurantId, tableId, sessionId);
     await clearCartInternal(restaurantId, tableId);
     return { message: "Cart cleared successfully." };
   } catch (error) {

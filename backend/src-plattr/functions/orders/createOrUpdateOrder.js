@@ -2,7 +2,7 @@ const functions = require("firebase-functions");
 const { admin, db } = require("../admin/admin");
 const { ORDER_STATUS, PAYMENT_STATUS, FULFILLMENT_STATUS } = require('./orderConstants');
 const OrderInputValidation = require('./orderInputValidation');
-const { validateCheckoutSession } = require('../cart/cartInputValidation');
+const { validateCheckoutSession, cartOfSession } = require('../cart/cartInputValidation');
 const timestamp = require('../utils/timestamp');
 const errorHandler = require('../singleton/ErrorHandler');
 const { OrderPriceInfo, CartTotalPriceInfo } = require('../genericModels/priceinfo');
@@ -91,7 +91,8 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
 
       // 0. Read the live cart (locks it for the duration of the transaction)
       const liveCartDoc = await transaction.get(cartRef);
-      const liveCart = liveCartDoc.exists ? liveCartDoc.data() : null;
+      // TD-033: an earlier sitting's unsent cart is never placed on this party's order.
+      const liveCart = cartOfSession(liveCartDoc.exists ? liveCartDoc.data() : null, sessionId);
 
       // Split the table's shared list into what this diner is placing and what stays behind.
       // Done before the fingerprint below so a retry is judged against the same lines it sent.
