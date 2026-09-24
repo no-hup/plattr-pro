@@ -47,7 +47,7 @@ exports.getTables = functions.https.onCall(async (request, context) => {
                 id: doc.id,
                 number: tableData.number || doc.id,
                 status: tableData.status || TABLE_STATUS.VACANT,
-                capacity: tableData.capacity || null,
+                capacity: tableData.capacity ?? null,
                 assignedServerId: tableData.assignedServerId || null,
                 isOccupied: tableData.status === TABLE_STATUS.ACTIVE,
                 primaryCustomer: tableData.primaryCustomer || null,

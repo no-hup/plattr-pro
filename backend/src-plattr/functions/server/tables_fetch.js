@@ -62,7 +62,7 @@ exports.getTables = functions.https.onCall(async (data, context) => {
                 id: doc.id,
                 number: tableData.number,
                 status: validStatus,
-                capacity: tableData.capacity || null,
+                capacity: tableData.capacity ?? null,   // ?? not ||: a parcel counter seats 0, and null breaks the waiter app
                 assignedServerId: tableData.assignedServerId || null,
                 isOccupied: validStatus === 'active',
                 primaryCustomer: tableData.primaryCustomer || null,

@@ -78,7 +78,7 @@ exports.validateTableAndLocation = functions.https.onCall(async (request, contex
         const tableInfo = {
             number: tableData.number,
             id: tableId,
-            capacity: tableData.capacity || null,
+            capacity: tableData.capacity ?? null,
             ...(tableData.assignedServerId && { assignedServerId: tableData.assignedServerId })
         };
 
@@ -799,7 +799,7 @@ exports.getTablesForRestaurant = functions.https.onCall(async (request, context)
                 id: doc.id,
                 number: tableData.number || doc.id,
                 status: tableData.status || 'vacant',
-                capacity: tableData.capacity || null
+                capacity: tableData.capacity ?? null
             };
 
             // Add optional fields if they exist
@@ -982,7 +982,7 @@ exports.getTableDetails = functions.https.onCall(async (request, context) => {
             id: tableId,
             number: tableData.number || tableId,
             status: tableData.status || 'vacant',
-            capacity: tableData.capacity || null,
+            capacity: tableData.capacity ?? null,
             section: tableData.section || null,
             floor: tableData.floor || null,
             assignedServer: serverInfo,
