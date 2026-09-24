@@ -4,81 +4,119 @@
   "data": {
     "cart": {
       "restaurantId": "res_meghana",
-      "tableId": "tbl_meg_7",
+      "tableId": "tbl_meg_2",
       "sessionId": "SESSIONID_1",
       "items": [
         {
-          "menuItemId": "mi_paneer65",
-          "categoryId": "mc_starters",
+          "menuItemId": "mi_chicken_bir",
+          "categoryId": "mc_biryani",
           "subcategoryIds": [
-            "ms_st_veg"
+            "ms_bir_chicken"
           ],
           "menuItem": {
             "nutritionalInfo": {
-              "carbs": 40,
-              "protein": 17,
-              "fat": 15,
-              "calories": 336
+              "carbs": 33,
+              "protein": 33,
+              "fat": 20,
+              "calories": 408
             },
-            "addons": [],
+            "addons": [
+              "ma_extra_raita",
+              "ma_extra_egg",
+              "ma_extra_gravy"
+            ],
             "allergenTags": [],
-            "variants": [],
+            "variants": [
+              {
+                "id": "mv_bir_portion",
+                "name": "Portion"
+              }
+            ],
             "restaurantId": "res_meghana",
-            "menuItemId": "mi_paneer65",
+            "taxCode": "996331",
+            "menuItemId": "mi_chicken_bir",
+            "taxBlockId": "food",
             "lastUpdated": {
               "_seconds": 1780000000,
               "_nanoseconds": 0
             },
             "priceInfo": {
-              "discount": 15,
-              "finalPrice": 204,
-              "basePrice": 240
+              "discount": 0,
+              "finalPrice": 320,
+              "basePrice": 320
             },
-            "primarySubcategoryId": "ms_st_veg",
-            "isCustomizable": false,
+            "primarySubcategoryId": "ms_bir_chicken",
+            "isCustomizable": true,
             "meta": {
-              "primarySubcategoryName": "Veg Starters",
+              "primarySubcategoryName": "Chicken Biryani",
               "image": "",
-              "name": "Paneer 65",
-              "description": "",
+              "name": "Chicken Dum Biryani",
+              "description": "Signature dum biryani",
               "spiceLevel": 3,
               "categoryName": "",
-              "dietaryType": "VEG",
+              "dietaryType": "NON_VEG",
               "isVegan": false
             },
             "subcategoryIds": [
-              "ms_st_veg"
+              "ms_bir_chicken"
             ],
             "isInStock": true,
-            "categoryId": "mc_starters",
-            "order": 3
+            "categoryId": "mc_biryani",
+            "order": 0
           },
-          "selectedVariantsDetails": [],
-          "selectedAddonsDetails": [],
+          "selectedVariantsDetails": [
+            {
+              "id": "mv_bir_portion",
+              "name": "Portion",
+              "isMandatory": true,
+              "respectParentDiscount": true,
+              "selected_variant_id": "family",
+              "selected_variant_name": "Family (serves 3)",
+              "priceInfo": {
+                "basePrice": 260,
+                "finalPrice": 260,
+                "discount": 0
+              }
+            }
+          ],
+          "selectedAddonsDetails": [
+            {
+              "id": "ma_extra_raita",
+              "name": "Extra Raita",
+              "priceInfo": {
+                "discount": 0,
+                "finalPrice": 40,
+                "basePrice": 40
+              },
+              "respectParentDiscount": false
+            }
+          ],
           "quantity": 1,
           "priceInfo": {
-            "itemBasePrice": 240,
-            "itemFinalPrice": 204,
-            "totalVariantBasePrice": 0,
-            "totalVariantFinalPrice": 0,
-            "totalAddonBasePrice": 0,
-            "totalAddonFinalPrice": 0,
-            "totalBasePrice": 240,
-            "finalPrice": 204,
-            "discount": 15,
-            "discountAmount": 36
+            "itemBasePrice": 320,
+            "itemFinalPrice": 320,
+            "totalVariantBasePrice": 260,
+            "totalVariantFinalPrice": 260,
+            "totalAddonBasePrice": 40,
+            "totalAddonFinalPrice": 40,
+            "totalBasePrice": 620,
+            "finalPrice": 620,
+            "discount": 0,
+            "discountAmount": 0
           },
           "cartItemId": 1,
+          "addedBy": null,
+          "note": "",
           "status": "PENDING"
         }
       ],
       "priceInfo": {
-        "basePrice": 240,
-        "finalPrice": 204,
-        "totalVariantBasePrice": 0,
-        "totalAddonBasePrice": 0,
-        "totalDiscount": 15,
-        "totalDiscountAmount": 36
+        "basePrice": 620,
+        "finalPrice": 620,
+        "totalVariantBasePrice": 260,
+        "totalAddonBasePrice": 40,
+        "totalDiscount": 0,
+        "totalDiscountAmount": 0
       }
     }
   }

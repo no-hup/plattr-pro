@@ -3,7 +3,7 @@
   "message": "Order retrieved successfully",
   "data": {
     "id": "ID_1",
-    "orderNumber": "ORD-00006",
+    "orderNumber": "ORD-00001",
     "orderStatus": "IN_PROGRESS",
     "createdAt": {
       "_seconds": 1780000000,
@@ -13,7 +13,7 @@
       "_seconds": 1780000000,
       "_nanoseconds": 0
     },
-    "tableId": "tbl_meg_8",
+    "tableId": "tbl_meg_10",
     "restaurantId": "res_meghana",
     "sessionId": "SESSIONID_2",
     "total": 2064,
@@ -95,7 +95,7 @@
     "notes": "",
     "carts": [
       {
-        "tableId": "tbl_meg_8",
+        "tableId": "tbl_meg_10",
         "sessionId": "SESSIONID_2",
         "restaurantId": "res_meghana",
         "priceInfo": {
@@ -133,7 +133,9 @@
                 }
               ],
               "restaurantId": "res_meghana",
+              "taxCode": "996331",
               "menuItemId": "mi_chicken_bir",
+              "taxBlockId": "food",
               "lastUpdated": {
                 "_seconds": 1780000000,
                 "_nanoseconds": 0
@@ -203,6 +205,8 @@
               "discountAmount": 0
             },
             "cartItemId": 1,
+            "addedBy": null,
+            "note": "",
             "status": "PENDING"
           },
           {
@@ -222,7 +226,9 @@
               "allergenTags": [],
               "variants": [],
               "restaurantId": "res_meghana",
+              "taxCode": "996331",
               "menuItemId": "mi_paneer65",
+              "taxBlockId": "food",
               "lastUpdated": {
                 "_seconds": 1780000000,
                 "_nanoseconds": 0
@@ -267,11 +273,13 @@
               "discountAmount": 72
             },
             "cartItemId": 2,
+            "addedBy": null,
+            "note": "",
             "status": "PENDING"
           }
         ],
         "lastUpdated": "2026-01-01T00:00:00.000Z",
-        "cartId": "res_meghana_tbl_meg_8_CART",
+        "cartId": "res_meghana_tbl_meg_10_CART",
         "status": "PENDING",
         "statusHistory": [
           {

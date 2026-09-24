@@ -3,7 +3,7 @@
   "message": "Primary customer authenticated",
   "data": {
     "status": "success",
-    "customToken": null,
+    "customToken": "JWT",
     "isPrimaryCustomer": true,
     "sessionId": "SESSIONID_1"
   }

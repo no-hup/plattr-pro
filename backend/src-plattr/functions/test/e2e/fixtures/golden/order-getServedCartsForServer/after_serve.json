@@ -12,7 +12,7 @@
         "cartIndex": 0,
         "status": "SERVED",
         "statusColorHex": "#4CAF50",
-        "servedAt": 1788824243000,
+        "servedAt": 1780000000000,
         "priceInfo": {
           "finalPrice": 1186
         },

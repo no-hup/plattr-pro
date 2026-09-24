@@ -59,6 +59,7 @@ const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z?$/;
 // Firestore auto-ids (20 chars) and the hex suffix on a generated cartId.
 const AUTO_ID_RE = /^[A-Za-z0-9]{20}$/;
 const CART_ID_RE = /^(.*_)[0-9a-f]{8}$/;
+const JWT_RE = /^eyJ[\w-]+\.[\w-]+\.[\w-]+$/;
 
 function stabilize(value, key, ids) {
   if (Array.isArray(value)) return value.map(v => stabilize(v, key, ids));
@@ -69,8 +70,11 @@ function stabilize(value, key, ids) {
     }
     return out;
   }
+  // Epoch milliseconds (lastUpdated, a checkoutTime written as a number): wall clock, so stable.
+  if (typeof value === 'number') return value > 1e12 && value < 1e13 ? STABLE_EPOCH * 1000 : value;
   if (typeof value !== 'string') return value;
   if (ISO_RE.test(value)) return STABLE_ISO;
+  if (JWT_RE.test(value)) return 'JWT';   // a login token is signed with its mint time: new every run
   const cart = CART_ID_RE.exec(value);
   if (cart) return `${cart[1]}CART`;
   if (AUTO_ID_RE.test(value)) {

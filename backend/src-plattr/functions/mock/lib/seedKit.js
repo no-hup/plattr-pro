@@ -456,7 +456,7 @@ function createSeedKit() {
   // ── Golden expected-value registry ──────────────────────────────────────────
   // Each entry is an independent (non-backend) computation of what the LIVE
   // backend should return for a scenario. The E2E suite asserts backend ↔ golden.
-  const golden = { generatedAtUnix: NOW, scenarios: [] };
+  const golden = { scenarios: [] };   // no build time: it churned the committed file on every seed
 
   /**
    * Record a single-item pricing scenario (exercises calculateItemPrice).

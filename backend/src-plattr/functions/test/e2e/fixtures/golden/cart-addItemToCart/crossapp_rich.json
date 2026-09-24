@@ -4,7 +4,7 @@
   "data": {
     "cart": {
       "restaurantId": "res_meghana",
-      "tableId": "tbl_meg_7",
+      "tableId": "tbl_meg_9",
       "sessionId": "SESSIONID_1",
       "items": [
         {
@@ -33,7 +33,9 @@
               }
             ],
             "restaurantId": "res_meghana",
+            "taxCode": "996331",
             "menuItemId": "mi_chicken_bir",
+            "taxBlockId": "food",
             "lastUpdated": {
               "_seconds": 1780000000,
               "_nanoseconds": 0
@@ -103,6 +105,8 @@
             "discountAmount": 0
           },
           "cartItemId": 1,
+          "addedBy": null,
+          "note": "",
           "status": "PENDING"
         }
       ],

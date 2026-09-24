@@ -3,7 +3,7 @@
   "message": "Customer successfully joined table",
   "data": {
     "status": "success",
-    "customToken": null,
+    "customToken": "JWT",
     "isPrimaryCustomer": false,
     "sessionId": "SESSIONID_1"
   }
