@@ -190,7 +190,7 @@ is not progress; a restaurant issuing a bill is.**
   Grok consulted first and converged. Unit 1276, e2e 638, journey 60, till Playwright 55, and a headless re-drive
   of issue → re-tap → cash → Clear on a real checkout, all green on slot 1. Record:
   `reviews/2026-09-22-sanity-run-1.md`. Left open: TD-052 (till login lost on navigation), TD-053 (tile vs bill
-  once an order offer fires). Not committed.
+  once an order offer fires). Committed 2026-09-25 (3ab0250).
 - 2026-09-18 · **Manager pass: four go-live decisions landed, FL's two calls checked against the code, the
   orphaned OF work adopted.** Build order confirmed unchanged: **Tax → FL → OR → KT-a → RP → CF → KT-b → UQ.**
   Nothing in the six donor and fan-out reviews moves a module; two change what a module builds (below).
