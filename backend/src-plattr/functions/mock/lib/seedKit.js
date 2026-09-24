@@ -50,11 +50,14 @@ function createSeedKit() {
           food: { label: 'GST', mode: 'exclusive', collect: true, parts: [{ label: 'CGST', rateBps: 250 }, { label: 'SGST', rateBps: 250 }], defaultCode: '996331' },
           liquor: { label: 'Liquor', mode: 'inclusive', collect: true, parts: [], defaultCode: '' },
         } },
-        tenders: [
+        // PY reads `payments.tenders` (domain/payments configFrom); a top-level `tenders` key was never read.
+        // BT / TD-012: `account` settles a bill as money owed — never in the drawer, the ref is who owes.
+        payments: { tenders: [
           { id: 'cash', label: 'Cash', kind: 'cash', opensDrawer: true, needsRef: false },
           { id: 'card', label: 'Card', kind: 'external', opensDrawer: false, needsRef: true },
           { id: 'upi', label: 'UPI', kind: 'external', opensDrawer: false, needsRef: true },
-        ],
+          { id: 'account', label: 'On account', kind: 'credit', opensDrawer: false, needsRef: true },
+        ] },
         seller: { name: info.name, taxId: 'GSTIN_' + id.replace('res_', '').toUpperCase() },
       } },
     };
@@ -170,6 +173,8 @@ function createSeedKit() {
     if (status === 'active') { t.lastActivity = ts(-10 * MIN); t.firstScannedAt = ts(-40 * MIN); }
     if (extra.section) t.section = extra.section;
     if (extra.floor) t.floor = extra.floor;
+    // BT: the charge rows this table carries (a counter ticket: PACKING, never the service charge). Absent = every row.
+    if (extra.charges) t.charges = extra.charges;
     R.tables[id] = t;
   }
 
