@@ -72,6 +72,10 @@ Driving the Flutter apps in a browser: **gstack `/browse`, headless, via `script
 never `--headed`, never a second browser tool. Seed is **MockData7**.
 Full recipe, identifiers and gotchas: `FRONTEND_TESTING.md`.
 
+**Sanity and QA runs across the apps** (one real order through every screen, or a screen explored
+like a manual tester, with a driver agent and an observing session): follow `AGENT_QA.md`, and update
+it after every run by its own rules.
+
 ### Testing Strategy (Two Homes)
 
 All backend tests live under **one folder**: `backend/src-plattr/functions/test/` (see `TEST_STRATEGY.md`). Two modes:
