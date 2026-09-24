@@ -13,7 +13,9 @@ const { validateStaffSession } = require('../adminApp/auth');
 const { safeArrayUnion, applyArrayOperation } = require('../utils/arrayOperations');
 const { buildAuthDetails } = require('./tableHelperFunctions');
 const { vacateTable } = require('./vacateTable');
-const { resolveTableId, unmergeChildren } = require('./mergedTables');
+const { resolveTableId } = require('./mergedTables');
+const { clearTable, ApprovalError } = require('../lib/app/floor');
+const { ports: floorPorts } = require('../lib/adapters/firestore/floor');
 const customerService = require('../customer/customerService');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 
@@ -1409,6 +1411,10 @@ exports.updateTableStatus = functions.https.onCall(async (request, context) => {
         // sessions (same helper order-updateOrderStatus uses at COMPLETED).
         console.log(`updateTableStatus - Updating table ${tableId} status from ${previousStatus} to ${status}`);
         if (status === 'vacant') {
+            // TD-037: the waiter's Vacant frees a table by FL's rule, never over open money. Clear refuses
+            // while anything is unbilled or unpaid in the group, ends the sitting and writes the audit row;
+            // vacateTable then resets what the older table module keeps on the document.
+            await clearTable(floorPorts, { restaurantId, staffSessionId: data.sessionId, tableId, cid: `vacant_${tableId}_${Date.now()}` });
             await vacateTable(restaurantId, tableId);
         } else {
             await tableRef.update(updateData);
@@ -1430,6 +1436,7 @@ exports.updateTableStatus = functions.https.onCall(async (request, context) => {
     } catch (error) {
         console.error('Error in updateTableStatus:', error);
         console.error('Error stack:', error.stack);
+        if (error instanceof ApprovalError) errorHandler.throwError(error.code, error.message, error.details);
 
         if (error.code === 'not-found') {
             console.log(`updateTableStatus - Not found error: ${error.message}`);

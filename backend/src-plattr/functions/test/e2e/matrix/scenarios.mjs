@@ -12,6 +12,7 @@
  */
 import { Customer, Kitchen, Waiter, orderIdOf, priceInfoOf, cartsOf, orderOf, ok } from './actors.mjs';
 import { call } from '../lib/api.js';
+import { staffLogin, draftVersions, fsFor } from '../lib/rest.mjs';
 
 const near = (a, b, tol = 0.05) => Math.abs((a ?? NaN) - (b ?? NaN)) <= tol;
 
@@ -467,7 +468,8 @@ async function cartTransitionMatrix(ctx) {
   const c = new Customer(restaurantId);
   const table = ctx.freshTable();
   if (!table) return;
-  if (!ctx.record(ok(await c.join(table)), 'customer joins for the transition matrix')) return;
+  const joinedT = await c.join(table);
+  if (!ctx.record(ok(joinedT), 'customer joins for the transition matrix', joinedT?.message)) return;
 
   let cartIndex = -1;
   const nextCart = async (label) => {
@@ -623,46 +625,42 @@ async function staleOrderSameTable(ctx) {
   const co1 = await first.checkout('party1');
   const order1 = orderIdOf(co1);
   if (!ctx.record(ok(co1) && !!order1, 'first party checks out', co1?.message)) return;
-  const total1 = priceInfoOf(await first.getOrder(order1, 'party1'))?.finalPrice ?? 0;
 
   // THE TURNOVER. Without this the second customer is just another person
   // joining the sitting that is already there, and sharing an order is correct
   // behaviour — which is why this scenario used to prove nothing. Setting the
   // table vacant is what ends the table's sessions, so this is a real new party.
+  //
+  // TD-037 (2026-09-23): party one's food is unbilled, so the waiter's turnover is refused — Vacant
+  // follows FL's rule and never frees a table over open money (a captain is denied outright,
+  // Shaurya 2026-09-24). That is the first half of this scenario's finding.
   const turned = await waiter.setTableStatus(table, 'vacant', 'turnover');
-  if (!ctx.record(ok(turned), 'waiter can turn the table over', turned?.message)) return;
+  ctx.record(!ok(turned) && /money on it|still owes/i.test(turned?.message || turned?.error?.message || ''),
+    'a table with an unbilled order cannot be turned over (TD-037)', turned?.message);
 
-  // Going vacant clears the table's OTP along with its sessions, so the waiter
-  // mints a fresh one before the next party can scan in. Skipping this is what
-  // made the first version of this fix fail with "OTP data missing".
-  const otp = await waiter.generateTableOtp(table, 'turnover_otp');
-  ctx.record(ok(otp), 'waiter can issue a fresh OTP after a turnover', otp?.message);
+  // The second half, on the only path that frees a table now: the cashier bills it, it is paid,
+  // the cashier clears it. Then a new party sits down and must get a NEW order, never party one's.
+  const mgr = await staffLogin(restaurantId);
+  const draftId = first.sessionId;
+  const issued = await call('billing-issue', { restaurantId, sessionId: mgr.sessionId, draftId, cid: `m10_${Date.now()}`, tableIds: [table], expectedV: await draftVersions(restaurantId, draftId) });
+  const bill = issued?.data;
+  if (!ctx.record(ok(issued) && !!bill?.billId, 'the cashier bills party one', issued?.message)) return;
+  const tenders = (await fsFor(restaurantId).getDoc('config/settings'))?.payments?.tenders || [];
+  const cash = tenders.find(t => t.kind === 'cash') || tenders[0];
+  const paid = await call('payments-take', { restaurantId, sessionId: mgr.sessionId, billId: bill.billId, paymentId: `m10_pay_${Date.now()}`, tenderId: cash?.id, amount: bill.payable, tendered: bill.payable });
+  if (!ctx.record(ok(paid), 'party one pays in full', paid?.message)) return;
+  const cleared = await call('floor-clear', { restaurantId, staffSessionId: mgr.sessionId, tableId: table, cid: `m10_clear_${Date.now()}` });
+  if (!ctx.record(ok(cleared), 'the cashier clears the paid table', cleared?.message)) return;
 
+  // Clear wiped party one's OTP; the next guest's scan is what mints a new one.
+  await call('table-validateTableAndLocation', { restaurantId, tableId: table, userLocation: { latitude: 12.9716, longitude: 77.5946 } });
   const second = new Customer(restaurantId, '9876543211', 'Customer Two');
   const joined = await second.join(table);
-  if (!ctx.record(ok(joined), 'a new party can be seated after a turnover', joined?.message)) return;
-  ctx.record(second.sessionId !== first.sessionId,
-    'the new party gets a new session',
-    `first ${first.sessionId}, second ${second.sessionId}`);
-
-  await second.addItem(menu.simple, 'party2');
+  if (!ctx.record(ok(joined), 'a new party joins the cleared table', joined?.message)) return;
+  await second.addItem(menu.rich, 'party2');
   const co2 = await second.checkout('party2');
   const order2 = orderIdOf(co2);
-  if (!ctx.record(ok(co2) && !!order2, 'second party checks out', co2?.message)) return;
-
-  if (order2 === order1) {
-    const merged = priceInfoOf(await second.getOrder(order1, 'merged'));
-    ctx.finding({
-      title: 'A new party inherits the previous party\'s unpaid order',
-      severity: 'CRITICAL', area: 'lifecycle', endpoint: 'cart-checkoutCart',
-      file: 'orders/createOrUpdateOrder.js:89-113',
-      detail: 'The table was explicitly turned over — set vacant, which ends the table\'s sessions — and a genuinely new customer with a new session still had their cart appended to the previous party\'s open order. The new customer\'s bill includes food they did not order. This is the version that matters: it is not two people sharing one sitting, it is one party being charged for another.',
-      expected: `a new order for session ${second.sessionId}`,
-      actual: `reused order ${order1}; total went ${total1} -> ${merged?.finalPrice}`,
-    });
-  }
-  ctx.record(order2 !== order1, 'a new party gets its own order after a turnover',
-    order2 === order1 ? `both parties on ${order1}` : `${order1} then ${order2}`);
+  ctx.record(ok(co2) && !!order2 && order2 !== order1, 'the new party gets a NEW order, not the last party\'s', `${order1} → ${order2}`);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -733,7 +731,8 @@ async function crossAppAgreement(ctx) {
   const { restaurantId, kitchen, waiter } = ctx;
   const menu = menuOf(restaurantId);
   const c = new Customer(restaurantId);
-  if (!ctx.record(ok(await c.join(ctx.freshTable())), 'customer joins for cross-app check')) return;
+  const joinedX = await c.join(ctx.freshTable());
+  if (!ctx.record(ok(joinedX), 'customer joins for cross-app check', joinedX?.message)) return;
 
   await c.addItem(menu.rich, 'crossapp_rich');
   await c.addItem(menu.simple, 'crossapp_simple');
