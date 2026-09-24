@@ -200,6 +200,22 @@ export function route(line: Pick<Line, 'categoryId' | 'components' | 'lineId'>, 
   return st;
 }
 
+/**
+ * KT-S19's "Mocktails has no station": categories whose lines reached the default station only because nobody
+ * mapped them — not in print.route, and the tax block routes nowhere either. Empty when print.route is empty,
+ * because then the default station IS the design. The placing hook logs it; the till does not show it (Decisions).
+ */
+export function unroutedCategories(lines: Pick<Line, 'categoryId' | 'components' | 'countsTowardTotal'>[], cfg: PrintConfig): string[] {
+  if (!Object.keys(cfg.route).length) return [];
+  const out = new Set<string>();
+  for (const l of lines) {
+    const block = l.components[0]?.taxBlockId ?? null;
+    if (l.countsTowardTotal === false || !l.categoryId || cfg.route[l.categoryId] || (block && cfg.routeByTaxBlock[block])) continue;
+    out.add(l.categoryId);
+  }
+  return [...out];
+}
+
 // ── The KOT (KT-S1..S5, S11..S13, S18) ─────────────────────────────────────
 
 /** One ticket per station the round's lines route to, in print.stations order. Disabled stations get none. */

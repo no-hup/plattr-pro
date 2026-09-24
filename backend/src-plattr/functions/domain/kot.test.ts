@@ -7,7 +7,7 @@
 
 import { Line } from './line';
 import {
-  route, kotTickets, formatMoney, formatTime, formatDate, printConfigFrom, PRINT_DEFAULTS, wrap,
+  route, unroutedCategories, kotTickets, formatMoney, formatTime, formatDate, printConfigFrom, PRINT_DEFAULTS, wrap,
   Round, PrintConfig, Ticket,
 } from './kot';
 
@@ -66,6 +66,23 @@ describe('route — the station is read off the frozen line (R9, KT-S3, KT-S19)'
   it('a mapped station that is not in print.stations is a config bug and throws, never a silent default', () => {
     const bad = printConfigFrom({ print: { route: { cat_pizza: 'oven' }, stations: { kitchen: {} } } });
     expect(() => route(pizza, bad)).toThrow(/oven/);
+  });
+});
+
+describe('unroutedCategories — KT-S19, what the placing hook logs as line.unrouted', () => {
+  const mojito = line({ name: 'Virgin Mojito', qty: 1, categoryId: 'cat_mocktails' });
+  const monk = line({ name: 'Old Monk', qty: 1, categoryId: 'cat_rum', components: [{ id: 'om', kind: 'item', name: 'Old Monk', unitListPrice: 0, taxBlockId: 'liquor', taxCode: '2208' }] });
+  it('KT-S19 a Mocktails lemonade, mapped nowhere and taxed as food, is named once however many lines carry it', () => {
+    expect(unroutedCategories([pizza, mojito, { ...mojito, lineId: 'm2' }], cfg)).toEqual(['cat_mocktails']);
+  });
+  it('a mapped category, and an unmapped one the tax block routes (rum → bar), are not unrouted', () => {
+    expect(unroutedCategories([pizza, pints(2), monk], cfg)).toEqual([]);
+  });
+  it('with print.route empty, food at the default station is the design, not a gap — nothing is named', () => {
+    expect(unroutedCategories([mojito], printConfigFrom({ print: { stations: { kitchen: {} } } }))).toEqual([]);
+  });
+  it('a line that does not count (a voided one) and a line with no categoryId (line.noCategory\'s case) are not named here', () => {
+    expect(unroutedCategories([{ ...mojito, countsTowardTotal: false }, line({ name: 'Ghost', qty: 1, categoryId: null })], cfg)).toEqual([]);
   });
 });
 
