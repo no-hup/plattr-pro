@@ -10,12 +10,17 @@ describe('domain/invoice', () => {
   it('BL-S7 missing counter starts at "0001"', () => {
     expect(nextNumber(null, cfg)).toEqual({ number: '0001', counter: { next: 2 } });
   });
+  it('BL-S7 a counter that exists but is unreadable is refused (null), never restarted at 0001', () => {
+    for (const next of [undefined, null, NaN, 0, -3, 1.5, '12', Infinity]) {
+      expect(nextNumber({ next } as never, cfg)).toBeNull();
+    }
+  });
   it('BL-S7 next 10000 at width 4 → "10000", never wraps', () => {
-    expect(nextNumber({ next: 10000 }, cfg).number).toBe('10000');
+    expect(nextNumber({ next: 10000 }, cfg)!.number).toBe('10000');
   });
   it('BL-S12 two issues from one counter: 0417 then 0418', () => {
     const a = nextNumber({ next: 417 }, cfg);
-    expect(nextNumber(a.counter, cfg).number).toBe('0418');
+    expect(nextNumber(a!.counter, cfg)!.number).toBe('0418');
   });
   it('BL-S18 31 Mar 2027 23:59 IST (18:29 UTC) → "2026-27"; 1 Apr 2027 00:00 IST (31 Mar 18:30 UTC) → "2027-28"', () => {
     expect(fiscalYear(utc('2027-03-31T18:29:00'), cfg)).toBe('2026-27');

@@ -22,8 +22,11 @@ export function counterKey(series: string, now: number, cfg: InvoiceConfig): str
   return `${series}_${fiscalYear(now, cfg)}`;
 }
 
-/** Pads to width, never wraps: next 10000 at width 4 is "10000". A missing counter starts at 1. */
-export function nextNumber(counter: Counter | null, cfg: InvoiceConfig): { number: string; counter: Counter } {
+/** Pads to width, never wraps: next 10000 at width 4 is "10000". A missing counter starts at 1.
+ *  A counter that exists but whose `next` is not a positive integer returns null: restarting it at 1
+ *  would hand out numbers already on paper, and a repeated invoice number is filed with GST. */
+export function nextNumber(counter: Counter | null, cfg: InvoiceConfig): { number: string; counter: Counter } | null {
+  if (counter && !(Number.isSafeInteger(counter.next) && counter.next >= 1)) return null;
   const n = counter?.next ?? 1;
   return { number: String(n).padStart(cfg.width, '0'), counter: { next: n + 1 } };
 }

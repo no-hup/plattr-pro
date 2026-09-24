@@ -272,6 +272,25 @@ test('OF-S18 reconcile with take aborted once → estimate keeps its billId; ret
   expect(bill).toMatchObject({ status: 'paid', paidTotal: 60900 })
 })
 
+test('OF-S18b issue lands but its answer is lost → second tap adopts the bill the server names; one number, paid', async ({ page }) => {
+  await openDraft(page)
+  await printEstimate(page)
+  await restore(page)
+  const issues = calls(page, 'billing-issue')
+  await login(page, 'reconcile=1')
+  await page.getByTestId('check').click()
+  let n = 0
+  await page.route('**/billing-issue', async r => { n++; if (n === 1) { await r.fetch(); await r.abort('failed') } else await r.continue() })
+  await page.getByTestId('issue-take').click()
+  await expect(page.getByTestId('rec-msg')).toHaveText('No connection')
+  await page.getByTestId('issue-take').click()
+  await expect(page.getByTestId('rec-msg')).toContainText('paid; outstanding ₹0.00')
+  expect(issues).toHaveLength(2)
+  const pizza = await getDoc(`lines/${DRAFT}_pizza`)
+  const bill = await getDoc(`bills/${pizza!.billId}`)
+  expect(bill).toMatchObject({ status: 'paid', paidTotal: 60900 })
+})
+
 test('OF-S12 preview 5 h old → Emergency bill refused "too old: write it by hand"', async ({ page }) => {
   await openDraft(page)
   await page.evaluate((draft) => {

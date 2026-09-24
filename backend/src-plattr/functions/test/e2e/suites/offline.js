@@ -37,6 +37,7 @@ const PIN_1234 = '$2a$10$2fnA8FQ9yXqhZsxpmOuLte23Ju5XigDAfapHtcUDvsT7OWGgYrbTm';
  *                same cid amountMinor 184000 → failed-precondition; captain → permission-denied without requires
  */
 import { call } from '../lib/api.js';
+import { draftVersions } from '../lib/rest.mjs';
 import { customerLogin } from '../lib/auth.js';
 import config from '../lib/config.js';
 
@@ -118,7 +119,7 @@ export default async function offlineSuite() {
   const manager = await login('manager@of.test');
   const captain = await login('captain@of.test');
   if (!manager || !captain) { record(false, 'ABORT: staff login failed', { manager, captain }); return results; }
-  const bill = (fn, sessionId, body) => call(`billing-${fn}`, { restaurantId: RID, sessionId, expectedV: {}, ...body });
+  const bill = async (fn, sessionId, body) => call(`billing-${fn}`, { restaurantId: RID, sessionId, ...(fn === 'issue' ? { expectedV: await draftVersions(RID, body.draftId) } : {}), ...body });
   const take = (billId, body) => call('payments-take', { restaurantId: RID, sessionId: manager, billId, tenderId: 'cash', ...body });
   const applyAs = (sessionId, body) => call('approvals-apply', { restaurantId: RID, sessionId, action: 'estimate', cid: 'est_draft_of_20260916T2045', amountMinor: 231000, note: 'cash draft_of 20:45 preview 20:38', ...body });
   const TODAY = bdFor(Date.now());

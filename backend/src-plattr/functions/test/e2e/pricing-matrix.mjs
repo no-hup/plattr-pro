@@ -20,7 +20,7 @@
 import { writeFileSync } from 'node:fs';
 import {
   fsFor, call, ok, errOf, R, check, step, info, die, counts,
-  makeBillable, claimTable, staffLogin,
+  makeBillable, claimTable, staffLogin, draftVersions,
 } from './lib/rest.mjs';
 
 const RID = 'res_meghana';
@@ -250,7 +250,7 @@ async function run(sc) {
   }
 
   // ── issue and settle, so the numbers are real money and not a preview ───────
-  const iss = await call('billing-issue', { restaurantId: RID, sessionId: staff.sessionId, draftId, cid: `mx_${sc.key}_${Date.now()}`, tableIds: [table.id], expectedV: {} });
+  const iss = await call('billing-issue', { restaurantId: RID, sessionId: staff.sessionId, draftId, cid: `mx_${sc.key}_${Date.now()}`, tableIds: [table.id], expectedV: await draftVersions(RID, draftId) });
   check('bill issued', ok(iss), iss.message || errOf(iss));
   if (ok(iss)) {
     rec.bill.billId = iss.data.billId;
