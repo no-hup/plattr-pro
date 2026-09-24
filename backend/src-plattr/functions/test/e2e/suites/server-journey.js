@@ -9,7 +9,7 @@ import { assertSuccess, assertError, assertFieldExists } from '../lib/assert.js'
 import { serverLogin } from '../lib/auth.js';
 import config from '../lib/config.js';
 
-const { RESTAURANT_ID, TABLE_CLEAN_1, TABLE_OTP } = config;
+const { RESTAURANT_ID, TABLE_CLEAN_1, TABLE_CLEAN_10, TABLE_OTP } = config;
 
 export default async function serverJourneySuite() {
   const results = { name: 'server-journey', pass: 0, fail: 0, tests: [] };
@@ -76,13 +76,15 @@ export default async function serverJourneySuite() {
   {
     const resp = await call('server-generateTableOTP', {
       restaurantId: RESTAURANT_ID,
-      tableId: TABLE_CLEAN_1,
+      // TD-024 (b): its own table. table_clean_1 is seated by every earlier suite, and an OTP is
+      // rightly refused for a table that already has a party.
+      tableId: TABLE_CLEAN_10,
       sessionId,
     });
     const ok = resp.status === 'success' || resp.success === true || resp._httpStatus === 200;
     record({
       pass: ok,
-      message: ok ? '5. Generate OTP → success' : '5. Generate OTP → KNOWN: onCall param format issue',
+      message: `5. Generate OTP on a vacant table → ${ok ? 'success' : resp.message}`,
       actual: ok ? undefined : resp,
     });
   }

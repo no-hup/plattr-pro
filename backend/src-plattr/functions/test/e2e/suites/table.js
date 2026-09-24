@@ -10,7 +10,10 @@ import { customerLogin, serverLogin } from '../lib/auth.js';
 import { narrator } from '../lib/narrator.js';
 import config from '../lib/config.js';
 
-const { RESTAURANT_ID, TABLE_CLEAN_1, TABLE_CLEAN_2, TABLE_CLEAN_3, TABLE_CLEAN_4, TABLE_OTP } = config;
+const { RESTAURANT_ID, TABLE_CLEAN_1, TABLE_CLEAN_3, TABLE_CLEAN_4, TABLE_CLEAN_11, TABLE_OTP } = config;
+// TD-024 (c): the primary-customer thread (tests 3 → 17) runs on a table no other suite seats. On the
+// shared table_clean_2 an earlier suite's guest was already primary, so 3b read false.
+const TABLE_CLEAN_2 = TABLE_CLEAN_11;
 
 export default async function tableSuite() {
   const results = { name: 'table', pass: 0, fail: 0, tests: [] };

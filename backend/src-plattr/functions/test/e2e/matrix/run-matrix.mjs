@@ -57,9 +57,12 @@ const ALL_RESTAURANTS = ['res_meghana', 'res_pizzabakery', 'res_truffles', 'res_
 const SEED_PATH = resolve(FUNCTIONS_DIR, 'mock/MockData7ProductionMenus.json');
 function vacantTablesOf(restaurantId) {
   const seed = JSON.parse(readFileSync(SEED_PATH, 'utf8'));
-  const tables = seed.restaurants?.[restaurantId]?.tables || {};
+  const r = seed.restaurants?.[restaurantId];
+  const tables = r?.tables || {};
+  // Counter tickets (BT / OR-3) are vacant but never scanned: no OTP, no guest. Not a dine-in table.
+  const counters = r?.config?.settings?.ordering?.takeawayTableIds || [];
   return Object.entries(tables)
-    .filter(([, t]) => t.status === 'vacant')
+    .filter(([id, t]) => t.status === 'vacant' && !counters.includes(id))
     .map(([id]) => id)
     .sort();
 }

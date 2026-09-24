@@ -15,7 +15,7 @@ import { assertSuccess } from '../lib/assert.js';
 import { serverLogin } from '../lib/auth.js';
 import config from '../lib/config.js';
 
-const { RESTAURANT_ID } = config;
+const { RESTAURANT_ID, ADMIN_EMAIL } = config;
 
 export default async function adminSuite() {
   const results = { name: 'admin', pass: 0, fail: 0, tests: [] };
@@ -45,7 +45,7 @@ export default async function adminSuite() {
   // Setup: admin login
   let sessionId;
   try {
-    sessionId = await serverLogin();
+    sessionId = await serverLogin(RESTAURANT_ID, ADMIN_EMAIL);
     record({ pass: true, message: '0. Admin login → success' });
   } catch (e) {
     record({ pass: false, message: `Setup: admin login failed: ${e.message}` });
@@ -64,12 +64,12 @@ export default async function adminSuite() {
   await adminCall('admin-getServers', base, '3. Get servers');
 
   const addResp = await adminCall('admin-addServer', {
-    ...base, name: 'Test Server E2E', email: 'test-e2e@plattr.com', pin: '5678', role: 'SERVER',
+    ...base, server: { name: 'Test Server E2E', email: 'test-e2e@plattr.com', password: '5678', role: 'SERVER' },   // the admin app's shape (staff_api_service.dart)
   }, '4. Add server');
   const newServerId = addResp?.data?.serverId || addResp?.data?.id;
 
   if (newServerId) {
-    await adminCall('admin-updateServer', { ...base, serverId: newServerId, name: 'Updated' }, '5. Update server');
+    await adminCall('admin-updateServer', { ...base, serverId: newServerId, updateData: { name: 'Updated' } }, '5. Update server');
     await adminCall('admin-resetServerPin', { ...base, serverId: newServerId, newPin: '9999' }, '6. Reset server PIN');
   } else {
     record({ pass: true, message: '5. Update server → SKIP' });
@@ -78,17 +78,17 @@ export default async function adminSuite() {
 
   // ── 7-8. Table management ─────────────────────────────────────
   await adminCall('admin-getTables', base, '7. Get tables (admin)');
-  await adminCall('admin-updateTable', { ...base, tableId: 'table_1', capacity: 6 }, '8. Update table');
+  await adminCall('admin-updateTable', { ...base, tableId: 'table_1', updateData: { capacity: 6 } }, '8. Update table');
 
   // ── 9-12. Category management ──────────────────────────────────
   const catResp = await adminCall('admin-addCategory', {
-    ...base, name: 'E2E Test Category', description: 'Created by E2E tests',
+    ...base, category: { name: 'E2E Test Category', description: 'Created by E2E tests', order: 99 },   // menu_api_service.dart
   }, '9. Add category');
   const newCategoryId = catResp?.data?.categoryId || catResp?.data?.id;
 
   if (newCategoryId) {
-    await adminCall('admin-updateCategory', { ...base, categoryId: newCategoryId, name: 'Updated' }, '10. Update category');
-    await adminCall('admin-addSubcategory', { ...base, categoryId: newCategoryId, name: 'E2E Sub' }, '11. Add subcategory');
+    await adminCall('admin-updateCategory', { ...base, categoryId: newCategoryId, updateData: { name: 'Updated' } }, '10. Update category');
+    await adminCall('admin-addSubcategory', { ...base, subcategory: { name: 'E2E Sub', order: 1, parentCategoryId: newCategoryId } }, '11. Add subcategory');
     await adminCall('admin-deleteCategory', { ...base, categoryId: newCategoryId }, '12. Delete category');
   } else {
     record({ pass: true, message: '10. Update category → SKIP' });
