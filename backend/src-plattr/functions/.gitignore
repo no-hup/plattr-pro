@@ -36,3 +36,5 @@ tests/.env.ports
 
 # tsc output of the TypeScript layers (domain/app/adapters/api)
 lib/
+# test/e2e/lib is test code, not compiled output (rest.mjs was never committed because of the rule above)
+!/test/e2e/lib/
