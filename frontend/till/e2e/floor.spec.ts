@@ -41,9 +41,9 @@ const line = (lineId: string, name: string, list: number, sessionId: string, ext
   taxBlocks: { food: FOOD }, offer: null, ...extra,
 })
 
-const TABLES = ['tbl_ui_12', 'tbl_ui_7', 'tbl_ui_5', 'tbl_ui_6', 'tbl_ui_19', 'tbl_ui_4', 'tbl_ui_9']
-const LINES = ['flui_tikka', 'flui_pitcher', 'flui_biryani', 'flui_7', 'flui_4', 'flui_split_a', 'flui_split_b']
-const SESSIONS = ['sess_ui_12', 'sess_ui_7', 'sess_ui_4']
+const TABLES = ['tbl_ui_12', 'tbl_ui_7', 'tbl_ui_5', 'tbl_ui_6', 'tbl_ui_19', 'tbl_ui_4', 'tbl_ui_9', 'tbl_ui_p1']
+const LINES = ['flui_tikka', 'flui_pitcher', 'flui_biryani', 'flui_7', 'flui_4', 'flui_split_a', 'flui_split_b', 'flui_p1']
+const SESSIONS = ['sess_ui_12', 'sess_ui_7', 'sess_ui_4', 'sess_ui_p1']
 
 async function reset() {
   for (const t of TABLES) await del(`tables/${t}`)
@@ -61,22 +61,26 @@ async function reset() {
   await seed('tables/tbl_ui_19', { number: '19', capacity: 2, status: 'vacant' })
   await seed('tables/tbl_ui_4', { number: '4', capacity: 4, status: 'active' })
   await seed('tables/tbl_ui_9', { number: '9', capacity: 4, status: 'vacant' })
+  // BT / OR-3: a counter ticket is a table doc named in ordering.takeawayTableIds; the floor draws it in the Parcels strip.
+  await seed('tables/tbl_ui_p1', { number: 'PC1', capacity: 0, status: 'active', charges: ['PACKING'] })   // not 'P1': the shared seed already has a table numbered P1
 
   await seed('sessions/sess_ui_12', sitting('tbl_ui_12'))
   await seed('sessions/sess_ui_7', sitting('tbl_ui_7'))
   await seed('sessions/sess_ui_4', sitting('tbl_ui_4'))
+  await seed('sessions/sess_ui_p1', sitting('tbl_ui_p1'))
 
   await seed('lines/flui_tikka', line('flui_tikka', 'Paneer Tikka', 32000, 'sess_ui_12'))
   await seed('lines/flui_pitcher', line('flui_pitcher', 'Pitcher', 125000, 'sess_ui_12', { offer: { id: 'hh', name: 'Happy Hour', amount: 10000 } }))
   await seed('lines/flui_biryani', line('flui_biryani', 'Biryani', 45000, 'sess_ui_12', { countsTowardTotal: false, void: { reason: 'sent back', note: '', approverId: 'm' } }))
   await seed('lines/flui_7', line('flui_7', 'Dosa', 100000, 'sess_ui_7', { tableId: 'tbl_ui_7', billId: 'flui_0701' }))
   await seed('lines/flui_4', line('flui_4', 'Biryani', 168000, 'sess_ui_4', { tableId: 'tbl_ui_4' }))
+  await seed('lines/flui_p1', line('flui_p1', 'Masala Dosa', 18000, 'sess_ui_p1', { tableId: 'tbl_ui_p1' }))
   await seed('bills/flui_0701', { billId: 'flui_0701', sessionId: 'sess_ui_7', payable: 100000, paidTotal: 40000, status: 'issued', cid: 'cid_flui7', number: 'flui_0701', tableIds: ['tbl_ui_7'] })
 
   // The screen's own clock, turned down so the grey arrives inside a test's patience rather than
   // after the twenty seconds a real Friday would want.
   const settings = await (await fetch(`${FS}/config/settings`, { headers: H })).json().catch(() => ({}))
-  await seed('config/settings', { ...(settings?.fields ? {} : {}), floor: { pollSeconds: 1, staleAfterSeconds: 2, settledFreeAfterMinutes: 30 } })
+  await seed('config/settings', { ...(settings?.fields ? {} : {}), floor: { pollSeconds: 1, staleAfterSeconds: 2, settledFreeAfterMinutes: 30 }, ordering: { takeawayTableIds: ['tbl_ui_p1'] } })
 
   await seed('servers/mgr_flui', { name: 'Manager UI', role: 'MANAGER', status: 'active', email: 'manager@flui.test', password: '1234', pinHash: PIN_1234 })
   await seed('servers/srv_flui', { name: 'Server UI', role: 'SERVER', status: 'active', email: 'server@flui.test', password: '1234', pinHash: PIN_1234 })
@@ -108,6 +112,15 @@ test.describe('the floor is the home screen', () => {
     await login(page)
     await expect(page.getByTestId('due-7')).toHaveText(/₹600\.00 due/)
     await expect(page.getByTestId('tile-7')).not.toContainText('paid')
+  })
+
+  test('BT parcel: the counter ticket PC1 with ₹180.00 on it sits in the Parcels strip, not among the tables', async ({ page }) => {
+    await login(page)
+    const strip = page.getByTestId('parcels')
+    await expect(strip).toBeVisible()
+    await expect(strip.getByTestId('tile-PC1')).toBeVisible()
+    await expect(strip.getByTestId('on-PC1')).toHaveText(/₹180\.00/)
+    await expect(page.getByTestId('tiles').getByTestId('tile-PC1')).toHaveCount(0)
   })
 
   test('FL-S1 an empty table reads free with no money on it', async ({ page }) => {

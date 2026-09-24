@@ -68,7 +68,7 @@ export interface Sitting {
   bills: Bill[];
 }
 
-export const DEFAULTS = { pollSeconds: 5, staleAfterSeconds: 20, idleFreeAfterMinutes: 60 };
+export const DEFAULTS = { pollSeconds: 5, staleAfterSeconds: 20, idleFreeAfterMinutes: 60, takeawayTableIds: [] as string[] };
 
 // ── The two numbers ────────────────────────────────────────────────────────
 

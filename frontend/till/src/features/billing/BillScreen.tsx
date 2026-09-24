@@ -4,6 +4,8 @@ import { rupees, useBill, type Ctx } from './useBill'
 import { EstimateScreen } from '../offline/EstimateScreen'
 import { useOnline } from '../offline/useOnline'
 
+const label = (type: string) => type.toLowerCase().replace(/_/g, ' ')   // SERVICE_CHARGE → service charge, PACKING → packing
+
 /** BL-S1..S10 on one screen: a table's draft, its blocks and totals, Generate bill, drop the service charge, Cancel. Print bytes are KT's. */
 export function BillScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
   const { bill, busy, dropCharges, asOf, preview, issue, comp, cancel, toggleCharge } = useBill(ctx)
@@ -43,7 +45,8 @@ export function BillScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
           {bill.blocks.map(b => (
             <p key={b.id} data-testid={`block-${b.id}`}>{b.label}: {rupees(b.taxable)}{b.parts.map(p => ` · ${p.label} ${p.rateBps / 100}% ${rupees(p.amount)}`).join('')}</p>
           ))}
-          {bill.charges.map(c => <p key={c.type} data-testid={`charge-${c.type}`}>{c.type} {c.pctBps / 100}%: {rupees(c.amount)}</p>)}
+          {/* BT: a charge is a percentage of its block, a flat amount (packing), or both. */}
+          {bill.charges.map(c => <p key={c.type} data-testid={`charge-${c.type}`}>{c.type}{c.pctBps ? ` ${c.pctBps / 100}%` : ''}{c.flat ? ` ${rupees(c.flat)} flat` : ''}: {rupees(c.amount)}</p>)}
           {bill.roundOff !== 0 && <p data-testid="roundoff">Round off {bill.roundOff > 0 ? '+' : ''}{rupees(bill.roundOff)}</p>}
           <p><strong data-testid="payable">Payable {rupees(bill.payable)}</strong>{asOf !== null && <span data-testid="as-of"> as of {new Date(asOf).toTimeString().slice(0, 5)}</span>}{' '}
             <button data-testid="preview" onClick={() => preview()} disabled={busy}>Preview</button></p>
@@ -53,11 +56,12 @@ export function BillScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
             <p>
               <button data-testid="issue" onClick={() => issue().then(b => b && say(`Bill ${b.number} issued`))} disabled={busy}>Generate bill</button>
               {' '}
-              {(bill.charges.length > 0 || dropCharges.length > 0) && (
-                <button data-testid="toggle-charge" onClick={() => toggleCharge('SERVICE_CHARGE')} disabled={busy}>
-                  {dropCharges.includes('SERVICE_CHARGE') ? 'Add service charge back' : 'Remove service charge'}
+              {/* BL-S10, and BT: one Remove / Add-back per charge row the table carries (packing on a parcel, service charge on a table). */}
+              {[...new Set([...bill.charges.map(c => c.type), ...dropCharges])].map(type => (
+                <button key={type} data-testid={type === 'SERVICE_CHARGE' ? 'toggle-charge' : `toggle-charge-${type}`} onClick={() => toggleCharge(type)} disabled={busy}>
+                  {dropCharges.includes(type) ? `Add ${label(type)} back` : `Remove ${label(type)}`}
                 </button>
-              )}
+              ))}
             </p>
           )}
           {!issued && (

@@ -7,7 +7,8 @@ export type PartRounding = 'independent' | 'residualLast';
 export interface BillingConfig { partRounding: PartRounding; roundTo: number }
 export const BILLING_DEFAULTS: BillingConfig = { partRounding: 'independent', roundTo: 100 };
 
-export interface ChargeIn { type: string; pctBps: number; taxBlockId: string }
+/** BT: `pctBps` of the block's net plus `flat` minor units (a packing charge). Either may be 0; `flat` absent reads 0. */
+export interface ChargeIn { type: string; pctBps: number; flat?: number; taxBlockId: string; optIn?: boolean }   // optIn: only on a table that names it (app/billing)
 export interface Charge extends ChargeIn { base: number; amount: number; tax: ComponentTax }
 export interface BillDiscount {
   amount: number; pct: number; source: DiscountSource;
@@ -121,13 +122,18 @@ export function preview(lines: Line[], discount: BillDiscount | null, charges: C
   // the block ⟹ base 0 ⟹ amount 0, and the `: { taxable: amount, parts: [] }` arm below is only
   // ever reached with amount 0. Widening `base` past the charge's own block breaks that and
   // resurrects a silently untaxed charge — `C6b` goes red if you try.
+  // BT: a FLAT charge (packing ₹20) has no base to be zero, so the C6b invariant above does not
+  // save it — in a block no line touches it would be levied untaxed. Refuse instead (fail closed);
+  // the cashier drops the charge or the owner fixes its block.
+  const untaxed = charges.find(ch => (ch.flat ?? 0) > 0 && !live.some(l => blockOf(l, ch.taxBlockId)));
+  if (untaxed) return { ok: false, code: 'failed-precondition', message: `${untaxed.type} charge is in tax block ${untaxed.taxBlockId} but nothing on this bill is` };
   const out: Charge[] = charges.map(ch => {
     const def = live.map(l => blockOf(l, ch.taxBlockId)).find(Boolean);
     const base = billed.reduce((a, l) => a + Object.entries(l.tax).reduce((s, [cid, t]) => s + (l.components.find(c => c.id === cid)!.taxBlockId === ch.taxBlockId ? t.taxable : 0), 0), 0);
-    const amount = Math.floor(base * ch.pctBps / 10000);
+    const amount = Math.floor(base * ch.pctBps / 10000) + (ch.flat ?? 0);
     const t = def ? taxOn(amount, def, cfg) : { taxable: amount, parts: [] };
     if (def) addTo(ch.taxBlockId, def, t);
-    return { ...ch, base, amount, tax: t };
+    return { ...ch, flat: ch.flat ?? 0, base, amount, tax: t };
   });
 
   const list = [...blocks.values()];
