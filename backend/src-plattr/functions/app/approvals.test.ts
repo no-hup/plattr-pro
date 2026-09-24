@@ -205,8 +205,15 @@ describe('app/approvals apply()', () => {
     expect((await fails(apply(p, discount({ amount: 100, cid: undefined })))).code).toBe('invalid-argument');
     expect((await fails(apply(p, discount({ amount: 100, action: 'refund' })))).code).toBe('invalid-argument');
   });
+  it('TD-004 cap 50 %: ₹200 off the ₹320 tikka (PIN given) → failed-precondition naming the limit, no audit row, line unchanged', async () => {
+    const p = fakePorts({ config: { discountMaxPercent: 50 } });
+    const e = await fails(apply(p, discount({ amount: 200, lineId: 'line_tikka', reason: 'placard', pin: '1234' })));
+    expect(e).toMatchObject({ code: 'failed-precondition', message: 'discount is above the 50 % limit' });
+    expect(p.audits.size).toBe(0);
+    expect(p.lines.get('line_tikka')?.v).toBe(0);
+  });
   it('ST-S13 ₹400 on the ₹320 tikka with ₹64 offer (PIN given) → failed-precondition, no audit row, line unchanged', async () => {
-    const p = fakePorts();
+    const p = fakePorts({ config: { discountMaxPercent: 100 } });   // cap off, so the below-zero rule is the one under test
     const e = await fails(apply(p, discount({ amount: 400, lineId: 'line_tikka', reason: 'placard', pin: '1234' })));
     expect(e).toMatchObject({ code: 'failed-precondition', message: 'line cannot go below zero' });
     expect(p.audits.size).toBe(0);

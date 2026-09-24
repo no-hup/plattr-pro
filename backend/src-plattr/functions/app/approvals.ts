@@ -118,7 +118,7 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
     amountPaise = amt as number;
     base = b as number;
     pct = percentOf(amountPaise, base);
-  } else if (action === 'estimate') {
+  } else if (action === 'estimate' || action === 'releaseUnpaid') {
     const amt = req.amountMinor;
     if (!Number.isInteger(amt) || (amt as number) <= 0) fail('invalid-argument', 'amountMinor must be a positive integer in minor units', {}, null, false, 'invalid');
     amountPaise = amt as number;
@@ -126,7 +126,10 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
 
   const decision = decide({ action: action as Action, role: staff.role as never, amount: amountPaise, listPrice: base, lineSent: line?.sent }, cfg);
   if (!decision.ok) {
-    fail(decision.code, decision.code === 'permission-denied' ? 'Not allowed for your role' : `unknown action ${action}`, {}, null, false, decision.code === 'permission-denied' ? 'forbidden' : 'invalid');
+    const why = decision.code === 'permission-denied' ? 'Not allowed for your role'
+      : decision.code === 'failed-precondition' ? `discount is above the ${cfg.discountMaxPercent} % limit`   // TD-004
+      : `unknown action ${action}`;
+    fail(decision.code, why, {}, null, false, decision.code === 'permission-denied' ? 'forbidden' : 'invalid');
   }
   const { needsPin, sev } = decision as { needsPin: boolean; sev: Sev };
 
@@ -162,7 +165,7 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
         }
         // Two drawer opens in one millisecond must both leave a row: the suffix keeps the ids apart.
         const auditId = `${cid}_${action}_${ts}_${Math.random().toString(36).slice(2, 8)}`;
-        t.createAudit(auditId, auditRow({ ts, cid, action, staffId: staff.staffId, sev, reason: reason as string, note, lineId: null, before: null, after: null }));
+        t.createAudit(auditId, auditRow({ ts, cid, action, staffId: staff.staffId, sev, amount: amountPaise, reason: reason as string, note, lineId: null, before: null, after: null }));
         // KT-S17: a no-sale open is a drawer kick too, queued with its P0 row and keyed on that row.
         if (action === 'drawer') t.createPrintJob(newPrintJob({ jobId: printIds.drawer(auditId), cid, kind: 'drawer', ticketNo: cid, tableLabel: '', paymentId: auditId, by: staff.staffId, now: ts }));
         return { auditId } as ApplyResult;
@@ -176,7 +179,7 @@ export async function apply(ports: Ports, req: ApplyRequest): Promise<ApplyResul
       // The line may have gone to the kitchen since the decision read. Decide again on the fresh doc:
       // a PIN that was not needed then, and was never verified, is needed now.
       const fresh = decide({ action: action as Action, role: staff.role as never, amount: amountPaise, listPrice: before.listPrice, lineSent: before.sent }, cfg);
-      if (!fresh.ok) throw new ApprovalError(fresh.code, 'Not allowed for your role');
+      if (!fresh.ok) throw new ApprovalError(fresh.code, fresh.code === 'failed-precondition' ? `discount is above the ${cfg.discountMaxPercent} % limit` : 'Not allowed for your role');
       if (fresh.needsPin && !needsPin) throw new ApprovalError('permission-denied', 'PIN required', { requires: 'pin', action, sev: fresh.sev });
       const applied = applyToLine(before, { action: action as Action, amount: amountPaise, pct, reason: reason as string, note, approverId: staff.staffId });
       if (!applied.ok) throw new ApprovalError(applied.code, applied.message);
