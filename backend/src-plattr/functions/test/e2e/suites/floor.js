@@ -204,6 +204,15 @@ export default async function floorSuite() {
     const held = await call('table-setMerge', { restaurantId: RID, staffSessionId: manager, parentTableId: 'table_fl_5', merge: false, cid: 'cid_fl_u1' });
     check('FL-S27 unmerge is refused while the group holds 412000 unbilled (R14)', codeOf(held) === 'failed-precondition' && /bill it or move it first/i.test(msgOf(held)), held);
     check('FL-S27 nothing was released: table 6 still points at 5', (await getDoc('tables/table_fl_6'))?.mergedInto === 'table_fl_5', null);
+    // TD-037: the captain's manual Vacant is the same act by another door, on the parent or the child.
+    const vacate = tableId => call('table-updateTableStatus', { restaurantId: RID, sessionId: server, tableId, status: 'vacant' });
+    const vParent = await vacate('table_fl_5'), vChild = await vacate('table_fl_6');
+    // Shaurya 2026-09-24: a table that still owes frees only by the cashier's PIN, so the captain is denied outright.
+    check('TD-037 captain Vacant on table 5 is denied while the group holds 412000 unbilled', codeOf(vParent) === 'permission-denied' && /only the cashier/i.test(msgOf(vParent)), vParent);
+    check('TD-037 captain Vacant on child 6 is denied too: its money is the group\'s', codeOf(vChild) === 'permission-denied', vChild);
+    const noPin = await call('floor-clear', { restaurantId: RID, staffSessionId: manager, tableId: 'table_fl_5', cid: 'cid_fl_walk' });
+    check('cashier Clear on the owing group without a PIN → refused, asking for the PIN and naming 412000', codeOf(noPin) === 'failed-precondition' && errData(noPin).requires === 'pin' && errData(noPin).owed === 412000, noPin);
+    check('TD-037 …and nothing moved: 6 still in the group, 5 not vacant', (await getDoc('tables/table_fl_6'))?.mergedInto === 'table_fl_5' && (await getDoc('tables/table_fl_5'))?.status !== 'vacant', null);
 
     await delDoc('lines/fl_group');   // the group is billed and settled; nothing open
     const freed = await call('table-setMerge', { restaurantId: RID, staffSessionId: manager, parentTableId: 'table_fl_5', merge: false, cid: 'cid_fl_u2' });

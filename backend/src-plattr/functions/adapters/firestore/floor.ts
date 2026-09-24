@@ -1,5 +1,7 @@
 // FL · Firestore ports for app/floor. The only place this module touches Firebase.
 // Runtime note: this file runs from functions/lib/adapters/firestore/, so existing JS is three levels up.
+import { apply as approve } from '../../app/approvals';
+import { ports as approvalPorts } from './approvals';
 import { Ports, Tx, Order, SittingHead, floorConfigFrom } from '../../app/floor';
 import { Staff } from '../../app/approvals';
 import { Bill, Table, OrderState } from '../../domain/floor';
@@ -93,6 +95,7 @@ async function byIn<T>(q: Query, field: string, ids: string[], map: (d: Firebase
 
 export const ports: Ports = {
   now: () => Date.now(),
+  approve: req => approve(approvalPorts, req as never),
   log: line => console.log(JSON.stringify(line)),
 
   staff: {

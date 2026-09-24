@@ -197,7 +197,7 @@ export default async function coverageSuite() {
       realOk ? '' : `→ ${real?.message || JSON.stringify(real).slice(0, 200)}`);
   }
 
-  // ── 5. table-updateTableStatus: reserved blocks self-service; vacant restores the table ──
+  // ── 5. table-updateTableStatus: reserved blocks self-service; vacant is refused over open money ──
   {
     const staffSessionId = await serverLogin();
     const setStatus = (status) => call('table-updateTableStatus', {
@@ -221,9 +221,12 @@ export default async function coverageSuite() {
     record(otpOk, 'reserved table: validateOTP → 403 (was 500)',
       otpOk ? '' : `→ HTTP ${otp?._httpStatus} ${otp?.message}`);
 
+    // TD-037: the Tiramisu checked out in step 4 is served and still unbilled, so Vacant is refused —
+    // it used to free the table and the next party sat down on that money. Freeing a table that owes
+    // nothing is FL's Clear, covered in suites/floor.js.
     const resp = await setStatus('vacant');
-    const ok = resp?.status === 'success';
-    record(ok, 'table-updateTableStatus sets table vacant',
+    const ok = resp?.status !== 'success' && /money on it|still owes/i.test(resp?.message || resp?.error?.message || '');
+    record(ok, 'table-updateTableStatus vacant is refused while the table has unbilled food (TD-037)',
       ok ? '' : `→ ${resp?.message || JSON.stringify(resp).slice(0, 200)}`);
   }
 
