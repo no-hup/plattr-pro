@@ -2,8 +2,8 @@
 // (document + audit). No Firestore here; ports only. See moonshot/SPEC_DC_day_close.md.
 // Money is integer minor units on every field.
 import {
-  DayCloseConfig, DayState, Floor, LedgerRow, Movement, StaffTotal, TenderTotal, VoidBlock,
-  applyCounted, canClose, canMove, canVoidMove, configFrom, differenceOf, expectedCashFrom,
+  DayBill, DayCloseConfig, DayState, DiscountTotal, Floor, LedgerRow, Movement, StaffTotal, TenderTotal, VoidBlock,
+  applyCounted, canClose, canMove, canVoidMove, configFrom, differenceOf, discountsFrom, expectedCashFrom,
   openingFloatOf, previousDate, severityOf, totalsFrom,
 } from '../domain/dayClose';
 import { businessDateFor, PaymentsConfig } from '../domain/payments';
@@ -21,6 +21,7 @@ export interface CloseDoc {
   openingFloat: number; expectedCash: number; countedCash: number; difference: number;
   leftInDrawer: number | null;
   byTender: TenderTotal[]; byStaff: StaffTotal[]; movements: Movement[];
+  discounts: DiscountTotal[];   // BT: what the day gave away, by reason (NC, staff meal, comps, offers), frozen like byTender
   thresholds: { overShortP0Above: number }; note: string;
 }
 
@@ -30,6 +31,7 @@ export interface Tx {
   rowsForDay(businessDate: string): Promise<LedgerRow[]>;
   movementsForDay(businessDate: string): Promise<StoredMovement[]>;
   floorOn(businessDate: string): Promise<Floor>;
+  billsForDay(businessDate: string): Promise<DayBill[]>;   // BT: every bill issued on the date, any status
   movementById(movementId: string): Promise<StoredMovement | null>;
   createMovement(movementId: string, m: StoredMovement): void;   // must fail if the id exists
   setMovementVoid(movementId: string, v: VoidBlock): void;
@@ -47,6 +49,7 @@ export interface Ports extends PinPorts {
     rows(restaurantId: string, businessDate: string): Promise<LedgerRow[]>;
     movements(restaurantId: string, businessDate: string): Promise<StoredMovement[]>;
     floor(restaurantId: string, businessDate: string): Promise<Floor>;
+    bills(restaurantId: string, businessDate: string): Promise<DayBill[]>;
   };
   transact<T>(restaurantId: string, fn: (t: Tx) => Promise<T>): Promise<T>;
 }
@@ -60,6 +63,7 @@ export interface PreviousClose { businessDate: string; countedCash: number; left
 export interface DayView {
   businessDate: string; closed: boolean; blindCount: boolean; reasons: string[];
   byTender: TenderTotal[]; byStaff?: StaffTotal[]; movements?: Movement[];
+  discounts: DiscountTotal[];   // BT: not a cash figure, so it shows blind too
   openingFloat?: number; expectedCash?: number; countedCash?: number; difference?: number; leftInDrawer?: number | null;
   closedAt?: number; closedBy?: string; note?: string;
   floor: { issuedBills: number; unbilledItems: number };
@@ -159,7 +163,7 @@ export async function close(ports: Ports, req: CloseReq): Promise<CloseResult> {
       }
       // R6a: the numbers that get frozen are read here, inside, so a payment committed while the
       // cashier was counting aborts one of the two transactions instead of being lost (DC-S26).
-      const [rows2, moves2, floor2] = await Promise.all([t.rowsForDay(bd), t.movementsForDay(bd), t.floorOn(bd)]);
+      const [rows2, moves2, floor2, bills2] = await Promise.all([t.rowsForDay(bd), t.movementsForDay(bd), t.floorOn(bd), t.billsForDay(bd)]);
       const v2 = canClose({ ...req, role: staff.role }, 'open', floor2, today);
       if (!v2.ok) throw new ApprovalError(v2.code, v2.message);
 
@@ -179,6 +183,7 @@ export async function close(ports: Ports, req: CloseReq): Promise<CloseResult> {
         difference: difference2, leftInDrawer: req.leftInDrawer ?? null,
         byTender: counted.rows, byStaff: totals.byStaff,
         movements: moves2,   // voided ones included, the way BL freezes voided lines onto a bill
+        discounts: discountsFrom(bills2),
         thresholds: { overShortP0Above: cfg.overShortP0Above }, note: typeof req.note === 'string' ? req.note : '',
       };
       t.createClose(bd, doc);
@@ -211,11 +216,11 @@ export async function get(ports: Ports, req: GetReq): Promise<DayView> {
   need(/^\d{4}-\d{2}-\d{2}$/.test(bd), 'businessDate must be YYYY-MM-DD');
 
   const prevDate = previousDate(bd);
-  let doc: CloseDoc | null, prev: CloseDoc | null, rows: LedgerRow[], movements: StoredMovement[], floor: Floor;
+  let doc: CloseDoc | null, prev: CloseDoc | null, rows: LedgerRow[], movements: StoredMovement[], floor: Floor, bills: DayBill[];
   try {
-    [doc, prev, rows, movements, floor] = await Promise.all([
+    [doc, prev, rows, movements, floor, bills] = await Promise.all([
       ports.read.close(rid, bd), ports.read.close(rid, prevDate),
-      ports.read.rows(rid, bd), ports.read.movements(rid, bd), ports.read.floor(rid, bd),
+      ports.read.rows(rid, bd), ports.read.movements(rid, bd), ports.read.floor(rid, bd), ports.read.bills(rid, bd),
     ]);
   } catch { throw new ApprovalError('unavailable', 'Cannot read that day'); }
 
@@ -228,18 +233,19 @@ export async function get(ports: Ports, req: GetReq): Promise<DayView> {
   };
   if (doc) {
     return {
-      ...base, closed: true, byTender: doc.byTender, byStaff: doc.byStaff, movements: doc.movements,
+      ...base, closed: true, byTender: doc.byTender, byStaff: doc.byStaff, movements: doc.movements, discounts: doc.discounts,
       openingFloat: doc.openingFloat, expectedCash: doc.expectedCash, countedCash: doc.countedCash,
       difference: doc.difference, leftInDrawer: doc.leftInDrawer, closedAt: doc.closedAt, closedBy: doc.closedBy, note: doc.note,
     };
   }
   const { byTender, byStaff } = totalsFrom(rows);
+  const discounts = discountsFrom(bills);
   if (cfg.blindCount) {
     // Takings of ₹12,450, refunds of ₹84 and a float of ₹2,000 are one addition away from the
     // number we are hiding, so the cash rows, the staff split and the movement amounts all stay here.
-    return { ...base, closed: false, byTender: byTender.filter(t => t.kind !== 'cash') };
+    return { ...base, closed: false, byTender: byTender.filter(t => t.kind !== 'cash'), discounts };
   }
-  return { ...base, closed: false, byTender, byStaff, movements, openingFloat: openingFloatOf(movements), expectedCash: expectedCashFrom(rows, movements) };
+  return { ...base, closed: false, byTender, byStaff, movements, discounts, openingFloat: openingFloatOf(movements), expectedCash: expectedCashFrom(rows, movements) };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -9,7 +9,7 @@
 // `overShortP0Above` is 10000 (₹100.00) by default.
 import {
   DEFAULTS, configFrom, openingFloatOf, expectedCashFrom, differenceOf, severityOf, totalsFrom,
-  canClose, canMove, canVoidMove, isBusinessDate, LedgerRow, Movement, IssuedBill, UnbilledLine, Floor,
+  canClose, canMove, canVoidMove, isBusinessDate, LedgerRow, Movement, IssuedBill, UnbilledLine, Floor, discountsFrom, DayBill,
 } from './dayClose';
 
 type Snap = LedgerRow['tender'];
@@ -262,3 +262,53 @@ describe('configFrom', () => {
     expect(Object.keys(of({}).config).sort()).toEqual(['blindCount', 'overShortP0Above', 'reasons']);
   });
 });
+
+describe('BT · NC / staff meal / complimentary: what the day gave away, by reason, from the bills BL froze', () => {
+  const src = (reason: string, approverId = 'priya') => ({ reason, note: '', approverId });
+  const bills: DayBill[] = [
+    // A staff meal comped whole (BL-S22): bill discount 42000 under `staff meal`; its lines carry billDiscount, not `discount`.
+    { status: 'paid', discount: { amount: 42000, pct: 100, source: src('staff meal') }, lines: [{ countsTowardTotal: true }, { countsTowardTotal: true }] },
+    // A birthday dessert comped on its line (ST discount 5000), and the same bill under the happy-hour offer (10000).
+    { status: 'paid', discount: { amount: 10000, pct: 0, source: src('Happy Hour', 'offer') }, lines: [{ countsTowardTotal: true, discount: { amount: 5000, pct: 100, source: src('birthday') } }, { countsTowardTotal: false, discount: { amount: 999, pct: 0, source: src('birthday') } }] },
+    // A cancelled bill and a credit note are not the day's giving.
+    { status: 'cancelled', discount: { amount: 30000, pct: 0, source: src('regular') }, lines: [] },
+    { status: 'issued', discount: null, creditNoteOf: { billId: 'b1' }, lines: [{ countsTowardTotal: true, discount: { amount: -5000, pct: 0, source: src('birthday') } }] },
+  ];
+  it('BT-N1 groups line and bill discounts by reason: staff meal 42000 ×1, Happy Hour 10000 ×1, birthday 5000 ×1; voided lines, cancelled bills and credit notes excluded; biggest first', () => {
+    expect(discountsFrom(bills)).toEqual([
+      { reason: 'staff meal', amount: 42000, count: 1 },
+      { reason: 'Happy Hour', amount: 10000, count: 1 },
+      { reason: 'birthday', amount: 5000, count: 1 },
+    ]);
+  });
+  it('BT-N1 nothing given away → an empty list, never a missing field', () => {
+    expect(discountsFrom([{ status: 'paid', discount: null, lines: [{ countsTowardTotal: true }] }])).toEqual([]);
+  });
+});
+
+describe('BT · tips and money owed at day close', () => {
+  const account: Snap = { label: 'On account', kind: 'credit' };
+  it('BT-T5 a cash tip is in the drawer: expected cash rises by it; a card tip is not; tips are reported by tender and staff outside net', () => {
+    const rows = [...ROWS, take(60900, cash, 'priya', { tip: 5000 }), take(60900, card, 'ravi', { tip: 3000 })];
+    expect(expectedCashFrom(rows, MOVES)).toBe(EXPECTED + 60900 + 5000);
+    const { byTender, byStaff } = totalsFrom(rows);
+    expect(byTender.find(t => t.tenderId === 'cash')).toMatchObject({ taken: 720000 + 525000 + 60900, tips: 5000, net: 720000 + 525000 + 60900 - 8400 });
+    expect(byTender.find(t => t.tenderId === 'card')?.tips).toBe(3000);
+    expect(byStaff.find(s => s.staffId === 'ravi')?.tips).toBe(3000);
+  });
+  it('BT-A8 a bill settled on account is its own tender line, kind credit, and never enters expected cash', () => {
+    const rows = [...ROWS, { kind: 'take', amount: 184000, tenderId: 'account', tender: account, by: 'priya', void: null } as LedgerRow];
+    expect(expectedCashFrom(rows, MOVES)).toBe(EXPECTED);
+    expect(totalsFrom(rows).byTender.find(t => t.tenderId === 'account')).toMatchObject({ kind: 'credit', taken: 0, owed: 184000, net: 0 });
+  });
+  it('BT-A arch P2: on-account money counts once, on the day it arrives — the sale day shows it owed, the collection day shows it taken; two days summed = 184000', () => {
+    const saleDay = [{ kind: 'take', amount: 184000, tenderId: 'account', tender: account, by: 'priya', void: null } as LedgerRow];
+    const collectDay = [take(184000, cash, 'ravi', { receivableId: 'r1' } as Partial<LedgerRow>)];
+    const sum = (rows: LedgerRow[]) => totalsFrom(rows).byTender.reduce((n, t) => n + t.net, 0);
+    expect(sum(saleDay)).toBe(0);
+    expect(totalsFrom(saleDay).byStaff[0]).toMatchObject({ taken: 0, owed: 184000, net: 0 });
+    expect(sum(collectDay)).toBe(184000);
+    expect(sum(saleDay) + sum(collectDay)).toBe(184000);
+  });
+});
+

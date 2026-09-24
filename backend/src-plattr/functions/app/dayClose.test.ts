@@ -4,7 +4,7 @@
 // The running day is 2026-09-16: float 200000, cash 1245000 (Priya 720000 + Ravi 525000),
 // cash refunds 8400, vendor out 120000, card 3120000, upi 890000. Expected cash 1316600.
 import { close, get, move, voidMove, DayCloseError, Ports, Tx, CloseDoc, StoredMovement, DayView } from './dayClose';
-import { Floor, LedgerRow } from '../domain/dayClose';
+import { Floor, LedgerRow, DayBill } from '../domain/dayClose';
 import { AuditRow, PinState } from '../domain/approvals';
 import { Staff } from './approvals';
 
@@ -34,6 +34,7 @@ interface Opts {
   staff?: Partial<Staff>; config?: unknown; rows?: LedgerRow[]; movements?: StoredMovement[]; floor?: Floor;
   closes?: Record<string, CloseDoc>; readFails?: 'close' | 'rows' | 'floor'; now?: number;
   onTransact?: (n: number, p: Fake) => void | Promise<void>;
+  bills?: DayBill[];
 }
 type Fake = Ports & {
   closes: Map<string, CloseDoc>; movements: Map<string, StoredMovement>; audits: Map<string, AuditRow>;
@@ -71,6 +72,7 @@ function fakePorts(opts: Opts = {}): Fake {
       rows: async () => { calls.push('read.rows'); if (opts.readFails === 'rows') throw new Error('firestore'); return p.rowsOf; },
       movements: async (_r, bd) => { calls.push('read.movements'); return [...movements.values()].filter(m => m.businessDate === bd); },
       floor: async () => { calls.push('read.floor'); if (opts.readFails === 'floor') throw new Error('firestore'); return p.floorOf; },
+      bills: async () => { calls.push('read.bills'); return opts.bills ?? []; },
     },
     async transact(_rid, fn) {
       n += 1;
@@ -82,6 +84,7 @@ function fakePorts(opts: Opts = {}): Fake {
         readClose: async bd => { calls.push('tx.readClose'); return closes.get(bd) ?? null; },
         createClose: (bd, doc) => { if (closes.has(bd) || pc.has(bd)) throw new Error('already exists'); pc.set(bd, doc); },
         rowsForDay: async () => { calls.push('tx.rowsForDay'); return p.rowsOf; },
+        billsForDay: async () => { calls.push('tx.billsForDay'); return opts.bills ?? []; },
         movementsForDay: async bd => { calls.push('tx.movementsForDay'); return [...movements.values()].filter(m => m.businessDate === bd); },
         floorOn: async () => { calls.push('tx.floorOn'); return p.floorOf; },
         movementById: async id => movements.get(id) ?? null,
@@ -474,3 +477,21 @@ describe('voidMove', () => {
     expect((await fails(voidMove(p, { restaurantId: RID, sessionId: 's1', movementId: 'm_out', reason: 'correction' } as never))).code).toBe('permission-denied');
   });
 });
+
+describe('BT · the discounts slice rides the day view and the close document', () => {
+  const NC: DayBill[] = [{ status: 'paid', discount: { amount: 42000, pct: 100, source: { reason: 'staff meal', note: '', approverId: 'priya' } }, lines: [] }];
+  it('BT-N2 get(): open day, blind count → the cash figures stay hidden but the discounts show (they are not cash)', async () => {
+    const v = await get(fakePorts({ bills: NC }), { restaurantId: 'r1', sessionId: 's1', businessDate: DAY });
+    expect(v.expectedCash).toBeUndefined();
+    expect(v.discounts).toEqual([{ reason: 'staff meal', amount: 42000, count: 1 }]);
+  });
+  it('BT-N3 close(): the slice is frozen on the document and read back from it', async () => {
+    const p = fakePorts({ bills: NC });
+    const { doc } = await close(p, { restaurantId: 'r1', sessionId: 's1', businessDate: DAY, countedCash: EXPECTED });
+    expect(doc.discounts).toEqual([{ reason: 'staff meal', amount: 42000, count: 1 }]);
+    const v = await get({ ...p, read: { ...p.read, bills: async () => [] } }, { restaurantId: 'r1', sessionId: 's1', businessDate: DAY });
+    expect(v.closed).toBe(true);
+    expect(v.discounts).toEqual([{ reason: 'staff meal', amount: 42000, count: 1 }]);
+  });
+});
+
