@@ -1,8 +1,17 @@
 const functions = require('firebase-functions');
-const { db, FieldValue } = require('../admin/admin');
+const { db } = require('../admin/admin');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 const errorHandler = require('../singleton/ErrorHandler');
 const { validateAdminSession } = require('./auth');
+const { safeArrayUnion, safeArrayRemove, applyArrayOperation } = require('../utils/arrayOperations');
+
+// Raw FieldValue is undefined in the emulator (addSubcategory crashed there); go through the repo's safe ops.
+async function updateSubcategoryIds(categoryRef, op) {
+  const snap = await categoryRef.get();
+  const update = {};
+  applyArrayOperation(update, 'subcategoryIds', (snap.data() || {}).subcategoryIds || [], op);
+  await categoryRef.update(update);
+}
 
 function requireField(value, message) {
   if (value === undefined || value === null || value === '') {
@@ -133,9 +142,7 @@ exports.addSubcategory = functions.https.onCall(async (data, context) => {
     };
 
     const docRef = await restaurantRef.collection('subcategories').add(payload);
-    await restaurantRef.collection('categories').doc(subcategory.parentCategoryId).update({
-      subcategoryIds: FieldValue.arrayUnion(docRef.id),
-    });
+    await updateSubcategoryIds(restaurantRef.collection('categories').doc(subcategory.parentCategoryId), safeArrayUnion(docRef.id));
 
     return ResponseBuilder.success({ subcategoryId: docRef.id }, 'Subcategory created');
   } catch (error) {
@@ -195,12 +202,8 @@ exports.updateSubcategory = functions.https.onCall(async (data, context) => {
     await subcategoryRef.update(payload);
 
     if (existing.parentCategoryId && existing.parentCategoryId !== newParentId) {
-      await restaurantRef.collection('categories').doc(existing.parentCategoryId).update({
-        subcategoryIds: FieldValue.arrayRemove(subcategoryId),
-      });
-      await restaurantRef.collection('categories').doc(newParentId).update({
-        subcategoryIds: FieldValue.arrayUnion(subcategoryId),
-      });
+      await updateSubcategoryIds(restaurantRef.collection('categories').doc(existing.parentCategoryId), safeArrayRemove(subcategoryId));
+      await updateSubcategoryIds(restaurantRef.collection('categories').doc(newParentId), safeArrayUnion(subcategoryId));
     }
 
     return ResponseBuilder.success(null, 'Subcategory updated');
@@ -231,9 +234,7 @@ exports.deleteSubcategory = functions.https.onCall(async (data, context) => {
     await subcategoryRef.delete();
 
     if (subcategory.parentCategoryId) {
-      await restaurantRef.collection('categories').doc(subcategory.parentCategoryId).update({
-        subcategoryIds: FieldValue.arrayRemove(subcategoryId),
-      });
+      await updateSubcategoryIds(restaurantRef.collection('categories').doc(subcategory.parentCategoryId), safeArrayRemove(subcategoryId));
     }
 
     return ResponseBuilder.success(null, 'Subcategory deleted');

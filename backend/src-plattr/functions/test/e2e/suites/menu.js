@@ -39,7 +39,8 @@ export default async function menuSuite() {
   if (menuData) {
     // Find items in the response (may be at top level or nested under categories)
     const directItems = menuData.menuItems || menuData.items || [];
-    let allItems = Array.isArray(directItems) ? directItems : Object.values(directItems);
+    // menu-getRestaurantMenu groups items by subcategory: { sub_beer: [item, …], … }.
+    let allItems = Array.isArray(directItems) ? directItems : Object.values(directItems).flat();
     // If no direct items, drill into categories
     if (allItems.length === 0 && Array.isArray(menuData.categories)) {
       allItems = menuData.categories.flatMap(c =>
@@ -50,7 +51,7 @@ export default async function menuSuite() {
     const hasItems = allItems.length > 0;
     if (hasItems) {
       const sample = allItems[0];
-      const hasStructure = sample.meta || sample.name || sample.menuItemId || sample.priceInfo || sample.id;
+      const hasStructure = !!sample.menuItemId && !!sample.meta?.name && typeof sample.priceInfo?.finalPrice === 'number';
       record({
         pass: !!hasStructure,
         message: `3. Menu items have structure (${Object.keys(sample).slice(0, 3).join(', ')}...)`,

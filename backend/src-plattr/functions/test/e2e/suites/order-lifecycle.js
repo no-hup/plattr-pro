@@ -181,25 +181,36 @@ export default async function orderLifecycleSuite() {
     record(assertSuccess(resp, '9. Mark order COMPLETED'));
   }
 
-  // ── 9b. COMPLETED vacates the table and ends the session ───────
-  // The paid party is done: the old session must not be able to order again,
-  // but it may still read its own bill. A new party scans and gets a new OTP.
+  // ── 9b. COMPLETED ends nothing; only the floor frees a table (D1, 2026-09-20) ───────
+  // The food is done but the bill is not: the sitting stays open (a dessert can still come).
+  // The table frees when the cashier frees it; here the party leaves unpaid, so that is the
+  // cashier's PIN release (Shaurya 2026-09-24). After it the old session is locked out.
   {
+    const dessert = await call('cart-addItemToCart', {
+      restaurantId: RESTAURANT_ID, tableId: TABLE_CLEAN_1,
+      menuItemId: ITEMS.TIRAMISU.id, quantity: 1, sessionId,
+    });
+    record({ pass: dessert.status === 'success', message: `9b. COMPLETED leaves the sitting open: the old session can still add a dessert → ${dessert.status}`, actual: dessert.status === 'success' ? undefined : dessert });
+
+    const cashier = await serverLogin(RESTAURANT_ID, config.ADMIN_EMAIL);
+    const freed = await call('floor-clear', { restaurantId: RESTAURANT_ID, staffSessionId: cashier, tableId: TABLE_CLEAN_1, cid: `ol9b_${Date.now()}`, pin: '1234', reason: 'guest left' });
+    record(assertSuccess(freed, '9b. The cashier frees the unpaid table with a PIN'));
+
     const addResp = await call('cart-addItemToCart', {
       restaurantId: RESTAURANT_ID, tableId: TABLE_CLEAN_1,
       menuItemId: ITEMS.TIRAMISU.id, quantity: 1, sessionId,
     });
     const rejected = addResp.status === 'error' || addResp._httpStatus >= 400;
-    record({ pass: rejected, message: `9b. Old session cannot add to cart after COMPLETED → ${rejected ? 'rejected' : 'unexpectedly allowed'}`, actual: rejected ? undefined : addResp });
+    record({ pass: rejected, message: `9b. Old session cannot add to cart after the table is freed → ${rejected ? 'rejected' : 'unexpectedly allowed'}`, actual: rejected ? undefined : addResp });
 
     const billResp = await call('order-getOrder', { restaurantId: RESTAURANT_ID, orderId, sessionId });
     record(assertSuccess(billResp, '9b. Old session can still read its own COMPLETED bill'));
 
     try {
       sessionId = await rejoin(TABLE_CLEAN_1, '5551120002', 'Next Party');
-      record({ pass: true, message: '9b. Table vacated: next party scans and gets a fresh session' });
+      record({ pass: true, message: '9b. Table freed: next party scans and gets a fresh session' });
     } catch (e) {
-      record({ pass: false, message: `9b. Next party could not join after COMPLETED: ${e.message}` });
+      record({ pass: false, message: `9b. Next party could not join after the table was freed: ${e.message}` });
     }
   }
 

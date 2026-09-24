@@ -149,7 +149,7 @@ bearer token authenticates); otherwise the suite falls back to asserting the aut
 ### Known Test Gaps
 
 - ~~`offers` and `offer-pricing` suites are SKIPped~~ — CLOSED 2026-09-16. `applyOffer` was removed in Offers V2 (offers auto-apply at checkout), so `offer-pricing.js` is deleted and `test/e2e/suites/offers.js` was rewritten to verify offers through the real checkout flow on `res_e2e_offer_configs` (6 scenarios, 21 assertions: BOGO, capped percentage, FLAT `maxDiscount`, a requiredItems gate, an expired offer that must not fire, a category percentage at its cap). Two live gaps found writing it and filed in `moonshot/TECH_DEBT.md`: TD-020 (equal-value offers tie-break non-deterministically — `offer_flat_100` and `offer_maxdiscount_cap` both land on ₹100 for any bar-only cart, so never assert on a tie) and TD-021 (`conditions.minCartValue` / `conditions.isFirstTimeUser` are seeded but read nowhere, and an unknown condition is ignored rather than refused).
-- `admin` suite runs again since `index.js` exports admin endpoints as the nested `exports.admin = {…}` group (the prod requirement from 2026-09-08, see `INFRASTRUCTURE.md`; committed 2026-09-15 inside the ST commits). It fails 9/16 on "Insufficient permissions": the seeded session is not ADMIN/MANAGER. TD-007.
+- ~~`admin` suite fails 9/16 on "Insufficient permissions"~~ — CLOSED 2026-09-24 (TD-007): it logged in as a waiter and the seed spelled the role `admin`, not `ADMIN`. It now logs in as `admin1@e2e.com`; 16/16.
 - ~~`checkTableStatus` endpoint returns INTERNAL error~~ — FIXED 2026-09-08: the handler
   destructured the callable request wrapper instead of reading `request.data`, so
   `restaurantId`/`tableId` were always undefined. Covered by table suite tests 16 and 17.

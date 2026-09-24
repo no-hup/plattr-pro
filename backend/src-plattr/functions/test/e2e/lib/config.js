@@ -33,6 +33,8 @@ const TABLE_CLEAN_4 = 'table_clean_4'; // disabled table (for error tests)
 const TABLE_CLEAN_5 = 'table_clean_5'; // for offers suite (res_e2e_offer_configs)
 const TABLE_CLEAN_6 = 'table_clean_6'; // for order-lifecycle cancel flow
 const TABLE_CLEAN_7 = 'table_clean_7'; // for customer-journey expanded
+const TABLE_CLEAN_10 = 'table_clean_10'; // server-journey only (TD-024 b)
+const TABLE_CLEAN_11 = 'table_clean_11'; // table suite 3b only (TD-024 c)
 const TABLE_OTP = '123456';
 
 // ── Customers ────────────────────────────────────────────────────
@@ -44,6 +46,7 @@ const CUSTOMER_NAME_2 = 'Customer Two';
 // ── Servers ──────────────────────────────────────────────────────
 const SERVER_EMAIL = 'server1@e2e.com';
 const SERVER_PASSWORD = '1234';
+const ADMIN_EMAIL = 'admin1@e2e.com';   // TD-007: the admin suite logs in as the seeded ADMIN, not a waiter
 const SERVER_EMAIL_2 = 'server2@e2e.com';
 
 // ── Menu Items (res_e2e_all_on prices) ───────────────────────────
@@ -282,6 +285,8 @@ export default {
   TABLE_CLEAN_5,
   TABLE_CLEAN_6,
   TABLE_CLEAN_7,
+  TABLE_CLEAN_10,
+  TABLE_CLEAN_11,
   TABLE_OTP,
   CUSTOMER_PHONE,
   CUSTOMER_PHONE_2,
@@ -289,6 +294,7 @@ export default {
   CUSTOMER_NAME_2,
   SERVER_EMAIL,
   SERVER_PASSWORD,
+  ADMIN_EMAIL,
   SERVER_EMAIL_2,
   ITEMS,
   ITEMS_SIMPLE,

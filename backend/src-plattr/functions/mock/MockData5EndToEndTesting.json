@@ -467,7 +467,7 @@
         },
         "admin_1": {
           "name": "Admin One",
-          "role": "admin",
+          "role": "ADMIN",
           "status": "active",
           "email": "admin1@e2e.com",
           "password": "1234",
@@ -637,6 +637,38 @@
         },
         "table_clean_9": {
           "number": "C9",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_10": {
+          "number": "C10",
+          "capacity": 4,
+          "status": "vacant",
+          "currentOTP": {
+            "code": "123456",
+            "expiresAt": {
+              "_seconds": 1775704803,
+              "_nanoseconds": 0
+            },
+            "createdAt": {
+              "_seconds": 1775700603,
+              "_nanoseconds": 0
+            }
+          }
+        },
+        "table_clean_11": {
+          "number": "C11",
           "capacity": 4,
           "status": "vacant",
           "currentOTP": {
@@ -1244,7 +1276,7 @@
         },
         "admin_1": {
           "name": "Admin One",
-          "role": "admin",
+          "role": "ADMIN",
           "status": "active",
           "email": "admin1@e2e-mv.com",
           "password": "1234",
@@ -1768,7 +1800,7 @@
         },
         "admin_1": {
           "name": "Admin One",
-          "role": "admin",
+          "role": "ADMIN",
           "status": "active",
           "email": "admin1@e2e-fb.com",
           "password": "1234",
@@ -2011,7 +2043,7 @@
         },
         "admin_1": {
           "name": "Admin One",
-          "role": "admin",
+          "role": "ADMIN",
           "status": "active",
           "email": "admin1@e2e-empty.com",
           "password": "1234",
@@ -2598,7 +2630,7 @@
         },
         "admin_1": {
           "name": "Admin One",
-          "role": "admin",
+          "role": "ADMIN",
           "status": "active",
           "email": "admin1@e2e-oos.com",
           "password": "1234",
@@ -2936,7 +2968,7 @@
         },
         "admin_1": {
           "name": "Admin One",
-          "role": "admin",
+          "role": "ADMIN",
           "status": "active",
           "email": "admin1@e2e-simple.com",
           "password": "1234",
@@ -3523,7 +3555,7 @@
         },
         "admin_1": {
           "name": "Admin One",
-          "role": "admin",
+          "role": "ADMIN",
           "status": "active",
           "email": "admin1@e2e-offer.com",
           "password": "1234",

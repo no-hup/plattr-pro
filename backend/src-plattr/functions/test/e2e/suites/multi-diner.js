@@ -27,7 +27,7 @@
  *   MD-8   cart 1 → READY, one line of it served by hand, then cart 1 CANCELLED
  *          → the served line stays SERVED, the rest CANCELLED, order drops by 450 → 590
  *   MD-9   CANCELLED → PREPARING refused (terminal)
- *   MD-10  every live cart SERVED → order COMPLETED, table vacated, old session locked out
+ *   MD-10  every live cart SERVED → order COMPLETED; the table stays seated until the cashier frees it (D1), then the old session is locked out
  *   MD-11  the next party on the same table gets a NEW order, never the last party's
  *   MD-12  Bhanu's Salad goes out of stock → Asha's own round must still leave (table_clean_2)
  *   MD-13  Asha taps with nothing of hers in the cart → refused, Bhanu's line untouched
@@ -143,7 +143,7 @@ export default async function multiDinerSuite() {
   {
     const c = await cartOf(T1);
     const ashasLine = (c.items || []).find(i => i.menuItemId === PASTA);
-    const resp = await call('cart-removeItemFromCart', { restaurantId: RID, tableId: T1, menuItemId: PASTA, cartItemId: ashasLine.cartItemId, addedBy: BHANU });
+    const resp = await call('cart-removeItemFromCart', { restaurantId: RID, tableId: T1, menuItemId: PASTA, cartItemId: ashasLine.cartItemId, addedBy: BHANU, sessionId: S });
     check('MD-2 Bhanu cannot remove Asha\'s Pasta', isErr(resp) && /not yours/i.test(resp.message || ''), resp);
     const after = await cartOf(T1);
     check('MD-2 the cart is untouched after the refusal', (after.items || []).length === 2 && after.priceInfo?.finalPrice === 690, after?.priceInfo);
@@ -280,8 +280,17 @@ export default async function multiDinerSuite() {
     check('MD-10 the order closes', ok(done), done);
     const closed = await getDoc(`orders/${orderId}`);
     check('MD-10 the cancelled round never comes back into the total: 590', closed.priceInfo?.finalPrice === 590, closed.priceInfo);
+    // D1 (2026-09-20): COMPLETED ends nothing — only the floor frees a table. The 590 is unbilled, so
+    // the captain cannot free it, and the cashier can only with a PIN, on the record (Shaurya 2026-09-24).
+    const t1 = await getDoc(`tables/${T1}`);
+    check('MD-10 COMPLETED leaves the table seated: the 590 is still owed', t1?.status !== 'vacant', t1?.status);
+    const vac = await call('table-updateTableStatus', { restaurantId: RID, sessionId: staff, tableId: T1, status: 'vacant' });
+    check('MD-10 the captain cannot free a table that still owes', isErr(vac), vac);
+    const cashier = await serverLogin(RID, 'admin1@e2e-simple.com');
+    const freed = await call('floor-clear', { restaurantId: RID, staffSessionId: cashier, tableId: T1, cid: `md10_${Date.now()}`, pin: '1234', reason: 'guest left' });
+    check('MD-10 the cashier frees it with a PIN', ok(freed), freed);
     const late = await add(T1, S, SALAD, ASHA);
-    check('MD-10 the old session cannot order again after the table is closed', isErr(late), late);
+    check('MD-10 the old session cannot order again after the table is freed', isErr(late), late);
   }
 
   // ── MD-11 the next party is not the last party ──────────────────
