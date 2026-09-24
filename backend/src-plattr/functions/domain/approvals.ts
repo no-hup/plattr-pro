@@ -1,13 +1,14 @@
 // ST · Staff PIN & approvals — pure decisions. No firebase, no adapters, no clock: `now` is passed in.
 // Sheet: moonshot/SPEC_ST_staff_pin_and_approvals.md
 
-export type Action = 'discount' | 'billDiscount' | 'removeOffer' | 'void' | 'reprint' | 'drawer' | 'cancelBill' | 'creditNote' | 'estimate';
+export type Action = 'discount' | 'billDiscount' | 'removeOffer' | 'void' | 'reprint' | 'drawer' | 'cancelBill' | 'creditNote' | 'estimate' | 'releaseUnpaid';
 export type Role = 'ADMIN' | 'MANAGER' | 'SERVER' | 'KITCHEN';
 export type Sev = 'P0' | 'P1';
 export type ErrorCode = 'permission-denied' | 'invalid-argument' | 'failed-precondition';
 
 export interface ApprovalsConfig {
   discountPinAbovePercent: number;
+  discountMaxPercent: number;   // TD-004: above this a staff line discount is refused, PIN or not. 100 = no cap
   voidAfterKitchenNeedsPin: boolean;
   pinSlowAfterWrong: number;
   pinSlowWindowMinutes: number;
@@ -17,15 +18,16 @@ export interface ApprovalsConfig {
 
 export const DEFAULTS: ApprovalsConfig = {
   discountPinAbovePercent: 10,
+  discountMaxPercent: 50,   // Shaurya 2026-09-24
   voidAfterKitchenNeedsPin: true,
   pinSlowAfterWrong: 5,
   pinSlowWindowMinutes: 10,
   pinSlowMaxSeconds: 120,
-  reasons: ['placard', 'regular', 'complaint', 'birthday', 'guest left', 'staff meal', 'other'],
+  reasons: ['placard', 'regular', 'complaint', 'birthday', 'guest left', 'staff meal', 'complimentary', 'other'],
 };
 
 const NOTE_MAX = 200;
-const ACTIONS: Action[] = ['discount', 'billDiscount', 'removeOffer', 'void', 'reprint', 'drawer', 'cancelBill', 'creditNote', 'estimate'];
+const ACTIONS: Action[] = ['discount', 'billDiscount', 'removeOffer', 'void', 'reprint', 'drawer', 'cancelBill', 'creditNote', 'estimate', 'releaseUnpaid'];
 
 /** Raw `approvals` block from the config doc → full config plus one warning per bad key. Never PIN-free on bad input. */
 export function configFrom(raw: unknown): { config: ApprovalsConfig; warnings: string[] } {
@@ -44,6 +46,7 @@ export function configFrom(raw: unknown): { config: ApprovalsConfig; warnings: s
   return {
     config: {
       discountPinAbovePercent: pick('discountPinAbovePercent', nonNegNumber),
+      discountMaxPercent: pick('discountMaxPercent', v => nonNegNumber(v) && (v as number) <= 100),
       voidAfterKitchenNeedsPin: pick('voidAfterKitchenNeedsPin', v => typeof v === 'boolean'),
       pinSlowAfterWrong: pick('pinSlowAfterWrong', v => nonNegNumber(v) && (v as number) >= 1),
       pinSlowWindowMinutes: pick('pinSlowWindowMinutes', nonNegNumber),
@@ -75,6 +78,11 @@ export function decide(input: DecideInput, cfg: ApprovalsConfig): Decision {
     // giving money away — so it is judged by the same key, against the bill's net instead of the
     // line's list price. One rule, one config value, no second threshold to keep in step.
     case 'discount': case 'billDiscount': {
+      // TD-004 (Shaurya 2026-09-24): the ceiling is on the staff line discount only. The bill-level comp
+      // (billDiscount: BL-S22 walkout, DC-S25 staff meal, NC) is a full give-away by design and keeps its
+      // PIN-above-threshold rule; automatic offers never come through this door at all.
+      const capped = action === 'discount' && cfg.discountMaxPercent < 100 && (input.amount ?? 0) * 100 > (input.listPrice ?? 0) * cfg.discountMaxPercent;
+      if (capped) return { ok: false, code: 'failed-precondition' };
       const over = (input.amount ?? 0) * 100 > (input.listPrice ?? 0) * cfg.discountPinAbovePercent;
       return over ? { ok: true, needsPin: true, sev: 'P0' } : { ok: true, needsPin: false, sev: 'P1' };
     }
@@ -90,6 +98,8 @@ export function decide(input: DecideInput, cfg: ApprovalsConfig): Decision {
     // OF-S20: an emergency estimate printed with no server is a fact to record, not a change to a bill.
     // Audit only, no PIN: the money moves later through billing-issue and payments-take.
     case 'estimate': return { ok: true, needsPin: false, sev: 'P1' };
+    // FL (Shaurya 2026-09-24): freeing a table that still owes is money walking out. Cashier only, always a PIN.
+    case 'releaseUnpaid': return { ok: true, needsPin: true, sev: 'P0' };
   }
 }
 

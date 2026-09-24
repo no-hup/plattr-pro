@@ -135,8 +135,8 @@ export default async function approvalsSuite() {
   // ST-S10
   {
     await seed('config/settings', { approvals: { discountPinAbovePercent: 5 } }, 'approvals');
-    const r = await applyAs(manager, { amount: 100, lineId: 'line_dosa' });
-    check('ST-S10 limit 5 → ₹100 on ₹1,250… on dosa ₹120: 83 % → requires pin (config read per request)', errData(r).requires === 'pin', r);
+    const r = await applyAs(manager, { amount: 10, lineId: 'line_dosa' });
+    check('ST-S10 limit 5 → ₹10 on dosa ₹120 = 8.33 % → requires pin (config read per request)', errData(r).requires === 'pin', r);
     const r2 = await applyAs(manager, { amount: 5, lineId: 'line_dosa' });
     check('ST-S10 ₹5 on ₹120 = 4.17 % under 5 → applied, 500 paise', r2.status === 'success' && r2.data?.line?.discount?.amount === 500, r2);
     await seed('config/settings', { approvals: { discountPinAbovePercent: 10 } }, 'approvals');

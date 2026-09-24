@@ -14,6 +14,28 @@ describe('domain/approvals decide(action, ctx, config)', () => {
   const d = (action: string, role: string, extra: Record<string, unknown> = {}, c = cfg) =>
     decide({ action, role, ...extra } as never, c);
 
+  // TD-004 (Shaurya 2026-09-24). A ₹4,000 line (400000p). Default cap 50 % on the staff line discount, PIN or not.
+  it('TD-004 default 50: ₹2,000 off ₹4,000 = exactly 50 % → allowed with a PIN (P0)', () => {
+    expect(cfg.discountMaxPercent).toBe(50);
+    expect(d('discount', 'MANAGER', { amount: 200000, listPrice: 400000 })).toEqual({ ok: true, needsPin: true, sev: 'P0' });
+  });
+  it('TD-004 default 50: ₹2,040 off ₹4,000 = 51 % → refused failed-precondition, even for ADMIN', () => {
+    expect(d('discount', 'ADMIN', { amount: 204000, listPrice: 400000 })).toEqual({ ok: false, code: 'failed-precondition' });
+  });
+  it('TD-004 the cap is on the staff line discount only: the whole-bill comp (₹4,000 → ₹0) still goes, with a PIN', () => {
+    expect(d('billDiscount', 'MANAGER', { amount: 400000, listPrice: 400000 })).toEqual({ ok: true, needsPin: true, sev: 'P0' });
+  });
+  it('TD-004 100 turns the cap off: 100 % off a line is allowed with a PIN', () => {
+    expect(d('discount', 'MANAGER', { amount: 400000, listPrice: 400000 }, { ...cfg, discountMaxPercent: 100 })).toEqual({ ok: true, needsPin: true, sev: 'P0' });
+  });
+  it('TD-004 a void is never refused by the cap', () => {
+    expect(d('void', 'MANAGER', { lineSent: true }, { ...cfg, discountMaxPercent: 0 })).toEqual({ ok: true, needsPin: true, sev: 'P0' });
+  });
+  it('releaseUnpaid (FL, 2026-09-24): cashier → always PIN, P0; captain → permission-denied', () => {
+    expect(d('releaseUnpaid', 'MANAGER', { amount: 234000 })).toEqual({ ok: true, needsPin: true, sev: 'P0' });
+    expect(d('releaseUnpaid', 'SERVER', { amount: 234000 })).toEqual({ ok: false, code: 'permission-denied' });
+  });
+
   it('ST-S1 discount ₹100 on ₹1,250 = 8.00 % ≤ 10 → MANAGER: {ok, needsPin:false, sev:P1}', () => {
     expect(d('discount', 'MANAGER', { amount: 10000, listPrice: 125000 })).toEqual({ ok: true, needsPin: false, sev: 'P1' });
   });
@@ -83,11 +105,19 @@ describe('domain/approvals decide(action, ctx, config)', () => {
 });
 
 describe('domain/approvals configFrom(raw) — config keys with defaults', () => {
+  it('TD-004 discountMaxPercent: 30 is taken; 150, -1 and "30" fall back to 50 with a warning', () => {
+    expect(configFrom({ discountMaxPercent: 30 }).config.discountMaxPercent).toBe(30);
+    for (const bad of [150, -1, '30']) {
+      const r = configFrom({ discountMaxPercent: bad });
+      expect(r.config.discountMaxPercent).toBe(50);
+      expect(r.warnings).toEqual([expect.stringContaining('discountMaxPercent')]);
+    }
+  });
   it('config missing → defaults: limit 10, void needs PIN, slow from 5 wrong / 10 min / max 120 s, 7 reasons', () => {
     const { config, warnings } = configFrom(undefined);
     expect(config).toEqual({
-      discountPinAbovePercent: 10, voidAfterKitchenNeedsPin: true, pinSlowAfterWrong: 5, pinSlowWindowMinutes: 10,
-      pinSlowMaxSeconds: 120, reasons: ['placard', 'regular', 'complaint', 'birthday', 'guest left', 'staff meal', 'other'],
+      discountPinAbovePercent: 10, discountMaxPercent: 50, voidAfterKitchenNeedsPin: true, pinSlowAfterWrong: 5, pinSlowWindowMinutes: 10,
+      pinSlowMaxSeconds: 120, reasons: ['placard', 'regular', 'complaint', 'birthday', 'guest left', 'staff meal', 'complimentary', 'other'],
     });
     expect(warnings).toEqual(['approvals config missing, defaults apply']);
   });
