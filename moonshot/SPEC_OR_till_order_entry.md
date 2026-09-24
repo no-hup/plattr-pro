@@ -127,6 +127,16 @@ sees that money.
 - **R3** One sitting, one session, one `draftId`. Opening a table that is already `active` returns the
   live session and extends its expiry; it never mints a second. Two sessions on one table is two bills
   for one party, which is a money bug, not a UI annoyance.
+- **R3a** The sitting on a line is the table session, never the cashier's login. The till holds two
+  session ids: its own staff login (auth, `addedBy`) and the table session `table-openTable` returned.
+  Only the second may ever reach `cart-*` as `sessionId`. Since 2026-09-25 the line writer refuses a
+  line with no sitting (`orders/lineSnapshots.js`), a bill takes its sitting and tables from its lines,
+  and the floor finds bills by that `sittingId`. A staff login sent as the sitting would pass all three
+  and bill the walk-in to the cashier. Sanity run 1 found exactly this mix-up between the till and the
+  bill (`reviews/2026-09-22-sanity-run-1.md`). The backend half already obeys this: `table-openTable`
+  returns the table session and `suites/order-entry.js` sends that to `cart-*`. The till screen is not
+  built yet; its first Playwright test asserts the placed line's `sessionId` equals the id
+  `table-openTable` returned, not the cashier's login.
 - **R4** The till is a diner. It sends `addedBy: 'staff:<serverId>'` on every cart write, so it owns its
   own group, cannot remove a guest's item, and its Send leaves everyone else's list where it is.
 - **R5** One Send, one `requestId`, minted at the tap and kept while it is in flight. The same id is the

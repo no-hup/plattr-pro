@@ -2,6 +2,7 @@
 // and `table-moveTable` (OR-4's name: move is a table verb and belongs in that family).
 // Parse the body, call app, map errors. Nothing here logs the body.
 import { ApprovalError, clearTable, getFloor, moveTable, openTable, setMerge, releaseIdleEverywhere } from '../app/floor';
+import { BrokenSitting } from '../domain/floor';
 import { ports } from '../adapters/firestore/floor';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 
@@ -17,7 +18,7 @@ const wrap = (name: string, message: string, fn: (data: never) => Promise<unknow
     try {
       return { status: 'success', message, data: await fn(data as never) };
     } catch (e) {
-      if (e instanceof ApprovalError) errorHandler.throwError(e.code, e.message, e.details);
+      if (e instanceof ApprovalError || e instanceof BrokenSitting) errorHandler.throwError(e.code, e.message, e.details);
       errorHandler.handleError(e, name);
     }
   });

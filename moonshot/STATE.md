@@ -182,6 +182,15 @@ four `HANDOFF_*.md` files are spent. Reviews are dated snapshots and can stay. *
 is not progress; a restaurant issuing a bill is.**
 
 ## Done
+- 2026-09-25 · **The bill finds its table again (sanity run 1, findings 1–2).** A real bill carried the cashier's
+  login as its sitting and no tables, so the floor never saw it, the paid table drew a blank tile and Clear 500'd.
+  The bill now reads `sittingId` and `tableIds` off its own lines at issue (the field `bill.sessionId` is gone —
+  a schema change, re-seed); the floor reads bills by `sittingId`, skips staff logins (they were blank tiles), and
+  throws when a billed line's bill is missing; Clear refuses a blank table; every line requires a guest sitting.
+  Grok consulted first and converged. Unit 1276, e2e 638, journey 60, till Playwright 55, and a headless re-drive
+  of issue → re-tap → cash → Clear on a real checkout, all green on slot 1. Record:
+  `reviews/2026-09-22-sanity-run-1.md`. Left open: TD-052 (till login lost on navigation), TD-053 (tile vs bill
+  once an order offer fires). Not committed.
 - 2026-09-18 · **Manager pass: four go-live decisions landed, FL's two calls checked against the code, the
   orphaned OF work adopted.** Build order confirmed unchanged: **Tax → FL → OR → KT-a → RP → CF → KT-b → UQ.**
   Nothing in the six donor and fan-out reviews moves a module; two change what a module builds (below).

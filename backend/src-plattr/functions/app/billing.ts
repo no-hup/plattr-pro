@@ -96,7 +96,20 @@ function numberOrRefuse(key: string, counter: Counter | null, cfg: InvoiceConfig
   return n;
 }
 
-export interface IssueRequest extends PreviewRequest { pin?: unknown; cid: string; tableIds: string[]; expectedV: Record<string, number> }
+export interface IssueRequest extends PreviewRequest { pin?: unknown; cid: string; expectedV: Record<string, number> }
+
+/**
+ * The sitting and the tables a bill belongs to, read off the lines it bills — never from the request, whose
+ * `sessionId` is the cashier's login and whose screen only knows the draft. One sitting or refuse.
+ */
+export function billSitting(lines: Line[]): { sittingId: string; tableIds: string[] } {
+  if (!lines.length) throw new ApprovalError('failed-precondition', 'nothing to bill');
+  const orphan = lines.find(l => !l.sessionId);
+  if (orphan) throw new ApprovalError('failed-precondition', 'a line on this draft has no sitting', { lineId: orphan.lineId });
+  const sittings = [...new Set(lines.map(l => l.sessionId))];
+  if (sittings.length > 1) throw new ApprovalError('failed-precondition', 'this draft holds lines of two sittings; split it first', { sittings });
+  return { sittingId: sittings[0], tableIds: [...new Set(lines.map(l => l.tableId))] };
+}
 
 /** BL-S7: number, freeze, lines stamped, counter moved, all in one transaction. Recomputed from snapshots. */
 export async function issue(ports: Ports, req: IssueRequest): Promise<Bill> {
@@ -130,7 +143,9 @@ export async function issue(ports: Ports, req: IssueRequest): Promise<Bill> {
   const now = ports.now();
   const bill = await ports.transact(req.restaurantId, async t => {
     const draft = await ports.linesOfDraft(req.restaurantId, req.draftId);
-    const [fresh, tableLabel] = await Promise.all([t.getLines(draft.map(l => l.lineId)), t.tableLabel(req.tableIds)]);
+    const fresh = await t.getLines(draft.map(l => l.lineId));
+    const { sittingId, tableIds } = billSitting(fresh);
+    const tableLabel = await t.tableLabel(tableIds);
     const taken = fresh.find(l => l.billId !== null);
     if (taken) throw new ApprovalError('failed-precondition', `already issued ${taken.billId}`, { billId: taken.billId });
     // Moved off this draft, added or edited since the preview, or previewed and now gone.
@@ -143,7 +158,7 @@ export async function issue(ports: Ports, req: IssueRequest): Promise<Bill> {
     const n = numberOrRefuse(key, await t.getCounter(key), cfg.invoice);
     const meta: Meta = {
       billId: t.newBillId(), number: n.number, series: cfg.invoice.series, fiscalYear: key.slice(cfg.invoice.series.length + 1),
-      cid: req.cid, tableIds: req.tableIds, sessionId: req.sessionId, draftId: req.draftId, issuedAt: now, issuedBy: staff.staffId,
+      cid: req.cid, tableIds, sittingId, draftId: req.draftId, issuedAt: now, issuedBy: staff.staffId,
       seller: cfg.seller, customer: req.customer ?? null,
     };
     const r = issueBill(body, meta);
@@ -202,7 +217,7 @@ export async function creditNote(ports: Ports, req: CreditRequest): Promise<Bill
     const n = numberOrRefuse(key, await t.getCounter(key), cfg.invoice);
     const meta: Meta = {
       billId: t.newBillId(), number: n.number, series: cfg.invoice.creditNoteSeries, fiscalYear: key.slice(cfg.invoice.creditNoteSeries.length + 1),
-      cid: req.cid, tableIds: b.tableIds, sessionId: req.sessionId, draftId: b.draftId, issuedAt: now, issuedBy: staff.staffId, seller: b.seller, customer: b.customer ?? null,
+      cid: req.cid, tableIds: b.tableIds, sittingId: b.sittingId, draftId: b.draftId, issuedAt: now, issuedBy: staff.staffId, seller: b.seller, customer: b.customer ?? null,
     };
     const r = noteOn(b, req.credits, meta);
     if (!r.ok) throw new ApprovalError(r.code, r.message);

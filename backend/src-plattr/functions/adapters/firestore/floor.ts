@@ -4,7 +4,7 @@ import { apply as approve } from '../../app/approvals';
 import { ports as approvalPorts } from './approvals';
 import { Ports, Tx, Order, SittingHead, floorConfigFrom } from '../../app/floor';
 import { Staff } from '../../app/approvals';
-import { Bill, Table, OrderState } from '../../domain/floor';
+import { Bill, Table, OrderState, sittingOf } from '../../domain/floor';
 import { Line } from '../../domain/line';
 import type { DocumentReference, Transaction, Query } from 'firebase-admin/firestore';
 import { Timestamp } from 'firebase-admin/firestore';
@@ -69,16 +69,20 @@ function toTable(d: FirebaseFirestore.QueryDocumentSnapshot, parents: Set<string
 }
 
 /** FL-S32: a status word the table module spells differently must not read as vacant here. */
-const toBill = (d: FirebaseFirestore.QueryDocumentSnapshot): Bill & { sessionId: string } => {
+const toBill = (d: FirebaseFirestore.QueryDocumentSnapshot): Bill => {
   const x = d.data();
   return {
     billId: d.id,
+    sittingId: String(x.sittingId ?? ''),
+    note: !!x.creditNoteOf,
     status: x.status,
     payable: Number(x.payable) || 0,
     paid: Number(x.paidTotal) || 0,
-    sessionId: String(x.sessionId ?? ''),
   };
 };
+
+/** Staff logins share the `sessions` collection (entity 'server', no table). They are never a sitting. */
+const isStaff = (x: FirebaseFirestore.DocumentData | undefined) => x?.entity === 'server';
 
 const chunk = <T>(xs: T[], n: number): T[][] =>
   xs.length ? Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, i * n + n)) : [];
@@ -139,21 +143,21 @@ export const ports: Ports = {
       tables(rid).get(),
     ]);
 
-    const needed = new Set<string>(live.docs.map(d => d.id));
+    const needed = new Set<string>(live.docs.filter(d => !isStaff(d.data())).map(d => d.id));
     for (const d of openLines.docs) {
       const x = d.data();
       if (x.countsTowardTotal !== false && x.sessionId) needed.add(String(x.sessionId));
     }
     for (const d of openBills.docs) {
       const x = d.data();
-      if (x.sessionId && (Number(x.paidTotal) || 0) < (Number(x.payable) || 0)) needed.add(String(x.sessionId));
+      if (x.sittingId && (Number(x.paidTotal) || 0) < (Number(x.payable) || 0)) needed.add(String(x.sittingId));
     }
 
-    const known = new Map(live.docs.map(d => [d.id, d.data()]));
+    const known = new Map(live.docs.filter(d => !isStaff(d.data())).map(d => [d.id, d.data()]));
     const missing = [...needed].filter(id => !known.has(id));
     for (const part of chunk(missing, 30)) {
       const snap = await sessions(rid).where('__name__', 'in', part.map(id => sessions(rid).doc(id))).get();
-      for (const d of snap.docs) known.set(d.id, d.data());
+      for (const d of snap.docs) if (!isStaff(d.data())) known.set(d.id, d.data());
     }
 
     const children = new Map<string, string[]>();
@@ -174,7 +178,7 @@ export const ports: Ports = {
 
   // R2: by the FROZEN sessionId. `draftId` is rewritten by a split and would read ₹0.
   linesOfSessions: (rid, ids) => byIn(lines(rid), 'sessionId', ids, d => d.data() as Line),
-  billsOfSessions: (rid, ids) => byIn(bills(rid), 'sessionId', ids, toBill),
+  billsOfSessions: (rid, ids) => byIn(bills(rid), 'sittingId', ids, toBill),
 
   async restaurantIds() {
     const snap = await db.collection('restaurants').get();
@@ -247,15 +251,9 @@ export const ports: Ports = {
           const ids = [tableId, ...kids.docs.map(k => k.id)];
           const [ls, bs] = await Promise.all([
             t.get(lines(rid).where('sessionId', '==', d.id)),
-            t.get(bills(rid).where('sessionId', '==', d.id)),
+            t.get(bills(rid).where('sittingId', '==', d.id)),
           ]);
-          return {
-            sessionId: d.id,
-            tableIds: ids,
-            openedAt: millis(x.createdAt),
-            lines: ls.docs.map(l => l.data() as Line),
-            bills: bs.docs.map(toBill),
-          };
+          return sittingOf({ sessionId: d.id, tableIds: ids, openedAt: millis(x.createdAt) }, ls.docs.map(l => l.data() as Line), bs.docs.map(toBill));
         },
 
         async ordersOfSession(sessionId) {
@@ -269,7 +267,7 @@ export const ports: Ports = {
             t.get(sessions(rid).doc(s.sessionId)),
             Promise.all(s.tableIds.map(id => t.get(carts(rid).doc(id)))),
             Promise.all(s.tableIds.map(id => t.get(tables(rid).doc(id)))),
-            t.get(bills(rid).where('sessionId', '==', s.sessionId)),
+            t.get(bills(rid).where('sittingId', '==', s.sessionId)),
           ]);
           const out: number[] = [millis(sess.data()?.updatedAt)];
           for (const c of cartDocs) out.push(millis(c.data()?.lastUpdated), millis(c.data()?.updatedAt));

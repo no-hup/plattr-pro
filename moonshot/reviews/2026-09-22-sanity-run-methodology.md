@@ -1,5 +1,7 @@
 # The sanity run — one sitting, every screen, an agent drives, a session watches
 
+> **Superseded 2026-09-25 by [AGENT_QA.md](../../AGENT_QA.md)**, the maintained version. This page is the original design, kept for the record.
+
 Written 2026-09-22 for Shaurya. Run 1 executed the same evening: [2026-09-22-sanity-run-1.md](2026-09-22-sanity-run-1.md) — 5 of 6 hops pass, the BL/FL seam is broken on a real bill, and the step-card corrections are listed there.
 
 ## The one-line version

@@ -9,7 +9,7 @@
 import {
   onTable, unpaid, draftCount, tile, tileWord, mayAct,
   canMerge, canUnmerge, canReceive, canMove, isReleasable, acceptsNewGuests, moveWriteSet,
-  Bill, Table, Sitting, Role, OrderState, idleCall, lastTouchedAt, DEFAULTS,
+  Bill, Table, Sitting, Role, OrderState, idleCall, lastTouchedAt, DEFAULTS, sittingOf,
 } from './floor';
 import { Line } from './line';
 
@@ -35,7 +35,7 @@ const biryani = line({ lineId: 'l_biryani', listPrice: 45000, countsTowardTotal:
 const TABLE_12 = [tikka, pitcher, biryani];
 
 const bill = (over: Partial<Bill> & { billId: string }): Bill =>
-  ({ status: 'issued', payable: 0, paid: 0, ...over });
+  ({ sittingId: 'sess_12', status: 'issued', payable: 0, paid: 0, ...over });
 
 const table = (over: Partial<Table> & { tableId: string }): Table =>
   ({ status: 'vacant', ...over });
@@ -100,6 +100,36 @@ describe('onTable — what is on the table, unbilled (R2)', () => {
     ];
     expect(split.every(l => l.sessionId === 'sess_12')).toBe(true);
     expect(onTable(split)).toBe(300000);
+  });
+});
+
+// Sanity run 1: the floor looked for bills under the cashier's login, found none, and a table with
+// ₹258 on an issued bill read ₹0 owed. A stamped line whose bill the read missed must be loud.
+describe('sittingOf — a sitting is its own lines and its own bills, or it throws', () => {
+  const head = { sessionId: 'sess_12', tableIds: ['12'], openedAt: NOW };
+  it('takes the lines and bills of sess_12 and none of sess_9s', () => {
+    const s = sittingOf(head,
+      [tikka, line({ lineId: 'other', listPrice: 9000, sessionId: 'sess_9' })],
+      [bill({ billId: 'b12', payable: 32000 }), bill({ billId: 'b9', sittingId: 'sess_9', payable: 9000 })]);
+    expect(s.lines.map(l => l.lineId)).toEqual(['l_tikka']);
+    expect(s.bills.map(b => b.billId)).toEqual(['b12']);
+  });
+  it('a line stamped b12 with no b12 in the read throws naming both, instead of painting ₹0 owed', () => {
+    expect(() => sittingOf(head, [line({ lineId: 'l_tikka', listPrice: 32000, billId: 'b12' })], []))
+      .toThrow(/l_tikka is on bill b12/);
+  });
+  it('a bill issued under some other id (the old staff-login shape) is not this sitting`s, so the stamped line throws', () => {
+    expect(() => sittingOf(head, [line({ lineId: 'l_tikka', listPrice: 32000, billId: 'b12' })], [bill({ billId: 'b12', sittingId: 'staff_login_7', payable: 32000 })]))
+      .toThrow(/could not be read/);
+  });
+  it('the endpoint gets a named refusal, not "An unexpected error occurred": failed-precondition with the table, line and bill', () => {
+    try { sittingOf(head, [line({ lineId: 'l_tikka', listPrice: 32000, billId: 'b12' })], []); throw new Error('did not throw'); }
+    catch (e) { expect(e).toMatchObject({ code: 'failed-precondition', message: expect.stringContaining('table 12'), details: { lineId: 'l_tikka', billId: 'b12' } }); }
+  });
+  it('a credit note on the sitting is a refund, never an open bill: it is left off the sitting', () => {
+    const s = sittingOf(head, [line({ lineId: 'l_tikka', listPrice: 32000, billId: 'b12' })],
+      [bill({ billId: 'b12', payable: 32000, paid: 32000, status: 'paid' }), bill({ billId: 'cn1', payable: -8400, note: true })]);
+    expect(s.bills.map(b => b.billId)).toEqual(['b12']);
   });
 });
 
@@ -563,7 +593,7 @@ describe('FL-S36 idle tables — the clock is derived from what the sitting did 
   });
 
   it('FL-S36 the newest line placed 30m ago outranks an opening 2h ago → busy', () => {
-    const s = sit({ lines: [placed(NOW - 30 * MIN, 184000, 'b1')], bills: [{ billId: 'b1', status: 'paid', payable: 184000, paid: 184000 }] });
+    const s = sit({ lines: [placed(NOW - 30 * MIN, 184000, 'b1')], bills: [{ billId: 'b1', sittingId: 's4', status: 'paid', payable: 184000, paid: 184000 }] });
     expect(idleCall(s, [], NOW, HOUR)).toBe('busy');
   });
 
@@ -572,12 +602,12 @@ describe('FL-S36 idle tables — the clock is derived from what the sitting did 
   });
 
   it('FL-S36 an issued bill 184000p unpaid and idle 2h → money', () => {
-    const s = sit({ lines: [placed(NOW - 2 * 60 * MIN, 184000, 'b1')], bills: [{ billId: 'b1', status: 'issued', payable: 184000, paid: 0 }] });
+    const s = sit({ lines: [placed(NOW - 2 * 60 * MIN, 184000, 'b1')], bills: [{ billId: 'b1', sittingId: 's4', status: 'issued', payable: 184000, paid: 0 }] });
     expect(idleCall(s, [], NOW, HOUR)).toBe('money');
   });
 
   it('FL-S36 paid in full 2h ago, nobody tapped Clear → free (signed lazy default, see plan)', () => {
-    const s = sit({ lines: [placed(NOW - 2 * 60 * MIN, 184000, 'b1')], bills: [{ billId: 'b1', status: 'paid', payable: 184000, paid: 184000 }] });
+    const s = sit({ lines: [placed(NOW - 2 * 60 * MIN, 184000, 'b1')], bills: [{ billId: 'b1', sittingId: 's4', status: 'paid', payable: 184000, paid: 184000 }] });
     expect(idleCall(s, [NOW - 2 * 60 * MIN], NOW, HOUR)).toBe('free');
   });
 

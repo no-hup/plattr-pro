@@ -319,7 +319,7 @@ describe('domain/billing preview — cases from the blind lists', () => {
 });
 
 const seller = { name: 'S', address: 'A', taxId: 'T', stateCode: '29', placeOfSupply: 'Karnataka (29)' };
-const meta = (n: string, extra: Partial<Meta> = {}): Meta => ({ billId: 'b_' + n, number: n, series: 'A', fiscalYear: '2026-27', cid: 'c1', tableIds: ['t7'], sessionId: 's1', draftId: 'd1', issuedAt: 1000, issuedBy: 'm1', seller, ...extra });
+const meta = (n: string, extra: Partial<Meta> = {}): Meta => ({ billId: 'b_' + n, number: n, series: 'A', fiscalYear: '2026-27', cid: 'c1', tableIds: ['t7'], sittingId: 's1', draftId: 'd1', issuedAt: 1000, issuedBy: 'm1', seller, ...extra });
 const s1 = () => ok(preview([line('pizza', 50000), line('coke', 8000)], null, [], cfg));
 const issued = (body = s1()) => { const r = issue(body, meta('0417')); if (!r.ok) throw new Error(r.message); return r.value; };
 const paid = (body = s1()): Bill => ({ ...issued(body), status: 'paid' });

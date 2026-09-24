@@ -148,7 +148,9 @@ export function preview(lines: Line[], discount: BillDiscount | null, charges: C
 
 export interface Seller { name: string; address: string; taxId: string; stateCode: string; placeOfSupply: string }
 export interface Meta {
-  billId: string; number: string; series: string; fiscalYear: string; cid: string; tableIds: string[]; sessionId: string; draftId: string;
+  // `sittingId` is the guest's session and `tableIds` its tables, both read off the bill's own lines at issue.
+  // The cashier is `issuedBy`; their login session is never stored here (sanity run 1, 2026-09-22).
+  billId: string; number: string; series: string; fiscalYear: string; cid: string; tableIds: string[]; sittingId: string; draftId: string;
   issuedAt: number; issuedBy: string; seller: Seller; customer?: { name: string; taxId: string } | null;
 }
 export interface Bill extends BillBody, Meta {

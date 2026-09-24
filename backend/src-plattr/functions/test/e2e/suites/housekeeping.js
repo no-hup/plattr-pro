@@ -99,9 +99,9 @@ export default async function housekeepingSuite() {
     taxBlocks: { food: FOOD }, offer: null,
   });
   await session('bill', 120);
-  await seed('bills/hk_bill', { billId: 'hk_bill', sessionId: S('bill'), payable: 184000, paidTotal: 0, status: 'issued', cid: 'cid_hk_bill', number: 'hk_bill', tableIds: [T('bill')], issuedAt: now - 120 * 60_000 });
+  await seed('bills/hk_bill', { billId: 'hk_bill', sittingId: S('bill'), payable: 184000, paidTotal: 0, status: 'issued', cid: 'cid_hk_bill', number: 'hk_bill', tableIds: [T('bill')], issuedAt: now - 120 * 60_000 });
   await session('paid', 120);
-  await seed('bills/hk_paid', { billId: 'hk_paid', sessionId: S('paid'), payable: 184000, paidTotal: 184000, status: 'paid', cid: 'cid_hk_paid', number: 'hk_paid', tableIds: [T('paid')], issuedAt: now - 125 * 60_000, paidAt: now - 120 * 60_000 });
+  await seed('bills/hk_paid', { billId: 'hk_paid', sittingId: S('paid'), payable: 184000, paidTotal: 184000, status: 'paid', cid: 'cid_hk_paid', number: 'hk_paid', tableIds: [T('paid')], issuedAt: now - 125 * 60_000, paidAt: now - 120 * 60_000 });
   await session('fresh', 40);
   await seed(`sessions/${S('nodate')}`, { tableId: T('nodate'), status: 'active', users: ['guest_hk'], expiresAt: new Date(now + 3600_000) });
   await session('p', 120);

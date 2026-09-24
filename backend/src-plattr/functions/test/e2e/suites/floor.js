@@ -114,7 +114,7 @@ export default async function floorSuite() {
   await seed('lines/fl_biryani4', line('fl_biryani4', 'Biryani', 168000, 'sess_fl_4', { tableId: 'table_fl_4' }));
   await seed('lines/fl_7', line('fl_7', 'Dosa', 100000, 'sess_fl_7', { tableId: 'table_fl_7', billId: 'fl_0701' }));
 
-  await seed('bills/fl_0701', { billId: 'fl_0701', sessionId: 'sess_fl_7', payable: 100000, paidTotal: 40000, status: 'issued', cid: 'cid_fl7', number: 'fl_0701', tableIds: ['table_fl_7'] });
+  await seed('bills/fl_0701', { billId: 'fl_0701', sittingId: 'sess_fl_7', payable: 100000, paidTotal: 40000, status: 'issued', cid: 'cid_fl7', number: 'fl_0701', tableIds: ['table_fl_7'] });
   await seed('orders/order_fl4', { orderId: 'order_fl4', sessionId: 'sess_fl_4', tableId: 'table_fl_4', status: 'PREPARING', restaurantId: RID });
   await seed('orders/order_fl4_done', { orderId: 'order_fl4_done', sessionId: 'sess_fl_4', tableId: 'table_fl_4', status: 'COMPLETED', restaurantId: RID });
   await seed('carts/table_fl_4', { tableId: 'table_fl_4', items: [{ cartItemId: 'ci_1', menuItemId: 'mi_x', quantity: 1 }] });
@@ -263,7 +263,7 @@ export default async function floorSuite() {
     const stillOwed = await call('floor-clear', { restaurantId: RID, staffSessionId: manager, tableId: 'table_fl_7', cid: 'cid_fl_c1' });
     check('FL-Q1 Clear is refused while 60000 is still owed, so it can never hide money', codeOf(stillOwed) === 'failed-precondition', stillOwed);
 
-    await seed('bills/fl_0701', { billId: 'fl_0701', sessionId: 'sess_fl_7', payable: 100000, paidTotal: 100000, status: 'paid', cid: 'cid_fl7', number: 'fl_0701', tableIds: ['table_fl_7'] });
+    await seed('bills/fl_0701', { billId: 'fl_0701', sittingId: 'sess_fl_7', payable: 100000, paidTotal: 100000, status: 'paid', cid: 'cid_fl7', number: 'fl_0701', tableIds: ['table_fl_7'] });
     check('FL-S14 once settled the tile reads "settled", not free', tileOf(await floor(), '7')?.word === 'settled', null);
 
     const freed = await call('floor-clear', { restaurantId: RID, staffSessionId: manager, tableId: 'table_fl_7', cid: 'cid_fl_c2' });

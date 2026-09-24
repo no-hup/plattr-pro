@@ -28,7 +28,7 @@ function fakePorts(opts: { role?: string; offer?: { id: string; name: string; am
     lines, bills, counters, audits, logs,
     now: () => Date.parse('2026-09-15T15:00:00Z'),
     log: l => logs.push(l),
-    staff: { bySession: async (_r, sid) => { if (sid !== 's1') throw new ApprovalError('unauthenticated', 'bad session'); return staff; } },
+    staff: { bySession: async (_r, sid) => { if (sid !== 'st1') throw new ApprovalError('unauthenticated', 'bad session'); return staff; } },
     config: { billing: async () => { if (opts.configThrows) throw new Error('firestore down'); return settings; } },
     linesOfDraft: async (_r, d) => [...lines.values()].filter(l => l.draftId === d),
     orderOffer: async () => opts.offer ?? null,
@@ -80,7 +80,9 @@ function fakePorts(opts: { role?: string; offer?: { id: string; name: string; am
   (ports as unknown as { printed: typeof printed }).printed = printed;
   return ports;
 }
-const base = { restaurantId: RID, sessionId: 's1', draftId: 's1', cid: 'o1' };
+// The cashier's login (`st1`) and the guest's sitting (`s1`) are different ids on purpose. When they were
+// both `s1`, a bill that copied the login into its sitting field passed every test here (sanity run 1).
+const base = { restaurantId: RID, sessionId: 'st1', draftId: 's1', cid: 'o1' };
 // TD-040: what the cashier's preview showed — both seeded lines at v0. A test that changes the draft says what it saw.
 const issueReq = (extra = {}) => ({ ...base, tableIds: ['t7'], expectedV: { pizza: 0, coke: 0 } as Record<string, number>, ...extra });
 const code = async (p: Promise<unknown>) => { try { await p; return 'ok'; } catch (e) { return (e as ApprovalError).code; } };
@@ -135,6 +137,37 @@ describe('app/billing issue', () => {
     expect(p.counters.get('A_2026-27')).toEqual({ next: 418 });
     expect([...p.lines.values()].every(l => l.billId === b.billId)).toBe(true);
     expect(p.logs).toEqual([expect.objectContaining({ cid: 'o1', from: 'draft', to: 'issued', number: '0417' })]);
+  });
+
+  // Sanity run 1 (2026-09-22): a real bill carried the cashier's login as its sitting and no tables,
+  // so the floor never found it and the printed bill named no table. The bill's lines already know both.
+  describe('the bill takes its sitting and its tables from its own lines', () => {
+    it('sitting s1 and table t7 come from the lines; the cashier login st1 is nowhere on the bill; paper says 7', async () => {
+      const p = fakePorts();
+      const b = await issue(p, issueReq({ tableIds: [] }));   // what the till actually sent
+      expect(b).toMatchObject({ sittingId: 's1', tableIds: ['t7'], issuedBy: 'm1' });
+      expect(JSON.stringify(b)).not.toContain('st1');
+      expect((p as unknown as { printed: { tableLabel: string }[] }).printed[0].tableLabel).toBe('t7');
+    });
+    it('a merged sitting billed across tables 7 and 8 names both, once each, in the order the lines came', async () => {
+      const p = fakePorts();
+      p.lines.set('naan', line('naan', 6000, FOOD, { tableId: 't8' }));
+      p.lines.set('dal', line('dal', 20000, FOOD, { tableId: 't8' }));
+      const b = await issue(p, issueReq({ expectedV: { pizza: 0, coke: 0, naan: 0, dal: 0 } }));
+      expect(b.tableIds).toEqual(['t7', 't8']);
+    });
+    it('a draft holding lines of two sittings is refused, nothing written', async () => {
+      const p = fakePorts();
+      p.lines.set('coke', line('coke', 8000, FOOD, { sessionId: 's2' }));
+      await expect(issue(p, issueReq())).rejects.toMatchObject({ code: 'failed-precondition', message: expect.stringContaining('two sittings') });
+      expect(p.bills.size).toBe(0);
+    });
+    it('a line with no sitting is refused rather than billed to an empty one', async () => {
+      const p = fakePorts();
+      p.lines.set('coke', line('coke', 8000, FOOD, { sessionId: '' }));
+      await expect(issue(p, issueReq())).rejects.toMatchObject({ code: 'failed-precondition' });
+      expect(p.bills.size).toBe(0);
+    });
   });
   it('BL-S7 a second issue on the same lines → failed-precondition "already issued", counter stays 418', async () => {
     const p = fakePorts();
@@ -291,6 +324,7 @@ describe('app/billing cancel / creditNote / split / get', () => {
     expect(await code(creditNote(p, { ...base, billId: b.billId, reason: 'complaint', credits: [{ lineId: 'coke', qty: 1 }] }))).toBe('permission-denied');   // requires pin
     const n = await creditNote(p, { ...base, billId: b.billId, reason: 'complaint', note: 'coke not served', pin: '1234', credits: [{ lineId: 'coke', qty: 1 }] });
     expect(n).toMatchObject({ series: 'CN', number: '0001', payable: -8400, creditNoteOf: { billId: b.billId, number: '0417' } });
+    expect(n).toMatchObject({ sittingId: 's1', tableIds: ['t7'] });   // the parent's sitting; payable is negative, so the floor never reads it as owed
     const o = p.bills.get(b.billId)!;
     expect(o.status).toBe('paid'); expect(o.creditNotes).toEqual([{ billId: n.billId, number: '0001', at: p.now() }]);
     expect(o.lines.find(l => l.lineId === 'coke')!.credited).toEqual({ qty: 1 });
@@ -316,8 +350,8 @@ describe('app/billing cancel / creditNote / split / get', () => {
   it('get returns the bill, not-found otherwise', async () => {
     const p = fakePorts();
     const b = await issue(p, issueReq());
-    expect((await get(p, { restaurantId: RID, sessionId: 's1', billId: b.billId })).number).toBe('0417');
-    expect(await code(get(p, { restaurantId: RID, sessionId: 's1', billId: 'nope' }))).toBe('not-found');
+    expect((await get(p, { restaurantId: RID, sessionId: 'st1', billId: b.billId })).number).toBe('0417');
+    expect(await code(get(p, { restaurantId: RID, sessionId: 'st1', billId: 'nope' }))).toBe('not-found');
   });
 });
 

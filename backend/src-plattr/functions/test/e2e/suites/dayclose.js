@@ -128,7 +128,7 @@ export default async function dayCloseSuite() {
   // ── BT · NC: a staff meal comped whole shows at close as a discount by reason ──
   {
     // A paid ₹0 bill (BL-S22) with a 42000 bill discount under `staff meal`, issued now, so it sits on TODAY.
-    await seed('bills/bill_dc_nc', { billId: 'bill_dc_nc', cid: 'cid_dc', status: 'paid', number: 'NC1', series: 'A', issuedAt: Date.now(), issuedBy: 'manager_dc', tableIds: ['table_dc'], sessionId: 'sess_dc_nc', draftId: 'sess_dc_nc', payable: 0, subtotal: 0, taxTotal: 0, roundOff: 0, discount: { amount: 42000, pct: 100, source: { reason: 'staff meal', note: 'kitchen dinner', approverId: 'manager_dc' } }, lines: [{ lineId: 'dc_nc_1', countsTowardTotal: true, billDiscount: 42000 }], blocks: [], charges: [], creditNotes: [] });
+    await seed('bills/bill_dc_nc', { billId: 'bill_dc_nc', cid: 'cid_dc', status: 'paid', number: 'NC1', series: 'A', issuedAt: Date.now(), issuedBy: 'manager_dc', tableIds: ['table_dc'], sittingId: 'sess_dc_nc', draftId: 'sess_dc_nc', payable: 0, subtotal: 0, taxTotal: 0, roundOff: 0, discount: { amount: 42000, pct: 100, source: { reason: 'staff meal', note: 'kitchen dinner', approverId: 'manager_dc' } }, lines: [{ lineId: 'dc_nc_1', countsTowardTotal: true, billDiscount: 42000 }], blocks: [], charges: [], creditNotes: [] });
     const g = await dc('get', manager, { businessDate: TODAY });
     const row = (g.data?.discounts || []).find(x => x.reason === 'staff meal');
     check('BT-N staff meal 42000 shows on the open day under discounts, by reason, even blind', g.status === 'success' && row?.amount === 42000 && row?.count === 1, g.data?.discounts);

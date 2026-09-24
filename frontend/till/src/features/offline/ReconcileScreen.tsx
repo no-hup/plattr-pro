@@ -41,7 +41,7 @@ export function ReconcileScreen({ ctx }: { ctx: { restaurantId: string; sessionI
     let billId = e.issuedBillId
     if (!billId) {
       try {
-        const r = await call<{ data: Bill }>('billing-issue', { ...ctx, cid: `till_${e.draftId}`, draftId: e.draftId, dropCharges: [], tableIds: [], expectedV: seenAt(checked[e.id] ?? null) })
+        const r = await call<{ data: Bill }>('billing-issue', { ...ctx, cid: `till_${e.draftId}`, draftId: e.draftId, dropCharges: [], expectedV: seenAt(checked[e.id] ?? null) })
         billId = r.data.billId!
       } catch (err) {
         // The issue landed and its answer was lost: the server names the bill these lines are on. Take
