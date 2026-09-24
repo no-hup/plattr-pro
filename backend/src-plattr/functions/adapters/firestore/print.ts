@@ -5,7 +5,7 @@ import { Ports, Tx } from '../../app/print';
 import { Staff, apply as approve } from '../../app/approvals';
 import { ports as approvalPorts } from './approvals';
 import { Job, cancelJobsFor, jobsForRound, release, drop } from '../../domain/print';
-import { PrintConfig, printConfigFrom } from '../../domain/kot';
+import { PrintConfig, printConfigFrom, unroutedCategories } from '../../domain/kot';
 import { Line } from '../../domain/line';
 import { Bill } from '../../domain/billing';
 import { encode } from '../printers/escpos';
@@ -89,6 +89,8 @@ export function enqueueRound(t: Transaction, rid: string, cfg: PrintConfig, plac
   const out = jobsForRound(placed, cfg, head);
   const unrouted = placed.filter(l => !l.categoryId && l.countsTowardTotal !== false).map(l => l.lineId);
   if (unrouted.length) console.log(JSON.stringify({ mod: 'print', evt: 'line.noCategory', cid: head.cid, cartId: head.cartId, lineIds: unrouted, routedTo: 'taxBlock/default' }));
+  const categories = unroutedCategories(placed, cfg);   // KT-S19: logged, caught next morning; never blocks the round
+  if (categories.length) console.log(JSON.stringify({ mod: 'print', evt: 'line.unrouted', cid: head.cid, cartId: head.cartId, categoryIds: categories, routedTo: cfg.defaultStation }));
   for (const j of out) t.set(jobs(rid).doc(j.jobId), j);   // set: a retried transaction lands on the same doc; cartId is unique per checkout
   return out;
 }
