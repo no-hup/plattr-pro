@@ -88,6 +88,9 @@ Paths are relative to the donor's clone. Line numbers are as of the pinned commi
 **Printing**
 - Odoo `addons/pos_restaurant` printer routing per category. Odoo `pos_printer` is not in the sparse set; add it when KT is built.
 
+**Aggregator orders (Swiggy, Zomato)**
+- Nobody readable. Odoo's `pos_urban_piper` is Enterprise-only and not in the Community repo. The reference is UrbanPiper's own POS docs (`api-docs.urbanpiper.com/downstream`) and the sandbox Postman collection; the shape was reviewed blind by Grok instead (`reviews/2026-09-22-aggregator-shape-grok.md`).
+
 **Audit trail**
 - India Compliance audit-trail app (clone first). Tamper-evident records for GST.
 
