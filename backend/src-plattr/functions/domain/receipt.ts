@@ -53,7 +53,7 @@ function block(sh: Sheet, bill: Bill, b: Block) {
     if (l.offer && l.offer.amount) sh.lr(`    ${(l.offer as { name?: string }).name ?? 'Offer'}`, formatAmount(-l.offer.amount));
     if (l.discount && l.discount.amount) sh.lr('    Discount', formatAmount(-l.discount.amount));
   }
-  for (const c of bill.charges) if (c.taxBlockId === b.id && c.amount) sh.lr(`${cap(c.type)} charge ${pct(c.pctBps)}%`, formatAmount(c.amount));
+  for (const c of bill.charges) if (c.taxBlockId === b.id && c.amount) sh.lr(`${cap(c.type)} charge${c.pctBps ? ` ${pct(c.pctBps)}%` : ''}`, formatAmount(c.amount));   // TD-050: a flat charge has no %
   if (b.parts.length) {
     sh.lr('Taxable', formatAmount(b.taxable));
     for (const p of b.parts) sh.lr(`${p.label} ${pct(p.rateBps)}%`, formatAmount(p.amount));
