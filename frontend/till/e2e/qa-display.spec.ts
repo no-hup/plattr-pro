@@ -111,3 +111,14 @@ test('QF-15 FL-S21: the split chooser buttons can be told apart, and "1 item" is
   expect(a).toContain('₹60.00 · 1 item')
 })
 
+test('QF-14: the PIN box says what the PIN is for in words, not a code word', async ({ page }) => {
+  await fake(page, {
+    'floor-get': () => floorOf([tile('4', { word: 'ordered', onTable: 23400, minutes: 50 })]),
+    'floor-clear': () => refuse(400, 'this table still has money on it — bill it and settle it first', { code: 'failed-precondition', requires: 'pin', action: 'releaseUnpaid', owed: 23400 }),
+  })
+  page.on('dialog', d => d.accept())
+  await login(page)
+  await page.getByTestId('walkout-4').click()
+  await expect(page.getByTestId('pin-hint')).toHaveText('Needed for freeing a table that still owes')
+})
+

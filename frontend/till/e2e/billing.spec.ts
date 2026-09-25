@@ -75,7 +75,7 @@ test('BL-S7/S9 manager generates the bill → number appears → cancel asks for
   await page.getByTestId('cancel-note').fill('service charge removed')
   await page.getByTestId('cancel').click()
   await expect(page.getByTestId('pin-prompt')).toBeVisible()
-  await expect(page.getByTestId('pin-hint')).toHaveText('Needed for this cancelBill')
+  await expect(page.getByTestId('pin-hint')).toHaveText('Needed for cancelling the bill')
   await page.getByTestId('pin-input').fill('1234')
   await page.getByTestId('pin-ok').click()
   await expect(page.getByTestId('bill-msg')).toHaveText(/^Bill \d{4,} cancelled$/)

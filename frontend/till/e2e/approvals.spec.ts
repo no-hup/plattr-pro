@@ -47,7 +47,7 @@ test('ST-S2 ₹251 off the ₹1,250 pitcher → PIN box appears → 1234 → lin
   await login(page, LINE, 'till.manager@st.test')
   await discount(page, '251', 'placard')
   await expect(page.getByTestId('pin-prompt')).toBeVisible()
-  await expect(page.getByTestId('pin-hint')).toHaveText('Needed for this discount')
+  await expect(page.getByTestId('pin-hint')).toHaveText('Needed for a discount on this line')
   await page.getByTestId('pin-input').fill('1234')
   await page.getByTestId('pin-ok').click()
   await expect(page.getByTestId('msg')).toHaveText('Applied −₹251 (20.08 %)')
