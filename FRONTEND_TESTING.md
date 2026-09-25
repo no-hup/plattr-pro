@@ -224,6 +224,8 @@ Never report from memory of an earlier snapshot; never report a failure without
 - **Under `-d web-server` the app log (`flutter-app-logs/<app>.log`) holds build output only**; runtime errors and assertions appear only in `$B console --errors`.
 - A `web/index.html` edit needs no rebuild; **any Dart edit needs the app restarted**, a
   running `flutter run` serves the old bundle (`ab ids` empty on a rendered page is this).
+- **`ab open consumer '#/r/…'` can drop the hash on a cold first load** and land on the dev home page ("QR: 10 …"). Set it with `$B js "location.hash='#/r/res_meghana/t/tbl_meg_7'"`, as `ab seed-consumer` does.
+- **`ab stop` can print "Server crashed twice in a row — aborting" and leave a new daemon behind on `about:blank`.** After it, run `pgrep -fl 'ms-playwright|browse/src/server.ts'` and kill the `server.ts` pid that is yours.
 - **Two agents, one emulator:** whoever runs `--clean` wipes the other's sessions, and it
   looks like a session bug. One live runner at a time.
 
