@@ -75,130 +75,11 @@ class MenuApiService {
 
         // Step 4: Direct manual mapping of the response
         try {
-          // Process categories
-          final List<MenuCategory> categories = [];
-          if (data.containsKey('categories') && data['categories'] is List) {
-            final categoriesJson = data['categories'] as List;
-            AppLogger.log('📚 Processing ${categoriesJson.length} categories');
-
-            for (var categoryJson in categoriesJson) {
-              try {
-                if (categoryJson is Map<String, dynamic>) {
-                  final category = MenuCategory(
-                    id: categoryJson['id'] as String,
-                    name: categoryJson['name'] as String,
-                    description: categoryJson['description'] as String? ?? '',
-                    image: categoryJson['image'] as String? ?? '',
-                    order: categoryJson['order'] as int? ?? 0,
-                  );
-                  categories.add(category);
-                }
-              } catch (e) {
-                AppLogger.log('⚠️ Error processing category: $e');
-                // Continue with next category
-              }
-            }
-          }
-          AppLogger.log(
-              '✅ Processed ${categories.length} categories successfully');
-
-          // Process menuItems
-          final Map<String, List<MenuItem>> menuItems = {};
-          if (data.containsKey('menuItems') && data['menuItems'] is Map) {
-            final menuItemsJson = data['menuItems'] as Map<String, dynamic>;
-            AppLogger.log(
-                '🍽 Processing menu items for ${menuItemsJson.keys.length} categories');
-
-            menuItemsJson.forEach((categoryId, itemsList) {
-              try {
-                if (itemsList is List) {
-                  final List<MenuItem> categoryItems = [];
-                  for (var itemJson in itemsList) {
-                    try {
-                      if (itemJson is Map<String, dynamic>) {
-                        // Extract meta field and create a MenuItemMeta object
-                        final metaMap =
-                            itemJson['meta'] as Map<String, dynamic>? ?? {};
-                        final itemMeta = MenuItemMeta(
-                          name: metaMap['name'] as String? ?? '',
-                          description: metaMap['description'] as String? ?? '',
-                          categoryName:
-                              metaMap['categoryName'] as String? ?? '',
-                          image: metaMap['image'] as String? ?? '',
-                        );
-
-                        // Extract price from priceInfo
-                        // Extract priceInfo and nutritionalInfo
-
-                        final item = MenuItem(
-                          id: itemJson['menuItemId'] as String,
-                          categoryId: categoryId,
-                          meta: itemMeta,
-                          priceInfo: PriceInfo.fromJson(
-                              itemJson['priceInfo'] as Map<String, dynamic>? ??
-                                  {}),
-                          nutritionalInfo: NutritionalInfo.fromJson(
-                              itemJson['nutritionalInfo']
-                                      as Map<String, dynamic>? ??
-                                  {}),
-                          addons: (itemJson['addons'] as List<dynamic>? ?? [])
-                              .map((a) =>
-                                  Addon.fromJson(a as Map<String, dynamic>))
-                              .toList(),
-                          isCustomizable:
-                              itemJson['isCustomizable'] as bool? ?? false,
-                          allergenTags:
-                              (itemJson['allergenTags'] as List<dynamic>? ?? [])
-                                  .map((t) => t as String)
-                                  .toList(),
-                          variants: (itemJson['variants'] as List<dynamic>? ??
-                                  [])
-                              .map((v) =>
-                                  Variant.fromJson(v as Map<String, dynamic>))
-                              .toList(),
-                          restaurantId:
-                              itemJson['restaurantId'] as String? ?? '',
-                          isAvailable: itemJson['isInStock'] as bool? ?? true,
-                        );
-                        categoryItems.add(item);
-                      }
-                    } catch (e) {
-                      AppLogger.log('⚠️ Error processing menu item: $e');
-                      // Continue with next item
-                    }
-                  }
-
-                  if (categoryItems.isNotEmpty) {
-                    menuItems[categoryId] = categoryItems;
-                  }
-                }
-              } catch (e) {
-                AppLogger.log(
-                    '⚠️ Error processing items for category "$categoryId": $e');
-                // Continue with next category
-              }
-            });
-          }
-          AppLogger.log(
-              '✅ Processed items for ${menuItems.keys.length} categories successfully');
-
-          // Process metadata
-          Map<String, dynamic>? metadata;
-          if (data.containsKey('metadata') && data['metadata'] is Map) {
-            metadata = (data['metadata'] as Map).cast<String, dynamic>();
-          }
-
-          // Create the response model
-          final menuResponse = FullRestaurantMenuResponse(
-            categories: categories,
-            menuItems: menuItems,
-            metadata: metadata,
-          );
+          final menuResponse = parseRestaurantMenu(data);
 
           AppLogger.log('✅ Successfully built complete menu model with '
-              '${categories.length} categories, '
-              'items for ${menuItems.keys.length} categories, '
-              'and ${metadata?.keys.length ?? 0} metadata entries');
+              '${menuResponse.categories.length} categories, '
+              'items for ${menuResponse.menuItems.keys.length} groups');
 
           return ApiResponse<FullRestaurantMenuResponse>.success(
             menuResponse,
@@ -294,4 +175,128 @@ class MenuApiService {
       return ApiResponse<void>.error(e.toString(), errorCode: 'parsing_error');
     }
   }
+}
+
+/// Builds the menu model from the `data` of a `menu-getRestaurantMenu` reply.
+FullRestaurantMenuResponse parseRestaurantMenu(Map<String, dynamic> data) {
+  // Process categories
+  final List<MenuCategory> categories = [];
+  if (data.containsKey('categories') && data['categories'] is List) {
+    final categoriesJson = data['categories'] as List;
+    AppLogger.log('📚 Processing ${categoriesJson.length} categories');
+
+    for (var categoryJson in categoriesJson) {
+      try {
+        if (categoryJson is Map<String, dynamic>) {
+          final category = MenuCategory(
+            id: categoryJson['id'] as String,
+            name: categoryJson['name'] as String,
+            description: categoryJson['description'] as String? ?? '',
+            image: categoryJson['image'] as String? ?? '',
+            order: categoryJson['order'] as int? ?? 0,
+          );
+          categories.add(category);
+        }
+      } catch (e) {
+        AppLogger.log('⚠️ Error processing category: $e');
+        // Continue with next category
+      }
+    }
+  }
+  AppLogger.log(
+      '✅ Processed ${categories.length} categories successfully');
+
+  // Process menuItems
+  final Map<String, List<MenuItem>> menuItems = {};
+  if (data.containsKey('menuItems') && data['menuItems'] is Map) {
+    final menuItemsJson = data['menuItems'] as Map<String, dynamic>;
+    AppLogger.log(
+        '🍽 Processing menu items for ${menuItemsJson.keys.length} categories');
+
+    menuItemsJson.forEach((categoryId, itemsList) {
+      try {
+        if (itemsList is List) {
+          final List<MenuItem> categoryItems = [];
+          for (var itemJson in itemsList) {
+            try {
+              if (itemJson is Map<String, dynamic>) {
+                // Extract meta field and create a MenuItemMeta object
+                final metaMap =
+                    itemJson['meta'] as Map<String, dynamic>? ?? {};
+                final itemMeta = MenuItemMeta(
+                  name: metaMap['name'] as String? ?? '',
+                  description: metaMap['description'] as String? ?? '',
+                  categoryName:
+                      metaMap['categoryName'] as String? ?? '',
+                  image: metaMap['image'] as String? ?? '',
+                );
+
+                // Extract price from priceInfo
+                // Extract priceInfo and nutritionalInfo
+
+                final item = MenuItem(
+                  id: itemJson['menuItemId'] as String,
+                  // TD-134: the group key is a subcategory id; the dish's own category is on the dish.
+              categoryId: itemJson['categoryId'] as String,
+                  meta: itemMeta,
+                  priceInfo: PriceInfo.fromJson(
+                      itemJson['priceInfo'] as Map<String, dynamic>? ??
+                          {}),
+                  nutritionalInfo: NutritionalInfo.fromJson(
+                      itemJson['nutritionalInfo']
+                              as Map<String, dynamic>? ??
+                          {}),
+                  addons: (itemJson['addons'] as List<dynamic>? ?? [])
+                      .map((a) =>
+                          Addon.fromJson(a as Map<String, dynamic>))
+                      .toList(),
+                  isCustomizable:
+                      itemJson['isCustomizable'] as bool? ?? false,
+                  allergenTags:
+                      (itemJson['allergenTags'] as List<dynamic>? ?? [])
+                          .map((t) => t as String)
+                          .toList(),
+                  variants: (itemJson['variants'] as List<dynamic>? ??
+                          [])
+                      .map((v) =>
+                          Variant.fromJson(v as Map<String, dynamic>))
+                      .toList(),
+                  restaurantId:
+                      itemJson['restaurantId'] as String? ?? '',
+                  isAvailable: itemJson['isInStock'] as bool? ?? true,
+                );
+                categoryItems.add(item);
+              }
+            } catch (e) {
+              AppLogger.log('⚠️ Error processing menu item: $e');
+              // Continue with next item
+            }
+          }
+
+          if (categoryItems.isNotEmpty) {
+            menuItems[categoryId] = categoryItems;
+          }
+        }
+      } catch (e) {
+        AppLogger.log(
+            '⚠️ Error processing items for category "$categoryId": $e');
+        // Continue with next category
+      }
+    });
+  }
+  AppLogger.log(
+      '✅ Processed items for ${menuItems.keys.length} categories successfully');
+
+  // Process metadata
+  Map<String, dynamic>? metadata;
+  if (data.containsKey('metadata') && data['metadata'] is Map) {
+    metadata = (data['metadata'] as Map).cast<String, dynamic>();
+  }
+
+  // Create the response model
+  return FullRestaurantMenuResponse(
+    categories: categories,
+    menuItems: menuItems,
+    metadata: metadata,
+  );
 }

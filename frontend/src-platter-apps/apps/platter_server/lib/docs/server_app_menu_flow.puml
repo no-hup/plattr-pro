@@ -40,7 +40,7 @@ note right of MenuAPI #LightCyan
   **Response parsing**
   - Expects top-level "result" and "data"
   - Builds categories list + menuItems map
-  - Items grouped by categoryId
+  - Items grouped by subcategoryId; screen filters by item.categoryId
 end note
 
 alt Success + menu available
