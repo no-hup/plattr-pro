@@ -80,11 +80,11 @@ The backend maintains shared data objects (restaurants, tables, sessions, menus,
 3. System validates selection and stock, updates totals.
 
 ### 7.3 Checkout to Order
-1. Customer confirms cart and checks out.
-2. A cart snapshot is attached to an active order.
+1. Customer confirms cart and checks out, choosing their own dishes or every guest's (see 9.1a).
+2. A cart snapshot of exactly those dishes is attached to an active order.
 3. Order becomes visible to the server app, and to the kitchen app unless the restaurant
    requires waiter confirmation first (see 9.4).
-4. Cart is cleared for future rounds at the same table.
+4. The sent dishes leave the cart; anything not sent stays for the next round.
 
 ### 7.4 Fulfillment to Completion
 1. Kitchen updates preparation status.
@@ -102,7 +102,8 @@ The backend maintains shared data objects (restaurants, tables, sessions, menus,
 - Session restore while valid.
 - Category-based menu browsing.
 - Customization (variants, addons).
-- Cart management and checkout.
+- Cart management and checkout. The table shares one cart; each phone shows "Your dishes" and "Table" and asks
+  what to send (9.1a).
 - Live order tracking with clear status labels.
 
 **Should have**
@@ -188,6 +189,18 @@ Decided 2026-09-25 (D1, D2, D3, D7). Full rules in `moonshot/SPEC_BL_billing_and
 
 ### 9.1 Multi-Cart Order Model
 Orders behave like a shared table tab. Each checkout creates a cart snapshot that rolls up into a single order total. This supports multi-round ordering without starting a new bill.
+
+### 9.1a The guest's shared cart (D5, 2026-09-25)
+- **Two totals.** Table 9's phones share one cart: Asha's Chicken 65 ₹280, Bhanu's Butter Naan ₹60. Asha's cart reads
+  "Your dishes ₹280 · Table ₹340". Without this, "To Pay ₹340" showed the whole table while Proceed sent only her ₹280,
+  and she thought the table had ordered (TD-119).
+- **Proceed asks.** "Send your 1 dish" or "Send all 2 for the table". With only her own dishes on the cart it doesn't
+  ask; with none of hers it offers only "Send all" (TD-131). Without this, a friend's naan never reached the kitchen.
+- **Guests only.** The captain's Coastal Crab Roast on the same cart is listed under "Added by staff" and is in neither
+  total; he sends it himself. Without this, "Send all" would take his half-entered round and his own Send would fail.
+- **Exactly what was shown.** The phone sends the ids of the dishes it showed. A Paneer 65 Bhanu adds while Asha decides
+  stays for the next send; a dish that was sent or removed meanwhile refuses the send ("Your table's order changed")
+  and the phone re-reads the cart. Without this, the kitchen gets a round nobody on that phone agreed to.
 
 ### 9.2 Menu and Inventory
 - Items can be in or out of stock.
