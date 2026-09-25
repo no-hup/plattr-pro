@@ -274,6 +274,12 @@ class ServerRoles {
     return isAdmin ? all : [server, kitchen];
   }
 
+  // DECISION(TD-147, 2026-09-26): mirrors adminApp/staff_admin.js cardEditRefusal, which is the real check. Only an
+  // Admin changes an Admin's or Manager's card (edit, status, Reset PIN), a manager's own included.
+  // If you change this, ask Shaurya first.
+  static bool canChangeCard({required String callerRole, required StaffMember target}) =>
+      callerRole.toUpperCase() == admin || (target.role != admin && target.role != manager);
+
   /// Why the role is fixed for this caller, shown under the greyed-out field.
   static String fixedReason({required String callerId, required StaffMember target}) =>
       target.id == callerId ? 'Nobody can change their own role' : 'Only an Admin can change this role';

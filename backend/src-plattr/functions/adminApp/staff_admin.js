@@ -25,6 +25,14 @@ function roleChangeRefusal({ callerRole, callerId, targetId, fromRole, toRole })
     return null;
 }
 
+// DECISION(TD-147, 2026-09-26): only an ADMIN changes an ADMIN's or MANAGER's staff card: name, phone, email, status
+// or PIN, a manager's own card included. till@ (a MANAGER) could reset the owner's PIN and was shown it, and the owner's
+// PIN approves everything SPEC_ST guards. Every change to a card writes an audit row in the same transaction as the
+// write. There is no delete endpoint; a card is switched inactive, which is this same rule. If you change this, ask Shaurya first.
+function cardEditRefusal({ callerRole, targetRole }) {
+    return callerRole !== SERVER_ROLES.ADMIN && OWNER_ROLES.includes(targetRole) ? 'Only an Admin can change an Admin or Manager card' : null;
+}
+
 /** Fail closed: an unknown role is refused, never stored. */
 function checkRole(role) {
     if (!Object.values(SERVER_ROLES).includes(role)) {
@@ -32,10 +40,9 @@ function checkRole(role) {
     }
 }
 
-function roleAuditRow(callerId, serverId, fromRole, toRole) {
-    return { ...auditRow({ ts: Date.now(), cid: `staff_${serverId}`, action: 'staffRoleChange', staffId: callerId, sev: 'P1',
-        reason: 'role change', note: null, lineId: null, before: fromRole ? { role: fromRole } : null, after: { role: toRole } }),
-        createdAt: timestamp.serverTimestamp() };
+function staffAuditRow(callerId, serverId, action, before, after) {
+    return { ...auditRow({ ts: Date.now(), cid: `staff_${serverId}`, action, staffId: callerId, sev: 'P1',
+        reason: action, note: null, lineId: null, before, after }), createdAt: timestamp.serverTimestamp() };
 }
 
 /**
@@ -188,7 +195,7 @@ exports.addServer = functions.https.onCall(async (request, context) => {
         const newServerRef = serversRef.doc();
         await db.runTransaction(async tx => {
             tx.create(newServerRef, serverData);
-            tx.create(db.collection('restaurants').doc(restaurantId).collection('audit').doc(), roleAuditRow(callerId, newServerRef.id, null, role));
+            tx.create(db.collection('restaurants').doc(restaurantId).collection('audit').doc(), staffAuditRow(callerId, newServerRef.id, 'staffRoleChange', null, { role }));
         });
         console.log(JSON.stringify({ cid: `staff_${newServerRef.id}`, action: 'staffRoleChange', restaurantId, staffId: callerId, from: null, to: role }));
 
@@ -303,21 +310,26 @@ exports.updateServer = functions.https.onCall(async (request, context) => {
             updates.profileImageUrl = updateData.profileImageUrl;
         }
 
-        // The role is read in the same transaction that writes it, so two edits at once cannot both pass on a stale role.
-        const { fromRole, roleChanged } = await db.runTransaction(async tx => {
-            const current = (await tx.get(serverRef)).data().role;
-            const changed = updateData.role !== undefined && updateData.role !== current;
-            if (changed) {
-                const refusal = roleChangeRefusal({ callerRole: caller.role, callerId, targetId: serverId, fromRole: current, toRole: updateData.role });
+        // The card is read in the same transaction that writes it, so two edits at once cannot both pass on a stale role.
+        const { action, before, after } = await db.runTransaction(async tx => {
+            const current = (await tx.get(serverRef)).data();
+            const roleChanged = updateData.role !== undefined && updateData.role !== current.role;
+            if (roleChanged) {
+                const refusal = roleChangeRefusal({ callerRole: caller.role, callerId, targetId: serverId, fromRole: current.role, toRole: updateData.role });
                 if (refusal) errorHandler.forbidden(refusal, { restaurantId, serverId, role: updateData.role });
-                tx.create(db.collection('restaurants').doc(restaurantId).collection('audit').doc(), roleAuditRow(callerId, serverId, current, updateData.role));
+                updates.role = updateData.role;
             }
-            tx.update(serverRef, changed ? { ...updates, role: updateData.role } : updates);
-            return { fromRole: current, roleChanged: changed };
+            const cardRefusal = cardEditRefusal({ callerRole: caller.role, targetRole: current.role });
+            if (cardRefusal) errorHandler.forbidden(cardRefusal, { restaurantId, serverId });
+            const changed = Object.keys(updates).filter(k => k !== 'updatedAt' && updates[k] !== current[k]);
+            const row = { action: roleChanged ? 'staffRoleChange' : 'staffCardChange',
+                before: Object.fromEntries(changed.map(k => [k, current[k] ?? null])), after: Object.fromEntries(changed.map(k => [k, updates[k]])) };
+            if (changed.length) tx.create(db.collection('restaurants').doc(restaurantId).collection('audit').doc(), staffAuditRow(callerId, serverId, row.action, row.before, row.after));
+            tx.update(serverRef, updates);
+            return changed.length ? row : {};
         });
-        if (roleChanged) {
-            console.log(JSON.stringify({ cid: `staff_${serverId}`, action: 'staffRoleChange', restaurantId, staffId: callerId, from: fromRole, to: updateData.role }));
-        }
+        // Field names only: the audit row keeps the values, and phone numbers and emails stay out of the logs.
+        if (action) console.log(JSON.stringify({ cid: `staff_${serverId}`, action, restaurantId, staffId: callerId, fields: Object.keys(after), role: after.role }));
 
         return ResponseBuilder.success({
             serverId,
@@ -351,8 +363,7 @@ exports.resetServerPin = functions.https.onCall(async (request, context) => {
         data = request.data;
         const { restaurantId, sessionId, serverId, newPin } = data;
 
-        // Validate admin session
-        await validateAdminSession(restaurantId, sessionId);
+        const { serverData: caller, serverId: callerId } = await validateAdminSession(restaurantId, sessionId);
 
         if (!serverId) {
             errorHandler.badRequest('Server ID is required', {
@@ -360,24 +371,23 @@ exports.resetServerPin = functions.https.onCall(async (request, context) => {
             });
         }
 
-        // Get existing server
-        const serverRef = db.collection('restaurants').doc(restaurantId).collection('servers').doc(serverId);
-        const serverDoc = await serverRef.get();
-
-        if (!serverDoc.exists) {
-            errorHandler.notFound('Server not found', { serverId });
-        }
-
         // Generate new PIN or use provided one. The plain PIN is returned
-        // once in the response; the stored value is always hashed.
+        // once in the response; the stored value is always hashed, and never written to the audit row.
         const pin = newPin || generatePIN(4);
         const hashedPin = await hashPassword(pin);
 
-        // Update the PIN only; the login password is untouched (TD-041)
-        await serverRef.update({
-            pinHash: hashedPin,
-            updatedAt: timestamp.serverTimestamp(),
+        // TD-147: the card's role is read in the same transaction that writes the PIN and its audit row.
+        const serverRef = db.collection('restaurants').doc(restaurantId).collection('servers').doc(serverId);
+        await db.runTransaction(async tx => {
+            const serverDoc = await tx.get(serverRef);
+            if (!serverDoc.exists) errorHandler.notFound('Server not found', { serverId });
+            const refusal = cardEditRefusal({ callerRole: caller.role, targetRole: serverDoc.data().role });
+            if (refusal) errorHandler.forbidden(refusal, { restaurantId, serverId });
+            // Update the PIN only; the login password is untouched (TD-041)
+            tx.update(serverRef, { pinHash: hashedPin, updatedAt: timestamp.serverTimestamp() });
+            tx.create(db.collection('restaurants').doc(restaurantId).collection('audit').doc(), staffAuditRow(callerId, serverId, 'staffPinReset', null, null));
         });
+        console.log(JSON.stringify({ cid: `staff_${serverId}`, action: 'staffPinReset', restaurantId, staffId: callerId }));
 
         return ResponseBuilder.success({
             serverId,
@@ -403,4 +413,5 @@ module.exports = {
     resetServerPin: exports.resetServerPin,
     SERVER_ROLES,
     roleChangeRefusal,
+    cardEditRefusal,
 };

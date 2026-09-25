@@ -129,6 +129,7 @@ class _StaffView extends StatelessWidget {
         final staff = provider.staff[index];
         return _StaffCard(
           staff: staff,
+          locked: !ServerRoles.canChangeCard(callerRole: provider.callerRole, target: staff),
           onEdit: () => _showEditStaffDialog(context, provider, staff),
           onToggleStatus: (active) =>
               provider.toggleStaffStatus(staff.id, active),
@@ -281,9 +282,12 @@ class _StaffCard extends StatelessWidget {
   final VoidCallback onEdit;
   final Function(bool) onToggleStatus;
   final VoidCallback onResetPin;
+  /// TD-147: an Admin's or Manager's card, seen by a manager. Shown, but the switch and the menu are greyed out.
+  final bool locked;
 
   const _StaffCard({
     required this.staff,
+    required this.locked,
     required this.onEdit,
     required this.onToggleStatus,
     required this.onResetPin,
@@ -365,7 +369,7 @@ class _StaffCard extends StatelessWidget {
               children: [
                 Switch(
                   value: staff.isActive,
-                  onChanged: onToggleStatus,
+                  onChanged: locked ? null : onToggleStatus,
                 ),
                 Text(
                   staff.isActive ? 'Active' : 'Inactive',
@@ -378,6 +382,8 @@ class _StaffCard extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             PopupMenuButton<String>(
+              enabled: !locked,
+              tooltip: locked ? 'Only an Admin can change this card' : 'Show menu',
               onSelected: (value) {
                 switch (value) {
                   case 'edit':

@@ -24,4 +24,11 @@ void main() {
   test('the owner editing their own card: fixed too', () {
     expect(ServerRoles.assignable(callerRole: 'ADMIN', callerId: 'srv_meg_admin', target: card('srv_meg_admin', 'ADMIN')), isEmpty);
   });
+  // TD-147: a manager can't touch the owner's or a manager's card at all (edit, status switch, Reset PIN).
+  test('a manager: the owner\'s and a manager\'s cards are locked, their own included; a waiter\'s is open', () {
+    expect(ServerRoles.canChangeCard(callerRole: 'MANAGER', target: card('srv_meg_admin', 'ADMIN')), isFalse);
+    expect(ServerRoles.canChangeCard(callerRole: 'MANAGER', target: card('srv_meg_till', 'MANAGER')), isFalse);
+    expect(ServerRoles.canChangeCard(callerRole: 'MANAGER', target: card('srv_meg_1', 'SERVER')), isTrue);
+    expect(ServerRoles.canChangeCard(callerRole: 'admin', target: card('srv_meg_mgr', 'MANAGER')), isTrue);
+  });
 }
