@@ -9,6 +9,8 @@
 //   node floorstate.mjs <tableNumber> reset        that table (and any table merged into it) back to the seed, free
 //   node floorstate.mjs <tableNumber> seen         what each other app sees: till tile, each draft's preview, kitchen and waiter reads
 //   node floorstate.mjs gate on|off                Meghana's waiter-confirmation gate (the leaf only)
+//   node floorstate.mjs <tableNumber> bill|pay|clear|ready [cartIndex]   act on the live sitting as it stands
+//   node floorstate.mjs stock <menuItemId> on|off  a dish in or out of stock (menu-updateMenuItemAvailability)
 //
 // Also a module: the till's Playwright specs import setState / resetTable / dump from here, so the QA
 // driver and the tests share one set of states (ticket 2026-09-25-ticket-till-test-stack.md).
@@ -291,6 +293,36 @@ export async function setState(n, state) {
   return out;
 }
 
+// Acts on the table's live guest sitting as it stands, for a round driven on the guest app first (guest-app run,
+// 2026-09-25): bill = billing-issue over the sitting's draft, pay = cash for what the newest issued bill still owes,
+// clear = floor-clear, ready [cartIndex] = the kitchen marks that round READY.
+export async function act(n, verb, arg) {
+  const t = await tableByNumber(n);
+  const s = (await list('sessions')).find(x => x.tableId === t.id && x.entity !== 'server' && x.status === 'active') || die(`no live sitting on table ${n}`);
+  const st = await staff();
+  if (verb === 'bill') return issue(st, s.id);
+  if (verb === 'pay') {
+    const b = (await list('bills')).filter(x => x.sittingId === s.id && x.status === 'issued').pop() || die('no issued bill');
+    const owed = b.payable - (b.paidTotal ?? b.paid ?? 0);
+    await pay(st, { billId: b.billId || b.id }, owed); log(`  took ${R(owed)} cash on ${b.series}-${b.number}`); return b;
+  }
+  if (verb === 'clear') { await call('floor-clear', { restaurantId: RID, staffSessionId: st, tableId: t.id, cid: `qa_clear_${Date.now()}` }); log(`  cleared table ${n}`); return null; }
+  if (verb === 'ready') {
+    const o = (await list('orders')).find(x => x.sessionId === s.id) || die('no order on the sitting');
+    await cartTo(o.id, Number(arg || 0), 'READY'); log(`  kitchen: round ${Number(arg || 0)} of ${o.id} READY`); return o;
+  }
+  die(`unknown act ${verb} (bill|pay|clear|ready)`);
+}
+
+// A dish 86'd by staff through the real endpoint the admin and waiter apps call (onRequest: a raw body, not {data}).
+export async function stock(menuItemId, on) {
+  const r = await fetch(`${BASE}/menu-updateMenuItemAvailability`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ restaurantId: RID, sessionId: await staff(), menuItemId, isAvailable: on }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) die(`stock ${menuItemId}: ${r.status} ${JSON.stringify(j).slice(0, 200)}`);
+  log(`  ${menuItemId} isInStock=${(await get(`menuItems/${menuItemId}`))?.isInStock}`);
+}
+
 // Per-table reset, so one table goes back to free without re-importing the whole seed (the QA runs re-seeded
 // three times each to reset one table). A reset is a delete, not a state a reader sees, so writing documents
 // here is fine: the table doc goes back to the seed file's own copy, and its sittings, orders, lines, bills,
@@ -332,6 +364,8 @@ if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
   const [arg, state] = process.argv.slice(2);
   try {
     if (arg === 'gate') await gate(state === 'on');
+    else if (arg === 'stock') await stock(state, process.argv[4] !== 'off');
+    else if (['bill', 'pay', 'clear', 'ready'].includes(state)) await act(arg, state, process.argv[4]);
     else if (arg === 'audit') {
       const rows = (await list('audit')).sort((a, b) => String(b.at ?? b.createdAt).localeCompare(String(a.at ?? a.createdAt))).slice(0, Number(state) || 8);
       for (const r of rows) console.log(JSON.stringify(r));

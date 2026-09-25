@@ -229,6 +229,7 @@ Never report from memory of an earlier snapshot; never report a failure without
 - **A Flutter list's `flt-semantics-identifier` can go stale** when a poll or a tab switch reorders the cards: `order-cart-<id>` then sits on another table's card, or on two cards. Reload the page before clicking by a card id, and confirm which card was hit from the emulator log (waiter run, 2026-09-25).
 - **Two agents, one emulator:** whoever runs `--clean` wipes the other's sessions, and it
   looks like a session bug. One live runner at a time.
+- **Measure Chrome's memory with `bash`, never the agent's zsh tool shell.** There `ps -o rss= -p <pids>` lists about half of Chrome's pids and reads ~2 GB low (2.1 vs 4.8 GB), so an observer 'unblocked' a driver twice while `ab preflight` (bash) rightly refused. Trust preflight's number (2026-09-25).
 
 ## 9. When it breaks
 
