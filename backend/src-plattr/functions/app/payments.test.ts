@@ -945,6 +945,28 @@ describe('BT · bill to company: a credit tender settles the bill as money owed'
   });
 });
 
+describe('D7 · partner tenders are not offered on Receivables', () => {
+  const DINEOUT = { id: 'dineout', label: 'Dineout', kind: 'external', opensDrawer: false, needsRef: true, partner: true };
+  const CFG7 = { payments: { tenders: [...CFG4.payments.tenders, DINEOUT] } };
+  it('D7 list({receivables: true}) offers cash and card, never Dineout; the bill screen still offers Dineout', async () => {
+    const p = fakePorts({ config: CFG7 });
+    await take(p, { ...base4, paymentId: 'p1', tenderId: 'account', amount: 60900, ref: 'Acme Ltd' });
+    const l = await list(p, { restaurantId: RID, sessionId: 's1', receivables: true }) as { tenders: { id: string }[] };
+    expect(l.tenders.map(t => t.id)).toEqual(['cash', 'card']);
+    const b = await list(p, { restaurantId: RID, sessionId: 's1', billId: '0417' }) as { tenders: { id: string }[] };
+    expect(b.tenders.map(t => t.id)).toContain('dineout');
+  });
+  it('D7 collecting ₹609 on Acme\'s account through Dineout is refused and nothing is written', async () => {
+    const p = fakePorts({ config: CFG7 });
+    await take(p, { ...base4, paymentId: 'p1', tenderId: 'account', amount: 60900, ref: 'Acme Ltd' });
+    const rowsBefore = p.rows.size;
+    await expect(collect(p, { restaurantId: RID, sessionId: 's1', paymentId: 'c1', receivableId: 'p1', tenderId: 'dineout', amount: 60900, ref: 'DO-7781' }))
+      .rejects.toMatchObject({ code: 'invalid-argument', message: expect.stringContaining('Dineout') });
+    expect(p.rows.size).toBe(rowsBefore);
+    expect(p.recs.get('p1')).toMatchObject({ collectedTotal: 0, state: 'open' });
+  });
+});
+
 describe('BT · tips: typed, never inferred, never bill money', () => {
   it('BT-T1 cash: guest hands ₹700 for ₹609, cashier types tip ₹50 → amount 60900, tip 5000, change 4100; paidTotal 60900', async () => {
     const p = fakePorts({ config: CFG4 });

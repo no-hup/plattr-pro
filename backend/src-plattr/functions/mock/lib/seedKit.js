@@ -58,10 +58,10 @@ function createSeedKit() {
           { id: 'upi', label: 'UPI', kind: 'external', opensDrawer: false, needsRef: true },
           { id: 'account', label: 'On account', kind: 'credit', opensDrawer: false, needsRef: true },
           // D7 (Shaurya 2026-09-25): partner payments are external tenders with the partner's reference; the payout is
-          // checked by hand the next day against day close's per-tender total. Config only.
-          { id: 'dineout', label: 'Dineout', kind: 'external', opensDrawer: false, needsRef: true },
-          { id: 'eazydiner', label: 'EazyDiner', kind: 'external', opensDrawer: false, needsRef: true },
-          { id: 'swiggy_dineout', label: 'Swiggy Dineout', kind: 'external', opensDrawer: false, needsRef: true },
+          // checked by hand the next day against day close's per-tender total. `partner` keeps them off Receivables.
+          { id: 'dineout', label: 'Dineout', kind: 'external', opensDrawer: false, needsRef: true, partner: true },
+          { id: 'eazydiner', label: 'EazyDiner', kind: 'external', opensDrawer: false, needsRef: true, partner: true },
+          { id: 'swiggy_dineout', label: 'Swiggy Dineout', kind: 'external', opensDrawer: false, needsRef: true, partner: true },
         ] },
         seller: { name: info.name, taxId: 'GSTIN_' + id.replace('res_', '').toUpperCase() },
       } },

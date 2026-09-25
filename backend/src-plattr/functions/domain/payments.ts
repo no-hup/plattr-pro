@@ -3,7 +3,8 @@
 
 /** BT / TD-012: `credit` settles the bill as money OWED (an account, a company), never in the drawer, never overpaid. */
 export type TenderKind = 'cash' | 'external' | 'credit';
-export interface Tender { id: string; label: string; kind: TenderKind; opensDrawer: boolean; needsRef: boolean }
+/** `partner`: paid through a dining partner (Dineout, EazyDiner…), D7. Only ever `true` or absent. */
+export interface Tender { id: string; label: string; kind: TenderKind; opensDrawer: boolean; needsRef: boolean; partner?: true }
 export interface PaymentsConfig { tenders: Tender[]; maxTendersPerBill: number; settleWithin: number; dayCloseHour: number; dayCloseMinute: number; timezoneOffsetMinutes: number }
 
 export type BillStatus = 'draft' | 'issued' | 'paid' | 'cancelled' | 'walkedOut';
@@ -74,9 +75,10 @@ export function configFrom(raw: unknown): { config: PaymentsConfig; warnings: st
       const r = t as Record<string, unknown>;
       const ok = !!r && typeof r.id === 'string' && r.id !== '' && (r.kind === 'cash' || r.kind === 'external' || r.kind === 'credit');
       if (!ok) warnings.push(`tender row ignored: ${JSON.stringify(t)}`);
+      else if (r.partner !== undefined && r.partner !== true) warnings.push(`tender row ${r.id}: partner must be true or absent, treated as not a partner`);
       return ok;
     // A credit tender always needs its ref: the ref IS the account (who owes). Config cannot switch that off.
-    }).map((t) => ({ id: t.id, label: typeof t.label === 'string' ? t.label : t.id, kind: t.kind, opensDrawer: t.kind === 'cash' && t.opensDrawer === true, needsRef: t.kind === 'credit' || t.needsRef === true }));
+    }).map((t) => ({ id: t.id, label: typeof t.label === 'string' ? t.label : t.id, kind: t.kind, opensDrawer: t.kind === 'cash' && t.opensDrawer === true, needsRef: t.kind === 'credit' || t.needsRef === true, ...(t.partner === true ? { partner: true as const } : {}) }));
     // An empty list after filtering is a real configuration, not a reason to invent cash (Decisions).
     tenders = kept;
   } else if (src.tenders !== undefined) {
@@ -313,6 +315,8 @@ export function canCollect(rec: Receivable | null, req: CollectRequest, config: 
   const tender = tenderById(config, req.tenderId);
   if (!tender) return no('invalid-argument', `Unknown tender ${String(req.tenderId)}`);
   if (tender.kind === 'credit') return no('invalid-argument', 'An account is not settled onto another account');
+  // DECISION(D7, 2026-09-25): partner tenders are not offered on Receivables. If you change this, ask Shaurya first.
+  if (tender.partner) return no('invalid-argument', `${tender.label} is a partner payment, not a way to settle an account`);
   if (tender.needsRef && blank(req.ref)) return no('invalid-argument', `${tender.label} needs a reference`);
   if (!isMoney(req.amount) || req.amount === 0) return no('invalid-argument', 'Amount must be a positive integer in minor units');
   if (req.amount > rec.amount - rec.collectedTotal) return no('failed-precondition', 'More than the account owes');

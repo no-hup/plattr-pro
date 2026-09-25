@@ -495,6 +495,18 @@ describe('BT · credit tender, collect, tips (domain)', () => {
     expect(code(canCollect(null, { role: 'MANAGER', tenderId: 'cash', amount: 1 }, cfg4))).toBe('failed-precondition');
     expect(code(canCollect(rec, { role: 'SERVER', tenderId: 'cash', amount: 1 }, cfg4))).toBe('permission-denied');
   });
+  it('D7 a partner tender (Dineout) keeps `partner: true` through configFrom and is refused on a collection, naming it; card stays allowed', () => {
+    const { config, warnings } = configFrom({ payments: { tenders: [{ id: 'dineout', label: 'Dineout', kind: 'external', opensDrawer: false, needsRef: true, partner: true }, { id: 'card', label: 'Card', kind: 'external', opensDrawer: false, needsRef: true, partner: 'yes' }] } });
+    expect(config.tenders).toEqual([
+      { id: 'dineout', label: 'Dineout', kind: 'external', opensDrawer: false, needsRef: true, partner: true },
+      { id: 'card', label: 'Card', kind: 'external', opensDrawer: false, needsRef: true },
+    ]);
+    expect(warnings).toEqual(['tender row card: partner must be true or absent, treated as not a partner']);
+    const rec: Receivable = { receivableId: 'p1', kind: 'account', party: 'Acme', billId: '0417', cid: 'c', businessDate: '2026-09-23', amount: 60900, collectedTotal: 0, state: 'open', at: 1, by: 'm' };
+    const v = canCollect(rec, { role: 'MANAGER', tenderId: 'dineout', amount: 60900, ref: 'DO-7781' }, config);
+    expect(v).toEqual({ ok: false, code: 'invalid-argument', message: 'Dineout is a partner payment, not a way to settle an account' });
+    expect(code(canCollect(rec, { role: 'MANAGER', tenderId: 'card', amount: 60900, ref: 'slip' }, config))).toBe('ok');
+  });
   it('BT-T canTake with a tip: cash settles with tendered − tip (70000 − 5000 covers 60900); a tip that swallows all the cash is refused; a non-integer tip is refused; a tip on card never touches the amount check', () => {
     expect(code(canTake(bill, [], tk({ tendered: 70000, tip: 5000 }), cfg))).toBe('ok');
     expect(code(canTake(bill, [], tk({ tendered: 70000, tip: 70000 }), cfg))).toBe('invalid-argument');
