@@ -1,6 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:platter_core/platter_core.dart';
 
+/// TD-141: the backend sends UTC; the owner reads the restaurant's own clock (the device's).
+DateTime? localTime(String? iso) => iso == null ? null : DateTime.tryParse(iso)?.toLocal();
+
 /// API service for historical orders
 class OrdersApiService {
   final Dio _dio = DioClient().dio;
@@ -151,8 +154,7 @@ class OrderSummary {
     );
   }
 
-  DateTime? get createdAtDateTime =>
-      createdAt != null ? DateTime.tryParse(createdAt!) : null;
+  DateTime? get createdAtDateTime => localTime(createdAt);
 }
 
 /// Detailed order information
@@ -167,6 +169,8 @@ class OrderDetails {
   final String? createdAt;
   final String? updatedAt;
   final List<CartDetails> carts;
+  /// TD-142: the order's own total, the same number as the list card (the carts carry no total).
+  final double totalAmount;
 
   OrderDetails({
     required this.id,
@@ -179,6 +183,7 @@ class OrderDetails {
     this.createdAt,
     this.updatedAt,
     required this.carts,
+    required this.totalAmount,
   });
 
   factory OrderDetails.fromJson(Map<String, dynamic> json) {
@@ -195,17 +200,8 @@ class OrderDetails {
       carts: ((json['carts'] as List<dynamic>?) ?? [])
           .map((c) => CartDetails.fromJson(c as Map<String, dynamic>))
           .toList(),
+      totalAmount: (json['totalAmount'] as num).toDouble(),
     );
-  }
-
-  double get totalAmount {
-    double total = 0;
-    for (final cart in carts) {
-      if (cart.total != null) {
-        total += cart.total!['finalPayableAmount'] as double? ?? 0;
-      }
-    }
-    return total;
   }
 
   int get totalItems {

@@ -403,11 +403,10 @@ class _DishEditorDialogState extends State<DishEditorDialog> {
                       value: _spiceLevel,
                       decoration:
                           const InputDecoration(labelText: 'Spice Level'),
-                      items: const [
-                        DropdownMenuItem(value: 0, child: Text('0')),
-                        DropdownMenuItem(value: 1, child: Text('1')),
-                        DropdownMenuItem(value: 2, child: Text('2')),
-                        DropdownMenuItem(value: 3, child: Text('3')),
+                      // TD-137: 0–4, the scale the menus use (Chicken 65 is a 4); a 0–3 list couldn't open those dishes.
+                      items: [
+                        for (var level = 0; level <= 4; level++)
+                          DropdownMenuItem(value: level, child: Text('$level')),
                       ],
                       onChanged: (value) {
                         if (value == null) return;

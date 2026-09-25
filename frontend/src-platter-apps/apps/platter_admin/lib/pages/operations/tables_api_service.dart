@@ -139,6 +139,19 @@ class TableInfo {
   bool get isDisabled => status == 'disabled';
   bool get isVacant => status == 'vacant';
   bool get isActive => status == 'active';
+  bool get isReserved => status == 'reserved';
+
+  /// TD-143: the card says the state the waiter sees; a booked table read AVAILABLE before.
+  String get label => switch (status) {
+        'disabled' => 'DISABLED',
+        'active' => 'OCCUPIED',
+        'reserved' => 'RESERVED',
+        'vacant' => 'AVAILABLE',
+        _ => status.toUpperCase(),
+      };
+
+  /// Only a free or switched-off table has the on/off switch; a booking or a sitting is the floor's to end.
+  bool get canSwitch => !isOccupied && !isReserved;
 }
 
 /// Primary customer model

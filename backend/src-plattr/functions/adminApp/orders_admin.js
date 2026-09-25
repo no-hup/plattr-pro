@@ -64,35 +64,11 @@ exports.getHistoricalOrders = functions.https.onCall(async (request, context) =>
             if (index < pageSize) {
                 const orderData = doc.data();
 
-                // Calculate order totals from carts
-                // Only calculate if totalAmount is NOT already present on the order
-                // to avoid double-counting when totalAmount is already the full total
-                let totalAmount = 0;
-                let itemCount = 0;
-
-                // Orders store their full total at priceInfo.finalPrice (legacy docs: totalAmount)
-                const storedTotal = orderData.priceInfo?.finalPrice ?? orderData.totalAmount;
-                if (storedTotal !== undefined && storedTotal !== null) {
-                    totalAmount = storedTotal;
-                    // Still calculate itemCount from carts
-                    if (orderData.carts && Array.isArray(orderData.carts)) {
-                        orderData.carts.forEach(cart => {
-                            if (cart.items && Array.isArray(cart.items)) {
-                                itemCount += cart.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
-                            }
-                        });
-                    }
-                } else if (orderData.carts && Array.isArray(orderData.carts)) {
-                    // No totalAmount on order, calculate from carts
-                    orderData.carts.forEach(cart => {
-                        if (cart.total) {
-                            totalAmount += cart.total.finalPayableAmount || 0;
-                        }
-                        if (cart.items && Array.isArray(cart.items)) {
-                            itemCount += cart.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
-                        }
-                    });
-                }
+                // TD-142: the order's own total, the one number the list and the detail both show. No fallback to an
+                // old shape: an order without priceInfo is a bug at its writer.
+                const totalAmount = orderData.priceInfo.finalPrice;
+                const itemCount = (orderData.carts || []).reduce((n, cart) =>
+                    n + (cart.items || []).reduce((sum, item) => sum + (item.quantity || 1), 0), 0);
 
                 orders.push({
                     id: doc.id,
@@ -183,6 +159,8 @@ exports.getOrderDetails = functions.https.onCall(async (request, context) => {
             customerPhone: orderData.customerPhone || orderData.primaryCustomer?.phoneNumber || null,
             createdAt: orderData.createdAt ? timestamp.toISOString(orderData.createdAt) : null,
             updatedAt: orderData.updatedAt ? timestamp.toISOString(orderData.updatedAt) : null,
+            // TD-142: the order's own total, the number the list card shows. The carts carry no total of their own.
+            totalAmount: orderData.priceInfo.finalPrice,
             carts: [],
         };
 

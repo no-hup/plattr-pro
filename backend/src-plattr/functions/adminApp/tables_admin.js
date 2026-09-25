@@ -12,6 +12,7 @@ const TABLE_STATUS = {
     ACTIVE: 'active',
     VACANT: 'vacant',
     DISABLED: 'disabled',
+    RESERVED: 'reserved',
     OTP_PENDING: 'pending'
 };
 
@@ -123,9 +124,18 @@ exports.updateTableStatus = functions.https.onCall(async (request, context) => {
 
         const tableData = tableDoc.data();
 
-        // If table is currently active (occupied), don't allow disabling
-        if (tableData.status === TABLE_STATUS.ACTIVE && status === TABLE_STATUS.DISABLED) {
-            errorHandler.badRequest('Cannot disable an occupied table. Please wait for guests to leave.', {
+        // An occupied table is the floor's to end: disabling it, or writing vacant over a live sitting (TD-143), is refused.
+        if (tableData.status === TABLE_STATUS.ACTIVE) {
+            errorHandler.badRequest(`Table ${tableData.number || tableId} is occupied. Please wait for guests to leave.`, {
+                tableId,
+                currentStatus: tableData.status
+            });
+        }
+
+        // TD-143: a booked table keeps its booking. The switch used to write disabled, then vacant, over `reserved`,
+        // and the next walk-in was seated at a table held for 8 pm. A waiter releases a booking from the floor.
+        if (tableData.status === TABLE_STATUS.RESERVED) {
+            errorHandler.badRequest(`Table ${tableData.number || tableId} is reserved. A waiter releases the booking from the floor first.`, {
                 tableId,
                 currentStatus: tableData.status
             });
