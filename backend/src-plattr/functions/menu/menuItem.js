@@ -17,17 +17,8 @@
  *     discount: number,
  *     finalPrice: number
  *   },
- *   variants: Array<{
- *     isMandatory: boolean,
- *     options: Array<{
- *       variantId: string,
- *       name: string,
- *       price: number,
- *       discount: number,
- *       finalPrice: number
- *     }>
- *   }>,
- *   addons: string[],
+ *   variants: Array<{ id: string, name: string }>,   // links to restaurants/{id}/variants (D6: price lives there)
+ *   addons: string[],                                // ids of restaurants/{id}/addons
  *   nutritionalInfo: object,
  *   allergenTags: string[],
  *   isInStock: boolean,
@@ -189,15 +180,16 @@ async function updateMenuItem(restaurantId, menuItemId, updateData) {
     const menuItemRef = db.collection('restaurants').doc(restaurantId)
       .collection('menuItems').doc(menuItemId);
 
-    const isCustomizable = (updateData.variants && updateData.variants.length > 0) ||
-      (updateData.addons && updateData.addons.length > 0);
-    
-    // Build update data with subcategory fields if provided
+    // DECISION(D6, 2026-09-25): a description-only save must not touch add-ons, portions, stock or isCustomizable.
+    // See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+    // Only the sent fields are written. isCustomizable is the server's, from the links after the save: the manager
+    // takes every add-on off Veg Biryani, and it stays customisable because its Portion is still linked.
+    const { isCustomizable: _ignored, ...sent } = updateData;
     const updateToSave = {
-      ...updateData,
-      isCustomizable: isCustomizable,
+      ...sent,
       lastUpdated: timestamp.serverTimestamp()
     };
+    const linksSent = sent.addons !== undefined || sent.variants !== undefined;
 
     // Handle subcategory updates if provided
     if (updateData.primarySubcategoryId !== undefined) {
@@ -226,7 +218,16 @@ async function updateMenuItem(restaurantId, menuItemId, updateData) {
       }
     }
 
-    await menuItemRef.update(updateToSave);
+    if (!linksSent) {
+      await menuItemRef.update(updateToSave);
+      return true;
+    }
+    await db.runTransaction(async tx => {
+      const stored = (await tx.get(menuItemRef)).data() || {};
+      updateToSave.isCustomizable = (sent.addons ?? stored.addons ?? []).length > 0 ||
+        (sent.variants ?? stored.variants ?? []).length > 0;
+      tx.update(menuItemRef, updateToSave);
+    });
     return true;
   } catch (error) {
     console.error('Error updating menu item:', error);

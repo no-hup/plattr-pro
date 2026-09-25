@@ -47,6 +47,7 @@ exports.admin = {
   addSubcategory: adminMenuFunctions.addSubcategory,
   updateSubcategory: adminMenuFunctions.updateSubcategory,
   deleteSubcategory: adminMenuFunctions.deleteSubcategory,
+  sharedOption: adminMenuFunctions.sharedOption,   // D6: shared add-ons and portions
   getServers: adminAppFunctions.getServers,
   addServer: adminAppFunctions.addServer,
   updateServer: adminAppFunctions.updateServer,

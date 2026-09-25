@@ -17,8 +17,7 @@ const read = () => organizeMenuWithSubcategories([{ id: 'mc_biryani', name: 'Bir
   { mv_bir_portion: portion }, { ma_extra_raita: raita }).menuItems.ms_bir_chicken[0];
 
 describe('menu read builds a dish from the shared add-on and portion records (D6)', () => {
-  // Removed with the fix: test.failing → it.
-  test.failing('[known bug] TD-107 D6 the portion group is named by the shared record, as the cart names it: "Portion size", not the dish copy', () => {
+  it('D6 the portion group is named by the shared record, as the cart names it: "Portion size", not the dish copy', () => {
     expect(read().variants.map(v => v.name)).toEqual(['Portion size']);
   });
 
