@@ -95,7 +95,7 @@ test('QF-9 R13: picking shows which tiles are picked, and speaks in table number
   await page.getByTestId('confirm-pick').click()
   await expect(page.getByTestId('floor-msg')).toHaveText('Merged into 6')
   // Display only: the act still goes out with document ids.
-  expect(sent['table-setMerge'][0]).toMatchObject({ parentTableId: 'tbl_meg_6', childTableIds: ['tbl_meg_7'], merge: true })
+  expect(sent['table-setMerge'][0]).toEqual({ restaurantId: 'res_qa', staffSessionId: 'sess_qa', parentTableId: 'tbl_meg_6', childTableIds: ['tbl_meg_7'], merge: true, cid: expect.any(String) })
 })
 test('QF-15 FL-S21: the split chooser buttons can be told apart, and "1 item" is singular', async ({ page }) => {
   await fake(page, {
