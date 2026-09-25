@@ -122,3 +122,21 @@ test('QF-14: the PIN box says what the PIN is for in words, not a code word', as
   await expect(page.getByTestId('pin-hint')).toHaveText('Needed for freeing a table that still owes')
 })
 
+test('QB-15: after the PIN box is cancelled, the bar says "PIN required", not the box\'s last "Wrong PIN"', async ({ page }) => {
+  const line = { lineId: 'l1', v: 0, name: 'Gulab jamun', qty: 1, listPrice: 6000, countsTowardTotal: true, billDiscount: 0, offer: null }
+  await fake(page, {
+    'billing-preview': () => ok({ lines: [line], blocks: [], charges: [], subtotal: 6000, taxTotal: 0, roundOff: 0, payable: 6000 }),
+    'billing-issue': d => d.pin === undefined
+      ? refuse(403, 'PIN required', { code: 'permission-denied', requires: 'pin', action: 'billDiscount', sev: 'P0' })
+      : refuse(403, 'Wrong PIN', { code: 'permission-denied', requires: 'pin', wrong: true, attemptsLeft: 4, action: 'billDiscount', sev: 'P0' }),
+  })
+  await login(page, '&draft=d_qa')
+  await expect(page.getByTestId('payable')).toHaveText('Payable ₹60.00')
+  await page.getByTestId('comp-reason').selectOption('guest left')
+  await page.getByTestId('comp').click()
+  await page.getByTestId('pin-input').fill('9999')
+  await page.getByTestId('pin-ok').click()
+  await expect(page.getByTestId('pin-hint')).toHaveText('Wrong PIN, 4 left')
+  await page.getByTestId('pin-cancel').click()
+  await expect(page.getByTestId('bill-msg')).toHaveText('PIN required')
+})
