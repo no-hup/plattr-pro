@@ -1,7 +1,38 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:platter_core/platter_core.dart';
 import 'menu_api_service.dart';
 import '../settings/settings_api_service.dart';
+
+/// D6 / TD-106: the dish as the backend stores it. Add-ons are ids and portions `{id, name}` links; their prices
+/// live on the shared records, which the add-on and portion editors change through `admin-sharedOption`.
+Map<String, dynamic> dishWire(MenuItem item) => {
+      'meta': item.meta.toJson(),
+      'priceInfo': item.priceInfo.toJson(),
+      'isInStock': item.isAvailable,
+      'categoryId': item.categoryId,
+      'primarySubcategoryId': item.primarySubcategoryId,
+      'subcategoryIds': item.subcategoryIds,
+      'taxBlockId': item.taxBlockId,
+      'nutritionalInfo': item.nutritionalInfo.toJson(),
+      'allergenTags': item.allergenTags,
+      'addons': [for (final a in item.addons) a.id],
+      'variants': [for (final v in item.variants) {'id': v.id, 'name': v.name}],
+    };
+
+// DECISION(D6, 2026-09-25): the dish editor saves only what the manager changed, add-ons as ids.
+// See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+/// TD-110: the Menu tab loaded at 18:00 says prawns are in stock; the kitchen marks them out at 20:30; a
+/// description fix at 21:00 sends `meta` alone, so the sold-out stands.
+Map<String, dynamic> dishChanges(MenuItem before, MenuItem after) {
+  final was = dishWire(before);
+  final now = dishWire(after);
+  const same = DeepCollectionEquality();
+  return {
+    for (final key in now.keys)
+      if (!same.equals(was[key], now[key])) key: now[key],
+  };
+}
 
 class MenuCatalogProvider extends ChangeNotifier {
   MenuCatalogProvider({
@@ -257,9 +288,7 @@ class MenuCatalogProvider extends ChangeNotifier {
   Future<bool> addMenuItem({
     required MenuItem item,
   }) async {
-    final menuItemData = Map<String, dynamic>.from(item.toJson())
-      ..remove('menuItemId')
-      ..['restaurantId'] = restaurantId;
+    final menuItemData = dishWire(item);
     final response = await apiService.addMenuItem(
       restaurantId: restaurantId,
       sessionId: sessionId,
@@ -276,12 +305,12 @@ class MenuCatalogProvider extends ChangeNotifier {
   }
 
   Future<bool> updateMenuItem({
-    required String menuItemId,
+    required MenuItem original,
     required MenuItem item,
   }) async {
-    final updateData = Map<String, dynamic>.from(item.toJson())
-      ..remove('menuItemId')
-      ..['restaurantId'] = restaurantId;
+    final updateData = dishChanges(original, item);
+    if (updateData.isEmpty) return true;
+    final menuItemId = original.id;
     final response = await apiService.updateMenuItem(
       restaurantId: restaurantId,
       sessionId: sessionId,
@@ -334,6 +363,84 @@ class MenuCatalogProvider extends ChangeNotifier {
       _errorMessage = response.message;
       notifyListeners();
     }
+  }
+
+  /// D6: how many dishes link each shared add-on / portion, counted on the server over every dish.
+  /// Null when the count failed: the editors then refuse to save rather than guess "one dish".
+  Future<({Map<String, int> addons, Map<String, int> variants})?> sharedUsage() async {
+    final r = await apiService.sharedOption(
+        restaurantId: restaurantId, sessionId: sessionId, action: 'usage');
+    if (!r.success) return null;
+    Map<String, int> counts(Object? m) =>
+        {for (final e in ((m as Map?) ?? {}).entries) e.key as String: (e.value as num).toInt()};
+    return (addons: counts(r.data?['addons']), variants: counts(r.data?['variants']));
+  }
+
+  /// D6: changes the shared record (every linked dish follows), or with [onlyForMenuItemId] copies it for that
+  /// one dish, which the server relinks. Answers the record as saved, or null with [errorMessage] set.
+  Future<Map<String, dynamic>?> changeSharedOption({
+    required String kind,
+    required String id,
+    required Map<String, dynamic> changes,
+    String? onlyForMenuItemId,
+  }) async {
+    final r = await apiService.sharedOption(
+      restaurantId: restaurantId,
+      sessionId: sessionId,
+      action: onlyForMenuItemId == null ? 'update' : 'copyForDish',
+      kind: kind,
+      id: id,
+      menuItemId: onlyForMenuItemId,
+      changes: changes,
+    );
+    return _sharedResult(r);
+  }
+
+  /// Q6-3: a new add-on becomes a shared record; the dish save links it.
+  Future<Addon?> createAddon({required String name, required num price}) async {
+    final r = await apiService.sharedOption(
+      restaurantId: restaurantId,
+      sessionId: sessionId,
+      action: 'create',
+      kind: 'addon',
+      changes: {'name': name, 'price': price},
+    );
+    final record = _sharedResult(r);
+    return record == null ? null : Addon.fromJson(record);
+  }
+
+  Future<bool> setAddonStock(String addonId, bool isAvailable) async {
+    final r = await apiService.updateAddonAvailability(
+      restaurantId: restaurantId,
+      sessionId: sessionId,
+      addonId: addonId,
+      isAvailable: isAvailable,
+    );
+    if (!r.success) {
+      _errorMessage = r.message;
+      notifyListeners();
+    }
+    _sharedEdited |= r.success;
+    return r.success;
+  }
+
+  /// A shared edit saved while the dish editor was open: the list needs a reload even if the dish is not saved.
+  bool _sharedEdited = false;
+  bool takeSharedEdited() {
+    final edited = _sharedEdited;
+    _sharedEdited = false;
+    return edited;
+  }
+
+  Map<String, dynamic>? _sharedResult(ApiResponse<Map<String, dynamic>> r) {
+    final record = r.data?['record'];
+    if (r.success && record is Map) {
+      _sharedEdited = true;
+      return Map<String, dynamic>.from(record);
+    }
+    _errorMessage = r.message ?? 'Could not save the change';
+    notifyListeners();
+    return null;
   }
 
   void _updateLocalAvailability(String menuItemId, bool isAvailable) {

@@ -178,6 +178,7 @@ Naming `<screen>-<action>[-<id>]`. `ab ids` shows what is live on the current pa
 | server — tables | `table-<tableId>`, `table-status-{vacant,active,reserved,disabled}`, `table-refresh-otp`, `table-view-order`, `tables-refresh`\* |
 | server — orders | `order-cart-<cartId>`, `order-mark-served`, `order-cancel`, `order-mark-paid`, `order-mark-paid-confirm`, `orders-refresh`\* |
 | kitchen | `kitchen-cart-<cartId>`, `kitchen-mark-ready`, `kitchen-refresh` (error-state retry only) |
+| admin — menu (D6) | `menu-edit-<itemId>`; dish editor `dish-edit-addons`, `dish-edit-variants`, `dish-save`; add-ons `addon-price-<addonId>`, `addon-stock-<addonId>`, `addon-save-<addonId>`, `addons-done`; portions `variant-edit-<variantId>`, `variant-option-price-<optionId>`, `variant-save`, `variants-done`; the "on N dishes" question `shared-scope-all`, `shared-scope-only` |
 
 Two conditional absences are load-bearing, not bugs in the table: **the selected
 server tab has no identifier** (it renders `activeIcon`, which carries none), so

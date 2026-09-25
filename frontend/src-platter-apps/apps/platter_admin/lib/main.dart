@@ -33,7 +33,7 @@ class AdminApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
       debugShowCheckedModeBanner: false,
-      home: const _AuthWrapper(),
+      // No `home:` next to a '/' route: debug builds assert on the pair and the app never paints.
       routes: {
         '/': (context) => const _AuthWrapper(),
         '/login': (context) => const LoginScreen(),
