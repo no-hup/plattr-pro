@@ -101,6 +101,7 @@ async function main() {
   // 5. Run suites
   const results = [];
   const failedTests = [];
+  const knownBugs = [];
   let totalPass = 0;
   let totalFail = 0;
 
@@ -113,13 +114,24 @@ async function main() {
 
     try {
       const result = await runSuite(suite);
+      // Known bug (TESTING.md): a test carrying `knownBug: 'QB-2'` is expected to fail today. Its failure is
+      // listed and counted as known, not failed; the day it passes it becomes a failure, so the mark is removed.
+      for (const t of result.tests || []) {
+        if (!t.knownBug) continue;
+        if (t.known) {
+          console.log(`  ⚠ [${suite.name}] known bug: ${t.message}`);
+        } else if (t.pass) { t.pass = false; result.pass--; result.fail++; t.message = `${t.knownBug} now passes, remove its knownBug mark: ${t.message}`; }
+        else { t.known = true; result.fail--; result.known = (result.known || 0) + 1; knownBugs.push(`${suite.name}: ${t.message}`); }
+      }
       results.push(result);
       totalPass += result.pass;
       totalFail += result.fail;
 
       // Print individual test results
       for (const t of result.tests || []) {
-        if (t.pass) {
+        if (t.known) {
+          console.log(`  ⚠ [${suite.name}] known bug: ${t.message}`);
+        } else if (t.pass) {
           // Only print passes in verbose mode
           if (verbose) console.log(`  ✓ ${t.message}`);
         } else {
@@ -150,10 +162,11 @@ async function main() {
   console.log(`${'═'.repeat(50)}`);
   for (const r of results) {
     const status = r.fail === 0 ? 'PASS' : 'FAIL';
-    console.log(`  ${status.padEnd(5)} ${r.name}: ${r.pass} pass, ${r.fail} fail`);
+    console.log(`  ${status.padEnd(5)} ${r.name}: ${r.pass} pass, ${r.fail} fail${r.known ? `, ${r.known} known bug` : ''}`);
   }
   console.log(`${'─'.repeat(50)}`);
-  console.log(`  TOTAL: ${totalPass} pass, ${totalFail} fail`);
+  console.log(`  TOTAL: ${totalPass} pass, ${totalFail} fail, ${knownBugs.length} known bug`);
+  for (const k of knownBugs) console.log(`  KNOWN ${k}`);
   console.log(`  STATUS: ${totalFail === 0 ? 'ALL PASSED' : 'FAILED'}`);
   console.log(`${'═'.repeat(50)}\n`);
 
@@ -166,6 +179,7 @@ async function main() {
     status: totalFail === 0 ? 'PASSED' : 'FAILED',
     suites: results.map(r => ({ name: r.name, pass: r.pass, fail: r.fail })),
     failedTests,
+    knownBugs,
   };
   await writeFile(resolve(RESULTS_DIR, 'summary.json'), JSON.stringify(summary, null, 2));
   await writeFile(resolve(RESULTS_DIR, 'last_run.txt'), `${summary.status} | ${totalPass} pass, ${totalFail} fail | ${summary.timestamp}`);
