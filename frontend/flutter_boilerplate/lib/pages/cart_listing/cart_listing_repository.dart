@@ -107,6 +107,7 @@ class CartListingRepository {
     required String sessionId,
     String? notes,
     String? requestId,
+    List<int>? cartItemIds,
   }) async {
     AppLogger.log('🛒 CART REPO: Checking out cart for table $tableId in restaurant $restaurantId');
     
@@ -117,6 +118,7 @@ class CartListingRepository {
       sessionId: sessionId,
       notes: notes,
       requestId: requestId,
+      cartItemIds: cartItemIds,
     );
   }
 }

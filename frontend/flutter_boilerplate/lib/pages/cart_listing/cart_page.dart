@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutterboilerplate/networking/device_id.dart';
 import 'package:flutterboilerplate/pages/cart_listing/cart_listing_state.dart';
 import 'package:flutterboilerplate/pages/menuListing/models/cart_item.dart';
-import 'package:flutterboilerplate/pages/menuListing/models/cart_price_info.dart';
 import 'package:flutterboilerplate/singletonGods/logger.dart';
 import 'package:flutterboilerplate/theme/theme.dart';
 import 'package:flutterboilerplate/widgets/consumer_app_bar.dart';
@@ -110,7 +109,7 @@ class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
                 ),
               ),
               CartPriceSummary(
-                priceInfo: state.cart!.priceInfo,
+                items: state.cart!.items,
                 tableId: widget.tableId,
                 restaurantId: widget.restaurantId,
               ),
@@ -196,20 +195,95 @@ class _CartPageState extends State<CartPage> with WidgetsBindingObserver {
 }
 
 /// Splits the table's shared cart into the rows this phone may edit and the rows it
-/// may only look at. An item with no owner was written before ownership existed or by
-/// an older app; it stays editable by everyone, which is how the whole cart behaved
-/// before. So does every item when this phone has no id yet.
+/// may only look at. Only this phone's own dishes are editable: the server refuses a
+/// remove of anyone else's, and a dish with no owner is nobody's (D5, fail closed).
 (List<CartItem>, List<CartItem>) splitByOwner(List<CartItem> items, String? me) {
   final mine = <CartItem>[];
   final theirs = <CartItem>[];
   for (final item in items) {
-    if (me == null || item.addedBy == null || item.addedBy == me) {
+    if (me != null && item.addedBy == me) {
       mine.add(item);
     } else {
       theirs.add(item);
     }
   }
   return (mine, theirs);
+}
+
+/// A dish a guest's phone added. The waiter app and the till stamp `staff:<id>`; no owner is not a guest.
+/// The same rule as the server's `isGuestOwner` (orders/createOrUpdateOrder.js).
+bool isGuestDish(CartItem item) =>
+    item.addedBy != null && item.addedBy!.isNotEmpty && !item.addedBy!.startsWith('staff:');
+
+/// What this phone can send, and for how much. Line totals come from the server's own pricing.
+class SendChoice {
+  const SendChoice(this.mineIds, this.mineTotal, this.tableIds, this.tableTotal);
+
+  final List<int> mineIds;
+  final num mineTotal;
+  final List<int> tableIds;
+  final num tableTotal;
+}
+
+// DECISION(D5, 2026-09-25): table 9 shares one cart: Asha's Chicken 65 ₹280, Bhanu's naan ₹60, the captain's crab.
+// Asha's phone reads "Your dishes ₹280 · Table ₹340" and Proceed asks "Send your 1 dish" or "Send all 2 for the
+// table". "Table" is every guest's dish, never staff's: the captain sends his own. The phone sends the ids it
+// showed, and the server sends exactly those. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md.
+// If you change this, ask Shaurya first.
+SendChoice sendChoice(List<CartItem> items, String? me) {
+  final table = items.where((i) => isGuestDish(i) && i.cartItemId != null).toList();
+  final mine = table.where((i) => me != null && i.addedBy == me).toList();
+  num total(List<CartItem> l) => l.fold<num>(0, (sum, i) => sum + (i.priceInfo?.finalPrice ?? 0));
+  return SendChoice(
+    [for (final i in mine) i.cartItemId!],
+    total(mine),
+    [for (final i in table) i.cartItemId!],
+    total(table),
+  );
+}
+
+String _rupees(num v) => v == v.roundToDouble() ? '₹${v.round()}' : '₹${v.toStringAsFixed(2)}';
+String _dishes(int n) => n == 1 ? '1 dish' : '$n dishes';
+
+/// "Your dishes ₹280 · Table ₹340".
+class SendTotals extends StatelessWidget {
+  const SendTotals({required this.choice, super.key});
+
+  final SendChoice choice;
+
+  @override
+  Widget build(BuildContext context) => Text(
+        'Your dishes ${_rupees(choice.mineTotal)} · Table ${_rupees(choice.tableTotal)}',
+        style: AppTypography.h3.copyWith(color: AppColors.primary),
+      );
+}
+
+/// Proceed's question. Answers the ids to send, or null if the guest backed out.
+/// Only your own dishes on the cart: nothing to ask, they go. Nothing of yours (TD-131): only "Send all".
+Future<List<int>?> askWhatToSend(BuildContext context, SendChoice c) async {
+  if (c.tableIds.isEmpty) return null;
+  if (c.mineIds.length == c.tableIds.length) return c.mineIds;
+  return showModalBottomSheet<List<int>>(
+    context: context,
+    builder: (sheet) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (c.mineIds.isNotEmpty)
+            ListTile(
+              title: Text('Send your ${_dishes(c.mineIds.length)}'),
+              trailing: Text(_rupees(c.mineTotal)),
+              onTap: () => Navigator.of(sheet).pop(c.mineIds),
+            ),
+          ListTile(
+            title: Text('Send all ${c.tableIds.length} for the table'),
+            trailing: Text(_rupees(c.tableTotal)),
+            onTap: () => Navigator.of(sheet).pop(c.tableIds),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class CartItemsList extends StatelessWidget {
@@ -227,17 +301,20 @@ class CartItemsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // A table shares one cart, so a big table's list is everyone's list. Split it:
-    // you edit your own items and see, but cannot touch, what the rest of the table
-    // has added. Items with no owner (written before ownership, or by an older app)
-    // stay in the shared group everyone can still edit, exactly as before.
+    // you edit your own items and see, but cannot touch, what the rest of the table has added.
     final (mine, theirs) = splitByOwner(items, DeviceId.value);
+    // D5: staff dishes are listed apart, because "Send all" never sends them: the waiter sends his own.
+    final guests = theirs.where(isGuestDish).toList();
+    final staff = theirs.where((i) => !isGuestDish(i)).toList();
 
     // Header rows and item rows in one flat list so the whole thing scrolls as one.
     final rows = <Object>[
       if (theirs.isNotEmpty && mine.isNotEmpty) const _Heading('Yours'),
       ...mine,
-      if (theirs.isNotEmpty) const _Heading('Rest of the table'),
-      ...theirs,
+      if (guests.isNotEmpty) const _Heading('Rest of the table'),
+      ...guests,
+      if (staff.isNotEmpty) const _Heading("Added by staff · they send it"),
+      ...staff,
     ];
 
     return ListView.separated(
@@ -619,54 +696,25 @@ class CartItemTile extends StatelessWidget {
 
 class CartPriceSummary extends StatelessWidget {
   const CartPriceSummary({
-    required this.priceInfo,
+    required this.items,
     required this.tableId,
     required this.restaurantId,
     super.key,
   });
 
-  final CartPriceInfo? priceInfo;
+  final List<CartItem> items;
   final String tableId;
   final String restaurantId;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final state = context.watch<CartListingState>();
+    // D5 (TD-119): one figure for what "Send your dishes" sends and one for "Send all". The old "To Pay" was the
+    // whole cart, staff dishes included, while Proceed sent only this phone's.
+    final choice = sendChoice(items, DeviceId.value);
 
-    // If priceInfo is null, use default values
-    if (priceInfo == null) {
-      AppLogger.log(
-          '💰 CART_SUMMARY: No priceInfo available, showing empty state',);
-      return const SizedBox.shrink();
-    }
-
-    // Log the cart price information
-    AppLogger.log('💰 CART_SUMMARY: priceInfo data');
-    AppLogger.log('💰 CART_SUMMARY: - basePrice: ${priceInfo!.basePrice}');
-    AppLogger.log('💰 CART_SUMMARY: - finalPrice: ${priceInfo!.finalPrice}');
-    AppLogger.log(
-        '💰 CART_SUMMARY: - totalDiscountAmount: ${priceInfo!.totalDiscountAmount}',);
-
-    // Get values directly from priceInfo with safe fallbacks
-    final basePrice = priceInfo!.basePrice?.toDouble() ?? 0.0;
-    final finalPrice = priceInfo!.finalPrice?.toDouble() ?? 0.0;
-    final discountAmount = priceInfo!.totalDiscountAmount?.toDouble() ?? 0.0;
-
-    // Detect if the cart is empty (has no items or all have zero prices)
-    final hasNoItems = state.cart?.items.isEmpty ?? true;
-
-    // Only show strikethrough if base price is different from final price
-    final showBasePriceStrikethrough =
-        basePrice > finalPrice && basePrice > 0 && finalPrice > 0;
-    final hasDiscount = discountAmount > 0;
-
-    // Hide the summary if both prices are zero or cart has no items
-    if (finalPrice <= 0 || hasNoItems) {
-      AppLogger.log(
-          '💰 CART_SUMMARY: Hiding summary because prices are zero or cart is empty',);
-      return const SizedBox.shrink();
-    }
+    // Only staff dishes on the cart: nothing a guest can send.
+    if (choice.tableIds.isEmpty) return const SizedBox.shrink();
 
     return Container(
       padding: AppSpacing.pagePadding,
@@ -679,39 +727,7 @@ class CartPriceSummary extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Only show subtotal if base price is different from final price
-            if (showBasePriceStrikethrough)
-              _buildPriceRow(
-                context,
-                'Subtotal:',
-                '₹${basePrice.toStringAsFixed(2)}',
-                valueStyle: theme.textTheme.bodyLarge?.copyWith(
-                  decoration: TextDecoration.lineThrough,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-
-            // Only show discount if there is a non-zero discount
-            if (hasDiscount)
-              _buildPriceRow(
-                context,
-                'Discount:',
-                '-₹${discountAmount.toStringAsFixed(2)}',
-                valueColor: theme.colorScheme.error,
-              ),
-
-            const Divider(height: 24),
-
-            // Always show final price
-            _buildPriceRow(
-              context,
-              'To Pay:',
-              '₹${finalPrice.toStringAsFixed(2)}',
-              labelStyle: AppTypography.h3,
-              valueStyle: AppTypography.h3.copyWith(
-                color: AppColors.primary,
-              ),
-            ),
+            SendTotals(choice: choice),
 
             AppSpacing.verticalLG,
 
@@ -722,10 +738,13 @@ class CartPriceSummary extends StatelessWidget {
                 child: PrimaryActionButton(
                 label: 'PROCEED TO CHECKOUT',
                 isLoading: state.isUpdatingCart,
-                onPressed: state.isUpdatingCart || hasNoItems
+                // No device id yet (the app is still starting): the send would carry no `addedBy` and be refused.
+                onPressed: state.isUpdatingCart || DeviceId.value == null
                     ? null
                     : () async {
-                        AppLogger.log('🛒 CART: Proceeding to checkout');
+                        final ids = await askWhatToSend(context, choice);
+                        if (ids == null || !context.mounted) return;
+                        AppLogger.log('🛒 CART: Sending cart items $ids');
 
                         // Show loading indicator
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -740,6 +759,7 @@ class CartPriceSummary extends StatelessWidget {
                             await context.read<CartListingState>().checkoutCart(
                                   restaurantId: restaurantId,
                                   tableId: tableId,
+                                  cartItemIds: ids,
                                 );
 
                         if (success) {
@@ -760,15 +780,17 @@ class CartPriceSummary extends StatelessWidget {
                         } else {
                           // Show error message
                           if (context.mounted) {
-                            final errorMsg =
-                                context.read<CartListingState>().error ??
-                                    'Failed to place order';
+                            final state = context.read<CartListingState>();
+                            final errorMsg = state.error ?? 'Failed to place order';
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(errorMsg),
                                 backgroundColor: Colors.red,
                               ),
                             );
+                            // D5: "Your table's order changed" (a friend sent or removed a dish) or any other
+                            // refusal: re-read the table's cart so the guest chooses again from what is there now.
+                            state.fetchCart(tableId: tableId, restaurantId: restaurantId);
                           }
                         }
                       },
@@ -776,37 +798,6 @@ class CartPriceSummary extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildPriceRow(
-    BuildContext context,
-    String label,
-    String value, {
-    TextStyle? labelStyle,
-    TextStyle? valueStyle,
-    Color? valueColor,
-  }) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: labelStyle ?? theme.textTheme.bodyLarge,
-          ),
-          Text(
-            value,
-            style: valueStyle ??
-                theme.textTheme.bodyLarge?.copyWith(
-                  color: valueColor,
-                ),
-          ),
-        ],
       ),
     );
   }

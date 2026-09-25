@@ -7,7 +7,21 @@ import 'dart:math';
 class CheckoutRequestId {
   String? _current;
 
+  String? _items;
+
   String get current => _current ??= _mint();
+
+  /// D5: the id for sending exactly these cart items. "Send your 1 dish" timed out keeps its id for a retry of the
+  /// same dishes; switching to "Send all 3" is a different act and gets a new one, or the server refuses it as
+  /// "requestId already used for a different cart".
+  String forItems(List<int> cartItemIds) {
+    final key = ([...cartItemIds]..sort()).join(',');
+    if (key != _items) {
+      _current = null;
+      _items = key;
+    }
+    return current;
+  }
 
   void settled() => _current = null;
 
