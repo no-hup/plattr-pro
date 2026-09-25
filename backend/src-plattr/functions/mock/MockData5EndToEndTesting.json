@@ -443,7 +443,7 @@
       "servers": {
         "server_1": {
           "name": "Server One",
-          "role": "waiter",
+          "role": "SERVER",
           "status": "active",
           "email": "server1@e2e.com",
           "password": "1234",
@@ -451,7 +451,7 @@
         },
         "server_2": {
           "name": "Server Two",
-          "role": "waiter",
+          "role": "SERVER",
           "status": "active",
           "email": "server2@e2e.com",
           "password": "1234",
@@ -459,7 +459,7 @@
         },
         "kitchen_staff_1": {
           "name": "Kitchen One",
-          "role": "kitchen",
+          "role": "KITCHEN",
           "status": "active",
           "email": "kitchen1@e2e.com",
           "password": "1234",
@@ -1252,7 +1252,7 @@
       "servers": {
         "server_1": {
           "name": "Server One",
-          "role": "waiter",
+          "role": "SERVER",
           "status": "active",
           "email": "server1@e2e-mv.com",
           "password": "1234",
@@ -1260,7 +1260,7 @@
         },
         "server_2": {
           "name": "Server Two",
-          "role": "waiter",
+          "role": "SERVER",
           "status": "active",
           "email": "server2@e2e-mv.com",
           "password": "1234",
@@ -1268,7 +1268,7 @@
         },
         "kitchen_staff_1": {
           "name": "Kitchen One",
-          "role": "kitchen",
+          "role": "KITCHEN",
           "status": "active",
           "email": "kitchen1@e2e-mv.com",
           "password": "1234",
@@ -1776,7 +1776,7 @@
       "servers": {
         "server_1": {
           "name": "Server One",
-          "role": "waiter",
+          "role": "SERVER",
           "status": "active",
           "email": "server1@e2e-fb.com",
           "password": "1234",
@@ -1784,7 +1784,7 @@
         },
         "server_2": {
           "name": "Server Two",
-          "role": "waiter",
+          "role": "SERVER",
           "status": "active",
           "email": "server2@e2e-fb.com",
           "password": "1234",
@@ -1792,7 +1792,7 @@
         },
         "kitchen_staff_1": {
           "name": "Kitchen One",
-          "role": "kitchen",
+          "role": "KITCHEN",
           "status": "active",
           "email": "kitchen1@e2e-fb.com",
           "password": "1234",
@@ -2019,7 +2019,7 @@
       "servers": {
         "server_1": {
           "name": "Server One",
-          "role": "waiter",
+          "role": "SERVER",
           "status": "active",
           "email": "server1@e2e-empty.com",
           "password": "1234",
@@ -2027,7 +2027,7 @@
         },
         "server_2": {
           "name": "Server Two",
-          "role": "waiter",
+          "role": "SERVER",
           "status": "active",
           "email": "server2@e2e-empty.com",
           "password": "1234",
@@ -2035,7 +2035,7 @@
         },
         "kitchen_staff_1": {
           "name": "Kitchen One",
-          "role": "kitchen",
+          "role": "KITCHEN",
           "status": "active",
           "email": "kitchen1@e2e-empty.com",
           "password": "1234",
@@ -2606,7 +2606,7 @@
       "servers": {
         "server_1": {
           "name": "Server One",
-          "role": "waiter",
+          "role": "SERVER",
           "status": "active",
           "email": "server1@e2e-oos.com",
           "password": "1234",
@@ -2614,7 +2614,7 @@
         },
         "server_2": {
           "name": "Server Two",
-          "role": "waiter",
+          "role": "SERVER",
           "status": "active",
           "email": "server2@e2e-oos.com",
           "password": "1234",
@@ -2622,7 +2622,7 @@
         },
         "kitchen_staff_1": {
           "name": "Kitchen One",
-          "role": "kitchen",
+          "role": "KITCHEN",
           "status": "active",
           "email": "kitchen1@e2e-oos.com",
           "password": "1234",
@@ -2944,7 +2944,7 @@
       "servers": {
         "server_1": {
           "name": "Server One",
-          "role": "waiter",
+          "role": "SERVER",
           "status": "active",
           "email": "server1@e2e-simple.com",
           "password": "1234",
@@ -2952,7 +2952,7 @@
         },
         "server_2": {
           "name": "Server Two",
-          "role": "waiter",
+          "role": "SERVER",
           "status": "active",
           "email": "server2@e2e-simple.com",
           "password": "1234",
@@ -2960,7 +2960,7 @@
         },
         "kitchen_staff_1": {
           "name": "Kitchen One",
-          "role": "kitchen",
+          "role": "KITCHEN",
           "status": "active",
           "email": "kitchen1@e2e-simple.com",
           "password": "1234",
@@ -3531,7 +3531,7 @@
       "servers": {
         "server_1": {
           "name": "Server One",
-          "role": "waiter",
+          "role": "SERVER",
           "status": "active",
           "email": "server1@e2e-offer.com",
           "password": "1234",
@@ -3539,7 +3539,7 @@
         },
         "server_2": {
           "name": "Server Two",
-          "role": "waiter",
+          "role": "SERVER",
           "status": "active",
           "email": "server2@e2e-offer.com",
           "password": "1234",
@@ -3547,7 +3547,7 @@
         },
         "kitchen_staff_1": {
           "name": "Kitchen One",
-          "role": "kitchen",
+          "role": "KITCHEN",
           "status": "active",
           "email": "kitchen1@e2e-offer.com",
           "password": "1234",

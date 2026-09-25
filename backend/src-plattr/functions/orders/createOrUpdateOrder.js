@@ -12,7 +12,7 @@ const { mapOrderStatus, mapCartStatus } = require('../utils/statusUtils');
 const { evaluateAndPickBestOffer, buildAppliedOfferObject } = require('../offers/evaluateOrderOffers');
 const { calculateCharges, loadChargesConfig } = require('./calculateCharges');
 const { validateCart } = require('../cart/validateCart');
-const { calculateCartValue } = require('../cart/calculateCartValue');
+const { calculateCartValue, isBillableItem } = require('../cart/calculateCartValue');
 const { writeLineSnapshots, loadTaxConfig } = require('./lineSnapshots');
 // KT: one print job per station, created in the placing transaction (R1, R4). Compiled TypeScript in lib/.
 const print = require('../lib/adapters/firestore/print');
@@ -587,7 +587,8 @@ async function buildOrderPriceInfo(restaurantId, carts, sessionId, chargesConfig
 
   // Offers V2: evaluate against raw items of live carts only (normalized items strip categoryId).
   const liveCarts = carts.filter(isLiveCart);
-  const allCartItems = liveCarts.flatMap(c => Array.isArray(c.items) ? c.items : []);
+  // A dish cancelled on its own (D4) sits in a live round; it must not earn an offer it is no longer paid for.
+  const allCartItems = liveCarts.flatMap(c => Array.isArray(c.items) ? c.items : []).filter(isBillableItem);
   const bestOffer = await evaluateAndPickBestOffer(
     restaurantId,
     allCartItems,

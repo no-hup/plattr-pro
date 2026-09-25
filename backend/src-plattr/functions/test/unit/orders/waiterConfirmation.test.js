@@ -354,13 +354,31 @@ describe('cart status moves the line snapshots too', () => {
       expect(auditRows().every(r => r.sev === 'P0')).toBe(true);
     });
 
-    test('an already-issued bill is left alone — reversing that is a credit note, not a void', async () => {
+    // D4 (2026-09-25): once the bill is printed only the till's Edit bill changes it. The cancel used to
+    // "succeed" while skipping the billed line: the kitchen lost the dish and the guest still paid for it.
+    test('D4: a round on a printed bill is refused, naming the bill, and nothing changes', async () => {
       seed(FULFILLMENT_STATUS.PENDING, { billId: 'bill_007' });
+      mockData['restaurants/rest001/bills/bill_007'] = { series: 'A', number: '0002', status: 'issued' };
+      const orderBefore = JSON.stringify(mockData[ORDER_PATH]);
+
+      await expect(invoke('CANCELLED')).rejects.toThrow('Bill A-0002 is printed — ask the cashier to edit it on the till');
+
+      expect(mockData[LINE(1)].countsTowardTotal).toBe(true);
+      expect(JSON.stringify(mockData[ORDER_PATH])).toBe(orderBefore);
+      expect(auditRows()).toHaveLength(0);
+    });
+
+    // A served dish was eaten. The cart cancel keeps it SERVED and billable on the order, so its line
+    // must keep counting too, or the till bills less than the order says (impact review, D4).
+    test('a dish already served stays on the bill when the rest of its round is cancelled', async () => {
+      seed(FULFILLMENT_STATUS.READY);
+      mockData[ORDER_PATH].carts[0].items[0].status = 'SERVED';
 
       await invoke('CANCELLED');
 
       expect(mockData[LINE(1)].countsTowardTotal).toBe(true);
-      expect(auditRows()).toHaveLength(0);
+      expect(mockData[LINE(2)].countsTowardTotal).toBe(false);
+      expect(auditRows().map(r => r.lineId)).toEqual([`${CART_ID}_2`]);
     });
 
     test('a line voided earlier is not voided twice', async () => {
@@ -384,6 +402,97 @@ describe('cart status moves the line snapshots too', () => {
 
       expect(cart.status).toBe(FULFILLMENT_STATUS.CANCELLED);
       expect(auditRows()).toHaveLength(0);
+    });
+  });
+
+  // ── D4: one dish off a sent round ─────────────────────────────
+  // 20:10, table 6 sent Chicken 65 (a) and Butter Naan (b); the guest drops the naan. Only the naan leaves
+  // the bill and the kitchen; the Chicken 65 keeps cooking. Audited, no PIN, P0 because the kitchen had it.
+  describe('D4: the waiter cancels one dish', () => {
+    const cancelDish = (cartItemId) => updateCartStatus.call(null, {
+      data: { restaurantId: 'rest001', orderId: 'order001', cartIndex: 0, newStatus: 'CANCELLED', cartItemId, sessionId: 'staff-session' },
+    }, context);
+
+    test('only that dish leaves the bill and the kitchen; the round keeps going', async () => {
+      seed(FULFILLMENT_STATUS.PREPARING);
+
+      await cancelDish(2);
+
+      const cart = mockData[ORDER_PATH].carts[0];
+      expect(cart.status).toBe('PREPARING');
+      expect(cart.items.map(i => i.status)).toEqual(['PREPARING', 'CANCELLED']);
+      expect(mockData[LINE(1)].countsTowardTotal).toBe(true);
+      expect(mockData[LINE(2)].countsTowardTotal).toBe(false);
+      const rows = auditRows();
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({ action: 'void', sev: 'P0', staffId: 'srv_1', lineId: `${CART_ID}_2`, reason: 'other' });
+    });
+
+    // The order total is summed from each round's own priceInfo, and the order offer is judged on it. Table 9's
+    // Chicken 65 (₹280) + Coastal Crab Roast (₹620) round earned the "₹100 off (min ₹499)" offer; with the crab
+    // cancelled the round is worth ₹280 and the offer must be judged on ₹280, not ₹900.
+    test('the round\'s own total drops by the cancelled dish, so the order offer is judged on what is left', async () => {
+      seed(FULFILLMENT_STATUS.READY);
+      const cart = mockData[ORDER_PATH].carts[0];
+      cart.priceInfo = { basePrice: 900, finalPrice: 900 };
+      cart.items[0].priceInfo = { totalBasePrice: 280, finalPrice: 280 };
+      cart.items[1].priceInfo = { totalBasePrice: 620, finalPrice: 620 };
+      const { buildOrderPriceInfo } = require('../../../orders/createOrUpdateOrder');
+
+      await cancelDish(2);
+
+      expect(mockData[ORDER_PATH].carts[0].priceInfo).toMatchObject({ basePrice: 280, finalPrice: 280 });
+      expect(buildOrderPriceInfo.mock.calls[0][1][0].priceInfo).toMatchObject({ basePrice: 280, finalPrice: 280 });
+    });
+
+    test('cancelling the last live dish cancels the round', async () => {
+      seed(FULFILLMENT_STATUS.PENDING);
+      mockData[ORDER_PATH].carts[0].items[0].status = 'CANCELLED';
+
+      await cancelDish(2);
+
+      expect(mockData[ORDER_PATH].carts[0].status).toBe('CANCELLED');
+    });
+
+    // Table 9: the Chicken 65 was served, the naan is still READY and the guest drops it. Nothing is left for the
+    // kitchen, so the round is SERVED; left READY, the kitchen kept an empty ticket and COMPLETED was refused.
+    test('cancelling the last unserved dish of a round with a served dish leaves the round SERVED', async () => {
+      seed(FULFILLMENT_STATUS.READY);
+      mockData[ORDER_PATH].carts[0].items[0].status = 'SERVED';
+
+      await cancelDish(2);
+
+      expect(mockData[ORDER_PATH].carts[0].status).toBe('SERVED');
+      expect(mockData[ORDER_PATH].carts[0].items.map(i => i.status)).toEqual(['SERVED', 'CANCELLED']);
+    });
+
+    test('a served dish cannot be cancelled, and nothing changes', async () => {
+      seed(FULFILLMENT_STATUS.READY);
+      mockData[ORDER_PATH].carts[0].items[1].status = 'SERVED';
+
+      await expect(cancelDish(2)).rejects.toThrow(/already served/);
+      expect(mockData[LINE(2)].countsTowardTotal).toBe(true);
+      expect(auditRows()).toHaveLength(0);
+    });
+
+    test('a dish on a printed bill is refused, naming the bill', async () => {
+      seed(FULFILLMENT_STATUS.PENDING, { billId: 'bill_007' });
+      mockData['restaurants/rest001/bills/bill_007'] = { series: 'A', number: '0002', status: 'issued' };
+
+      await expect(cancelDish(2)).rejects.toThrow('Bill A-0002 is printed — ask the cashier to edit it on the till');
+      expect(mockData[LINE(2)].countsTowardTotal).toBe(true);
+    });
+
+    test('a dish id that is not in the round is refused', async () => {
+      seed(FULFILLMENT_STATUS.PENDING);
+      await expect(cancelDish(9)).rejects.toThrow(/not in this round/);
+    });
+
+    test('a dish id with any status but CANCELLED is refused: one dish can only be cancelled', async () => {
+      seed(FULFILLMENT_STATUS.PENDING);
+      await expect(updateCartStatus.call(null, {
+        data: { restaurantId: 'rest001', orderId: 'order001', cartIndex: 0, newStatus: 'READY', cartItemId: 2, sessionId: 'staff-session' },
+      }, context)).rejects.toThrow(/only be cancelled/);
     });
   });
 

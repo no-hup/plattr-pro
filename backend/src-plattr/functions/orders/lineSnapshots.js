@@ -6,7 +6,10 @@ const { db } = require("../admin/admin");
 const print = require("../lib/adapters/firestore/print");
 const { placeLine } = require("../lib/domain/line");
 const { applyToLine, auditRow } = require("../lib/domain/approvals");
+const { billLabel } = require("../lib/domain/billing");
 const errorHandler = require("../singleton/ErrorHandler");
+const { FULFILLMENT_STATUS } = require("./orderConstants");
+const { mapCartStatus } = require("../utils/statusUtils");
 
 /** Old money is float rupees; every new field is integer minor units. */
 const minor = (rupees) => Math.round((Number(rupees) || 0) * 100);
@@ -143,68 +146,88 @@ async function markLinesSent(transaction, restaurantId, cartSnapshot) {
 }
 
 /**
- * Take a cancelled cart's lines off the bill, and leave a name on each.
+ * Take cancelled dishes off the bill and the kitchen, and leave a name on each.
  *
  * Cancelling a cart used to move only the old float total on the order; the line snapshots the
  * till bills from kept `countsTowardTotal: true`, so a rejected or cancelled round was still
  * billable. This is that fix, and it is here rather than at the reject path because every caller
- * of cart-updateCartStatus had it (kitchen cancel, waiter cancel, guest order rejected).
+ * has it: kitchen cancel, waiter cancel of a round or one dish, guest round rejected, and the
+ * waiter's Cancel Order (several rounds, one transaction — hence `carts` is a list).
+ * Pass a cart with only some of its items to void only those dishes.
  *
  * Goes through ST's own `applyToLine` so the voided shape is defined in exactly one place, and
  * writes ST's audit row (R4: the change and its row are one transaction; R5 fixes the keys).
  *
- * DEBT(TD-023): records the void, does not gate it. ST says voiding a line the kitchen has
- * already started needs a PIN (ST-S5), and this path never asks for one — the Flutter apps have
- * no PIN interceptor (TD-003). Deliberate under "catch it, don't cage it": the money is right
- * tonight and the P0 row names whoever did it. Gate it when TD-003 lands.
+ * DECISION(D4, 2026-09-25): 20:10 a guest drops the Butter Naan the kitchen already has: the waiter's
+ * cancel takes it off the bill and the kitchen with a P0 row and no PIN; whether to waste a dish in the
+ * tandoor is the waiter's call, not the system's. This relaxes ST-S5/R8 for the waiter's cancel (see the
+ * ST sheet's Decisions). If you change this, ask Shaurya first.
  *
  * Reads before writes, same as markLinesSent. Returns the audit ids written.
  */
-async function voidCartLines(transaction, restaurantId, cartSnapshot, { staffId, reason, note, now }) {
-  const cartId = cartSnapshot && cartSnapshot.cartId;
-  if (!cartId) return [];
+async function voidCartLines(transaction, restaurantId, carts, { staffId, reason, note, now }) {
+  const rest = db.collection("restaurants").doc(restaurantId);
+  const rounds = (carts || []).filter(cart => cart && cart.cartId).map(cart => ({
+    cart,
+    refs: (cart.items || [])
+      // A served dish was eaten: the order keeps it SERVED and billable, so its line keeps counting too.
+      // (A cancelled round used to void it anyway, and the till billed less than the order.)
+      .filter(item => item.menuItemId && ![FULFILLMENT_STATUS.SERVED, FULFILLMENT_STATUS.RETURNED].includes(mapCartStatus(item.status)))
+      .map(item => rest.collection("lines").doc(`${cart.cartId}_${item.cartItemId ?? 0}`)),
+  }));
 
-  const refs = (cartSnapshot.items || [])
-    .filter(item => item.menuItemId)
-    .map(item => db.collection("restaurants").doc(restaurantId)
-      .collection("lines").doc(`${cartId}_${item.cartItemId ?? 0}`));
+  // Every read of every round first: a transaction may not read after its first write.
+  const read = await Promise.all(rounds.map(async (r) => {
+    const [docs, kotJobs] = await Promise.all([Promise.all(r.refs.map(ref => transaction.get(ref))), print.kotJobsOfCart(transaction, restaurantId, r.cart.cartId)]);
+    return { ...r, docs, kotJobs };
+  }));
 
-  const [docs, kotJobs] = await Promise.all([Promise.all(refs.map(ref => transaction.get(ref))), print.kotJobsOfCart(transaction, restaurantId, cartId)]);
+  // DECISION(D4, 2026-09-25): once the bill is printed the waiter's cancel is refused; only the till's
+  // Edit bill changes it (D2). An issued bill freezes its lines (BL R4), and this used to skip them
+  // quietly: the kitchen lost the dish while the guest still paid for it (TD-089). Checked here, inside
+  // the transaction, because a bill can be issued at the same moment. If you change this, ask Shaurya first.
+  const billed = read.flatMap(r => r.docs).find(doc => doc.exists && doc.data()?.billId);
+  if (billed) {
+    const billId = billed.data().billId;
+    const bill = await transaction.get(rest.collection("bills").doc(billId));
+    errorHandler.preconditionFailed(`Bill ${bill.exists ? billLabel(bill.data()) : billId} is printed — ask the cashier to edit it on the till`, { billId });
+  }
+
   const written = [];
-  const voidedLineIds = [];
-  docs.forEach((doc, i) => {
-    if (!doc.exists) return;
-    const before = doc.data();
-    // An issued bill freezes its lines; reversing one is cancel or a credit note (BL-S8/S9/S11),
-    // never a quiet void. Leave it and let billing refuse.
-    if (before.billId) return;
-    const applied = applyToLine(before, {
-      action: 'void',
-      reason: reason || 'guest left',
-      note: note || '',
-      approverId: staffId || 'system',
-    });
-    if (!applied.ok) return;   // already voided — nothing to do, and no second audit row
+  for (const { cart, refs, docs, kotJobs } of read) {
+    const voidedLineIds = [];
+    docs.forEach((doc, i) => {
+      if (!doc.exists) return;
+      const before = doc.data();
+      const applied = applyToLine(before, {
+        action: 'void',
+        reason: reason || 'guest left',
+        note: note || '',
+        approverId: staffId || 'system',
+      });
+      if (!applied.ok) return;   // already voided — nothing to do, and no second audit row
 
-    const auditId = `${refs[i].id}_v${applied.line.v}`;
-    transaction.set(
-      db.collection("restaurants").doc(restaurantId).collection("audit").doc(auditId),
-      auditRow({
-        ts: now, cid: cartSnapshot.cartId, action: 'void', staffId: staffId || 'system',
-        // P0 once the kitchen had it, P1 while it had not. Same split ST uses.
-        sev: before.sent ? 'P0' : 'P1',
-        reason: reason || 'guest left', note: note || '',
-        lineId: refs[i].id, before, after: applied.line,
-      }),
-    );
-    transaction.set(refs[i], applied.line);
-    written.push(auditId);
-    voidedLineIds.push(refs[i].id);
-  });
-  // KT-S11 / R5: a held ticket is dropped (the kitchen was never told); a ticket the kitchen may have seen gets a
-  // cancel ticket at its station for exactly the lines voided there. Keyed on the cart's id and this void's clock.
-  if (voidedLineIds.length) {
-    print.cancelForVoid(transaction, restaurantId, kotJobs, voidedLineIds, { v: `cart_${now}`, reason: reason || 'guest left', by: staffId || 'system', now });
+      const auditId = `${refs[i].id}_v${applied.line.v}`;
+      transaction.set(
+        rest.collection("audit").doc(auditId),
+        auditRow({
+          ts: now, cid: cart.cartId, action: 'void', staffId: staffId || 'system',
+          // P0 once the kitchen had it, P1 while it had not. Same split ST uses. The amount is the
+          // dish's price even when the kitchen made it and it is wasted: that is the real loss (Q4-2).
+          sev: before.sent ? 'P0' : 'P1',
+          reason: reason || 'guest left', note: note || '',
+          lineId: refs[i].id, before, after: applied.line,
+        }),
+      );
+      transaction.set(refs[i], applied.line);
+      written.push(auditId);
+      voidedLineIds.push(refs[i].id);
+    });
+    // KT-S11 / R5: a held ticket is dropped (the kitchen was never told); a ticket the kitchen may have seen gets a
+    // cancel ticket at its station for exactly the lines voided there. Keyed on the cart's id and this void's clock.
+    if (voidedLineIds.length) {
+      print.cancelForVoid(transaction, restaurantId, kotJobs, voidedLineIds, { v: `cart_${now}`, reason: reason || 'guest left', by: staffId || 'system', now });
+    }
   }
   return written;
 }

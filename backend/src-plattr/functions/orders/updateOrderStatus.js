@@ -1,6 +1,10 @@
 const functions = require('firebase-functions');
 const { admin, db } = require('../admin/admin');
-const { ORDER_STATUS } = require('./orderConstants');
+const { ORDER_STATUS, FULFILLMENT_STATUS } = require('./orderConstants');
+const { mapCartStatus } = require('../utils/statusUtils');
+const { voidCartLines } = require('./lineSnapshots');
+const { applyCartStatus, dishName } = require('../cart/updateCartStatus');
+const { buildOrderPriceInfo } = require('./createOrUpdateOrder');
 const OrderInputValidation = require('./orderInputValidation');
 const { validateStaffSession } = require('../adminApp/auth');
 const { calculateCartValue, isBillableItem } = require('../cart/calculateCartValue');
@@ -55,8 +59,13 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
   const { restaurantId, orderId, orderStatus, sessionId } = requestData;
   // Staff only: this endpoint closes the order. (It used to set paymentStatus PAID too;
   // that is PY's now, TD-010.) validateSessionId was optional-and-anonymous — unacceptable here.
-  await validateStaffSession(restaurantId, sessionId);
-  const chargesConfig = orderStatus === ORDER_STATUS.COMPLETED ? await loadChargesConfig(restaurantId) : [];
+  const { serverId, serverData } = await validateStaffSession(restaurantId, sessionId);
+  const isCancel = orderStatus === ORDER_STATUS.CANCELLED;
+  // D4: the waiter (or the cashier) cancels. The kitchen strikes a round, never a whole order.
+  if (isCancel && !['SERVER', 'MANAGER', 'ADMIN'].includes(serverData?.role)) {
+    errorHandler.forbidden('Only the waiter or the cashier can cancel an order', { restaurantId, orderId, role: serverData?.role });
+  }
+  const chargesConfig = orderStatus === ORDER_STATUS.COMPLETED || isCancel ? await loadChargesConfig(restaurantId) : [];
   try {
     const orderRef = db
       .collection(COLLECTIONS.RESTAURANTS).doc(restaurantId)
@@ -94,6 +103,42 @@ exports.updateOrderStatus = functions.https.onCall(async (data, context) => {
       }
 
       const updatePayload = { orderStatus, updatedAt: timestamp.serverTimestamp() };
+      const UNBILLED = [FULFILLMENT_STATUS.CANCELLED, FULFILLMENT_STATUS.RETURNED];
+      const liveCarts = (order.carts || []).map((cart, i) => ({ cart, i })).filter(({ cart }) => !UNBILLED.includes(mapCartStatus(cart.status)));
+
+      if (orderStatus === ORDER_STATUS.CANCELLED) {
+        // DECISION(D4, 2026-09-25): 20:10 table 6's guest leaves before the Chicken 65 and Butter Naan are cooked;
+        // the captain taps Cancel Order. Every dish leaves the bill and the kitchen through the same void as a
+        // round cancel: an audit row each, no PIN, refused once the bill is printed (the till's Edit bill owns
+        // that). It used to write only orderStatus, so the kitchen lost the ticket and the till still billed it
+        // (TD-089). If you change this, ask Shaurya first.
+        // A served dish was eaten and cannot be cancelled; the waiter cancels the rest one dish at a time.
+        const served = liveCarts.flatMap(({ cart }) => cart.items || []).find(item => mapCartStatus(item.status) === FULFILLMENT_STATUS.SERVED);
+        if (served) {
+          errorHandler.preconditionFailed(`${dishName(served)} is already served — cancel the other dishes one at a time`, { orderId });
+        }
+        await voidCartLines(tx, restaurantId, liveCarts.map(({ cart }) => cart), {
+          staffId: serverId, reason: 'other', note: 'order cancelled', now: Date.now(),
+        });
+        let next = order;
+        for (const { i } of liveCarts) {
+          next = { ...next, ...applyCartStatus(next, i, FULFILLMENT_STATUS.CANCELLED, { status: FULFILLMENT_STATUS.CANCELLED, timestamp: timestamp.now(), userId: serverId, notes: 'order cancelled' }) };
+        }
+        updatePayload.carts = next.carts;
+        if (Array.isArray(order.items)) updatePayload.items = next.items;
+        const { priceInfo, appliedOffer } = await buildOrderPriceInfo(restaurantId, next.carts, order.sessionId, chargesConfig, orderId);
+        updatePayload.priceInfo = priceInfo;
+        updatePayload.appliedOffer = appliedOffer;
+      }
+
+      // TD-092: completing an order while a round is still at the kitchen dropped it from the kitchen and waiter
+      // screens while the till still billed it. The waiter app's Mark Paid is gone (D4); this guards the endpoint.
+      if (orderStatus === ORDER_STATUS.COMPLETED) {
+        const open = liveCarts.find(({ cart }) => mapCartStatus(cart.status) !== FULFILLMENT_STATUS.SERVED);
+        if (open) {
+          errorHandler.preconditionFailed(`Round ${open.i + 1} is still ${mapCartStatus(open.cart.status)} — serve or cancel it first`, { orderId });
+        }
+      }
 
       // If marking complete, revalidate prices AND re-evaluate order-level offer
       // (safety net in case items were cancelled after checkout).
