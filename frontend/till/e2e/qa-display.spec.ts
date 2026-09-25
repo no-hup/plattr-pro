@@ -77,3 +77,23 @@ test('QF-10 FL-S15: a floor gone stale is greyed, not just captioned', async ({ 
   expect(await opacity()).toBeLessThan(1)
 })
 
+test('QF-9 R13: picking shows which tiles are picked, and speaks in table numbers, never ids', async ({ page }) => {
+  const sent = await fake(page, {
+    'floor-get': () => floorOf([tile('6'), tile('7'), tile('8')]),
+    'table-setMerge': () => ok({}),
+  })
+  await login(page)
+  await page.getByTestId('start-merge').click()
+  await page.getByTestId('tile-6').getByRole('button').first().click()
+  await page.getByTestId('tile-7').getByRole('button').first().click()
+  await expect(page.getByTestId('picking')).not.toContainText('tbl_')
+  await expect(page.getByTestId('picking')).toContainText('keep 6')
+  await expect(page.getByTestId('picking')).toContainText('join 7')
+  const outline = (label: string) => page.getByTestId(`tile-${label}`).getByRole('button').first().evaluate(b => getComputedStyle(b).outlineStyle)
+  expect(await outline('6')).not.toBe('none')
+  expect(await outline('8')).toBe('none')
+  await page.getByTestId('confirm-pick').click()
+  await expect(page.getByTestId('floor-msg')).toHaveText('Merged into 6')
+  // Display only: the act still goes out with document ids.
+  expect(sent['table-setMerge'][0]).toMatchObject({ parentTableId: 'tbl_meg_6', childTableIds: ['tbl_meg_7'], merge: true })
+})

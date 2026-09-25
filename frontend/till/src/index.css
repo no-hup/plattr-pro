@@ -11,3 +11,6 @@ body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; }
 
 /* QF-10 / FL-S15: a floor that stopped answering is greyed, not only captioned. */
 .stale { opacity: .45; filter: grayscale(1); }
+
+/* QF-9 / R13: a picked tile shows it is picked. */
+[data-picked] > button:first-child { outline: 3px solid #2563eb; outline-offset: 2px; }

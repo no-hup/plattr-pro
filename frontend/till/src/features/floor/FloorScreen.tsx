@@ -46,10 +46,17 @@ export function FloorScreen({ ctx, role }: { ctx: Ctx; role: string }) {
     location.assign(`${location.pathname}?${p.toString()}`)
   }
 
+  // QF-9: a person reads table numbers, never document ids (Decisions 2026-09-18). Ids stay on the wire.
+  const labelOf = (id: string) => floor.tiles.find(t => t.tableIds[0] === id)?.label ?? id
+  const pickedWords = mode === 'merge'
+    ? `keep ${labelOf(picked[0])}${picked.length > 1 ? `, join ${picked.slice(1).map(labelOf).join(', ')}` : ''}`
+    : `move ${labelOf(picked[0])}${picked.length > 1 ? ` to ${labelOf(picked[1])}` : ''}`
+
   async function confirm() {
     if (mode === 'merge' && picked.length >= 2) {
       const [parent, ...children] = picked
-      if (await floor.merge(parent, children)) say(`Merged into ${parent}`)
+      const keeper = labelOf(parent)
+      if (await floor.merge(parent, children)) say(`Merged into ${keeper}`)
     }
     if (mode === 'move' && picked.length === 2) {
       if (await floor.move(picked[0], picked[1])) say('Party moved')
@@ -121,7 +128,7 @@ export function FloorScreen({ ctx, role }: { ctx: Ctx; role: string }) {
             <>
               <span data-testid="picking">
                 {mode === 'merge' ? 'Pick the table to keep, then the ones to join it' : 'Pick the party, then the empty table'}
-                {picked.length ? ` — ${picked.join(', ')}` : ''}
+                {picked.length ? ` — ${pickedWords}` : ''}
               </span>
               <button data-testid="confirm-pick" onClick={confirm} disabled={!ready || floor.busy}>Confirm</button>
               <button data-testid="cancel-pick" onClick={stop}>Cancel</button>
