@@ -56,3 +56,9 @@ test('QF-13 FL-S5: a seated table with nothing placed reads "seated" and ₹0.00
   await expect(page.getByTestId('tile-1')).toContainText('₹0.00')
 })
 
+test('QF-8 FL-S20: a billed table that ordered dessert reads "₹66.00 due · ₹60.00 new"', async ({ page }) => {
+  await fake(page, { 'floor-get': () => floorOf([tile('10', { word: 'billed', unpaid: 6600, onTable: 6000, minutes: 40 })]) })
+  await login(page)
+  await expect(page.getByTestId('tile-10')).toContainText('₹66.00 due · ₹60.00 new')
+})
+
