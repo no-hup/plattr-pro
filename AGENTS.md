@@ -66,6 +66,9 @@ Rules:
 
 ## Testing
 
+**Before writing any test** (unit, e2e, Flutter or Playwright): read `TESTING.md`. It holds the few
+principles every test here follows, and its own rules for editing it.
+
 ### Browser / front-end testing
 
 Driving the Flutter apps in a browser: **gstack `/browse`, headless, via `scripts/ab.sh`** —

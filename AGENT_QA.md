@@ -45,6 +45,9 @@ Observer habits that paid off:
   fired what, and an error shows up before the driver reports it.
 - Tell your own probes apart from the driver's calls. Your test call's error will appear in the same log.
 - Before calling something a bug, check whether a debug build or the seed explains it.
+- After the run, reproduce the top findings by calling the backend directly on a clean seed. That tells the fixer
+  whether the fault is in the screen or in the API (the floor's walk-out bug was in `floor-get`), and catches a finding
+  that was really a spec conflict.
 
 ## 4. Rules for the sanity spine
 
@@ -112,9 +115,13 @@ would confuse a cashier. Ask at every step: "what would annoy or mislead the cas
 **Unbuilt features.** A control that doesn't exist yet is a cell marked "not built", not a reason
 to stop the screen.
 
-**Seed, act, check.** Exploration may seed its starting state through Firestore REST. "Table 5
-billed, table 6 settled" takes seconds to write and ten minutes to click. The till Playwright specs
-already contain seed helpers.
+**Seed, act, check.** Exploration seeds its starting state instead of clicking it: "table 5 billed,
+table 6 settled" takes a second to seed and ten minutes to click. Seed **through the real endpoints**
+(guest OTP, cart, checkout, `billing-issue`, `payments-take`), not by writing documents. A seeded
+document is the shape the reader expects, which is how the bill-to-table bug hid (§8). The helper is
+[qa/floorstate.mjs](backend/src-plattr/functions/test/e2e/qa/floorstate.mjs): `node floorstate.mjs 6 billed`,
+`… 6 dump`, `… audit`. Add a state there when a screen needs one, rather than writing a second helper.
+Test the helper on every state before briefing the driver, because a broken seed looks like a broken screen.
 
 **Order.** Risk first, from what has already failed: till floor (merge, move, Clear), bill
 (charges, cancel, credit note), tender (part-pay, refund), server orders tab, kitchen, consumer,
@@ -126,6 +133,10 @@ Paste the step or grid table, and nothing else the driver doesn't need. Always i
 - the environment: slot, ports, seed, restaurant, table, staff logins, the exact dish
 - the tooling sections of FRONTEND_TESTING.md to read (§2, §4, §6, §11), by section, not whole
 - the rules in §4 (or the grid and misuses in §5), the command budget, and the trajectory file path
+- **a "do not report" list**: open `TECH_DEBT.md` rows for that screen, and any by-design difference
+  the driver will trip over (a tile shows food at ₹60, the bill ₹66 with service charge and tax). Without
+  it, the report fills up with known items.
+- the spec sheet's scenario ids next to each grid row, so every expected result cites its source
 - the trajectory line shape:
   `{"hop":1,"app":"consumer","action":"...","url":"...","expected":"...","actual":"...","verdict":"PASS|FAIL|BYPASSED|NOTE","reason":"...","ts":"ISO"}`
 - the final message: the per-step table, evidence for every FAIL or BYPASSED, the money seen, and
@@ -136,6 +147,14 @@ Paste the step or grid table, and nothing else the driver doesn't need. Always i
 - The trajectory goes to `backend/src-plattr/functions/test/e2e/results/<name>-<date>.jsonl`.
   The report goes to `moonshot/reviews/<date>-<name>.md`. The prose summarises the file; it never
   replaces it.
+- **The finder does not fix.** An exploration run only finds and writes down. A separate agent reads
+  the report, looks at the code and fixes it, so each finding has to stand alone for a reader who
+  wasn't there. Each one gets: a severity (P0 money wrong or lost, P1 cashier blocked or misled, P2
+  friction, P3 cosmetic), the scene in a restaurant sentence, steps from a clean re-seed (helper
+  commands, login, test ids), the expected result with its scenario id, what the screen said (quoted)
+  and what the database said, and the evidence (trajectory cell, screenshot). No proposed fix; at most
+  one "where to look" line. The report ends with **suggestions from the cashier's chair** (features
+  wanted after an evening on the screen) and a coverage grid of control × state.
 - **Every real bug becomes one automated check** at the cheapest level that can see it: a unit test
   for a rule, an e2e suite or the journey for a transaction, Playwright for something only the
   screen shows. Prove the check red on the old code, then green on the fix.
@@ -171,7 +190,8 @@ Each one cost a run time or produced a false finding.
 - **`journey.mjs` closes the business day** at the end, and later payments that day are refused.
   Re-seed after it.
 - **Other sessions share the source tree.** Take your own emulator slot (`EMU_SLOT`); slot 0 is
-  usually someone else's.
+  usually someone else's. The till follows it only if started with `VITE_FUNCTIONS_URL` pointing at
+  your slot (FRONTEND_TESTING §3); otherwise it quietly reads slot 0.
 
 ## 9. Editing this file
 
@@ -190,3 +210,5 @@ For any agent running this process:
 |---|---|---|---|---|
 | 2026-09-22 | spine | dine-in, one dish, cash, 5 apps; Opus driver, parent observer | 5/6; Clear failed. Found: bills not linked to their sitting, blank staff tiles, till login loss, tile vs bill amount | [sanity-run-1](moonshot/reviews/2026-09-22-sanity-run-1.md) |
 | 2026-09-25 | spine (till steps 4–6) | re-drive on a real checkout after the fix | 10/10; the tap after issue now routes to the bill | same report, "Fixed 2026-09-25" |
+| 2026-09-25 | exploration | till floor: merge, unmerge, move, tap, clear, walk-out, roles, stale; Opus driver with a seed helper | 93 cells, 19 FAIL (1 P0, 4 P1). Refusals and roles held; walk-out, parcels and stale Confirm did not. The top 3 were reproduced by the observer on the backend | [qa-till-floor](moonshot/reviews/2026-09-25-qa-till-floor.md) |
+| 2026-09-25 | exploration | till bill screen: preview, generate, cancel, comp, service charge, split (API only), dessert after the bill; Opus driver, grid written first by a read-only prep agent | 73 cells, 25 FAIL (2 P0, 5 P1). Numbers and tax held; the split offer and the part-paid cancel did not. Both P0s were reproduced by the observer on the backend | [qa-bill-screen](moonshot/reviews/2026-09-25-qa-bill-screen.md) |
