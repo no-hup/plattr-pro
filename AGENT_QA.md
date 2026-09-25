@@ -192,7 +192,8 @@ Each one cost a run time or produced a false finding.
   Re-seed after it.
 - **Other sessions share the source tree.** Take your own emulator slot (`EMU_SLOT`); slot 0 is
   usually someone else's. The till follows it only if started with `VITE_FUNCTIONS_URL` pointing at
-  your slot (FRONTEND_TESTING §3); otherwise it quietly reads slot 0.
+  your slot (FRONTEND_TESTING §3); otherwise it quietly reads slot 0. Take the ports from `EMU_SLOT=n ./emu.sh env`,
+  never from a brief (slot 3's functions are `:5302`), and export them before `floorstate.mjs`: without them it talks to slot 0.
 
 ## 9. Editing this file
 
@@ -215,3 +216,4 @@ For any agent running this process:
 | 2026-09-25 | exploration | till bill screen: preview, generate, cancel, comp, service charge, split (API only), dessert after the bill; Opus driver, grid written first by a read-only prep agent | 73 cells, 25 FAIL (2 P0, 5 P1). Numbers and tax held; the split offer and the part-paid cancel did not. Both P0s were reproduced by the observer on the backend | [qa-bill-screen](moonshot/reviews/2026-09-25-qa-bill-screen.md) |
 | 2026-09-25 | exploration | till tender screen: cash, change, split, tips, overpay, on account, void, refund, lost answer, reload, two tills, roles, then floor and day close; one agent as driver and observer | 48 cells, 10 FAIL (4 P1). Every take's money held; a credit note blocks day close for good, a lost answer freezes the tab's payments, and refunds need ids no screen shows. The top 3 were reproduced on the backend | [qa-till-tender](moonshot/reviews/2026-09-25-qa-till-tender.md) |
 | 2026-09-25 | exploration | till day close: blind count, movements with PIN, over/short, open/part-paid/on-account/comp/cancelled/walk-out/estimate, close twice, two tills, reload, roles, after the close, past and future dates; one agent as driver and observer | 51 cells, 11 FAIL (4 P1). The money and the blind count held; a walk-out or a cancel still blocks the close and the till can't clear it, nothing links to the screen, and a mistyped movement can't be voided. The top findings were reproduced on the backend | [qa-till-dayclose](moonshot/reviews/2026-09-25-qa-till-dayclose.md) |
+| 2026-09-25 | exploration | till merged groups (merge from the till, two phones, bill, pay, Clear, unmerge, old phone, two tills) and parcel tickets (packing, drop, drinks only, cash/UPI/card/account, what frees P1, day view); one agent as driver and observer, states from real endpoints | 26 cells, 6 FAIL (2 P1). Every bill matched the hand-worked money and group Clear frees every table; a paid parcel stays open so the next walk-up can't be billed, a beer to go can't be billed, and a group's bill says "10" not "10+11". The top 3 were reproduced on the backend | [qa-till-groups-parcels](moonshot/reviews/2026-09-25-qa-till-groups-parcels.md) |
