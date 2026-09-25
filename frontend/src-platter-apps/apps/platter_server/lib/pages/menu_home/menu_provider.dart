@@ -165,3 +165,13 @@ List<Addon> menuAddons(FullRestaurantMenuResponse? menu) {
   }
   return byId.values.toList()..sort((a, b) => a.meta.name.compareTo(b.meta.name));
 }
+
+/// The dishes a waiter sees under one category heading. The read groups dishes by subcategory, so match on
+/// the dish's own category (TD-134).
+List<MenuItem> categoryDishes(FullRestaurantMenuResponse? menu, MenuCategory category) =>
+    menuDishes(menu).where((i) => i.categoryId == category.id).toList();
+
+/// Every dish on the menu, once: a dish listed in two subcategories comes back in both groups.
+List<MenuItem> menuDishes(FullRestaurantMenuResponse? menu) => {
+      for (final i in (menu?.menuItems.values ?? const <List<MenuItem>>[]).expand((l) => l)) i.id: i
+    }.values.toList();

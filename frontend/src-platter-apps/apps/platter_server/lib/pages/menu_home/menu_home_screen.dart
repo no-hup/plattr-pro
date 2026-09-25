@@ -196,12 +196,6 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
     );
   }
 
-  List<MenuItem> _getMenuItemsForCategory(MenuCategory category) {
-    final menu = _menuProvider.menu;
-    if (menu == null) return [];
-    return menu.menuItems[category.id] ?? [];
-  }
-
   Widget _buildCategorySection(MenuCategory category) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,7 +222,7 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
             ),
           ),
         const SizedBox(height: 8),
-        ..._getMenuItemsForCategory(category)
+        ...categoryDishes(_menuProvider.menu, category)
             .map((item) => _buildMenuItem(item)),
         const Divider(thickness: 1),
       ],

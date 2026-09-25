@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:platter_core/platter_core.dart';
 import '../menu_home/repository/menu_api_service.dart';
+import '../menu_home/menu_provider.dart';
 import 'dish_search.dart';
 import 'models/table_models.dart';
 import 'repository/order_entry_api_service.dart';
@@ -83,10 +84,7 @@ class _AddDishesScreenState extends State<AddDishesScreen> {
         return;
       }
       _categories = menu.data!.categories;
-      _all = menu.data!.menuItems.values
-          .expand((l) => l)
-          .where((i) => i.isAvailable)
-          .toList();
+      _all = menuDishes(menu.data).where((i) => i.isAvailable).toList();
     });
   }
 
