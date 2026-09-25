@@ -29,7 +29,9 @@
 ## Orders Tab PRD
 - Display: active orders sorted by urgency/status; show orderId, tableId, and item status pills
 - Detail view: multi-cart display with item list, variants/addons, status chips
-- Actions: mark READY (cart-level updates), cancel order (order-level update)
+- Actions: mark READY (cart-level updates), cancel one dish (`cart-updateCartStatus` with `cartItemId`), cancel order
+  (`order-updateOrderStatus` CANCELLED). Every cancel takes the dish off the till bill and the kitchen, audited, no PIN;
+  a printed bill refuses it and names the bill (D4, 2026-09-25). No Mark Paid: the till owns payment.
 - Error states: offline or backend failure should show error banner but keep cached list
 - Suggestion: add "Only my assigned orders" filter (serverId) and "Ready" first sorting
 

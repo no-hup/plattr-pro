@@ -90,7 +90,8 @@ The backend maintains shared data objects (restaurants, tables, sessions, menus,
 1. Kitchen updates preparation status.
 2. READY items notify servers.
 3. Servers mark items served.
-4. Order closes when all items are resolved.
+4. Order closes when all items are resolved. Completing an order while a round is still at the kitchen is refused
+   (TD-092): the kitchen and waiter screens would drop food the till still bills.
 
 ## 8. Functional Requirements
 
@@ -120,7 +121,14 @@ The backend maintains shared data objects (restaurants, tables, sessions, menus,
 - Session-based staff login with expiry handling.
 - Notifications for READY items and new orders.
 - Confirm or reject a guest-placed order, where the restaurant requires it (see 9.4).
-- No bill powers: once a bill is printed only the till changes it (decided 2026-09-25, D2).
+- No bill powers: once a bill is printed only the till changes it (decided 2026-09-25, D2). No Mark Paid either:
+  the till owns payment (D4).
+- **Cancel a dish.** 20:10, table 6 sent Chicken 65 and Butter Naan; the guest drops the naan. The waiter cancels the
+  naan alone: it leaves the till bill (₹375 → ₹309) and the kitchen screen, with an audit row naming the waiter, no
+  PIN. If the tandoor already has it, the waiter decides: tell the guest it stays (don't cancel), or cancel and waste
+  it; the row records that the kitchen had it. Cancel Order does the same for every dish. Once the bill is printed
+  the cancel is refused: "Bill A-0002 is printed — ask the cashier to edit it on the till". Without this, the kitchen
+  stops cooking a dish the guest is still billed for (decided 2026-09-25, D4).
 
 **Should have**
 - Assignment filtering (“my tables”).
@@ -257,6 +265,8 @@ whether the gate is on or off; confirmation controls only when the kitchen is to
   (see 9.4); everywhere else a checkout begins at Pending
 - An unconfirmed cart has exactly two moves: the waiter confirms it, or it is cancelled
 - Cancelled and Returned are terminal outcomes
+- One dish can be cancelled on its own; its round stays live until no dish in it is left (D4). A served dish
+  cannot be cancelled, and an order with a served dish cannot be cancelled whole
 
 ### 10.5 Bill State
 - Issued → Paid (the payments settle it) · Issued → Cancelled (Cancel with a PIN, or Edit with no PIN; either only
