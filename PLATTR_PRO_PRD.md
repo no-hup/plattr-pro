@@ -119,6 +119,7 @@ The backend maintains shared data objects (restaurants, tables, sessions, menus,
 - Session-based staff login with expiry handling.
 - Notifications for READY items and new orders.
 - Confirm or reject a guest-placed order, where the restaurant requires it (see 9.4).
+- No bill powers: once a bill is printed only the till changes it (decided 2026-09-25, D2).
 
 **Should have**
 - Assignment filtering (“my tables”).
@@ -148,6 +149,21 @@ The backend maintains shared data objects (restaurants, tables, sessions, menus,
 - Historical orders with filtering and export.
 - Role-based permissions for managers vs staff.
 
+### 8.5 Till (Cashier)
+Decided 2026-09-25 (D1, D2, D3, D7). Full rules in `moonshot/SPEC_BL_billing_and_tax.md`, `SPEC_FL_floor_and_moves.md`,
+`SPEC_PY_payments.md` and `SPEC_DC_day_close.md`.
+- **Edit bill.** 22:10, table 12's ₹4,800 bill is on the table; they order two gulab jamun and ask for the service
+  charge off. The cashier taps Edit: the old number is cancelled as "edited", no PIN, and the new bill says
+  "Replaces A-0417". *Without this dessert after the bill cannot be billed at all.*
+- **No edit with money on it.** A friend has paid ₹500 of A-0004; Edit and Cancel are refused ("₹500 already paid on
+  A-0004 — take the rest first"), and a new round is refused until the payment is finished. *Without this the ₹500 stays on a
+  dead bill and the guest pays twice.*
+- **Walk-out.** 22:40, table 6 leaves on ₹660. Walk-out with the manager PIN marks the bill walked out, frees the
+  table, and day close shows "₹660 walked out" on its own line. A guest who comes back pays on the same bill.
+  *Without this one walk-out stops the day from closing.*
+- **Partner payments.** A guest pays through Dineout, EazyDiner or Swiggy Dineout; the cashier picks the partner as
+  the payment method and types its reference. *Without this the partner's money has nowhere to land on the bill.*
+
 ## 9. Shared Platform Concepts
 
 ### 9.1 Multi-Cart Order Model
@@ -162,6 +178,12 @@ Orders behave like a shared table tab. Each checkout creates a cart snapshot tha
 - Sessions link customers to a table and enable shared ordering.
 - Multi-user sessions may be enabled or disabled.
 - Session validity is time-bound and ends on inactivity or order closeout.
+
+### 9.3a A printed bill is frozen
+An issued bill never changes (GST: the series must stay honest). Changing it means cancelling it and issuing a new
+number that names the one it replaced. The till's Edit cancels it and returns the dishes to the draft; the next Issue
+names the bill it replaced. A table that has paid takes no new
+round or new guest until the cashier clears it; late coffees start a new sitting on a new bill (decided 2026-09-25).
 
 ### 9.4 Waiter-Confirmed Ordering (optional, per restaurant)
 
@@ -193,6 +215,10 @@ whether the gate is on or off; confirmation controls only when the kitchen is to
   the cashier's Clear. A table that still owes (unbilled food or an unpaid bill, the group's for a
   merged child) can only be freed by the cashier, with a PIN and a reason, and the audit row names
   the amount walked away from. A captain is refused outright (decided 2026-09-24, Shaurya).
+- A walk-out is the one way a table that owes is freed: the manager PIN marks its unpaid bills walked out, and
+  food never billed is billed first (decided 2026-09-25, D1).
+- A paid table stays Active until Clear, but takes no new round and no new guest; a table whose bill is part-paid
+  takes no new round until the payment is finished (decided 2026-09-25, D2/D3).
 - Disabled is an admin override state
 - Reserved is a staff-held state, set and cleared by the waiter (decided 2026-09-08,
   see 16.1). It is outside the self-service lifecycle: a customer scanning a reserved
@@ -216,6 +242,11 @@ whether the gate is on or off; confirmation controls only when the kitchen is to
   (see 9.4); everywhere else a checkout begins at Pending
 - An unconfirmed cart has exactly two moves: the waiter confirms it, or it is cancelled
 - Cancelled and Returned are terminal outcomes
+
+### 10.5 Bill State
+- Issued → Paid (the payments settle it) · Issued → Cancelled (Cancel with a PIN, or Edit with no PIN; either only
+  while no money is on it) · Issued → Walked out → Paid (if the guest comes back)
+- A walked-out bill keeps its number and owes nothing on the floor or at day close (decided 2026-09-25, D1)
 
 ## 11. Notifications and Real-Time Updates
 - READY items notify servers.
