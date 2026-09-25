@@ -291,8 +291,26 @@ const onlyKeys = (o, keys, what) => {
  * through menu-updateMenuItemAvailability, where the waiter can reach it too. Returns the record and the
  * top-level fields it touched, so the write names only those.
  */
+/**
+ * A new portion option, id from its name and unique in the group: "Jumbo (serves 5)" → `jumbo_serves_5`. The cart
+ * stores the chosen option's id on the line, so an id is never reused within a group while the group lives.
+ */
+function newOption(taken, o) {
+  onlyKeys(o, ['name', 'price'], 'new portion option');
+  const name = nameOf(o?.name);
+  const base = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 24) || 'option';
+  let id = base;
+  for (let n = 2; taken.has(id); n++) id = `${base}_${n}`;
+  taken.add(id);
+  return { id, name, priceInfo: new BasicPriceInfo(priceOf(o?.price, `Portion ${name}`), 0).toObject() };
+}
+
+const atLeastOne = options => {
+  if (!options.length) errorHandler.badRequest('A portion group needs at least one option');
+};
+
 function applyChanges(kind, record, changes) {
-  onlyKeys(changes, kind === 'addon' ? ['name', 'price'] : ['name', 'options'], kind);
+  onlyKeys(changes, kind === 'addon' ? ['name', 'price'] : ['name', 'options', 'addOptions', 'removeOptionIds'], kind);
   if (!changes || !Object.keys(changes).length) errorHandler.badRequest('Nothing to change');
   const next = JSON.parse(JSON.stringify(record));
   const touched = new Set();
@@ -316,6 +334,27 @@ function applyChanges(kind, record, changes) {
     }
     touched.add('options');
   }
+  // DECISION(D6/TD-132, 2026-09-25): the manager adds "Jumbo (serves 5) ₹480" to the Portion on 3 biryanis, or
+  // takes an option off, on the shared record like any other edit. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md.
+  // If you change this, ask Shaurya first. A cart already holding a removed option keeps its price (Q6-2).
+  if (kind === 'variant' && changes.removeOptionIds !== undefined) {
+    if (!Array.isArray(changes.removeOptionIds) || !changes.removeOptionIds.length) errorHandler.badRequest('removeOptionIds must list the options to remove');
+    for (const optId of changes.removeOptionIds) {
+      if (!(next.options || []).some(o => o.id === optId)) errorHandler.badRequest(`Unknown portion option "${optId}" on ${record.name || record.id}`, { optionId: optId });
+    }
+    next.options = next.options.filter(o => !changes.removeOptionIds.includes(o.id));
+    // A cart may still hold a removed option; its id is never handed out again in this group.
+    next.retiredOptionIds = [...new Set([...(next.retiredOptionIds || []), ...changes.removeOptionIds])];
+    touched.add('options');
+    touched.add('retiredOptionIds');
+  }
+  if (kind === 'variant' && changes.addOptions !== undefined) {
+    if (!Array.isArray(changes.addOptions) || !changes.addOptions.length) errorHandler.badRequest('addOptions must list the options to add');
+    const taken = new Set([...(record.options || []).map(o => o.id), ...(next.retiredOptionIds || [])]);
+    next.options = [...(next.options || []), ...changes.addOptions.map(o => newOption(taken, o))];
+    touched.add('options');
+  }
+  if (kind === 'variant') atLeastOne(next.options || []);
   return { next, touched: [...touched] };
 }
 
@@ -324,8 +363,10 @@ const pick = (o, keys) => Object.fromEntries(keys.map(k => [k, o[k]]));
 /**
  * admin-sharedOption { restaurantId, sessionId, action, kind: 'addon'|'variant', id, menuItemId, changes }
  *   usage        → { addons: {id: n}, variants: {id: n} }   dishes linking each record
- *   create       → { id, record }            a new add-on (Q6-3), name + price; the dish save links it
- *   update       → { id, usedBy, record }    changes the shared record: every linked dish follows
+ *   create       → { id, record }            a new add-on (Q6-3) {name, price}, or portion group (TD-132)
+ *                                            {name, isMandatory?, options: [{name, price}]}; the dish save links it
+ *   update       → { id, usedBy, record }    changes the shared record: every linked dish follows. A portion
+ *                                            also takes addOptions [{name, price}] and removeOptionIds [id]
  *   copyForDish  → { id, record, menuItemId } copies the record with the changes, relinks that one dish
  */
 exports.sharedOption = functions.https.onCall(async (data, context) => {
@@ -343,8 +384,31 @@ exports.sharedOption = functions.https.onCall(async (data, context) => {
     const audit = restaurantRef.collection('audit');
     const label = kind === 'addon' ? 'add-on' : 'portion';
 
+    if (action === 'create' && kind === 'variant') {
+      // TD-132: a new portion group ("Rice": Jeera rice ₹0, Extra rice ₹50) from the dish editor; the dish save links
+      // it. Like the seeded Portion, its options follow the dish's own discount (respectParentDiscount).
+      onlyKeys(changes, ['name', 'options', 'isMandatory'], 'portion group');
+      const name = nameOf(changes?.name);
+      if (changes.isMandatory !== undefined && typeof changes.isMandatory !== 'boolean') errorHandler.badRequest('isMandatory must be true or false');
+      if (!Array.isArray(changes.options)) errorHandler.badRequest('A portion group needs at least one option');
+      const taken = new Set();
+      const options = changes.options.map(o => newOption(taken, o));
+      atLeastOne(options);
+      const ref = col.doc();
+      const record = {
+        id: ref.id,   // the cart finds a record by this field, not the doc id: they must match
+        name, meta: { name, description: '' }, options,
+        isMandatory: changes.isMandatory === true, respectParentDiscount: true,
+      };
+      await db.runTransaction(async tx => {
+        tx.set(ref, { ...record, lastUpdated: timestamp.serverTimestamp() });
+        tx.create(audit.doc(), menuAuditRow(serverId, 'menuOptionCreate', `menu_${ref.id}`, null, record, 'variant'));
+      });
+      console.log(JSON.stringify({ cid: `menu_${ref.id}`, action: 'menuOptionCreate', restaurantId, kind, staffId: serverId }));
+      return ResponseBuilder.success({ id: ref.id, record }, 'Portion group created');
+    }
+
     if (action === 'create') {
-      if (kind !== 'addon') errorHandler.badRequest('Only add-ons can be created here');
       requireField(changes?.name, 'The add-on needs a name');
       onlyKeys(changes, ['name', 'price'], 'add-on');
       const ref = col.doc();

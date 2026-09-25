@@ -150,6 +150,9 @@ The backend maintains shared data objects (restaurants, tables, sessions, menus,
   as the tab loaded it. *Without this a stale tab puts sold-out prawns back on sale, and a save erased a dish's add-ons.*
 - **New add-on from the dish editor.** "Mirchi ka Salan ₹30" typed on Chicken Biryani becomes a shared add-on at once
   and is on sale when the dish is saved. *Without this a new add-on gets an id no cart accepts.*
+- **New portions and options.** The manager adds "Jumbo (serves 5) ₹480" to the biryani Portion ("Portion is on 3
+  dishes"), deletes an option, or makes a new "Rice" group (Extra rice ₹50) from the dish editor (TD-132, 2026-09-25).
+  *Without this a new portion needs a developer.*
 - Table management: add/edit tables, capacity, status.
 - Staff management: create/update servers and assignments.
 - View active orders and operational status.

@@ -296,15 +296,21 @@ Decision: `moonshot/reviews/2026-09-25-decisions-for-shaurya.md` D6. ADMIN/MANAG
 { restaurantId, sessionId, action, kind: 'addon' | 'variant', id?, menuItemId?, changes? }
 ```
 - `usage` → `{ addons: {id: n}, variants: {id: n} }`: dishes linking each record, over every dish (not the active menu).
-- `update` → `{ id, usedBy, record }`: add-on `{name?, price?}`, portion `{name?, options: [{id, name?, price?}]}`
-  on the shared record; every linked dish follows. Price ₹0 or more; the record's own discount is kept.
+- `update` → `{ id, usedBy, record }`: add-on `{name?, price?}`, portion `{name?, options: [{id, name?, price?}],
+  addOptions: [{name, price}], removeOptionIds: [id]}` on the shared record; every linked dish follows. Price ₹0 or
+  more; the record's own discount is kept. A new option's id comes from its name ("Jumbo (serves 5)" →
+  `jumbo_serves_5`, unique in the group; a removed option's id is kept in `retiredOptionIds` and never handed out
+  again, since a cart may still hold it). A group left with no options is refused (TD-132).
 - `copyForDish` → `{ id, record, menuItemId }`: "Only Mutton Biryani" — copies the record with the changes into a
   new record (its `id` field set to the new doc id: the cart finds records by that field) and relinks that one dish.
-- `create` (add-on only, Q6-3) → `{ id, record }`: a new in-stock add-on; the dish save links it.
+- `create` → `{ id, record }`: a new in-stock add-on `{name, price}` (Q6-3), or a portion group
+  `{name, isMandatory?, options: [{name, price}]}` (TD-132; its options follow the dish's discount, like the seeded
+  Portion). The dish save links it.
 - One audit row per act (`menuOptionEdit` / `menuOptionCopy` / `menuOptionCreate`, P1, before/after) in the same
   transaction. Stock goes through `menu-updateMenuItemAvailability` with `addonId`.
 - A price is fixed when the dish goes into the cart (Q6-2): Raita ₹40 added at 19:55 is sent at ₹40 after a raise to
-  ₹50 at 20:00; checkout re-reads stock only. Not offered here yet: new portion groups, new/removed options (TD-132).
+  ₹50 at 20:00; checkout re-reads stock only. The same holds for a removed portion option: a cart already holding
+  it is sent at its price; a new add is refused ("Selected option not found").
 
 ### Addon-MenuItem Relationship
 ```

@@ -9,7 +9,7 @@ Newest at the top of each list.
 
 
 ## In flight
-- D6 · Admin edits to shared add-ons and portions (Shaurya 2026-09-25, [decisions](reviews/2026-09-25-decisions-for-shaurya.md) D6 incl. "blanket or one dish", + Q6-2/Q6-3), fixer session 2026-09-25, emulator slot 0 (left running). **All phases DONE**; TD-106, TD-107, TD-110 closed, TD-132 filed (new portion groups/options not in the admin app). Pricing code untouched.
+- D6 · Admin edits to shared add-ons and portions (Shaurya 2026-09-25, [decisions](reviews/2026-09-25-decisions-for-shaurya.md) D6 incl. "blanket or one dish", + Q6-2/Q6-3), fixer session 2026-09-25, emulator slot 0 (left running). **All phases DONE**; TD-106, TD-107, TD-110 closed, TD-132 filed, then approved and closed the same day (portion groups and options made in the admin app; backend e2e on slot 3, screen check deferred to the admin-app screen run). Pricing code untouched.
   1. DONE 79bc229 tests: e2e `shared-options` (MockData7 Meghana, real writers), unit `test/unit/menu/sharedOptions.test.js`.
   2. DONE 9374d79 `admin-sharedOption` (usage / create / update / copyForDish, audit rows); availability takes `addonId`; dish save writes only sent fields, refuses object add-ons and unknown ids; portion names from the shared record. e2e 29/29, goalline 79/79 (its `clearCart` now names the sitting, TD-033).
   3. DONE 01e7358 admin editors: "X is on N dishes — Change all N / Only <dish>", dish save sends `dishChanges`; two admin boot bugs fixed (MaterialApp home + '/', dietary VEG/NON_VEG). Browser-checked.

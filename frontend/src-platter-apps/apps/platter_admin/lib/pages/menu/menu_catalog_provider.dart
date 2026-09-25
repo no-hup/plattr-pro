@@ -34,6 +34,38 @@ Map<String, dynamic> dishChanges(MenuItem before, MenuItem after) {
   };
 }
 
+/// One row of the portion editor: an existing option (id set) or a new one (id null).
+class OptionRow {
+  const OptionRow({this.id, required this.name, required this.price});
+  final String? id;
+  final String name;
+  final num price;
+}
+
+/// D6 / TD-132: only what the manager changed in a portion group. Family ₹260 → ₹280 sends
+/// `{options: [{id: family, price: 280}]}`; a new "Jumbo ₹480" row sends `addOptions`; a deleted row `removeOptionIds`.
+Map<String, dynamic> portionChanges(Variant was, String name, List<OptionRow> rows) {
+  final kept = {for (final r in rows) if (r.id != null) r.id!: r};
+  final edits = <Map<String, dynamic>>[];
+  for (final o in was.options) {
+    final r = kept[o.id];
+    if (r == null) continue;
+    final change = <String, dynamic>{
+      if (r.name != o.name) 'name': r.name,
+      if (r.price != o.priceInfo.basePrice) 'price': r.price,
+    };
+    if (change.isNotEmpty) edits.add({'id': o.id, ...change});
+  }
+  final removed = [for (final o in was.options) if (!kept.containsKey(o.id)) o.id];
+  final added = [for (final r in rows) if (r.id == null) {'name': r.name, 'price': r.price}];
+  return {
+    if (name != was.name) 'name': name,
+    if (edits.isNotEmpty) 'options': edits,
+    if (added.isNotEmpty) 'addOptions': added,
+    if (removed.isNotEmpty) 'removeOptionIds': removed,
+  };
+}
+
 class MenuCatalogProvider extends ChangeNotifier {
   MenuCatalogProvider({
     required this.apiService,
@@ -407,6 +439,27 @@ class MenuCatalogProvider extends ChangeNotifier {
     );
     final record = _sharedResult(r);
     return record == null ? null : Addon.fromJson(record);
+  }
+
+  /// TD-132: a new portion group becomes a shared record; the dish save links it.
+  Future<Variant?> createVariant({
+    required String name,
+    required bool isMandatory,
+    required List<OptionRow> options,
+  }) async {
+    final r = await apiService.sharedOption(
+      restaurantId: restaurantId,
+      sessionId: sessionId,
+      action: 'create',
+      kind: 'variant',
+      changes: {
+        'name': name,
+        'isMandatory': isMandatory,
+        'options': [for (final o in options) {'name': o.name, 'price': o.price}],
+      },
+    );
+    final record = _sharedResult(r);
+    return record == null ? null : Variant.fromJson(record);
   }
 
   Future<bool> setAddonStock(String addonId, bool isAvailable) async {
