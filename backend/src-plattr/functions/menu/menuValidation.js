@@ -195,6 +195,23 @@ class MenuValidation {
   }
 
   /**
+   * D6 / TD-106: a dish links add-ons as ids and portions as `{id, name}`; the price lives on the shared record.
+   * The old editor sent full add-on objects, which the menu read silently dropped (Raita vanished from the dish).
+   * @param {Object} data - menu item create or update data
+   * @throws {functions.https.HttpsError} - If a link is not in that shape
+   */
+  static validateOptionLinks(data) {
+    const { addons, variants } = data;
+    if (addons !== undefined && !(Array.isArray(addons) && addons.every(a => typeof a === 'string' && a))) {
+      throw new functions.https.HttpsError('invalid-argument', 'Add-ons must be a list of add-on ids');
+    }
+    const isLink = v => v && typeof v.id === 'string' && v.id && Object.keys(v).every(k => k === 'id' || k === 'name');
+    if (variants !== undefined && !(Array.isArray(variants) && variants.every(isLink))) {
+      throw new functions.https.HttpsError('invalid-argument', 'Portions must be a list of {id, name} links');
+    }
+  }
+
+  /**
    * Validates category creation input
    * @param {Object} categoryData - The category data to validate
    * @throws {functions.https.HttpsError} - If required fields are missing

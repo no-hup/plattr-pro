@@ -34,6 +34,8 @@ const MenuValidation = require('./menuValidation');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 const errorHandler = require('../singleton/ErrorHandler');
 const { validateAdminSession, validateStaffSession } = require('../adminApp/auth');
+const { menuAuditRow } = require('../adminApp/menu_admin');
+const timestamp = require('../utils/timestamp');
 
 const { getAllCategories, getCategoryById } = require('./creation/cateogory');
 const { getAllMenuItems, getMenuItemsByCategory, createMenuItem, updateMenuItem: updateMenuItemUtil, deleteMenuItem: deleteMenuItemUtil, getMenuItemById, updateMenuItemStock } = require('./menuItem');
@@ -52,6 +54,24 @@ async function assertKnownTaxBlock(restaurantId, taxBlockId) {
       restaurantId, taxBlockId, known: Object.keys(blocks),
     });
   }
+}
+
+/**
+ * D6 / TD-106: a dish links add-ons by id and portions as {id, name}; the price lives on the shared record.
+ * An object-shaped add-on (the old editor's full copy) or an id with no record (the old editor's `addon_<ms>`)
+ * is refused here, with the manager at the form: the menu read would drop it and the cart refuse it, and
+ * Raita would vanish from Chicken Biryani with nobody told why.
+ */
+async function assertKnownOptionLinks(restaurantId, data) {
+  MenuValidation.validateOptionLinks(data);
+  const rest = db.collection('restaurants').doc(restaurantId);
+  const check = async (ids, col, label) => {
+    const docs = await Promise.all(ids.map(id => rest.collection(col).doc(id).get()));
+    const missing = ids.filter((id, i) => !docs[i].exists);
+    if (missing.length) errorHandler.badRequest(`Unknown ${label} ${missing.join(', ')}: create it first`, { restaurantId, missing });
+  };
+  if (data.addons) await check(data.addons, 'addons', 'add-on');
+  if (data.variants) await check(data.variants.map(v => v.id), 'variants', 'portion');
 }
 
 /**
@@ -188,6 +208,7 @@ const addMenuItem = functions.https.onCall(async (data, context) => {
     
     // Create the menu item
     await assertKnownTaxBlock(restaurantId, menuItemData.taxBlockId);
+    await assertKnownOptionLinks(restaurantId, menuItemData);
     const menuItemId = await createMenuItem(restaurantId, menuItemData);
     
     // Get the created menu item
@@ -247,6 +268,7 @@ const updateMenuItem = functions.https.onCall(async (data, context) => {
     
     // Update the menu item
     await assertKnownTaxBlock(restaurantId, updateData.taxBlockId);
+    await assertKnownOptionLinks(restaurantId, updateData);
     await updateMenuItemUtil(restaurantId, menuItemId, updateData);
     
     // Get the updated menu item
@@ -324,7 +346,9 @@ const deleteMenuItem = functions.https.onCall(async (data, context) => {
 });
 
 /**
- * Cloud function to update a menu item's availability
+ * Cloud function to update a menu item's availability, or a shared add-on's (D6: send `addonId` instead of
+ * `menuItemId`). Any staff session: 20:00 the kitchen runs out of raita, and the waiter who hears it switches
+ * Extra Raita off once; it leaves every biryani on the guest menu and the cart refuses it.
  * Endpoint: /menu-updateMenuItemAvailability
  */
 const updateMenuItemAvailability = functions.https.onRequest(async (req, res) => {
@@ -332,24 +356,25 @@ const updateMenuItemAvailability = functions.https.onRequest(async (req, res) =>
     console.log('updateMenuItemAvailability function called with request:', req.body);
     
     // Validate input
-    const { restaurantId, sessionId, menuItemId, isAvailable } = req.body || {};
+    const { restaurantId, sessionId, menuItemId, addonId, isAvailable } = req.body || {};
     
-    if (!restaurantId || !menuItemId || typeof isAvailable !== 'boolean') {
+    if (!restaurantId || !menuItemId === !addonId || typeof isAvailable !== 'boolean') {
       console.error('Invalid request: restaurantId, menuItemId, and isAvailable (boolean) are required');
       return res
         .status(400)
         .json(
           ResponseBuilder.error(
             'invalid_argument',
-            'Restaurant ID, menu item ID, and availability status (boolean) are required',
-            { restaurantId, menuItemId }
+            'Restaurant ID, one of menu item ID or add-on ID, and availability status (boolean) are required',
+            { restaurantId, menuItemId, addonId }
           )
         );
     }
     
     // Staff-only mutation (called by both admin and waiter apps)
+    let staffId;
     try {
-      await validateStaffSession(restaurantId, sessionId);
+      ({ serverId: staffId } = await validateStaffSession(restaurantId, sessionId));
     } catch (authErr) {
       return res
         .status(401)
@@ -358,6 +383,27 @@ const updateMenuItemAvailability = functions.https.onRequest(async (req, res) =>
             restaurantId,
           })
         );
+    }
+
+    if (addonId) {
+      // DECISION(D6, 2026-09-25): Raita out of stock is refused on every dish, guest app first; the admin app and
+      // the waiter's stock screen switch the same shared record. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md.
+      // If you change this, ask Shaurya first.
+      const addonRef = db.collection('restaurants').doc(restaurantId).collection('addons').doc(addonId);
+      const audit = db.collection('restaurants').doc(restaurantId).collection('audit');
+      const found = await db.runTransaction(async tx => {
+        const snap = await tx.get(addonRef);
+        if (!snap.exists) return false;
+        tx.update(addonRef, { isInStock: isAvailable, lastUpdated: timestamp.serverTimestamp() });
+        tx.create(audit.doc(), menuAuditRow(staffId, 'menuOptionStock', `menu_${addonId}`,
+          { isInStock: snap.data().isInStock }, { isInStock: isAvailable }, 'addon'));
+        return true;
+      });
+      if (!found) {
+        return res.status(404).json(ResponseBuilder.error('not_found', 'Add-on not found', { restaurantId, addonId }));
+      }
+      console.log(JSON.stringify({ cid: `menu_${addonId}`, action: 'menuOptionStock', restaurantId, isAvailable, staffId }));
+      return res.status(200).json(ResponseBuilder.success({ addonId, isAvailable }, 'Add-on availability updated successfully'));
     }
 
     // Check if the menu item exists

@@ -171,11 +171,13 @@ function organizeMenuWithSubcategories(categories, subcategories, menuItems, var
       };
     });
 
-    // Process menu items with variants and addons
+    // DECISION(D6, 2026-09-25): Raita is on 3 dishes: every dish reads the one shared add-on record, dishes hold
+    // ids only. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+    // The manager raises Family ₹260 → ₹280 and renames it: Chicken, Mutton and Veg Biryani all show the new
+    // record here, name included (the cart names it from the record too). An id with no record (sold out on
+    // the guest read, or never created) is not offered.
     const processedMenuItems = menuItems.map(item => {
-      const itemVariants = (item.variants || []).map(variant =>
-        variants[variant.id] ? { ...variants[variant.id], name: variant.name } : null
-      ).filter(Boolean);
+      const itemVariants = (item.variants || []).map(variant => variants[variant.id]).filter(Boolean);
 
       const itemAddons = (item.addons || []).map(addonId => addons[addonId]).filter(Boolean);
 

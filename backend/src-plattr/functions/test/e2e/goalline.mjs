@@ -87,7 +87,8 @@ async function login(restaurantId, tableId) {
   if (!sid) throw new Error(`login failed for ${restaurantId}/${tableId}: ${resp?.message || JSON.stringify(resp)}`);
   return sid;
 }
-async function clearCart(restaurantId, tableId) { await call('cart-clearCart', { restaurantId, tableId }); }
+// TD-033: a cart belongs to the sitting that filled it, so the clear names the sitting.
+async function clearCart(base) { await call('cart-clearCart', { restaurantId: base.restaurantId, tableId: base.tableId, sessionId: base.sessionId }); }
 async function addItem(base, spec) {
   const selectedVariants = (spec.selVariants || []).reduce((m, v) => { m[v.variantId] = v.optionId; return m; }, {});
   return call('cart-addItemToCart', {
@@ -102,7 +103,7 @@ async function getCartPriceInfo(restaurantId, tableId) {
 }
 
 async function runItem(sc, base) {
-  await clearCart(base.restaurantId, base.tableId);
+  await clearCart(base);
   const add = await addItem(base, sc.input);
   if (add?.status !== 'success') { record(false, `${sc.scenarioId} add`, `→ ${add?.message || JSON.stringify(add)}`); return; }
   const pi = await getCartPriceInfo(base.restaurantId, base.tableId);
@@ -141,7 +142,7 @@ async function runCrossApp(sc, base, orderId, staff) {
 }
 
 async function runCheckout(sc, base, staff) {
-  await clearCart(base.restaurantId, base.tableId);
+  await clearCart(base);
   for (const it of sc.input.items) {
     const add = await addItem(base, it);
     if (add?.status !== 'success') { record(false, `${sc.scenarioId} add ${it.menuItemId}`, `→ ${add?.message || JSON.stringify(add)}`); return; }
