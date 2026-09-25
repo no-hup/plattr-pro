@@ -50,6 +50,8 @@ The bugs themselves are TD-061..077 in [TECH_DEBT.md](../TECH_DEBT.md).
 16. **Merging a free table into a billed parent** is allowed today, spec silent. (floor) *Default:* allow.
 16b. **Who may "retry" a day close?** (QD-7) *Default:* only the person who closed it; anyone else gets "already
     closed at 23:30 by Priya".
+16c. **Where the till keeps its login** (TD-052 fix, parked by the test-stack agent): per tab (`sessionStorage`, gone
+    when the tab closes) or per browser (`localStorage`, survives a restart of a shared till). *Default:* per tab.
 17. **A paid table ordering again.** (FR decision 4) *Default:* skip until staff ordering at the till (OR) is built.
 
 ## Approve, no question
@@ -60,8 +62,9 @@ The bugs themselves are TD-061..077 in [TECH_DEBT.md](../TECH_DEBT.md).
 19. **Backend wording** the display-fix agent parked: refusals name bill numbers, not internal ids (QB-9); the merge
     refusal says which table to pick first; the split chooser names the dishes (both need `floor-open` to send names).
 
-Still with the agents, not you: the till test-stack ticket's builder questions
-([ticket](2026-09-25-ticket-till-test-stack.md)); agent B answers those itself.
+The till test-stack ticket's builder questions are answered in the [ticket](2026-09-25-ticket-till-test-stack.md)
+(built in `9726ac4`). One proposed line for `moonshot/CLAUDE.md` Commands, yours to approve: "Browser sanity:
+`EMU_SLOT=<n> npm run e2e:ui` in `frontend/till/`" in place of "— TO BE CREATED".
 
 ## How to resume when you have time
 
