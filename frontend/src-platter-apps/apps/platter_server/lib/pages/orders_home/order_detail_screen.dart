@@ -133,7 +133,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           const Divider(),
           const SizedBox(height: 16),
 
-          // Order actions (Cancel / Mark Paid)
+          // Order actions (Cancel)
           _buildOrderActions(),
         ],
       ),
@@ -206,6 +206,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     if (status == 'COMPLETED' || status == 'CANCELLED') {
       return const SizedBox.shrink();
     }
+    // DECISION(D4, 2026-09-25): Mark Paid removed: the till owns payment (TD-010), and completing an order
+    // with a round still cooking dropped it from the kitchen while the till billed it (TD-092). The waiter
+    // has no bill powers (D2). If you change this, ask Shaurya first.
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -216,43 +219,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           color: Colors.red,
           onPressed: () => _showCancelConfirmation(),
         ),
-        const SizedBox(width: 8),
-        _buildActionButton(
-          identifier: 'order-mark-paid',
-          icon: Icons.check_circle,
-          label: 'Mark Paid',
-          color: Colors.green,
-          onPressed: () => _showPaidConfirmation(),
-        ),
       ],
-    );
-  }
-
-  void _showPaidConfirmation() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Mark as Paid?'),
-        content: const Text(
-            'This marks the food as done. The table stays occupied until the bill is settled and someone taps Vacant.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('No'),
-          ),
-          Semantics(
-            identifier: 'order-mark-paid-confirm',
-            child: TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _updateOrderStatus('completed');
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.green),
-              child: const Text('Yes, Mark Paid'),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -342,19 +309,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Cancel Order?'),
         content: const Text(
-            'Are you sure you want to cancel this order? This action cannot be undone.'),
+            'Every dish comes off the bill and the kitchen. This cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('No'),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _updateOrderStatus('cancelled');
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Yes, Cancel Order'),
+          Semantics(
+            identifier: 'order-cancel-confirm',
+            child: TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _updateOrderStatus('cancelled');
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Yes, Cancel Order'),
+            ),
           ),
         ],
       ),
@@ -387,7 +357,58 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       index: cartIndex,
       onMarkServed: (index) => _markCartServed(index),
       onItemServed: (item) => _markItemServed(item),
+      onItemCancel: (item) => _confirmCancelItem(cartIndex, item),
     );
+  }
+
+  // D4: one dish off a sent round. It leaves the bill and the kitchen, audited, no PIN. If the kitchen has
+  // already started it, the waiter decides: tell the guest it stays (don't press this), or waste it.
+  void _confirmCancelItem(int cartIndex, Map<String, dynamic> item) {
+    final name = item['name'] ?? item['menuItem']?['meta']?['name'] ?? 'this dish';
+    final cartItemId = item['cartItemId'];
+    if (cartItemId is! int) return;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Cancel ${item['quantity'] ?? 1}× $name?'),
+        content: const Text('It comes off the bill and the kitchen.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('No'),
+          ),
+          Semantics(
+            identifier: 'order-item-cancel-confirm',
+            child: TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _cancelItem(cartIndex, cartItemId);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Yes, cancel it'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _cancelItem(int cartIndex, int cartItemId) async {
+    final response = await _apiService.updateCartStatus(
+      restaurantId: widget.restaurantId,
+      orderId: widget.orderId,
+      cartIndex: cartIndex,
+      newStatus: 'CANCELLED',
+      cartItemId: cartItemId,
+      sessionId: widget.sessionId,
+    );
+    if (!mounted) return;
+    // A printed bill is refused with "Bill A-0002 is printed — ask the cashier to edit it on the till".
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(response.success ? 'Dish cancelled' : (response.message ?? 'Could not cancel the dish')),
+      backgroundColor: response.success ? null : Colors.red,
+    ));
+    if (response.success) await _fetchOrderDetail();
   }
 
   Future<void> _markCartServed(int cartIndex) async {

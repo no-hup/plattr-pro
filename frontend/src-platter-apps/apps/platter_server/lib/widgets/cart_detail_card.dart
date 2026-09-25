@@ -9,12 +9,16 @@ class CartDetailCard extends StatelessWidget {
   final Function(int) onMarkServed;
   final Function(Map<String, dynamic>) onItemServed;
 
+  /// D4: the waiter cancels one dish of a sent round (off the bill and the kitchen). Null hides the button.
+  final Function(Map<String, dynamic>)? onItemCancel;
+
   const CartDetailCard({
     super.key,
     required this.cart,
     required this.index,
     required this.onMarkServed,
     required this.onItemServed,
+    this.onItemCancel,
     this.isServeActionEnabled = true,
   });
 
@@ -97,6 +101,7 @@ class CartDetailCard extends StatelessWidget {
               item: item,
               cartStatus: status,
               onMarkServed: () => onItemServed(item),
+              onCancel: onItemCancel == null ? null : () => onItemCancel!(item),
             );
           }),
         ],
@@ -109,11 +114,13 @@ class _CartItemRow extends StatelessWidget {
   final Map<String, dynamic> item;
   final String cartStatus;
   final VoidCallback onMarkServed;
+  final VoidCallback? onCancel;
 
   const _CartItemRow({
     required this.item,
     required this.cartStatus,
     required this.onMarkServed,
+    this.onCancel,
   });
 
   @override
@@ -126,6 +133,9 @@ class _CartItemRow extends StatelessWidget {
     // until explicitly served, but the cart reaching READY means items
     // are ready to be individually served.
     final canServe = !isServed && StatusUtils.canTransition(cartStatus, 'SERVED');
+    // D4: any dish not yet served, cancelled or returned can be cancelled on its own. Whether a dish already
+    // cooking is wasted or stays on the bill is the waiter's call; a printed bill is refused by the backend.
+    final canCancel = onCancel != null && StatusUtils.canTransition(itemStatus, 'CANCELLED');
 
     final itemName = item['name'] ??
         item['menuItem']?['meta']?['name'] ??
@@ -219,6 +229,17 @@ class _CartItemRow extends StatelessWidget {
               ],
             ),
           ),
+
+          if (canCancel)
+            Semantics(
+              identifier: 'order-item-cancel-${item['cartItemId']}',
+              child: IconButton(
+                icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                tooltip: 'Cancel this dish',
+                visualDensity: VisualDensity.compact,
+                onPressed: onCancel,
+              ),
+            ),
 
           // Action
           SizedBox(
