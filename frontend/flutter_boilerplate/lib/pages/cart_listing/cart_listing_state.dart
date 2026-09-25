@@ -515,6 +515,7 @@ class CartListingState extends ChangeNotifier with OffersStateMixin {
   Future<bool> checkoutCart({
     required String restaurantId,
     required String tableId,
+    required List<int> cartItemIds,   // D5: the dishes the phone showed under the choice the guest tapped
     String? notes,
   }) async {
     try {
@@ -554,7 +555,8 @@ class CartListingState extends ChangeNotifier with OffersStateMixin {
         tableId: tableId,
         sessionId: sessionId,
         notes: notes,
-        requestId: _requestId.current,   // OF-S1: kept while this tap is in flight
+        requestId: _requestId.forItems(cartItemIds),   // OF-S1: kept while this tap is in flight; D5: new for new dishes
+        cartItemIds: cartItemIds,
       );
 
       // Check if response is success or error

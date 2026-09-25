@@ -20,6 +20,7 @@ class CheckoutRepository {
     required String sessionId,
     String? notes, // Optional notes
     String? requestId, // OF R1: one per Place order tap; a retry with the same id is the same order
+    List<int>? cartItemIds, // D5: exactly the dishes the phone showed under "Send your 1 dish" / "Send all 3"
   }) async {
     const endpoint = ApiConfig.checkoutCartEndpoint;
     
@@ -30,6 +31,7 @@ class CheckoutRepository {
         'sessionId': sessionId,
         if (notes != null && notes.isNotEmpty) 'notes': notes,
         if (requestId != null && requestId.isNotEmpty) 'requestId': requestId,
+        if (cartItemIds != null) 'cartItemIds': cartItemIds,
       },
     };
 

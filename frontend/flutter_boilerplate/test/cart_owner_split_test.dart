@@ -15,19 +15,22 @@ void main() {
     expect(theirs.map((i) => i.menuItemId), ['beer']);
   });
 
-  // A cart written before ownership existed, or by a phone still on the old app.
-  test('unowned items stay editable by everyone', () {
+  // D5 (2026-09-25) replaced "unowned items stay editable by everyone": the server already refused a stamped
+  // phone's remove of an unowned dish, and refuses it from a guest send. Showing it as yours was a promise the
+  // server would not keep, and it put ₹ in "Your dishes" that "Send your dishes" would not send.
+  test('an unowned item is nobody\'s: shown, not editable', () {
     final (mine, theirs) = splitByOwner([line('pizza')], 'dev_asha');
-    expect(mine, hasLength(1));
-    expect(theirs, isEmpty);
+    expect(mine, isEmpty);
+    expect(theirs, hasLength(1));
   });
 
-  test('a phone with no id yet sees the whole cart as its own, as before', () {
+  // main() awaits DeviceId.load() before the first request, so this is a phone mid-start. Nothing is its own.
+  test('a phone with no id yet owns nothing', () {
     final (mine, theirs) = splitByOwner(
       [line('pizza', addedBy: 'dev_asha'), line('beer', addedBy: 'dev_bhanu')],
       null,
     );
-    expect(mine, hasLength(2));
-    expect(theirs, isEmpty);
+    expect(mine, isEmpty);
+    expect(theirs, hasLength(2));
   });
 }

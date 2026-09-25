@@ -188,6 +188,9 @@ void stampCartCall(RequestOptions options) {
   final inner = body['data'];
   if (inner is! Map<String, dynamic>) return;
   final id = DeviceId.value;
+  // DECISION(D5, 2026-09-25): `addedBy` is always this phone, on every send. "Send all 3 for the table" is the list
+  // of `cartItemIds` the phone showed, never a missing `addedBy` (that sends staff dishes too, placed by "system").
+  // See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
   if (id != null) inner['addedBy'] = id;
   final session = currentSessionId();
   if (session != null && inner['sessionId'] == null) inner['sessionId'] = session;
