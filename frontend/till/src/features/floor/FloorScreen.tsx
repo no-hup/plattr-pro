@@ -151,9 +151,10 @@ export function FloorScreen({ ctx, role }: { ctx: Ctx; role: string }) {
       {picker && (
         <div data-testid="floor-picker">
           <p>{picker.tile.label} has more than one</p>
-          {picker.opened?.drafts.map(d => (
+          {/* QF-15: numbered, so two drafts of the same amount can be told apart. Dish names are not in floor-open. */}
+          {picker.opened?.drafts.map((d, i) => (
             <button key={d.draftId} data-testid={`pick-draft-${d.draftId}`} onClick={() => go({ draft: d.draftId })}>
-              {rupees(d.onTable)} · {d.lineIds.length} items
+              Draft {i + 1} · {rupees(d.onTable)} · {d.lineIds.length} {d.lineIds.length === 1 ? 'item' : 'items'}
             </button>
           ))}
           {picker.opened?.bills.map(b => (

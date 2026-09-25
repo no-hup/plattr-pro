@@ -97,3 +97,17 @@ test('QF-9 R13: picking shows which tiles are picked, and speaks in table number
   // Display only: the act still goes out with document ids.
   expect(sent['table-setMerge'][0]).toMatchObject({ parentTableId: 'tbl_meg_6', childTableIds: ['tbl_meg_7'], merge: true })
 })
+test('QF-15 FL-S21: the split chooser buttons can be told apart, and "1 item" is singular', async ({ page }) => {
+  await fake(page, {
+    'floor-get': () => floorOf([tile('11', { word: 'ordered', onTable: 12000, drafts: 2, minutes: 20 })]),
+    'floor-open': () => ok({ tableIds: ['tbl_meg_11'], sessionId: 's11', drafts: [{ draftId: 'd1', onTable: 6000, lineIds: ['a'] }, { draftId: 'd2', onTable: 6000, lineIds: ['b'] }], bills: [] }),
+  })
+  await login(page)
+  await page.getByTestId('tile-11').getByRole('button').first().click()
+  const a = await page.getByTestId('pick-draft-d1').textContent()
+  const b = await page.getByTestId('pick-draft-d2').textContent()
+  expect(a).not.toBe(b)
+  expect(a).not.toContain('1 items')
+  expect(a).toContain('₹60.00 · 1 item')
+})
+
