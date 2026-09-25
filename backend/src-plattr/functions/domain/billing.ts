@@ -15,6 +15,9 @@ export interface BillDiscount {
   /** TD-016. cartItemId → minor units, as the offer itself scored each item. Present on an ITEM- or
    *  CATEGORY-scoped offer, absent on an ORDER offer and on a manual comp, which have no target. */
   targets?: Record<string, number>;
+  /** D2: lineId → minor units, this line's share of an ORDER offer spread over the whole order by value (R1). Each draft
+   *  takes only its own lines' shares, through the same clamp as `targets`. Set by app/billing, never by a client. */
+  byLine?: Record<string, number>;
 }
 export interface PartAmount { label: string; rateBps: number; amount: number }
 export interface ComponentTax { taxable: number; parts: PartAmount[] }
@@ -73,13 +76,15 @@ export function preview(lines: Line[], discount: BillDiscount | null, charges: C
   // R1 / TD-016: a scoped offer names the cart items it discounts, and those names are the weights, so
   // the cut lands on the lines the offer targets and never on a naan sitting beside them. An ORDER offer
   // and a manual comp name nothing and spread across every line by net share, exactly as before.
-  const tgt = discount?.targets;
-  const weights = tgt ? live.map(l => tgt[l.cartItemId] ?? 0) : nets;
+  // DECISION(D2, 2026-09-25): ₹882 table with ₹100 off split in two: eligibility on the whole table, amount shared by value (BL-S3 rule). See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+  // `byLine` is that share per line; this clamp is what makes each half take only its own part of the ₹100.
+  const tgt = discount?.byLine ?? discount?.targets;
+  const weights = tgt ? live.map(l => tgt[discount?.byLine ? l.lineId : l.cartItemId] ?? 0) : nets;
   const here = weights.reduce((a, w) => a + w, 0);
   const all = tgt ? Object.values(tgt).reduce((a, w) => a + w, 0) : here;
   // Every line the offer names is on this bill → its own total, to the paise, so no existing figure moves.
   // Split bill (BL-S12) → only the part sitting here, so the two halves cannot each claim the whole offer.
-  const want = !discount ? 0 : !tgt || here >= all ? discount.amount : here;
+  const want = !discount ? 0 : !tgt || here >= all ? discount.amount : Math.min(here, discount.amount);
   const reach = weights.reduce((a, w, i) => a + (w > 0 ? nets[i] : 0), 0);   // what the weighted lines can absorb
   if (want > reach) return { ok: false, code: 'failed-precondition', message: 'discount exceeds bill' };
   const shares = apportion(want, weights);
@@ -160,7 +165,11 @@ export interface Bill extends BillBody, Meta {
   creditNoteOf?: { billId: string; number: string; issuedAt: number };
   refundedTotal?: number;   // credit notes only, minor units, PY is the only writer (its R7: refunds never sum past the note)
   paidTotal?: number;       // PY's stamp: net receipts, minor units. BL only reads it (D3)
+  dropped?: string[];       // BL-S10: charge types the cashier took off; an edit's next bill keeps them off (D2, QB-10)
+  replaces?: BillRef[];     // D2 / BL-S25: the cancelled bill(s) this one was issued in place of
+  replacedBy?: BillRef[];   // on the cancelled bill: what replaced it
 }
+export interface BillRef { billId: string; number: string }
 
 /** What a person reads: "A-0417", never the document id (QB-9). */
 export const billLabel = (b: { series: string; number: string }) => `${b.series}-${b.number}`;

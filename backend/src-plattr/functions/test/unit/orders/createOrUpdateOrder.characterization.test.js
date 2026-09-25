@@ -286,6 +286,14 @@ describe('createOrUpdateOrder — a round on a sitting whose bill is being paid 
         expect(writes.set).toHaveLength(0);
         expect(writes.delete).toHaveLength(0);
     });
+    // D2 / FL-S14: 23:15 the ₹1,200 is all paid; two filter coffees are refused "table 7 has paid — clear it first".
+    test('refused once every bill of the sitting is paid, naming the table, and nothing is written (D2)', async () => {
+        db._seed['restaurants/res_1/tables/t7'] = { assignedServerId: 'srv_1', number: '7' };
+        db._seed['__query__restaurants/res_1/bills'] = [bill({ paidTotal: 120000, status: 'paid' })];
+        await expect(createOrUpdateOrder('res_1', 't7', cart, 'guest_1', '', 'sess_1'))
+            .rejects.toMatchObject({ message: 'table 7 has paid — clear it first' });
+        expect(writes.set).toHaveLength(0);
+    });
     test('a printed bill with nothing paid takes the round (it goes on through Edit, D2)', async () => {
         db._seed['__query__restaurants/res_1/bills'] = [bill({ paidTotal: 0 })];
         await createOrUpdateOrder('res_1', 't7', cart, 'guest_1', '', 'sess_1');

@@ -1,5 +1,5 @@
 // BL app layer with fake ports and a fake clock. No emulator. Money in minor units; pizza 50000 + coke 8000 → 60900.
-import { ApprovalError, Ports, Tx, cancel, creditNote, get, issue, preview, settingsFrom, split } from './billing';
+import { ApprovalError, Ports, Tx, cancel, creditNote, edit, get, issue, preview, settingsFrom, split } from './billing';
 import { Bill } from '../domain/billing';
 import { Line, TaxBlock } from '../domain/line';
 import { Staff } from './approvals';
@@ -31,6 +31,7 @@ function fakePorts(opts: { role?: string; offer?: { id: string; name: string; am
     staff: { bySession: async (_r, sid) => { if (sid !== 'st1') throw new ApprovalError('unauthenticated', 'bad session'); return staff; } },
     config: { billing: async () => { if (opts.configThrows) throw new Error('firestore down'); return settings; } },
     linesOfDraft: async (_r, d) => [...lines.values()].filter(l => l.draftId === d),
+    linesOfOrder: async (_r, o) => [...lines.values()].filter(l => l.orderId === o),
     orderOffer: async () => opts.offer ?? null,
     getBill: async (_r, id) => bills.get(id) ?? null,
     tables: async (_r, ids) => ids.map(tableId => ({ tableId, charges: opts.tables?.[tableId] ?? null })),
@@ -328,6 +329,67 @@ describe('app/billing cancel / creditNote / split / get', () => {
       .rejects.toMatchObject({ code: 'failed-precondition', message: '₹200 already paid on A-0417 — take the rest first' });
     expect(p.bills.get(b.billId)!.status).toBe('issued');
     expect([...p.lines.values()].every(l => l.billId === b.billId)).toBe(true);
+  });
+  // D2 / BL-S9. A-0417 (pizza 50000 + coke 8000 = 60900) is printed; the table orders more. Edit: no PIN, number kept,
+  // status cancelled with reason `edited`, one P1 row keyed on the bill with the old payable, dishes back on draft s1.
+  it('D2 BL-S9 Edit cancels A-0417 as "edited" with no PIN, one P1 bill.edit row, and 0418 says it replaces A-0417', async () => {
+    const p = fakePorts();
+    const b = await issue(p, issueReq());
+    const e = await edit(p, { restaurantId: RID, sessionId: 'st1', cid: 'till_s1', billId: b.billId });
+    expect(e).toMatchObject({ status: 'cancelled', number: '0417', cancelled: { by: 'm1', reason: 'edited' } });
+    expect(p.audits.get(`${b.billId}_edit`)).toMatchObject({ action: 'bill.edit', sev: 'P1', amount: 60900, reason: 'edited', staffId: 'm1' });
+    expect(p.audits.size).toBe(1);
+    expect([...p.lines.values()].map(l => [l.billId, l.lastBillId])).toEqual([[null, b.billId], [null, b.billId]]);
+    const next = await issue(p, issueReq());
+    expect(next).toMatchObject({ number: '0418', payable: 60900, replaces: [{ billId: b.billId, number: 'A-0417' }] });
+    expect(p.bills.get(b.billId)!.replacedBy).toEqual([{ billId: next.billId, number: 'A-0418' }]);
+    expect([...p.lines.values()].every(l => l.billId === next.billId && l.lastBillId === null)).toBe(true);
+  });
+  it('D2 Edit is the cashier\'s: a SERVER is refused, and so is a bill with money on it (D3), before anything moves', async () => {
+    const s = fakePorts({ role: 'SERVER' });
+    s.bills.set('b9', { billId: 'b9', status: 'issued', series: 'A', number: '0417', payable: 60900, lines: [] } as unknown as Bill);
+    expect(await code(edit(s, { restaurantId: RID, sessionId: 'st1', cid: 'c', billId: 'b9' }))).toBe('permission-denied');
+    const p = fakePorts();
+    const b = await issue(p, issueReq());
+    p.bills.set(b.billId, { ...p.bills.get(b.billId)!, paidTotal: 50000 });
+    await expect(edit(p, { restaurantId: RID, sessionId: 'st1', cid: 'c', billId: b.billId })).rejects.toMatchObject({ message: '₹500 already paid on A-0417 — take the rest first' });
+    expect(p.bills.get(b.billId)!.status).toBe('issued');
+    expect(p.audits.size).toBe(0);
+  });
+  // Review P0: a till that sends its own per-line shares with a ₹0.01 discount must get ₹0.01 off, not ₹500. The share
+  // fields are the server's. ₹0.01 by net share lands on the pizza: 49999 + 2500 tax, coke 8000 + 400 = 60899 → 60900.
+  it('D2 a client-sent byLine or targets on a bill discount is ignored: {amount: 1, byLine: {pizza: 50000}} takes 1 off, not 50000', async () => {
+    const p = fakePorts();
+    const d = { amount: 1, pct: 0, source: { reason: 'regular', note: '', approverId: 'm1' }, byLine: { pizza: 50000, ghost: 999999 }, targets: { '1': 50000 } };
+    const r = await preview(p, { ...base, discount: d as never });
+    expect([r.discount!.amount, r.payable]).toEqual([1, 60900]);
+    expect(r.discount).not.toHaveProperty('byLine');
+  });
+  // Q2-4: A-0417 edited and split: the coke goes to draft s1_b. Both new bills replace A-0417; A-0417 lists both.
+  it('D2 BL-S25 Edit then split: 0418 and 0419 both say "Replaces A-0417", and A-0417 lists both', async () => {
+    const p = fakePorts();
+    const b = await issue(p, issueReq());
+    await edit(p, { restaurantId: RID, sessionId: 'st1', cid: 'c', billId: b.billId });
+    await split(p, { ...base, moves: [{ lineId: 'coke', toDraftId: 's1_b' }] });
+    const food = await issue(p, issueReq({ expectedV: { pizza: 0 } }));
+    const drink = await issue(p, issueReq({ draftId: 's1_b', expectedV: { coke: 0 } }));
+    expect([food.payable, drink.payable]).toEqual([52500, 8400]);   // 50000 + 2500 tax; 8000 + 400
+    expect([food.replaces, drink.replaces]).toEqual([[{ billId: b.billId, number: 'A-0417' }], [{ billId: b.billId, number: 'A-0417' }]]);
+    expect(p.bills.get(b.billId)!.replacedBy!.map(r => r.number)).toEqual(['A-0418', 'A-0419']);
+  });
+  // Q2-2 / QB-10. 10 % service charge: 58000 + 5800 = 63800 + 3190 tax = 66990 → 67000; without it 60900. The cashier drops
+  // it, prints A-0417 at 60900 (one P1 dropCharge row, 5800), then edits: the draft previews at 60900 with no list sent,
+  // and says what it kept off. Sending an empty list is how the cashier adds it back: 67000.
+  it('D2 Q2-2 a service charge dropped before an Edit stays dropped on the next preview and bill, unless the cashier adds it back', async () => {
+    const p = fakePorts({ charges: [{ type: 'SERVICE_CHARGE', pctBps: 1000, taxBlockId: 'food' }] });
+    const b = await issue(p, issueReq({ dropCharges: ['SERVICE_CHARGE'] }));
+    expect([b.payable, b.dropped]).toEqual([60900, ['SERVICE_CHARGE']]);
+    expect(p.audits.get(`${b.billId}_drop_SERVICE_CHARGE`)).toMatchObject({ action: 'dropCharge', sev: 'P1', amount: 5800 });
+    await edit(p, { restaurantId: RID, sessionId: 'st1', cid: 'c', billId: b.billId });
+    const again = await preview(p, base);
+    expect([again.payable, again.dropped]).toEqual([60900, ['SERVICE_CHARGE']]);
+    expect((await preview(p, { ...base, dropCharges: [] })).payable).toBe(67000);
+    expect((await issue(p, issueReq())).payable).toBe(60900);
   });
   it('BL-S11 credit note: CN series 0001, original keeps paid and gains creditNotes[], credited qty moves, audit amount 8400', async () => {
     const p = fakePorts();

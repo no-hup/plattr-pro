@@ -8,7 +8,7 @@
 
 import {
   onTable, unpaid, draftCount, tile, tileWord, mayAct,
-  canMerge, canUnmerge, canReceive, canMove, isReleasable, acceptsNewGuests, moveWriteSet,
+  canMerge, canUnmerge, canReceive, canMove, isReleasable, acceptsNewGuests, moveWriteSet, roundRefusal, guestRefusal, canMergeInto,
   Bill, Table, Sitting, Role, OrderState, idleCall, lastTouchedAt, DEFAULTS, sittingOf,
 } from './floor';
 import { Line } from './line';
@@ -491,13 +491,56 @@ describe('the floor is a picture (R1, R17, R19)', () => {
   it('FL-S14 once every bill of the group is settled the sitting refuses a new checkout', () => {
     const done = sitting({ bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })] });
     expect(acceptsNewGuests(done)).toBe(false);
-    // still eating after the bill: the door stays open, because ordering does not stop at issue
+    // D2 (Shaurya 2026-09-25) replaced "ordering does not stop at issue": a fully paid sitting takes no new round even
+    // with a ₹300 dish still unbilled on it. The late coffees go on a new sitting after Clear, never onto a paid bill.
     const eating = sitting({ lines: [line({ lineId: 'l', listPrice: 30000 })], bills: [bill({ billId: 'b1', payable: 100000, paid: 100000, status: 'paid' })] });
-    expect(acceptsNewGuests(eating)).toBe(true);
+    expect(acceptsNewGuests(eating)).toBe(false);
   });
 
   it('a sitting that has never been billed accepts guests', () => {
     expect(acceptsNewGuests(sitting())).toBe(true);
+  });
+
+  // The impact review's bug in the old check: `bills.length === 0` read a sitting mid-Edit (its only bill cancelled)
+  // as paid, and refused the gulab jamun the Edit was for.
+  it('D2 a sitting whose only bill was cancelled (mid-Edit) still accepts guests and rounds', () => {
+    const editing = sitting({ bills: [bill({ billId: 'b1', payable: 480000, status: 'cancelled' })] });
+    expect(acceptsNewGuests(editing)).toBe(true);
+    expect(roundRefusal(editing.bills, '12')).toBeNull();
+  });
+
+  // D2 / D3 at 22:10: table 12's A-0004 is ₹1,200. Unpaid and printed: a round goes on (Edit takes it). ₹500 paid:
+  // it waits. All ₹1,200 paid: "table 12 has paid — clear it first". A credit note on it changes none of this.
+  it('D2 D3 FL-S14 the round check: printed → yes; part-paid → waits naming A-0004; paid → clear it first', () => {
+    const a4 = (paid: number, status: Bill['status'] = 'issued') => bill({ billId: 'b4', series: 'A', number: '0004', payable: 120000, paid, status });
+    const note = bill({ billId: 'cn1', note: true, payable: -6300 });
+    expect(roundRefusal([a4(0)], '12')).toBeNull();
+    expect(roundRefusal([a4(50000)], '12')).toBe('A-0004 is being paid — finish the payment, then add');
+    expect(roundRefusal([a4(120000, 'paid'), note], '12')).toBe('table 12 has paid — clear it first');
+    // A stranger scanning: only the paid table refuses (a part-paid table may still gain a guest, Q2-1 is about rounds).
+    expect(guestRefusal([a4(50000)], '12')).toBeNull();
+    expect(guestRefusal([a4(120000, 'paid')], '12')).toBe('table 12 has paid — clear it first');
+    expect(guestRefusal([], '12')).toBeNull();
+  });
+
+  // Review P1: table 12 split food and drinks; the drinks (₹1,300) are paid, then the food bill A-0005 is edited to add a
+  // dessert. Until the food is re-issued the table is being billed, not paid: the dessert round goes on. Once A-0006
+  // replaces A-0005 and is paid too, the table has paid.
+  it('D2 mid-Edit on a split table with the other half paid still takes the round; once replaced and paid it refuses', () => {
+    const drinks = bill({ billId: 'b4', series: 'A', number: '0004', payable: 130000, paid: 130000, status: 'paid' });
+    const food = (extra: Partial<Bill>) => bill({ billId: 'b5', series: 'A', number: '0005', payable: 350000, status: 'cancelled', ...extra });
+    expect(roundRefusal([drinks, food({})], '12')).toBeNull();
+    const refood = bill({ billId: 'b6', series: 'A', number: '0006', payable: 374000, paid: 374000, status: 'paid' });
+    expect(roundRefusal([drinks, food({ replaced: true }), refood], '12')).toBe('table 12 has paid — clear it first');
+  });
+
+  // FL-S37: 21:50 table 12's ₹4,800 bill is printed, unpaid; the cashier tries to push table 11 onto it.
+  it('D2 FL-S37 merging onto a table with a printed unpaid bill, or a paid one, is refused naming the table', () => {
+    const p12 = table({ tableId: 't12', number: '12', status: 'active' });
+    expect(canMergeInto(sitting({ bills: [bill({ billId: 'b', payable: 480000 })] }), p12)).toMatchObject({ ok: false, message: 'table 12 has a printed bill — edit or settle it first' });
+    expect(canMergeInto(sitting({ bills: [bill({ billId: 'b', payable: 480000, paid: 480000, status: 'paid' })] }), p12)).toMatchObject({ ok: false, message: 'table 12 has paid — clear it first' });
+    expect(canMergeInto(sitting({ lines: [tikka] }), p12).ok).toBe(true);
+    expect(canMergeInto(null, p12).ok).toBe(true);
   });
 
   it('R19 lines that cannot be read fail the floor; they never render an occupied tile as 0p', () => {

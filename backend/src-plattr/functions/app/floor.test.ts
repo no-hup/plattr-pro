@@ -852,6 +852,21 @@ describe('setMerge — the race and the release (R14, R16, OR-5a, FL-S32)', () =
     expect(ports.world.tables.find(t => t.tableId === '6')!.mergedInto).toBeUndefined();
   });
 
+  // FL-S37 (D2): 21:50 table 5's ₹4,800 bill A-0431 is printed, unpaid. Pushing free table 6 onto it is refused, naming
+  // table 5, and nothing is written. Once that bill is edited away (cancelled) the merge goes through.
+  it('D2 FL-S37 merging onto a table with a printed unpaid bill is refused "table 5 has a printed bill — edit or settle it first"', async () => {
+    const ports = world({
+      tables: [table({ tableId: '5', number: '5', status: 'active', hasSession: true }), table({ tableId: '6', status: 'vacant' })],
+      sittings: [head({ sessionId: 's5', tableIds: ['5'] })],
+      bills: [bill({ billId: 'b431', sittingId: 's5', payable: 480000 })],
+    });
+    await expect(setMerge(ports, { ...MERGE, childTableIds: ['6'] })).rejects.toMatchObject({ code: 'failed-precondition', message: 'table 5 has a printed bill — edit or settle it first' });
+    expect(ports.writes).toHaveLength(0);
+    expect(ports.audits.size).toBe(0);
+    ports.world.bills[0].status = 'cancelled';
+    await expect(setMerge(ports, { ...MERGE, childTableIds: ['6'] })).resolves.toMatchObject({ merged: true });
+  });
+
   it('FL-S29 a SERVER is refused 403 on merge and on unmerge', async () => {
     const ports = world();
     ports.world.staff = { staffId: 'srv', role: 'SERVER', status: 'active' } as Staff;

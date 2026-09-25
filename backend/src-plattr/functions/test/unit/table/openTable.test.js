@@ -27,13 +27,19 @@ jest.mock('../../../session/sessionService', () => ({
     createOrGetTableSession: async (_r, tableId, primaryUserId) => { created.push({ tableId, primaryUserId }); return { id: 'sess_new', tableId, primaryUserId }; },
 }));
 
+// D2 / D3: the sitting's bills decide whether a round may go on; the rule itself is domain/floor's, tested there.
+const refusal = { current: null, asked: [] };
+jest.mock('../../../lib/adapters/firestore/floor', () => ({
+    sittingRefusal: async (...a) => { refusal.asked.push(a); return refusal.current; },
+}));
+
 const { openTable } = require('../../../table/openTable');
 const invoke = (data) => (typeof openTable.run === 'function' ? openTable.run({ data }) : openTable({ data }, {}));
 const T = 'restaurants/r1/tables';
 
 beforeEach(() => {
     Object.keys(store).forEach(k => delete store[k]);
-    updates.length = 0; created.length = 0; live.current = null;
+    updates.length = 0; created.length = 0; live.current = null; refusal.current = null; refusal.asked.length = 0;
     store[`${T}/t7`] = { number: '7', status: 'vacant' };
     store[`${T}/t9`] = { number: '9', status: 'disabled' };
     store['restaurants/r1/sessions/sess_new'] = {};
@@ -65,6 +71,16 @@ describe('table-openTable', () => {
         await invoke({ restaurantId: 'r1', tableId: 't7', sessionId: 'staff_s' });
         const w = updates.find(u => u.path === 'restaurants/r1/sessions/sess_old');
         expect(w.patch.expiresAt).toBeGreaterThanOrEqual(before + 4 * 60 * 60 * 1000 - 5);
+    });
+    // D2 (Shaurya 2026-09-25): 23:15 table 7 has paid ₹3,100; the captain opens it to add two filter coffees. Refused,
+    // naming the table, and nothing is extended or minted: the cashier clears it and the coffees start a new sitting.
+    test('D2 FL-S14 opening a paid table to add dishes is refused "table 7 has paid — clear it first", nothing written', async () => {
+        live.current = { id: 'sess_old', tableId: 't7' };
+        refusal.current = 'table 7 has paid — clear it first';
+        await expect(invoke({ restaurantId: 'r1', tableId: 't7', sessionId: 'staff_s' })).rejects.toMatchObject({ code: 'failed-precondition', message: 'table 7 has paid — clear it first' });
+        expect(refusal.asked).toEqual([['r1', 'sess_old', '7', 'round']]);
+        expect(updates).toEqual([]);
+        expect(created).toEqual([]);
     });
     test('a merged child opens its parent, like the cart does', async () => {
         store[`${T}/parent`] = { number: '5', status: 'vacant' };

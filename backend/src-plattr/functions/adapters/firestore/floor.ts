@@ -4,7 +4,7 @@ import { apply as approve } from '../../app/approvals';
 import { ports as approvalPorts } from './approvals';
 import { Ports, Tx, Order, SittingHead, floorConfigFrom } from '../../app/floor';
 import { Staff } from '../../app/approvals';
-import { Bill, Table, OrderState, sittingOf, roundRefusal } from '../../domain/floor';
+import { Bill, Table, OrderState, sittingOf, roundRefusal, guestRefusal } from '../../domain/floor';
 import { Line } from '../../domain/line';
 import type { DocumentReference, Transaction, Query } from 'firebase-admin/firestore';
 import { Timestamp } from 'firebase-admin/firestore';
@@ -78,6 +78,7 @@ const toBill = (d: FirebaseFirestore.QueryDocumentSnapshot): Bill => {
     status: x.status,
     payable: Number(x.payable) || 0,
     paid: Number(x.paidTotal) || 0,
+    replaced: Array.isArray(x.replacedBy) && x.replacedBy.length > 0,
     series: x.series ? String(x.series) : undefined,
     number: x.number ? String(x.number) : undefined,
   };
@@ -88,9 +89,15 @@ const toBill = (d: FirebaseFirestore.QueryDocumentSnapshot): Bill => {
  * same second makes one of the two retry instead of both winning. Bills only: reading the sitting's lines here would
  * make every checkout contend with the kitchen's line writes.
  */
-export async function roundRefusalIn(t: Transaction, rid: string, sessionId: string): Promise<string | null> {
+export async function roundRefusalIn(t: Transaction, rid: string, sessionId: string, label: string): Promise<string | null> {
   const bs = await t.get(bills(rid).where('sittingId', '==', sessionId));
-  return roundRefusal(bs.docs.map(toBill));
+  return roundRefusal(bs.docs.map(toBill), label);
+}
+
+/** D2 / D3 for the paths outside a transaction: a new phone joining (`kind: 'guest'`) and the waiter opening the table to add dishes (`'round'`). */
+export async function sittingRefusal(rid: string, sessionId: string, label: string, kind: 'guest' | 'round'): Promise<string | null> {
+  const bs = (await bills(rid).where('sittingId', '==', sessionId).get()).docs.map(toBill);
+  return kind === 'guest' ? guestRefusal(bs, label) : roundRefusal(bs, label);
 }
 
 /** Staff logins share the `sessions` collection (entity 'server', no table). They are never a sitting. */

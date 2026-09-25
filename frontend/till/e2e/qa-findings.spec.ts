@@ -45,12 +45,44 @@ test('[known bug] QF-7 TD-072: a double tap on Confirm merges once and says "Mer
   expect(sent['table-setMerge']).toHaveLength(1)
 })
 
-test('[known bug] QB-3 TD-065 BL-S9: an issued, unpaid bill can be cancelled from its tender screen', async ({ page }) => {
-  test.fail()
-  await fake(page, { 'payments-list': () => ok(billState()) })
+// D2 (Shaurya 2026-09-25) made the tender screen's way out an Edit, not a Cancel: no PIN, and it lands on the draft.
+test('QB-3 TD-065 D2 BL-S9: an issued, unpaid bill can be edited from its tender screen, and Edit opens its draft', async ({ page }) => {
+  const sent = await fake(page, {
+    'payments-list': () => ok(billState()),
+    'billing-edit': () => ok({ billId: 'b10', draftId: 'd_10', series: 'A', number: '0417', status: 'cancelled' }),
+    'billing-preview': () => ok({ lines: [], blocks: [], charges: [], subtotal: 0, taxTotal: 0, roundOff: 0, payable: 13200, dropped: [] }),
+  })
   await login(page, '&bill=b10')
   await expect(page.getByTestId('outstanding')).toHaveText('outstanding ₹66.00')
-  await expect(page.getByRole('button', { name: /cancel/i })).toBeVisible()   // today: Cancel lives only on the page that issued
+  await page.getByTestId('edit-bill').click()
+  await expect(page).toHaveURL(/draft=d_10/)
+  expect(sent['billing-edit']).toEqual([expect.objectContaining({ billId: 'b10' })])
+  expect(sent['billing-edit'][0]).not.toHaveProperty('pin')
+})
+
+// D2 / D3: with money on the bill the server refuses the Edit; the screen says why, in the server's words, and stays.
+test('D3 a part-paid bill: Edit is refused "₹30 already paid on A-0417 — take the rest first", and the screen stays', async ({ page }) => {
+  await fake(page, {
+    'payments-list': () => ok(billState({ paidTotal: 3000, outstanding: 3600 })),
+    'billing-edit': () => refuse(400, '₹30 already paid on A-0417 — take the rest first', { code: 'failed-precondition' }),
+  })
+  await login(page, '&bill=b10')
+  await page.getByTestId('edit-bill').click()
+  await expect(page.getByTestId('pay-msg')).toHaveText('₹30 already paid on A-0417 — take the rest first')
+  await expect(page).toHaveURL(/bill=b10/)
+})
+
+// TD-083: after Generate the bill screen has a way forward — Take payment — and D2's Edit.
+test('TD-083 D2 after Generate the bill screen offers Take payment and Edit bill', async ({ page }) => {
+  await fake(page, {
+    'billing-preview': () => ok({ lines: [], blocks: [], charges: [], subtotal: 6000, taxTotal: 300, roundOff: 0, payable: 6300, dropped: [] }),
+    'billing-issue': () => ok({ billId: 'b7', series: 'A', number: '0417', status: 'issued', lines: [], blocks: [], charges: [], subtotal: 6000, taxTotal: 300, roundOff: 0, payable: 6300 }),
+  })
+  await login(page, '&draft=d_7')
+  await page.getByTestId('issue').click()
+  await expect(page.getByTestId('bill-number')).toHaveText('#A-0417')
+  await expect(page.getByTestId('take-payment')).toHaveAttribute('href', '?r=res_qa&bill=b7')
+  await expect(page.getByTestId('edit-bill')).toBeVisible()
 })
 
 test('[known bug] QB-6 TD-066: a draft whose preview is refused still offers Preview, not a bare heading', async ({ page }) => {

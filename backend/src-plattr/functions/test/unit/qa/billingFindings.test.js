@@ -36,6 +36,7 @@ function fakePorts({ lines = [], role = 'MANAGER', offer = null, charges = [], t
     staff: { bySession: async (_r, sid) => { if (sid !== 'login_till') throw new ApprovalError('unauthenticated', 'bad session'); return staff; } },
     config: { billing: async () => settings },
     linesOfDraft: async (_r, d) => [...store.values()].filter(l => l.draftId === d),
+    linesOfOrder: async (_r, o) => [...store.values()].filter(l => l.orderId === o),
     orderOffer: async () => offer,
     getBill: async (_r, id) => bills.get(id) ?? null,
     tables: async (_r, tids) => tids.map(tableId => ({ tableId, charges: tables[tableId] ?? null })),
@@ -91,23 +92,38 @@ describe('QA bill screen findings (2026-09-25)', () => {
   //   A 28000 − 10000 = 18000 + 900 = 18900;  B 62000 − 10000 = 52000 + 2600 = 54600;  sum 73500, ₹105 short.
   // Under any reading of the spec (drop it: 29400 + 65100 = 94500; apportion it: 84000) the halves are never
   // less than the unsplit 84000. BL-S12 "any bill discount is recomputed per draft"; D 2026-09-15.
-  knownBug('QB-1 BL-S12: a split never gives the order offer twice — the halves add up to at least the unsplit 84000', async () => {
+  test('QB-1 D2 BL-S12: a split never gives the order offer twice — the halves add up to at least the unsplit 84000', async () => {
     const p = fakePorts({ offer: ORDER_OFFER, lines: [line('chicken', 'Chicken 65', 28000, 'sit_12'), line('crab', 'Coastal Crab Roast', 62000, 'sit_12_b')] });
     const a = await preview(p, req('sit_12'));
     const b = await preview(p, req('sit_12_b'));
     expect(a.payable + b.payable).toBeGreaterThanOrEqual(84000);
+    // D2 shares the ₹100 by value over the whole order (R1, lines by lineId): chicken floor(10000 × 28000 ÷ 90000) = 3111,
+    // crab 6889. A 24889 + 1244 tax (622 + 622) = 26133 → 26100; B 55111 + 2756 (1378 + 1378) = 57867 → 57900. Sum 84000.
+    expect([a.discount.amount, b.discount.amount, a.payable, b.payable]).toEqual([3111, 6889, 26100, 57900]);
   });
 
   // QB-6 · P1. The ₹60 naan split off an offer order cannot absorb ₹100 off, and preview refuses
   // "discount exceeds bill", so the half can never be billed. D 2026-09-15 (split drops the discount):
   // naan alone 6000 + 300 tax = 6300. Apportioned (R1) it would be less; either way it previews.
-  knownBug('QB-6 BL-S12: a cheap dish split off an offer order can still be previewed and billed', async () => {
+  test('QB-6 D2 BL-S12: a cheap dish split off an offer order can still be previewed and billed', async () => {
     const p = fakePorts({ offer: ORDER_OFFER, lines: [
       line('chicken', 'Chicken 65', 28000, 'sit_12'), line('crab', 'Coastal Crab Roast', 62000, 'sit_12'), line('naan', 'Butter Naan', 6000, 'sit_12_b'),
     ] });
     const r = await preview(p, req('sit_12_b'));
     expect(r.payable).toBeGreaterThan(0);
     expect(r.payable).toBeLessThanOrEqual(6300);
+    // Its share by value of 96000: 10000 − floor(10000 × 90000 ÷ 96000) = 625. 6000 − 625 = 5375 + 268 tax (134 + 134) = 5643 → 5600.
+    expect([r.discount.amount, r.payable]).toEqual([625, 5600]);
+  });
+
+  // TD-121 · P0 (QG-5). Table 12's A-0417 (chicken 28000 + crab 62000, ₹100 off) is printed at 84000. The guest then orders
+  // a naan (6000). Its draft previews WITHOUT the offer: A-0417 already took all ₹100, so 6000 + 300 tax = 6300, never 6300 − ₹100.
+  test('TD-121 D2 BL-S12: a dessert after the bill does not get the order offer a second time — 6300', async () => {
+    const p = fakePorts({ offer: ORDER_OFFER, lines: [line('chicken', 'Chicken 65', 28000, 'sit_12'), line('crab', 'Coastal Crab Roast', 62000, 'sit_12')] });
+    expect((await issueDraft(p, 'sit_12')).payable).toBe(84000);
+    p.lines.set('naan', line('naan', 'Butter Naan', 6000, 'sit_12'));
+    const r = await preview(p, req('sit_12'));
+    expect([r.discount, r.payable]).toEqual([null, 6300]);
   });
 
   // QB-2 · P0. Naan 6000 + 300 tax → bill 6300. The guest pays 3100 cash (floorstate's half: floor(6300/200)×100).
@@ -126,7 +142,7 @@ describe('QA bill screen findings (2026-09-25)', () => {
 
   // QB-3 (refusal half) and QB-9 · BL-S7: the refusal names the number on the paper, "already issued 0417",
   // never the document id. Bill 0417 is the first number the fake counter gives.
-  knownBug('QB-3 BL-S7: "already issued" names the bill number the cashier holds, 0417', async () => {
+  test('QB-3 D2 BL-S7: "already issued" names the bill number the cashier holds, 0417, and points at Edit', async () => {
     const p = fakePorts({ lines: [line('naan', 'Butter Naan', 6000, 'sit_10')] });
     const first = await issueDraft(p, 'sit_10');
     expect(first.number).toBe('0417');
@@ -135,6 +151,7 @@ describe('QA bill screen findings (2026-09-25)', () => {
     expect(err).toMatchObject({ code: 'failed-precondition' });
     expect(err.message).toContain('0417');
     expect(err.message).not.toContain(first.billId);
+    expect(err.message).toBe('A-0417 is already issued — Edit it to add these dishes');
   });
 
   // QB-4 · P1. The comp on the dessert draft is refused by the transaction ("already issued"), but ST's door
@@ -164,18 +181,19 @@ describe('QA bill screen findings (2026-09-25)', () => {
 
   // QB-7 · P1. BL "Who can do what": dropping the service charge before issue is allowed, audit P1. BL-S10
   // "Audit P1, no PIN". Naan 6000, service charge 5 % (300) dropped → bill 6300, and one row saying so.
-  knownBug('QB-7 BL-S10: removing the service charge writes one P1 audit row naming it', async () => {
+  test('QB-7 D2 BL-S10: removing the service charge writes one P1 audit row naming it', async () => {
     const p = fakePorts({ lines: [line('naan', 'Butter Naan', 6000, 'sit_6')], charges: [{ type: 'SERVICE_CHARGE', pctBps: 500, taxBlockId: 'food' }] });
     const bill = await issueDraft(p, 'sit_6', { dropCharges: ['SERVICE_CHARGE'] });
     expect(bill.payable).toBe(6300);
     const rows = [...p.audits.values()];
     expect(rows).toHaveLength(1);
     expect(JSON.stringify(rows[0])).toContain('SERVICE_CHARGE');
+    expect(rows[0]).toMatchObject({ action: 'dropCharge', sev: 'P1', amount: 300, staffId: 'stf_till' });   // 5 % of 6000
   });
 
   // QB-13 · P3. BL "Who can do what": dropping the service charge is SERVER "–". A captain's preview without
   // it tells the guest ₹63 for a ₹66 bill. The backend refuses the drop for the role, as it refuses issue.
-  knownBug('QB-13 BL: a SERVER login cannot take the service charge off, even on a preview', async () => {
+  test('QB-13 D2 BL: a SERVER login cannot take the service charge off, even on a preview', async () => {
     const p = fakePorts({ role: 'SERVER', lines: [line('naan', 'Butter Naan', 6000, 'sit_6')], charges: [{ type: 'SERVICE_CHARGE', pctBps: 500, taxBlockId: 'food' }] });
     expect((await preview(p, req('sit_6'))).payable).toBe(6600);   // 6000 + 300 = 6300 + 315 tax = 6615 → 6600: may look
     await expect(preview(p, { ...req('sit_6'), dropCharges: ['SERVICE_CHARGE'] })).rejects.toMatchObject({ code: 'permission-denied' });

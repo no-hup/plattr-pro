@@ -93,5 +93,11 @@ export function useTender(ctx: Ctx) {
   const voidRow = (paymentId: string, reason: string, note = '') =>
     write('payments-void', { paymentId, reason, note })
 
-  return { bill, busy, last, asOf, take, refund, voidRow, refresh }
+  /** D2 / BL-S9: Edit the bill (no PIN). Answers with the cancelled bill, whose draftId is where its dishes went back to. */
+  const edit = async (): Promise<{ draftId: string; series: string; number: string } | null> => {
+    setBusy(true)
+    try { return (await call<{ data: { draftId: string; series: string; number: string } }>('billing-edit', { restaurantId: ctx.restaurantId, sessionId: ctx.sessionId, cid: `till_edit_${ctx.billId}`, billId: ctx.billId })).data }
+    catch { return null } finally { setBusy(false) }
+  }
+  return { bill, busy, last, asOf, take, refund, voidRow, refresh, edit }
 }
