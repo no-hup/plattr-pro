@@ -86,6 +86,12 @@ const STATES = {
   expired: 'ordered, then the guest session expired (FL-S34)',
   reserved: 'table status reserved',
   disabled: 'table status disabled',
+  // Added by the tender-screen run (2026-09-25). PIN 1234, reason 'other'.
+  comped: 'ordered, then the whole bill comped at issue (BL-S22): payable ₹0, born paid (PY-S8)',
+  cancelled: 'billed, then the bill cancelled before anyone paid (PY-S14)',
+  cancelpp: 'part-paid ₹33 cash, then the bill cancelled anyway (QB-2 shape)',
+  credited: 'settled in cash, then a credit note raised on the dish (PY-S9 setup)',
+  onaccount: 'billed, then put on account for "Acme" (BT)',
 };
 
 async function dump(t) {
@@ -143,9 +149,29 @@ if (state === 'completed') {
   console.log('  captain marked the order COMPLETED'); process.exit(0);
 }
 if (state === 'expired') { await patch(`sessions/${guest}`, { expiresAt: new Date(Date.now() - 60_000) }); console.log('  session expiresAt set a minute ago'); process.exit(0); }
+if (state === 'comped') {   // what the bill screen's Comp sends: the whole net as a 100 % bill discount, PIN
+  const st0 = await staff();
+  const net = (await list('lines')).filter(l => l.draftId === guest && !l.billId && l.countsTowardTotal !== false).reduce((n, l) => n + l.listPrice, 0);
+  const c = await call('billing-issue', { restaurantId: RID, sessionId: st0, draftId: guest, cid: `qa_comp_${Date.now()}`, expectedV: await versions(guest), discount: { amount: net, pct: 100, source: { reason: 'complimentary', note: 'qa' } }, pin: '1234' });
+  console.log(`  comped: bill ${c.billId} ${c.series}-${c.number} payable ${R(c.payable)} status ${c.status}`); process.exit(0);
+}
 const st = await staff();
 const b = await issue(st, guest);
 if (state === 'billed') process.exit(0);
 if (state === 'dessert') { await order(t, guest); process.exit(0); }
 if (state === 'partpaid') { await pay(st, b, Math.floor(b.payable / 200) * 100); console.log(`  took ${R(Math.floor(b.payable / 200) * 100)} cash`); process.exit(0); }
 if (state === 'settled') { await pay(st, b, b.payable); console.log(`  took ${R(b.payable)} cash, bill paid`); process.exit(0); }
+// ── tender-screen states (2026-09-25) ──
+const cancelBill = () => call('billing-cancel', { restaurantId: RID, sessionId: st, cid: b.cid || `qa_c_${Date.now()}`, billId: b.billId, reason: 'other', note: 'qa', pin: '1234' });
+if (state === 'cancelled') { await cancelBill(); console.log(`  cancelled ${b.billId}`); process.exit(0); }
+if (state === 'cancelpp') { await pay(st, b, Math.floor(b.payable / 200) * 100); await cancelBill(); console.log(`  took ${R(Math.floor(b.payable / 200) * 100)} cash, then cancelled ${b.billId}`); process.exit(0); }
+if (state === 'credited') {
+  await pay(st, b, b.payable);
+  const line = (b.lines || []).find(l => l.countsTowardTotal !== false) || die('no line on the bill');
+  const n = await call('billing-creditNote', { restaurantId: RID, sessionId: st, cid: b.cid || `qa_cn_${Date.now()}`, billId: b.billId, reason: 'other', note: 'qa', pin: '1234', credits: [{ lineId: line.lineId, qty: 1 }] });
+  console.log(`  paid ${R(b.payable)} cash, credit note ${n.billId} ${n.series}-${n.number} for ${R(-n.payable)}`); process.exit(0);
+}
+if (state === 'onaccount') {
+  await call('payments-take', { restaurantId: RID, sessionId: st, billId: b.billId, paymentId: `qa_acct_${Date.now()}`, tenderId: 'account', amount: b.payable, ref: 'Acme' });
+  console.log(`  put ${R(b.payable)} on account for Acme`); process.exit(0);
+}
