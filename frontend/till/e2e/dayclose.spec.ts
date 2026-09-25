@@ -115,6 +115,6 @@ test('DC-S8 a wrong PIN is refused and no cash leaves the drawer', async ({ page
   // ST-S3: the till asks again rather than failing, so cancelling is how the cashier gets out.
   await expect(page.getByTestId('pin-input')).toBeVisible()
   await page.getByTestId('pin-cancel').click()
-  await expect(page.getByTestId('day-msg')).toContainText('Wrong PIN')
+  await expect(page.getByTestId('day-msg')).toHaveText('PIN required')
   await expect(page.getByTestId('day-expected')).toHaveText(before ?? '')
 })

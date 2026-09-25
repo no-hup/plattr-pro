@@ -112,7 +112,7 @@ test('TD-019 a comp with the wrong PIN takes no invoice number and leaves the dr
 
   await expect(page.getByTestId('pin-input')).toBeVisible()   // ST-S3: it asks again
   await page.getByTestId('pin-cancel').click()
-  await expect(page.getByTestId('bill-msg')).toContainText('Wrong PIN')
+  await expect(page.getByTestId('bill-msg')).toHaveText('PIN required')
   await expect(page.getByTestId('bill-number')).toHaveCount(0)
   await expect(page.getByTestId('payable')).toHaveText('Payable ₹670.00')
 })
