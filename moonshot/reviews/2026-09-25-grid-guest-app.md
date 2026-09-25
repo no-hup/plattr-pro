@@ -19,6 +19,8 @@ Sources: [CLAUDE.md](../../CLAUDE.md) "Price Calculation Reference" (per-compone
 | MW | [pages/menuListing/menu_widgets.dart](../../frontend/flutter_boilerplate/lib/pages/menuListing/menu_widgets.dart) | TBL | [table/table.js](../../backend/src-plattr/functions/table/table.js) (scan, OTP), [table/mergedTables.js](../../backend/src-plattr/functions/table/mergedTables.js) |
 | TV | [pages/table_verification/table_verification_state.dart](../../frontend/flutter_boilerplate/lib/pages/table_verification/table_verification_state.dart) | FS | [qa/floorstate.mjs](../../backend/src-plattr/functions/test/e2e/qa/floorstate.mjs) |
 
+**Run 2026-09-25 (screen half):** 50 cells (+1 added, G13b): 15 FAIL, 3 NOTE, 28 PASS, 2 NOTBUILT, 2 not run. 11 new findings QG-4…QG-14 (1 P0, 3 P1, 7 P2), plus TD-119 and TD-120 confirmed on screen. Correction to the grid: G11's cart is ₹840 → ₹560 as written, but its *order* at ×3 is ₹740 (840 ≥ 499 fires FLAT), per the API pass.
+
 ## 0. Read this before starting
 
 - **Slot 0 only.** The guest app is hardcoded to `:5002`. App: `run_app.sh consumer` → `:5051`. Phone viewport 430×900.
