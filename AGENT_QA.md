@@ -120,7 +120,8 @@ table 6 settled" takes a second to seed and ten minutes to click. Seed **through
 (guest OTP, cart, checkout, `billing-issue`, `payments-take`), not by writing documents. A seeded
 document is the shape the reader expects, which is how the bill-to-table bug hid (§8). The helper is
 [qa/floorstate.mjs](backend/src-plattr/functions/test/e2e/qa/floorstate.mjs): `node floorstate.mjs 6 billed`,
-`… 6 dump`, `… audit`. Add a state there when a screen needs one, rather than writing a second helper.
+`… 6 dump`, `… 6 reset` (that table, and any merged into it, back to free), `… audit`. The till's browser walks
+import the same states, so add a state there when a screen needs one, rather than writing a second helper.
 Test the helper on every state before briefing the driver, because a broken seed looks like a broken screen.
 
 **Order.** Risk first, from what has already failed: till floor (merge, move, Clear), bill

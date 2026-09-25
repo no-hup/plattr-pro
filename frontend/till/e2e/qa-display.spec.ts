@@ -1,45 +1,9 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
+import { fake, floorOf, login, ok, refuse, tile } from './fake'
 
 // QA display findings (moonshot/reviews/2026-09-25-qa-till-floor.md QF-*, 2026-09-25-qa-bill-screen.md QB-*).
 // Each fix here changes only words or looks, never what the till sends, so the backend is faked: every
-// Cloud Function call is answered from the table below. No emulator needed.
-
-type Reply = { status?: number; body: unknown }
-type Handler = (data: Record<string, unknown>) => Reply
-const ok = (data: unknown): Reply => ({ body: { result: { data } } })
-const refuse = (status: number, message: string, data: Record<string, unknown>): Reply =>
-  ({ status, body: { error: { message, status: 'ERR', details: { data } } } })
-
-const tile = (label: string, extra: Record<string, unknown> = {}) =>
-  ({ tableIds: [`tbl_meg_${label}`], label, word: 'free', onTable: 0, unpaid: 0, drafts: 0, minutes: 0, ...extra })
-const floorOf = (tiles: unknown[]) => ok({ tiles, config: { pollSeconds: 5, staleAfterSeconds: 20, settledFreeAfterMinutes: 30, takeawayTableIds: [] }, at: 0 })
-
-/** Fakes every function; returns the bodies each endpoint was sent, so a test can check the request did not change. */
-async function fake(page: Page, handlers: Record<string, Handler>) {
-  const sent: Record<string, Record<string, unknown>[]> = {}
-  const all: Record<string, Handler> = {
-    'server-serverLogin': () => ok({ sessionId: 'sess_qa', name: 'Till', role: 'MANAGER' }),
-    'approvals-config': () => ok({ reasons: ['guest left', 'complaint'] }),
-    'print-status': () => ok({ stations: {}, waiting: 0, notAutoPrinted: 0, lastClaimAt: null, silentSeconds: null, at: 0 }),
-    ...handlers,
-  }
-  await page.route(/\/us-central1\/[\w-]+$/, route => {
-    const name = route.request().url().split('/').pop()!
-    const data = (route.request().postDataJSON() as { data: Record<string, unknown> }).data
-    ;(sent[name] ??= []).push(data)
-    const r = (all[name] ?? (() => ok({})))(data)
-    return route.fulfill({ status: r.status ?? 200, contentType: 'application/json', body: JSON.stringify(r.body) })
-  })
-  return sent
-}
-
-async function login(page: Page, query = '') {
-  await page.goto(`/?r=res_qa${query}`)
-  await page.getByTestId('email').fill('till@qa.test')
-  await page.getByTestId('password').fill('1234')
-  await page.getByTestId('login').click()
-}
-
+// Cloud Function call is answered from a table (fake.ts). No emulator needed.
 
 test('QF-12 FL-S1: tiles run 1, 2, 3 … 10, not 1, 10, 11, 2', async ({ page }) => {
   await fake(page, { 'floor-get': () => floorOf(['1', '10', '11', '12', '2', '3+9', '4'].map(l => tile(l))) })
