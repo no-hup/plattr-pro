@@ -143,14 +143,8 @@ class _OffersView extends StatelessWidget {
 
     if (result == null) return;
 
-    final created = await provider.createOffer(result.offerData);
-    if (created == null && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.errorMessage ?? 'Failed to create offer'),
-        ),
-      );
-    }
+    await provider.createOffer(result.offerData);
+    // TD-138: RefusalInterceptor shows the refusal.
   }
 
   Future<void> _showEditDialog(
@@ -165,14 +159,8 @@ class _OffersView extends StatelessWidget {
 
     if (result == null) return;
 
-    final ok = await provider.updateOffer(offer.id, result.offerData);
-    if (!ok && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.errorMessage ?? 'Failed to update offer'),
-        ),
-      );
-    }
+    await provider.updateOffer(offer.id, result.offerData);
+    // TD-138: RefusalInterceptor shows the refusal.
   }
 
   Future<void> _confirmDelete(
@@ -200,14 +188,8 @@ class _OffersView extends StatelessWidget {
     );
 
     if (confirmed != true) return;
-    final ok = await provider.deleteOffer(offer.id);
-    if (!ok && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.errorMessage ?? 'Failed to delete offer'),
-        ),
-      );
-    }
+    await provider.deleteOffer(offer.id);
+    // TD-138: RefusalInterceptor shows the refusal.
   }
 }
 
