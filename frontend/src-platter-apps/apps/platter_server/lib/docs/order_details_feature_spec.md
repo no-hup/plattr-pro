@@ -38,7 +38,8 @@ From the server app PRD and overview docs:
 Flutter:
 - `OrderDetailScreen` loads `order-getOrder` and renders a flat list of items.
 - Header is a placeholder with "Server: Unassigned".
-- Actions: "Mark Served" per cart, item-level served checkbox, and "Cancel Order".
+- Actions: "Mark Served" per cart, item-level served checkbox, a cancel button per dish, and "Cancel Order" (D4:
+  both take food off the bill and the kitchen, refused on a printed bill). Mark Paid was removed (D4).
 - Status chips exist (`_buildStatusChip`) but are not displayed.
 - Error state replaces content entirely (no cached fallback).
 

@@ -139,8 +139,9 @@ Covered by `test/unit/orders/waiterConfirmation.test.js`, `test/e2e/suites/waite
 The confirm also flips `line.sent` on the round's billing snapshots, and cancelling a cart
 voids them (`orders/lineSnapshots.js` `markLinesSent` / `voidCartLines`). Two things follow:
 ST-S5 ("voiding a line the kitchen started needs a PIN") now fires for the first time, and a
-cancelled or rejected round stops being billable at the till. The void is recorded but not
-PIN-gated from the Flutter apps — TD-023, waiting on TD-003. Decisions are in
+cancelled or rejected round stops being billable at the till. The void is recorded, never
+PIN-gated: D4 (2026-09-25) lets the waiter cancel a dish or a whole order after the kitchen has it, and refuses
+once the bill is printed (`test/e2e/suites/waiter-cancel.js`). Decisions are in
 `moonshot/STATE.md` and the ST sheet.
 
 ### coverage Suite (orphaned endpoints)

@@ -176,7 +176,7 @@ Naming `<screen>-<action>[-<id>]`. `ab ids` shows what is live on the current pa
 | staff login (all 4 apps) | `login-restaurant`, `login-username`, `login-password`, `login-submit` |
 | server — tabs | `tab-orders`, `tab-tables`, `tab-menu` |
 | server — tables | `table-<tableId>`, `table-status-{vacant,active,reserved,disabled}`, `table-refresh-otp`, `table-view-order`, `tables-refresh`\* |
-| server — orders | `order-cart-<cartId>`, `order-mark-served`, `order-cancel`, `order-mark-paid`, `order-mark-paid-confirm`, `orders-refresh`\* |
+| server — orders | `order-cart-<cartId>`, `order-mark-served`, `order-cancel`, `order-cancel-confirm`, `order-item-cancel-<cartItemId>`, `order-item-cancel-confirm`, `orders-refresh`\* (Mark Paid removed, D4) |
 | server — menu stock (D6) | `stock-addon-<addonId>` (the Add-ons section at the top of the Menu tab; tap it open first), `stock-addon-confirm` |
 | kitchen | `kitchen-cart-<cartId>`, `kitchen-mark-ready`, `kitchen-refresh` (error-state retry only) |
 | admin — menu (D6) | `menu-edit-<itemId>`; dish editor `dish-edit-addons`, `dish-edit-variants`, `dish-save`; add-ons `addon-price-<addonId>`, `addon-stock-<addonId>`, `addon-save-<addonId>`, `addons-done`; portions `variant-add`, `variant-edit-<variantId>`, `variant-name`, `variant-option-name-<optionId>`, `variant-option-price-<optionId>`, `variant-option-delete-<optionId>` (a new row is `new<i>`), `variant-add-option`, `variant-save`, `variants-done`; the "on N dishes" question `shared-scope-all`, `shared-scope-only` |
@@ -275,7 +275,7 @@ server        long-press the card    →  Mark Served    cart 0 SERVED
 guests        round 2 (mains) same session → checkout  cart 1 PENDING, SAME order, 2 carts
 kitchen                              →  Mark Ready     cart 1 READY
 server        long-press             →  Mark Served    cart 1 SERVED
-server        table → View → Mark Paid → confirm       order COMPLETED, table → vacant
+till          bill → take payment → Clear              bill paid, table → vacant (Mark Paid removed, D4)
 ```
 
 Read back from Firestore after every step; the screen can lie, the document
