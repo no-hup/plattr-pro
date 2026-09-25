@@ -60,8 +60,10 @@ export function FloorScreen({ ctx, role }: { ctx: Ctx; role: string }) {
   const ready = mode === 'merge' ? picked.length >= 2 : picked.length === 2
 
   const isParcel = (t: Tile) => t.tableIds.some(id => floor.config.takeawayTableIds.includes(id))
-  const tables = floor.tiles.filter(t => !isParcel(t))
-  const parcels = floor.tiles.filter(isParcel)
+  // QF-12: by number, so 2 comes before 10 ("3+9" sorts as 3). The server's order is not a promise.
+  const sorted = [...floor.tiles].sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))
+  const tables = sorted.filter(t => !isParcel(t))
+  const parcels = sorted.filter(isParcel)
   const tileList = (tiles: Tile[]) => (
     <>
         {tiles.map(t => (
