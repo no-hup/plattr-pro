@@ -164,6 +164,17 @@ The backend maintains shared data objects (restaurants, tables, sessions, menus,
   *Without this a new portion needs a developer.*
 - Table management: add/edit tables, capacity, status.
 - Staff management: create/update servers and assignments.
+- **Roles are the owner's to give** (TD-139, 2026-09-26). The cashier's till@ login is a Manager; he opens his own card
+  and the Role field is greyed out, "Nobody can change their own role". A manager can move Server Two to the kitchen,
+  but only the owner makes someone a Manager or an Admin. Every role given is an audit row naming who did it.
+  *Without this the person the owner-only rules control can make himself the owner, and nothing records it.*
+- **A refused save says so** (TD-138, 2026-09-26). At 21:00 the manager's morning login has expired; she flips Butter
+  Naan off. "Session Expired" shows and she is sent to log in; any other refusal shows the server's own words. *Without
+  this the switch stays on in silence, she believes the naan is off, and guests keep ordering it.*
+- **Offer dates are whole days** (A26, 2026-09-26). The manager sets Navratri 10% "26 Sep to 30 Sep": it applies from
+  00:00 IST on the 26th to the last minute of the 30th, in the restaurant's clock (`payments.timezoneOffsetMinutes`),
+  and a one-day Sunday offer is start = end. *Without this it starts at 05:30 on the 26th and ends at 05:30 on the
+  30th, and the last day's lunch and dinner lose it.*
 - View active orders and operational status.
 
 **Should have**

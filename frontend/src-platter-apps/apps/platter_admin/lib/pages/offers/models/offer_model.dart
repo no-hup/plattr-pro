@@ -19,7 +19,7 @@ class OfferModel {
   final List<String> exclusionIds;
   final bool isActive;
 
-  /// Expected keys: startDate, endDate (ISO 8601 strings)
+  /// Expected keys: startDate, endDate. Read as ISO instants with the zone written in; the editor sends days (A26).
   final Map<String, dynamic> validity;
 
   /// Optional. Expected keys: minOrderValue, requiredItems
