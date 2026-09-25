@@ -181,7 +181,10 @@ export async function cancel(ports: Ports, req: CancelRequest): Promise<Bill> {
   const staff = await ports.staff.bySession(req.restaurantId, req.sessionId);
   const existing = await ports.getBill(req.restaurantId, req.billId);
   if (!existing) fail('not-found', 'bill not found');
-  if (existing!.status !== 'issued') fail('failed-precondition', `cannot cancel a ${existing!.status} bill`);   // before the PIN is asked for
+  // Before the PIN is asked for, so nobody is asked for a PIN for nothing: the same rule the transaction applies again
+  // below on the fresh bill (status, credit note, D3's money on it), since a payment can land in between.
+  const pre = cancelBill(existing!, 0, staff.staffId, req.reason);
+  if (!pre.ok) fail(pre.code, pre.message);
   await ports.approve({ restaurantId: req.restaurantId, sessionId: req.sessionId, action: 'cancelBill', cid: req.cid, reason: req.reason, note: `${req.note ?? ''} bill ${existing!.number} ₹${existing!.payable}`.trim().slice(0, 200), pin: req.pin });
   const now = ports.now();
   const bill = await ports.transact(req.restaurantId, async t => {

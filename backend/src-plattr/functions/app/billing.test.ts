@@ -317,6 +317,18 @@ describe('app/billing cancel / creditNote / split / get', () => {
     p.bills.set(b.billId, { ...b, status: 'paid' });
     expect(await code(cancel(p, { ...base, billId: b.billId, reason: 'other' }))).toBe('failed-precondition');   // no pin needed to learn that
   });
+  // D3: A-0417 is ₹609.00. A second till takes ₹200 cash while the first cashier is typing the PIN. The check before the
+  // PIN saw no money; the transaction re-reads the bill, sees paidTotal 20000 and refuses. Nothing moves: bill issued, lines billed.
+  it('D3 a payment landing between the pre-check and the cancel transaction is caught inside it: "₹200 already paid on A-0417"', async () => {
+    const p = fakePorts();
+    const b = await issue(p, issueReq());
+    const door = p.approve;
+    p.approve = async req => { const r = await door(req); p.bills.set(b.billId, { ...p.bills.get(b.billId)!, paidTotal: 20000 }); return r; };
+    await expect(cancel(p, { ...base, billId: b.billId, reason: 'other', pin: '1234' }))
+      .rejects.toMatchObject({ code: 'failed-precondition', message: '₹200 already paid on A-0417 — take the rest first' });
+    expect(p.bills.get(b.billId)!.status).toBe('issued');
+    expect([...p.lines.values()].every(l => l.billId === b.billId)).toBe(true);
+  });
   it('BL-S11 credit note: CN series 0001, original keeps paid and gains creditNotes[], credited qty moves, audit amount 8400', async () => {
     const p = fakePorts();
     const b = await issue(p, issueReq());

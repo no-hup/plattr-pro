@@ -159,7 +159,13 @@ export interface Bill extends BillBody, Meta {
   creditNotes: { billId: string; number: string; at: number }[];
   creditNoteOf?: { billId: string; number: string; issuedAt: number };
   refundedTotal?: number;   // credit notes only, minor units, PY is the only writer (its R7: refunds never sum past the note)
+  paidTotal?: number;       // PY's stamp: net receipts, minor units. BL only reads it (D3)
 }
+
+/** What a person reads: "A-0417", never the document id (QB-9). */
+export const billLabel = (b: { series: string; number: string }) => `${b.series}-${b.number}`;
+/** ₹500 for whole rupees, ₹33.50 otherwise. Refusal text only; the screen formats its own figures. */
+const rs = (minor: number) => `₹${(minor / 100).toFixed(minor % 100 ? 2 : 0)}`;
 
 /** BL-S7: a preview body becomes a bill. Lines are copied, never referenced. A bill with nothing to charge is refused. */
 export function issue(body: BillBody, meta: Meta): Result<Bill> {
@@ -175,6 +181,10 @@ export function issue(body: BillBody, meta: Meta): Result<Bill> {
 export function cancel(bill: Bill, at: number, by: string, reason: string): Result<Bill> {
   if (bill.status !== 'issued') return { ok: false, code: 'failed-precondition', message: `cannot cancel a ${bill.status} bill` };
   if (bill.creditNoteOf) return { ok: false, code: 'failed-precondition', message: 'a credit note is not cancelled' };
+  // DECISION(D3, 2026-09-25): ₹500 already paid on A-0004: Edit and Cancel refused, take the rest first. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+  // Friends paying ₹500 + ₹700 towards one ₹1,200 bill is normal; cancelling between the two left the ₹500 on a dead bill (TD-062).
+  // PY keeps a part-paid bill `issued`, so the status check above lets it through; `paidTotal` is what catches it.
+  if ((bill.paidTotal ?? 0) > 0) return { ok: false, code: 'failed-precondition', message: `${rs(bill.paidTotal!)} already paid on ${billLabel(bill)} — take the rest first` };
   return { ok: true, value: { ...bill, status: 'cancelled', cancelled: { at, by, reason } } };
 }
 
