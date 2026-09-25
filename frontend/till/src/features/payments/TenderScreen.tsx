@@ -70,7 +70,7 @@ export function TenderScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) 
     <section>
       <p>
         Bill <code>{bill.billId}</code> · payable {fmt(bill.payable)} · paid {fmt(bill.paidTotal)} ·{' '}
-        <strong data-testid="outstanding">{settled ? 'settled' : `outstanding ${fmt(outstanding)}`}</strong>
+        <strong data-testid="outstanding">{settled ? 'settled' : bill.status === 'walkedOut' ? `walked out · ${fmt(outstanding)} unpaid` : `outstanding ${fmt(outstanding)}`}</strong>
         <span data-testid="status"> [{bill.status}]</span>
       </p>
       <p data-testid="drawer" hidden={!drawer}>DRAWER OPEN</p>

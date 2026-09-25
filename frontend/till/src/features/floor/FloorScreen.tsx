@@ -99,7 +99,7 @@ export function FloorScreen({ ctx, role }: { ctx: Ctx; role: string }) {
               <button data-testid={`clear-${t.label}`} onClick={async () => { if (await floor.clear(t.tableIds[0])) say(`${t.label} cleared`) }} disabled={floor.busy || floor.stale}>Clear</button>
             )}
             {mayAct && !mode && t.onTable + t.unpaid > 0 && (
-              <button data-testid={`walkout-${t.label}`} onClick={async () => { if (window.confirm(`Free ${t.label} with ${rupees(t.onTable + t.unpaid)} unpaid?`) && await floor.walkOut(t.tableIds[0])) say(`${t.label} freed, unpaid`) }} disabled={floor.busy || floor.stale}>Walk-out</button>
+              <button data-testid={`walkout-${t.label}`} onClick={async () => { if (window.confirm(`Walk out ${t.label}? Its unpaid bill is written off at day close.`) && await floor.walkOut(t.tableIds[0])) say(`${t.label} walked out`) }} disabled={floor.busy || floor.stale}>Walk-out</button>
             )}
           </li>
         ))}

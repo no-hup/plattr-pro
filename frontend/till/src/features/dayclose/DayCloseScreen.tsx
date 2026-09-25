@@ -61,6 +61,11 @@ export function DayCloseScreen({ ctx }: { ctx: Ctx }) {
         ))}
       </tbody></table>
 
+      {/* D1: walked-out money is its own line, not inside comps, named by bill so the morning read can ask about each. */}
+      {!!day.walkouts?.count && (
+        <p data-testid="walkouts">Walked out {fmt(day.walkouts.amount)} · {day.walkouts.count} {day.walkouts.count === 1 ? 'bill' : 'bills'} ({day.walkouts.bills.map(b => b.number).join(', ')})</p>
+      )}
+
       {/* BT: what the day gave away — a staff meal, a comped table, an offer — each a reason on a numbered bill. */}
       {day.discounts.length > 0 && (
         <table data-testid="discounts"><tbody>

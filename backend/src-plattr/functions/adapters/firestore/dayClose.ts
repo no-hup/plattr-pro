@@ -45,7 +45,12 @@ const billsQuery = (rid: string, businessDate: string, cfg: PaymentsConfig): Que
   const { start, end } = businessDayWindow(businessDate, cfg);
   return bills(rid).where('issuedAt', '>=', start).where('issuedAt', '<', end);
 };
-const asDayBill = (d: FirebaseFirestore.DocumentData): DayBill => ({ status: String(d.status ?? ''), creditNoteOf: d.creditNoteOf ?? undefined, discount: d.discount ?? null, lines: Array.isArray(d.lines) ? d.lines : [] });
+const asDayBill = (d: FirebaseFirestore.DocumentData): DayBill => ({
+  status: String(d.status ?? ''), creditNoteOf: d.creditNoteOf ?? undefined, discount: d.discount ?? null, lines: Array.isArray(d.lines) ? d.lines : [],
+  billId: typeof d.billId === 'string' ? d.billId : undefined, series: typeof d.series === 'string' ? d.series : undefined, number: typeof d.number === 'string' ? d.number : undefined,
+  walkedOut: d.walkedOut && typeof d.walkedOut.amount === 'number' ? { amount: d.walkedOut.amount } : null,   // D1
+  payable: Number(d.payable ?? 0), paidTotal: Number(d.paidTotal ?? 0),
+});
 const unbilledQuery = (rid: string, businessDate: string, cfg: PaymentsConfig): Query => {
   const { start, end } = businessDayWindow(businessDate, cfg);
   return lines(rid).where('billId', '==', null).where('placedAt', '>=', start).where('placedAt', '<', end);

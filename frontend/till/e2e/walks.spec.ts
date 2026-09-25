@@ -160,3 +160,23 @@ test('[known bug] QT-4 TD-070 PY-S9: the cashier refunds credit note CN-… by t
   await pin(page)
   await expect(page.getByTestId('pay-msg')).toHaveText('Refunded')
 })
+
+// D1 (Shaurya 2026-09-25), FL-S35, DC-S25a on real writers. 22:40 table 11's naan is billed ₹66.00 and nobody pays.
+// Walk-out with the manager PIN: the table frees, the bill keeps its number and reads walked out, and the day view
+// carries "Walked out ₹66.00 · 1 bill" on its own line instead of refusing the close over an unpaid bill.
+test('D1 FL-S35 DC-S25a walk-out on a ₹66.00 bill frees table 11, keeps the bill as walked out, and day close shows the line', async ({ page }) => {
+  const { guest } = await setState('11', 'billed')
+  page.on('dialog', d => d.accept())
+  await open(page)
+  await expect(page.getByTestId('due-11')).toHaveText(/₹66\.00 due/)
+  await page.getByTestId('walkout-11').click()
+  await expect(page.getByTestId('pin-amount')).toHaveText('₹66.00 unpaid')   // the server's post-tax figure, before the PIN
+  await pin(page)
+  await expect(page.getByTestId('tile-11')).toContainText('free')
+  const b = (await list('bills')).find((x: { sittingId?: string }) => x.sittingId === guest)
+  expect(b).toMatchObject({ status: 'walkedOut', walkedOut: { amount: 6600 } })
+  await page.goto(`/?r=${RID}&day=1`)
+  await loginAgain(page)
+  await expect(page.getByTestId('walkouts')).toContainText(`${b.series}-${b.number}`)
+  await expect(page.getByTestId('walkouts')).toContainText('₹66.00')
+})

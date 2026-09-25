@@ -36,6 +36,8 @@ export function PinPrompt() {
       <form onSubmit={e => { e.preventDefault(); finish(value) }} style={{ background: '#fff', padding: 24, borderRadius: 8, minWidth: 260 }}>
         <h2 style={{ marginTop: 0 }}>Enter your PIN</h2>
         <p data-testid="pin-hint">{hint}</p>
+        {/* D1: a walk-out writes off what the server priced, post-tax; the cashier sees it before the PIN. */}
+        {typeof detail.owed === 'number' && <p data-testid="pin-amount">₹{(detail.owed / 100).toFixed(2)} unpaid</p>}
         <input ref={input} data-testid="pin-input" type="password" inputMode="numeric" autoComplete="off" value={value} onChange={e => setValue(e.target.value)} />
         <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
           <button type="button" data-testid="pin-cancel" onClick={() => finish(null)}>Cancel</button>

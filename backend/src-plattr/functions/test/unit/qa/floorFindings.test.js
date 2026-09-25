@@ -60,7 +60,7 @@ describe('QA till floor findings (2026-09-25)', () => {
   // orders a naan (6000). Two sittings now name table 7. R9: one tile per sitting; FL-S1 / R19: the live
   // party's money is on the floor. Today the tile shows whichever sitting was read last: when the walked-out
   // one comes second (the adapter reads live sessions first), the family's 6000 is nowhere.
-  knownBug('QF-1 FL R9: a new party at a walked-out table has its own money on the floor, whatever order the sittings are read in', async () => {
+  test('QF-1 TD-063 FL R9: a new party at a walked-out table has its own money on the floor, whatever order the sittings are read in', async () => {
     const walked = { sessionId: 'sit_walked', tableIds: ['t7'], openedAt: NOW - 60 * MIN };
     const family = { sessionId: 'sit_family', tableIds: ['t7'], openedAt: NOW - 10 * MIN };
     const world = heads => ({

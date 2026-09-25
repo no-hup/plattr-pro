@@ -8,6 +8,7 @@ export interface Movement { movementId: string; kind: 'float' | 'in' | 'out'; am
 export interface DiscountTotal { reason: string; amount: number; count: number }
 export interface DayView {
   discounts: DiscountTotal[]   // BT: NC, staff meal, comps and offers by reason; not cash, so shown blind
+  walkouts?: { amount: number; count: number; bills: { billId: string; number: string; amount: number }[] }   // D1: walked-out bills, their own line
   businessDate: string; closed: boolean; blindCount: boolean; reasons: string[]
   byTender: TenderTotal[]; byStaff?: { staffId: string; net: number }[]; movements?: Movement[]
   openingFloat?: number; expectedCash?: number; countedCash?: number; difference?: number; leftInDrawer?: number | null

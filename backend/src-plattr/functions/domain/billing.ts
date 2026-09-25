@@ -159,8 +159,11 @@ export interface Meta {
   issuedAt: number; issuedBy: string; seller: Seller; customer?: { name: string; taxId: string } | null;
 }
 export interface Bill extends BillBody, Meta {
-  status: 'issued' | 'paid' | 'cancelled';
+  // DECISION(D1, 2026-09-25): Table 6 leaves on ₹660: the bill stays, marked walked out, number kept. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+  // `walkedOut` is FL's Walk-out, not a cancel and not a comp; a guest who comes back pays on it and it turns `paid` (Q1-3).
+  status: 'issued' | 'paid' | 'cancelled' | 'walkedOut';
   cancelled?: { at: number; by: string; reason: string };
+  walkedOut?: { at: number; by: string; amount: number; cid: string };   // amount = payable − paidTotal when the table left
   creditNotes: { billId: string; number: string; at: number }[];
   creditNoteOf?: { billId: string; number: string; issuedAt: number };
   refundedTotal?: number;   // credit notes only, minor units, PY is the only writer (its R7: refunds never sum past the note)

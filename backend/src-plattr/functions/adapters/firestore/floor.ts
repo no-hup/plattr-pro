@@ -2,6 +2,8 @@
 // Runtime note: this file runs from functions/lib/adapters/firestore/, so existing JS is three levels up.
 import { apply as approve } from '../../app/approvals';
 import { ports as approvalPorts } from './approvals';
+import { ports as billingPorts } from './billing';
+import { preview as previewBill, walkOutDraft } from '../../app/billing';
 import { Ports, Tx, Order, SittingHead, floorConfigFrom } from '../../app/floor';
 import { Staff } from '../../app/approvals';
 import { Bill, Table, OrderState, sittingOf, roundRefusal, guestRefusal } from '../../domain/floor';
@@ -120,6 +122,11 @@ export const ports: Ports = {
   now: () => Date.now(),
   approve: req => approve(approvalPorts, req as never),
   log: line => console.log(JSON.stringify(line)),
+  // D1: BL's own use-cases, as the cashier (their session), so the walk-out bill is priced and numbered exactly as any other.
+  billing: {
+    async payable(rid, sid, draftId) { return (await previewBill(billingPorts, { restaurantId: rid, sessionId: sid, draftId })).payable; },
+    async issueForWalkOut(rid, sid, draftId, cid, payable) { await walkOutDraft(billingPorts, { restaurantId: rid, sessionId: sid, draftId, cid, payable }); },
+  },
 
   staff: {
     async bySession(rid, sid): Promise<Staff> {
@@ -329,6 +336,9 @@ export const ports: Ports = {
         },
         createAudit(id, row) {
           t.create(audit(rid).doc(id), { ...row, createdAt: timestamp.serverTimestamp() });
+        },
+        walkOutBill(billId, block) {
+          t.update(bills(rid).doc(billId), { status: 'walkedOut', walkedOut: block });
         },
       };
       return fn(tx);

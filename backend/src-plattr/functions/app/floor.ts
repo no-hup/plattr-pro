@@ -56,6 +56,8 @@ export interface Tx {
    * `lastActivity`, each bill's `issuedAt`/`paidAt`, each payment's `at`. Millis; unknown → 0.
    */
   touchedAt(sitting: Sitting): Promise<number[]>;
+  /** D1: BL's walk-out stamp on one bill: status `walkedOut` and what was left unpaid. */
+  walkOutBill(billId: string, block: { at: number; by: string; amount: number; cid: string }): void;
 }
 
 export interface Ports {
@@ -73,6 +75,12 @@ export interface Ports {
   restaurantIds(): Promise<string[]>;
   /** ST's one door (app/approvals apply): role, reason, PIN, P0 audit row. Throws ApprovalError on refusal. */
   approve(req: { restaurantId: string; sessionId: string; action: 'releaseUnpaid'; cid: string; amountMinor: number; reason?: unknown; note?: unknown; pin?: unknown }): Promise<unknown>;
+  /** D1: BL, for a walk-out. What a draft would bill at (post-tax), and issuing it as a bill with no paper. */
+  billing: {
+    payable(restaurantId: string, staffSessionId: string, draftId: string): Promise<number>;
+    /** Refuses unless the draft still bills at `payable`, the figure the PIN approved, before a number is taken. */
+    issueForWalkOut(restaurantId: string, staffSessionId: string, draftId: string, cid: string, payable: number): Promise<void>;
+  };
 }
 
 const fail = (code: string, message: string, details: Record<string, unknown> = {}): never => {
@@ -108,8 +116,12 @@ export async function getFloor(ports: Ports, req: FloorRequest): Promise<FloorRe
 
   const sittings = heads.map(h => sittingOf(h, lines, bills));
   const now = ports.now();
+  // TD-063 / R9: two sittings can name one table — a captain's COMPLETED leaves the old one on the floor with money on
+  // it while a new party sits. The newer owns the table's tile; the older still gets its own tile below (R17), never
+  // silently overwritten. 21:30 a couple at table 6 orders ₹420 while the 20:00 party's ₹660 is still unbilled.
   const byTable = new Map<string, Sitting>();
-  for (const s of sittings) for (const t of s.tableIds) byTable.set(t, s);
+  for (const s of sittings) for (const t of s.tableIds) { const cur = byTable.get(t); if (!cur || s.openedAt > cur.openedAt) byTable.set(t, s); }
+  const shown = new Set<string>();
 
   const numbers = new Map(tables.filter(t => t.number).map(t => [t.tableId, t.number as string]));
   // mergedInto on the child is the only stored form of the relationship (see the note in
@@ -128,13 +140,16 @@ export async function getFloor(ports: Ports, req: FloorRequest): Promise<FloorRe
     if (!s && t.status === 'disabled') continue;
     const group = kids.has(t.tableId) ? [t.tableId, ...(kids.get(t.tableId) as string[])] : undefined;
     tiles.push(tile(s, t, now, numbers, group));
+    if (s) shown.add(s.sessionId);
     if (s) for (const id of s.tableIds) drawn.add(id);
     else for (const id of group ?? [t.tableId]) drawn.add(id);
   }
 
   // R17: a sitting whose table document was retired or deleted still needs a door to its bill.
   for (const s of sittings) {
-    if (s.tableIds.some(id => drawn.has(id))) continue;
+    if (shown.has(s.sessionId)) continue;
+    // A sitting that lost its table to a newer party is drawn only while it holds money (R17); an empty one is noise.
+    if (s.tableIds.some(id => drawn.has(id)) && onTable(s.lines) === 0 && unpaid(s.bills) === 0) continue;
     tiles.push(tile(s, { tableId: s.tableIds[0], status: 'disabled' }, now, numbers));
     for (const id of s.tableIds) drawn.add(id);
   }
@@ -327,23 +342,51 @@ export async function clearTable(ports: Ports, req: ClearRequest): Promise<{ fre
   const staff = await actor(ports, req.restaurantId, req.staffSessionId);
   const at = ports.now();
   const cashier = staff.role === 'MANAGER' || staff.role === 'ADMIN';
+  const OWES = 'this table still has money on it — bill it and settle it first';
 
-  const release = (owedApproved: number | null) => ports.transact(req.restaurantId, async t => {
+  const sittingOfTable = async (t: Tx) => {
     const table = await t.getTable(req.tableId);
     if (!table) fail('not-found', `table ${req.tableId} does not exist`);
     // TD-037: a merged child has no session of its own; its money is its group's. The waiter's manual
     // Vacant reaches here for a child too, and must not detach table 6 from a party that still owes.
-    const s = await t.getSitting(table!.mergedInto ?? req.tableId);
-    if (!s) return { freed: [] as string[], owed: 0 };                // already free; nothing to do
-    const owed = isReleasable(s) ? 0 : onTable(s.lines) + unpaid(s.bills);
-    if (owed > 0 && owed !== owedApproved) {
-      if (!cashier) fail('permission-denied', 'only the cashier can free a table that still owes');
-      // Approved a different figure (a dish landed in between): the PIN covered that amount, not this one.
-      if (owedApproved !== null) fail('failed-precondition', 'the amount on this table changed, try again', { owed });
-      fail('failed-precondition', 'this table still has money on it — bill it and settle it first', { requires: 'pin', action: 'releaseUnpaid', owed });
-    }
-    if (table!.mergedInto) return { freed: [] as string[], owed }; // the group owes nothing; the caller detaches the child, the party stays
+    return { table: table!, s: await t.getSitting(table!.mergedInto ?? req.tableId) };
+  };
 
+  // D1 / QF-6: what a walk-out writes off, as billed — the unpaid part of every bill plus what each unbilled draft
+  // would bill at (BL's preview, tax and charges in). 22:40 table 10: printed ₹66 + a ₹60 naan never billed = ₹129.
+  const { s: now, table: head } = await ports.transact(req.restaurantId, sittingOfTable);
+  const owes = !!now && !isReleasable(now);
+  if (owes && !cashier) fail('permission-denied', 'only the cashier can free a table that still owes');   // before any pricing
+  const drafts = owes ? [...new Set(now!.lines.filter(l => !l.billId && l.countsTowardTotal).map(l => l.draftId))].sort() : [];
+  let owed = owes ? unpaid(now!.bills) : 0;
+  const payables: number[] = [];
+  for (const d of drafts) { const p = await ports.billing.payable(req.restaurantId, req.staffSessionId, d); payables.push(p); owed += p; }   // BL refuses food it cannot bill (R10), and the walk-out with it
+
+  if (owed > 0) {
+    if (req.pin === undefined) fail('failed-precondition', OWES, { requires: 'pin', action: 'releaseUnpaid', owed });
+    // A merged child's walk-out is the group's, done from the group's tile; tapped on the child it changes nothing.
+    if (head.mergedInto) fail('failed-precondition', `table ${head.number ?? head.tableId} is part of table ${head.mergedInto}'s group — walk out from that tile`);
+    await ports.approve({ restaurantId: req.restaurantId, sessionId: req.staffSessionId, action: 'releaseUnpaid', cid: req.cid, amountMinor: owed, reason: req.reason, note: req.note, pin: req.pin });
+    // Q1-1: every walk-out is a numbered bill at what the guest would have paid. No paper: nobody is there to take it.
+    // A draft that changed since the PIN is refused before it takes a number. A failure part way (draft 2 of 3) leaves
+    // draft 1 billed, unpaid and on the floor; the retry prices what is left and asks the PIN again (a second P0 row).
+    for (const [i, d] of drafts.entries()) await ports.billing.issueForWalkOut(req.restaurantId, req.staffSessionId, d, `${req.cid}_${d}`, payables[i]);
+  }
+
+  const out = await ports.transact(req.restaurantId, async t => {
+    const { table, s } = await sittingOfTable(t);
+    if (!s) return { freed: [] as string[] };                          // already free; nothing to do
+    // Re-read inside: the PIN covered exactly `owed`. A dish or a payment landing in between refuses (try again).
+    if (!isReleasable(s) && (owed === 0 || onTable(s.lines) > 0 || unpaid(s.bills) !== owed)) {
+      fail('failed-precondition', owed === 0 ? OWES : 'the amount on this table changed, try again', { owed: unpaid(s.bills) });
+    }
+    if (table.mergedInto) return { freed: [] as string[] };           // the group owes nothing; the caller detaches the child, the party stays
+
+    // DECISION(D1, 2026-09-25): Walk-out marks the unpaid bills walked out and frees the table; only the unpaid part is written off. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+    // A split table's paid half is untouched (Q1-4); a part-paid bill writes off what is left (₹660 − ₹300 = ₹360).
+    for (const b of s.bills) {
+      if (!b.note && b.status === 'issued' && b.payable - b.paid > 0) t.walkOutBill(b.billId, { at, by: staff.staffId, amount: b.payable - b.paid, cid: req.cid });
+    }
     // The sitting ends with the table. Leaving the session active would keep painting the tile
     // as settled forever, and a passer-by scanning the QR would join a paid party's tab (R18).
     endSitting(t, s);
@@ -351,21 +394,10 @@ export async function clearTable(ports: Ports, req: ClearRequest): Promise<{ fre
       cid: req.cid, action: 'table.clear', sev: owed > 0 ? 'P0' : 'P2', at, owed,
       by: staff.staffId, role: staff.role, sessionId: s.sessionId, tableIds: s.tableIds,
     });
-    ports.log({ evt: 'table.clear', cid: req.cid, tableIds: s.tableIds, by: staff.staffId, owed });
-    return { freed: s.tableIds, owed };
+    ports.log({ evt: owed > 0 ? 'table.walkOut' : 'table.clear', cid: req.cid, tableIds: s.tableIds, by: staff.staffId, owed });
+    return { freed: s.tableIds };
   });
-
-  if (!cashier || req.pin === undefined) return { freed: (await release(null)).freed };
-  // The cashier sent a PIN: learn what is owed, clear it through ST's door (which writes the P0 row
-  // with that amount), then free the table only if the amount is still exactly that.
-  const owed = await ports.transact(req.restaurantId, async t => {
-    const table = await t.getTable(req.tableId);
-    const s = table ? await t.getSitting(table.mergedInto ?? req.tableId) : null;
-    return s && !isReleasable(s) ? onTable(s.lines) + unpaid(s.bills) : 0;
-  });
-  if (owed === 0) return { freed: (await release(null)).freed };
-  await ports.approve({ restaurantId: req.restaurantId, sessionId: req.staffSessionId, action: 'releaseUnpaid', cid: req.cid, amountMinor: owed, reason: req.reason, note: req.note, pin: req.pin });
-  return { freed: (await release(owed)).freed };
+  return out;
 }
 
 /**

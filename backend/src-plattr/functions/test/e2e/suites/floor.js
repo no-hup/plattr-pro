@@ -93,7 +93,9 @@ export default async function floorSuite() {
 
   await seed('tables/table_fl_12', { number: '12', capacity: 4, status: 'active' });
   await seed('tables/table_fl_7', { number: '7', capacity: 2, status: 'active' });
-  await seed('tables/table_fl_5', { number: '5', capacity: 4, status: 'active' });
+  // `charges: []`: this table names no charge rows (BT), so what a walk-out bills is the food + GST alone, whatever
+  // service charge another suite leaves on this restaurant's config.
+  await seed('tables/table_fl_5', { number: '5', capacity: 4, status: 'active', charges: [] });
   await seed('tables/table_fl_6', { number: '6', capacity: 4, status: 'vacant' });
   await seed('tables/table_fl_9', { number: '9', capacity: 4, status: 'vacant' });
   await seed('tables/table_fl_19', { number: '19', capacity: 2, status: 'vacant' });
@@ -211,7 +213,9 @@ export default async function floorSuite() {
     check('TD-037 captain Vacant on table 5 is denied while the group holds 412000 unbilled', codeOf(vParent) === 'permission-denied' && /only the cashier/i.test(msgOf(vParent)), vParent);
     check('TD-037 captain Vacant on child 6 is denied too: its money is the group\'s', codeOf(vChild) === 'permission-denied', vChild);
     const noPin = await call('floor-clear', { restaurantId: RID, staffSessionId: manager, tableId: 'table_fl_5', cid: 'cid_fl_walk' });
-    check('cashier Clear on the owing group without a PIN → refused, asking for the PIN and naming 412000', codeOf(noPin) === 'failed-precondition' && errData(noPin).requires === 'pin' && errData(noPin).owed === 412000, noPin);
+    // D1 / QF-6 (2026-09-25): the amount named is what the walk-out would write off AS BILLED, not the pre-tax food:
+    // 412000 + CGST 2.5 % 10300 + SGST 2.5 % 10300 = 432600 (table 5 carries no charge rows).
+    check('cashier Clear on the owing group without a PIN → refused, asking for the PIN and naming 432600 as billed', codeOf(noPin) === 'failed-precondition' && errData(noPin).requires === 'pin' && errData(noPin).owed === 432600, noPin);
     check('TD-037 …and nothing moved: 6 still in the group, 5 not vacant', (await getDoc('tables/table_fl_6'))?.mergedInto === 'table_fl_5' && (await getDoc('tables/table_fl_5'))?.status !== 'vacant', null);
 
     await delDoc('lines/fl_group');   // the group is billed and settled; nothing open

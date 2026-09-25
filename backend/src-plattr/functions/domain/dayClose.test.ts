@@ -9,7 +9,7 @@
 // `overShortP0Above` is 10000 (₹100.00) by default.
 import {
   DEFAULTS, configFrom, openingFloatOf, expectedCashFrom, differenceOf, severityOf, totalsFrom,
-  canClose, canMove, canVoidMove, isBusinessDate, LedgerRow, Movement, IssuedBill, UnbilledLine, Floor, discountsFrom, DayBill,
+  canClose, canMove, canVoidMove, isBusinessDate, LedgerRow, Movement, IssuedBill, UnbilledLine, Floor, discountsFrom, walkoutsFrom, DayBill,
 } from './dayClose';
 
 type Snap = LedgerRow['tender'];
@@ -283,6 +283,23 @@ describe('BT · NC / staff meal / complimentary: what the day gave away, by reas
   });
   it('BT-N1 nothing given away → an empty list, never a missing field', () => {
     expect(discountsFrom([{ status: 'paid', discount: null, lines: [{ countsTowardTotal: true }] }])).toEqual([]);
+  });
+});
+
+// D1 / DC-S25a. 22:40 table 6 walks out on A-0004 (₹660.00, nothing paid); 23:05 table 10 walks out on A-0007 (₹1,320.00)
+// having paid ₹500, so ₹820.00 is written off. A-0009 walked out, then the guest came back and paid: it is `paid` now and
+// is not the day's walk-out. A cancelled bill is never one. The line reads "Walked out ₹1,480.00 · 2 bills".
+describe('D1 walkoutsFrom — walked-out money is its own line at close', () => {
+  const b = (number: string, status: string, amount: number | null): DayBill => ({ billId: `b_${number}`, series: 'A', number, status, lines: [], ...(amount === null ? {} : { walkedOut: { amount } }) });
+  it('DC-S25a two walk-outs: 66000 + 82000 = 148000, count 2, each named by its number', () => {
+    expect(walkoutsFrom([b('0004', 'walkedOut', 66000), b('0007', 'walkedOut', 82000), b('0009', 'paid', 40000), b('0010', 'cancelled', null), b('0011', 'paid', null)]))
+      .toEqual({ amount: 148000, count: 2, bills: [{ billId: 'b_0004', number: 'A-0004', amount: 66000 }, { billId: 'b_0007', number: 'A-0007', amount: 82000 }] });
+  });
+  it('DC-S25a none → zero, never a missing field', () => expect(walkoutsFrom([])).toEqual({ amount: 0, count: 0, bills: [] }));
+  // Review P1: A-0007 (₹1,320) walked out with ₹500 paid, ₹820 written off; at 23:20 the guest brings back ₹200 of it.
+  // The line reads ₹620, so the ₹200 is counted once, as taken.
+  it('D1 a part brought back the same day shrinks the line: 82000 − 20000 = 62000', () => {
+    expect(walkoutsFrom([{ ...b('0007', 'walkedOut', 82000), payable: 132000, paidTotal: 70000 }]).amount).toBe(62000);
   });
 });
 
