@@ -127,6 +127,15 @@ export const STATES = {
   orphan: 'staffopen + one staff line in the cart, never checked out (interrupted Send)',
   guestdraft: 'seated + one dish in the guest cart, not checked out',
   staffexpired: 'no table change: server@\'s staff session expiresAt set a minute ago',
+  // Added by the kitchen-app run (2026-09-25): what a cook has to read off a ticket.
+  note: 'server@ opened the table and sent Butter Naan with the note "no onion" (Add dishes\' note dialog)',
+  qty3: 'one round of Chicken 65 x3',
+  tworounds: 'round 1 Butter Naan, round 2 Gulab Jamun, both PENDING',
+  variant: 'Chicken Biryani, Family portion + Extra Raita, note "less spicy"',
+  biground: 'one round of six different dishes',
+  linevoid: 'ordered, then manager@ voided the line with a PIN (approvals-apply void, ST-S5)',
+  confirmed: 'awaiting, then server2@ sent it to the kitchen; gate turned off again',
+  mergedchild: '8 merged into this table, then a guest scanned table 8 and ordered',
 };
 
 export async function dump(t) {
@@ -181,12 +190,32 @@ export async function setState(n, state) {
     if (state === 'orphan') { const d = await dish(); await call('cart-addItemToCart', { restaurantId: RID, tableId: t.id, sessionId: o.sessionId, addedBy: 'staff:srv_meg_1', menuItemId: d.id, quantity: 1 }); log(`  staff line ${d.meta?.name} left in the cart`); }
     return out;
   }
-  if (state === 'awaiting') await gate(true);
+  if (state === 'awaiting' || state === 'confirmed') await gate(true);
+  if (state === 'note') {
+    const srv = await staff('server'), o = await call('table-openTable', { restaurantId: RID, sessionId: srv, tableId: t.id, covers: 2 });
+    await call('cart-addItemToCart', { restaurantId: RID, tableId: t.id, sessionId: o.sessionId, addedBy: 'staff:srv_meg_1', menuItemId: 'mi_butter_naan', quantity: 1, note: 'no onion' });
+    const co = await call('cart-checkoutCart', { restaurantId: RID, tableId: t.id, sessionId: o.sessionId, addedBy: 'staff:srv_meg_1' });
+    log(`  server@ sent Butter Naan "no onion", order ${co.orderId}`); return { ...out, guest: o.sessionId, orderId: co.orderId };
+  }
+  if (state === 'mergedchild') {
+    const c = await tableByNumber(8); if (c.status !== 'vacant') die('table 8 is not vacant');
+    await call('table-setMerge', { restaurantId: RID, staffSessionId: await staff(), parentTableId: t.id, childTableIds: [c.id], cid: `qa_merge_${Date.now()}`, merge: true });
+    const g = out.guest = await seat(c);
+    await call('cart-addItemToCart', { restaurantId: RID, tableId: c.id, menuItemId: 'mi_gulab', quantity: 1, sessionId: g });
+    const co = await call('cart-checkoutCart', { restaurantId: RID, tableId: c.id, sessionId: g });
+    log(`  merged ${c.id} into ${t.id}; guest on 8 ordered Gulab Jamun, order ${co.orderId}`); return { ...out, orderId: co.orderId };
+  }
   if (state === 'holding') { await patch(`tables/${t.id}`, { currentOTP: { code: '123456', createdAt: new Date(), expiresAt: new Date(Date.now() + 30 * 60_000) } }); return out; }
   const guest = out.guest = await seat(t);
   log(`  guest session ${guest}`);
   if (state === 'seated') return out;
   if (state === 'guestdraft') { const d = await dish(); await call('cart-addItemToCart', { restaurantId: RID, tableId: t.id, menuItemId: d.id, quantity: 1, sessionId: guest }); log(`  ${d.meta?.name} in the guest cart, not checked out`); return out; }
+  const one = async (menuItemId, quantity = 1, extra = {}) => call('cart-addItemToCart', { restaurantId: RID, tableId: t.id, menuItemId, quantity, sessionId: guest, ...extra });
+  const send = async () => (await call('cart-checkoutCart', { restaurantId: RID, tableId: t.id, sessionId: guest })).orderId;
+  if (state === 'qty3') { await one('mi_chicken65', 3); out.orderId = await send(); log(`  Chicken 65 x3, order ${out.orderId}`); return out; }
+  if (state === 'tworounds') { await one('mi_butter_naan'); await send(); await one('mi_gulab'); out.orderId = await send(); log(`  round 1 Butter Naan, round 2 Gulab Jamun, order ${out.orderId}`); return out; }
+  if (state === 'variant') { await one('mi_chicken_bir', 1, { selectedVariants: { mv_bir_portion: 'family' }, selectedAddons: ['ma_extra_raita'], note: 'less spicy' }); out.orderId = await send(); log(`  Chicken Biryani Family + Extra Raita "less spicy", order ${out.orderId}`); return out; }
+  if (state === 'biground') { for (const id of ['mi_butter_naan', 'mi_gulab', 'mi_chicken65', 'mi_crab_roast', 'mi_apollo_fish', 'mi_paneer65']) await one(id); out.orderId = await send(); log(`  six dishes in one round, order ${out.orderId}`); return out; }
   if (state === 'offer') {
     for (const id of ['mi_chicken65', 'mi_crab_roast']) await call('cart-addItemToCart', { restaurantId: RID, tableId: t.id, menuItemId: id, quantity: 1, sessionId: guest });
     const co = await call('cart-checkoutCart', { restaurantId: RID, tableId: t.id, sessionId: guest });
@@ -203,6 +232,12 @@ export async function setState(n, state) {
     return out;
   }
   if (state === 'ordered' || state === 'awaiting') return out;
+  if (state === 'confirmed') { await cartTo(orderId, 0, 'PENDING', 'server2'); await gate(false); log('  server2: sent to the kitchen, gate off'); return out; }
+  if (state === 'linevoid') {
+    const line = (await list('lines')).find(l => l.sessionId === guest) || die('no line');
+    await call('approvals-apply', { restaurantId: RID, sessionId: await staff(), cid: `qa_void_${Date.now()}`, lineId: line.lineId, action: 'void', reason: 'other', note: 'qa', pin: '1234' });
+    log(`  manager voided line ${line.lineId}`); return out;
+  }
   if (state === 'preparing' || state === 'ready' || state === 'served') {
     if (state === 'preparing') { await cartTo(orderId, 0, 'PREPARING'); log('  kitchen: PREPARING'); return out; }
     await cartTo(orderId, 0, 'READY'); log('  kitchen: READY');
@@ -272,7 +307,12 @@ export async function resetTable(n) {
   const bills = (await list('bills')).filter(b => (b.tableIds || []).some(i => ids.includes(i)) || sess.includes(b.sittingId));
   const billIds = bills.map(b => b.id);
   const notes = (await list('bills')).filter(b => billIds.includes(b.creditNoteOf?.billId)).map(b => b.id);
-  for (const l of (await list('lines')).filter(l => ids.includes(l.tableId) || sess.includes(l.sessionId))) await del(`lines/${l.id}`);
+  const tLines = (await list('lines')).filter(l => ids.includes(l.tableId) || sess.includes(l.sessionId));
+  // A print job whose lines are gone is refused at claim, and the agent retries it forever ahead of every
+  // other ticket for that station (kitchen-app run, 2026-09-25). Jobs are keyed `<kind>:<cartId>:…`.
+  const cartIds = new Set(tLines.map(l => l.cartId));
+  for (const j of (await list('printJobs')).filter(j => cartIds.has(j.id.split(':')[1]))) await del(`printJobs/${encodeURIComponent(j.id)}`);
+  for (const l of tLines) await del(`lines/${l.id}`);
   for (const p of (await list('payments')).filter(p => billIds.includes(p.billId) || notes.includes(p.billId))) await del(`payments/${p.id}`);
   for (const id of [...billIds, ...notes]) await del(`bills/${id}`);
   for (const o of (await list('orders')).filter(o => ids.includes(o.tableId))) await del(`orders/${o.id}`);
