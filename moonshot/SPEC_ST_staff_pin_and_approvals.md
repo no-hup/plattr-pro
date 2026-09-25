@@ -16,6 +16,8 @@ Roles are the existing ones in `adminApp/auth.js`: ADMIN, MANAGER, SERVER, KITCH
 | Void a line already sent to kitchen | – | PIN | PIN |
 | Void a line not yet sent | ✓ | ✓ | ✓ |
 | Reprint a bill | – | ✓ (audit P1) | ✓ (audit P1) |
+| Edit an issued bill with no money on it (BL-S9) | – | ✓ (no PIN, audit P1) | ✓ (no PIN, audit P1) |
+| Cancel an issued bill with no money on it | – | PIN (P0) | PIN (P0) |
 | Open drawer with no sale | – | PIN | PIN |
 | Change the limits | – | – | ✓ (config doc) |
 
@@ -146,6 +148,7 @@ Same shape for `requires: 'otp'` or `'password'` later. Nothing per screen.
 | 2026-09-15 | Arch review 1, item 3: the staging line doc is TD-008; TD-004 stays the no-ceiling row | Two rows shared one id |
 | 2026-09-15 | Arch review item 1 (gate on net, not list price): **not taken, accepted risk by Shaurya, 2026-09-15**. Tracked as TD-009 | A sheet rule is Shaurya's to change, not a reviewer's or mine |
 | 2026-09-24 | **Shaurya: TD-004 default is 50 %, and the cap is on the staff line discount only.** ₹2,040 off a ₹4,000 dish (51 %) is refused even with a PIN; ₹2,000 (50 %) goes with a PIN. The whole-bill comp (`billDiscount`: BL-S22 walkout, DC-S25 staff meal, NC) keeps its PIN-above-10 % rule and no ceiling, because a comp is a 100 % give-away by design. Automatic offers never reach this door | A manager's one-dish discount had no ceiling; the comp needed to stay whole |
+| 2026-09-25 | **D2 (Shaurya): Edit bill needs no PIN, and is not an action through the door.** BL writes its own P1 `bill.edit` row in the cancel transaction (no challenge to raise, so no door). `cancelBill` stays PIN and P0. Edit loses nothing on its own: it frees the lines back to the draft, where they stay billable. Q2-5 default: shipped before TD-005's reader exists; the rows are written now | Thirty innocent P0s on a Friday of desserts would bury the one real cancel. Do not "fix" the missing PIN: it is the decision |
 | 2026-09-24 | **`releaseUnpaid`: a new action through the one door.** Freeing a table that still owes is cashier-only (MANAGER/ADMIN), always a PIN, P0, reason from the list; the audit row's `amount` is what was owed. FL calls it from Clear (see FL Decisions 2026-09-24) | A walk-out needs one named person and a figure on the record |
 | 2026-09-23 | **TD-004 closed: `approvals.discountMaxPercent`, default 100 = no cap.** Above it a line or bill discount is refused `failed-precondition` "discount is above the N % limit", PIN or not, before any write. 100 is literally off, so the owner's walkout comp (BL-S22, DC-S25) keeps working and a discount larger than the line still gets applyToLine's own "cannot go below zero". Shaurya delegated the default | A restaurant with a manager who is not the owner sets it; nobody else pays for it |
 
