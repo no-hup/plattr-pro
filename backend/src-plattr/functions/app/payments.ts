@@ -320,7 +320,7 @@ export interface ReceivableList { receivables: Receivable[]; tenders: Tender[] }
 export async function list(ports: Ports, req: ListReq): Promise<DayList | BillList | ReceivableList> {
   await staffFor(ports, req);
   const cfg = await cfgFor(ports, req.restaurantId);
-  if (req.receivables === true) return { receivables: await ports.receivables.open(req.restaurantId), tenders: cfg.tenders.filter(t => t.kind !== 'credit') };
+  if (req.receivables === true) return { receivables: await ports.receivables.open(req.restaurantId), tenders: cfg.tenders.filter(t => t.kind !== 'credit' && !t.partner) };   // DECISION(D7, 2026-09-25): partner tenders are not offered on Receivables. If you change this, ask Shaurya first.
   if (str(req.billId)) {
     const billId = req.billId;
     const { b, rows } = await ports.transact(req.restaurantId, async t => ({ b: await t.readBill(billId), rows: await t.rowsForBill(billId) }));

@@ -2128,21 +2128,24 @@
                 "label": "Dineout",
                 "kind": "external",
                 "opensDrawer": false,
-                "needsRef": true
+                "needsRef": true,
+                "partner": true
               },
               {
                 "id": "eazydiner",
                 "label": "EazyDiner",
                 "kind": "external",
                 "opensDrawer": false,
-                "needsRef": true
+                "needsRef": true,
+                "partner": true
               },
               {
                 "id": "swiggy_dineout",
                 "label": "Swiggy Dineout",
                 "kind": "external",
                 "opensDrawer": false,
-                "needsRef": true
+                "needsRef": true,
+                "partner": true
               }
             ]
           },
@@ -3592,21 +3595,24 @@
                 "label": "Dineout",
                 "kind": "external",
                 "opensDrawer": false,
-                "needsRef": true
+                "needsRef": true,
+                "partner": true
               },
               {
                 "id": "eazydiner",
                 "label": "EazyDiner",
                 "kind": "external",
                 "opensDrawer": false,
-                "needsRef": true
+                "needsRef": true,
+                "partner": true
               },
               {
                 "id": "swiggy_dineout",
                 "label": "Swiggy Dineout",
                 "kind": "external",
                 "opensDrawer": false,
-                "needsRef": true
+                "needsRef": true,
+                "partner": true
               }
             ]
           },
@@ -4987,21 +4993,24 @@
                 "label": "Dineout",
                 "kind": "external",
                 "opensDrawer": false,
-                "needsRef": true
+                "needsRef": true,
+                "partner": true
               },
               {
                 "id": "eazydiner",
                 "label": "EazyDiner",
                 "kind": "external",
                 "opensDrawer": false,
-                "needsRef": true
+                "needsRef": true,
+                "partner": true
               },
               {
                 "id": "swiggy_dineout",
                 "label": "Swiggy Dineout",
                 "kind": "external",
                 "opensDrawer": false,
-                "needsRef": true
+                "needsRef": true,
+                "partner": true
               }
             ]
           },
@@ -6779,21 +6788,24 @@
                 "label": "Dineout",
                 "kind": "external",
                 "opensDrawer": false,
-                "needsRef": true
+                "needsRef": true,
+                "partner": true
               },
               {
                 "id": "eazydiner",
                 "label": "EazyDiner",
                 "kind": "external",
                 "opensDrawer": false,
-                "needsRef": true
+                "needsRef": true,
+                "partner": true
               },
               {
                 "id": "swiggy_dineout",
                 "label": "Swiggy Dineout",
                 "kind": "external",
                 "opensDrawer": false,
-                "needsRef": true
+                "needsRef": true,
+                "partner": true
               }
             ]
           },
@@ -8136,21 +8148,24 @@
                 "label": "Dineout",
                 "kind": "external",
                 "opensDrawer": false,
-                "needsRef": true
+                "needsRef": true,
+                "partner": true
               },
               {
                 "id": "eazydiner",
                 "label": "EazyDiner",
                 "kind": "external",
                 "opensDrawer": false,
-                "needsRef": true
+                "needsRef": true,
+                "partner": true
               },
               {
                 "id": "swiggy_dineout",
                 "label": "Swiggy Dineout",
                 "kind": "external",
                 "opensDrawer": false,
-                "needsRef": true
+                "needsRef": true,
+                "partner": true
               }
             ]
           },

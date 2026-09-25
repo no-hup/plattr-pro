@@ -230,7 +230,7 @@ test('PY-S24 a retry the server answers with the original row shows "Already rec
 // ── BT · on account (TD-012) and a tip ──────────────────────────────────────
 test('BT-A/T ₹609 put on account for "Acme Ltd" settles the bill with no drawer; a cash ₹700 with a ₹50 tip on the next bill gives change ₹41.00', async ({ page }) => {
   // The account tender is config: set only `payments` on the settings doc, leaving every other module's keys alone.
-  const TENDERS = [{ id: 'cash', label: 'Cash', kind: 'cash', opensDrawer: true, needsRef: false }, { id: 'card', label: 'Card', kind: 'external', opensDrawer: false, needsRef: true }, { id: 'account', label: 'On account', kind: 'credit', opensDrawer: false, needsRef: true }]
+  const TENDERS = [{ id: 'cash', label: 'Cash', kind: 'cash', opensDrawer: true, needsRef: false }, { id: 'card', label: 'Card', kind: 'external', opensDrawer: false, needsRef: true }, { id: 'account', label: 'On account', kind: 'credit', opensDrawer: false, needsRef: true }, { id: 'dineout', label: 'Dineout', kind: 'external', opensDrawer: false, needsRef: true, partner: true }]
   const r = await fetch(`${FS}/config/settings?updateMask.fieldPaths=payments`, { method: 'PATCH', headers: H, body: JSON.stringify({ fields: { payments: enc({ tenders: TENDERS }) } }) })
   if (!r.ok) throw new Error(`seed settings: ${r.status}`)
   try {
@@ -250,6 +250,9 @@ test('BT-A/T ₹609 put on account for "Acme Ltd" settles the bill with no drawe
     await page.getByTestId('password').fill('1234')
     await page.getByTestId('login').click()
     await expect(page.getByTestId('receivables')).toContainText('Acme Ltd')
+    // D7: a regular's tab is never settled through a dining partner, so Dineout is not offered here
+    const pick = page.getByTestId('receivables').locator('select[name="tender"]').first()
+    await expect(pick.locator('option')).toHaveText(['Cash', 'Card'])
 
     // a fresh bill: cash 700 with a 50 tip
     const BILL2 = `${BILL}_tip`
