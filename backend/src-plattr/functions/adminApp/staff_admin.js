@@ -6,6 +6,37 @@ const ResponseBuilder = require('../utils/ResponseBuilder');
 const { SERVER_STATUS } = require('../server/serverEnums');
 const { validateAdminSession, SERVER_ROLES } = require('./auth');
 const { hashPassword } = require('../utils/passwordUtils');
+const { auditRow } = require('../lib/domain/approvals');
+
+// DECISION(TD-139, 2026-09-26): only an ADMIN gives or takes the ADMIN or MANAGER role; nobody changes their own
+// role; every role given (a change, or a new staff member) writes one audit row in the same transaction. The cashier's
+// till@ login is a MANAGER and could make itself ADMIN, which put every owner-only rule one tap from the person it
+// controls. Taking a role is the same power as giving it, so a manager cannot demote the owner either.
+// If you change this, ask Shaurya first.
+const OWNER_ROLES = [SERVER_ROLES.ADMIN, SERVER_ROLES.MANAGER];
+
+/** Why this caller may not give `toRole` to this staff member (targetId null = a new one), or null when allowed. */
+function roleChangeRefusal({ callerRole, callerId, targetId, fromRole, toRole }) {
+    if (fromRole === toRole) return null;
+    if (targetId && callerId === targetId) return 'Nobody can change their own role';
+    if (callerRole !== SERVER_ROLES.ADMIN && (OWNER_ROLES.includes(toRole) || OWNER_ROLES.includes(fromRole))) {
+        return 'Only an Admin can give or take the Admin or Manager role';
+    }
+    return null;
+}
+
+/** Fail closed: an unknown role is refused, never stored. */
+function checkRole(role) {
+    if (!Object.values(SERVER_ROLES).includes(role)) {
+        errorHandler.badRequest(`Unknown role "${role}"`, { role });
+    }
+}
+
+function roleAuditRow(callerId, serverId, fromRole, toRole) {
+    return { ...auditRow({ ts: Date.now(), cid: `staff_${serverId}`, action: 'staffRoleChange', staffId: callerId, sev: 'P1',
+        reason: 'role change', note: null, lineId: null, before: fromRole ? { role: fromRole } : null, after: { role: toRole } }),
+        createdAt: timestamp.serverTimestamp() };
+}
 
 /**
  * Generates a random 4-6 digit PIN
@@ -93,8 +124,7 @@ exports.addServer = functions.https.onCall(async (request, context) => {
         data = request.data;
         const { restaurantId, sessionId, server } = data;
 
-        // Validate admin session
-        await validateAdminSession(restaurantId, sessionId);
+        const { serverData: caller, serverId: callerId } = await validateAdminSession(restaurantId, sessionId);
 
         // Validate server data
         if (!server || !server.name) {
@@ -108,6 +138,11 @@ exports.addServer = functions.https.onCall(async (request, context) => {
                 details: 'server.phoneNumber or server.email is required for login'
             });
         }
+
+        const role = server.role || SERVER_ROLES.SERVER;
+        checkRole(role);
+        const refusal = roleChangeRefusal({ callerRole: caller.role, callerId, targetId: null, fromRole: null, toRole: role });
+        if (refusal) errorHandler.forbidden(refusal, { restaurantId, role });
 
         // Check for duplicate phone/email
         const serversRef = db.collection('restaurants').doc(restaurantId).collection('servers');
@@ -141,7 +176,7 @@ exports.addServer = functions.https.onCall(async (request, context) => {
             name: server.name,
             phoneNumber: server.phoneNumber || '',
             email: server.email || '',
-            role: server.role || SERVER_ROLES.SERVER,
+            role,
             status: SERVER_STATUS.ACTIVE,
             password: hashedPassword,
             pinHash: hashedPin,
@@ -150,7 +185,12 @@ exports.addServer = functions.https.onCall(async (request, context) => {
             updatedAt: timestamp.serverTimestamp(),
         };
 
-        const newServerRef = await serversRef.add(serverData);
+        const newServerRef = serversRef.doc();
+        await db.runTransaction(async tx => {
+            tx.create(newServerRef, serverData);
+            tx.create(db.collection('restaurants').doc(restaurantId).collection('audit').doc(), roleAuditRow(callerId, newServerRef.id, null, role));
+        });
+        console.log(JSON.stringify({ cid: `staff_${newServerRef.id}`, action: 'staffRoleChange', restaurantId, staffId: callerId, from: null, to: role }));
 
         return ResponseBuilder.success({
             serverId: newServerRef.id,
@@ -190,8 +230,7 @@ exports.updateServer = functions.https.onCall(async (request, context) => {
         data = request.data;
         const { restaurantId, sessionId, serverId, updateData } = data;
 
-        // Validate admin session
-        await validateAdminSession(restaurantId, sessionId);
+        const { serverData: caller, serverId: callerId } = await validateAdminSession(restaurantId, sessionId);
 
         if (!serverId) {
             errorHandler.badRequest('Server ID is required', {
@@ -254,9 +293,7 @@ exports.updateServer = functions.https.onCall(async (request, context) => {
             updates.email = updateData.email;
         }
 
-        if (updateData.role !== undefined) {
-            updates.role = updateData.role;
-        }
+        if (updateData.role !== undefined) checkRole(updateData.role);
 
         if (updateData.status !== undefined) {
             updates.status = updateData.status;
@@ -266,8 +303,21 @@ exports.updateServer = functions.https.onCall(async (request, context) => {
             updates.profileImageUrl = updateData.profileImageUrl;
         }
 
-        // Update server
-        await serverRef.update(updates);
+        // The role is read in the same transaction that writes it, so two edits at once cannot both pass on a stale role.
+        const { fromRole, roleChanged } = await db.runTransaction(async tx => {
+            const current = (await tx.get(serverRef)).data().role;
+            const changed = updateData.role !== undefined && updateData.role !== current;
+            if (changed) {
+                const refusal = roleChangeRefusal({ callerRole: caller.role, callerId, targetId: serverId, fromRole: current, toRole: updateData.role });
+                if (refusal) errorHandler.forbidden(refusal, { restaurantId, serverId, role: updateData.role });
+                tx.create(db.collection('restaurants').doc(restaurantId).collection('audit').doc(), roleAuditRow(callerId, serverId, current, updateData.role));
+            }
+            tx.update(serverRef, changed ? { ...updates, role: updateData.role } : updates);
+            return { fromRole: current, roleChanged: changed };
+        });
+        if (roleChanged) {
+            console.log(JSON.stringify({ cid: `staff_${serverId}`, action: 'staffRoleChange', restaurantId, staffId: callerId, from: fromRole, to: updateData.role }));
+        }
 
         return ResponseBuilder.success({
             serverId,
@@ -352,4 +402,5 @@ module.exports = {
     updateServer: exports.updateServer,
     resetServerPin: exports.resetServerPin,
     SERVER_ROLES,
+    roleChangeRefusal,
 };

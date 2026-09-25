@@ -13,6 +13,8 @@ class HomeScreen extends StatefulWidget {
   final String sessionId;
   final String restaurantName;
   final String staffName;
+  final String staffId;
+  final String role;
 
   const HomeScreen({
     super.key,
@@ -20,6 +22,8 @@ class HomeScreen extends StatefulWidget {
     required this.sessionId,
     required this.restaurantName,
     required this.staffName,
+    required this.staffId,
+    required this.role,
   });
 
   @override
@@ -88,6 +92,8 @@ class _HomeScreenState extends State<HomeScreen> {
       StaffScreen(
         restaurantId: widget.restaurantId,
         sessionId: widget.sessionId,
+        staffId: widget.staffId,
+        role: widget.role,
       ),
       OffersScreen(
         restaurantId: widget.restaurantId,

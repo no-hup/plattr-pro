@@ -264,6 +264,20 @@ class ServerRoles {
 
   static List<String> get all => [admin, manager, server, kitchen];
 
+  // DECISION(TD-139, 2026-09-26): mirrors adminApp/staff_admin.js roleChangeRefusal, which is the real check. Only
+  // an Admin gives or takes Admin or Manager; nobody changes their own role. If you change this, ask Shaurya first.
+  /// The roles [callerRole] may pick for [target] (null = a new staff member). Empty: the role is fixed here.
+  static List<String> assignable({required String callerRole, required String callerId, StaffMember? target}) {
+    if (target != null && target.id == callerId) return const [];
+    final isAdmin = callerRole.toUpperCase() == admin;
+    if (!isAdmin && target != null && (target.role == admin || target.role == manager)) return const [];
+    return isAdmin ? all : [server, kitchen];
+  }
+
+  /// Why the role is fixed for this caller, shown under the greyed-out field.
+  static String fixedReason({required String callerId, required StaffMember target}) =>
+      target.id == callerId ? 'Nobody can change their own role' : 'Only an Admin can change this role';
+
   static String displayName(String role) {
     switch (role) {
       case admin:
