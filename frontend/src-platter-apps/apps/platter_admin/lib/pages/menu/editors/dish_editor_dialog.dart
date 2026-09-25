@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:platter_core/platter_core.dart';
+import '../menu_catalog_provider.dart';
 import 'addon_editor_dialog.dart';
 import 'variant_editor_dialog.dart';
 
 class DishEditorDialog extends StatefulWidget {
   const DishEditorDialog({
     super.key,
+    required this.provider,
     required this.categories,
     this.taxBlocks = const {},
     this.initialItem,
@@ -13,6 +15,8 @@ class DishEditorDialog extends StatefulWidget {
     this.selectedSubcategoryId,
   });
 
+  /// The add-on and portion editors save shared records through it (D6).
+  final MenuCatalogProvider provider;
   final List<MenuCategory> categories;
   /// Tax block id → label. Empty when the restaurant has none configured; the picker then hides.
   final Map<String, String> taxBlocks;
@@ -38,7 +42,7 @@ class _DishEditorDialogState extends State<DishEditorDialog> {
   List<String> _subcategoryIds = [];
   bool _isInStock = true;
   String? _taxBlockId;
-  String _dietaryType = 'Veg';
+  String _dietaryType = 'VEG';
   int _spiceLevel = 0;
   bool _isVegan = false;
 
@@ -80,7 +84,7 @@ class _DishEditorDialogState extends State<DishEditorDialog> {
     _taxBlockId = item?.taxBlockId;
     _dietaryType = item?.meta.dietaryType.isNotEmpty == true
         ? item!.meta.dietaryType
-        : 'Veg';
+        : 'VEG';
     _spiceLevel = item?.meta.spiceLevel ?? 0;
     _isVegan = item?.meta.isVegan ?? false;
     _variants = item?.variants ?? [];
@@ -109,9 +113,17 @@ class _DishEditorDialogState extends State<DishEditorDialog> {
   }
 
   Future<void> _editVariants() async {
+    // Done is the only way out: an "Only this dish" copy is already saved, and a dismissed dialog would hand
+    // this dish its old link back on the next save.
     final result = await showDialog<List<Variant>>(
       context: context,
-      builder: (context) => VariantEditorDialog(variants: _variants),
+      barrierDismissible: false,
+      builder: (context) => VariantEditorDialog(
+        provider: widget.provider,
+        variants: _variants,
+        menuItemId: widget.initialItem?.id,
+        dishName: _nameController.text.trim(),
+      ),
     );
     if (result != null) {
       setState(() {
@@ -123,7 +135,13 @@ class _DishEditorDialogState extends State<DishEditorDialog> {
   Future<void> _editAddons() async {
     final result = await showDialog<List<Addon>>(
       context: context,
-      builder: (context) => AddonEditorDialog(addons: _addons),
+      barrierDismissible: false,
+      builder: (context) => AddonEditorDialog(
+        provider: widget.provider,
+        addons: _addons,
+        menuItemId: widget.initialItem?.id,
+        dishName: _nameController.text.trim(),
+      ),
     );
     if (result != null) {
       setState(() {
@@ -191,7 +209,13 @@ class _DishEditorDialogState extends State<DishEditorDialog> {
         finalPrice: finalPrice,
         discount: discount,
       ),
-      nutritionalInfo: NutritionalInfo(calories: calories),
+      // Only calories is on this form; the rest is kept, or a calorie fix zeroes protein, carbs and fat.
+      nutritionalInfo: NutritionalInfo(
+        calories: calories,
+        carbs: widget.initialItem?.nutritionalInfo.carbs ?? 0,
+        protein: widget.initialItem?.nutritionalInfo.protein ?? 0,
+        fat: widget.initialItem?.nutritionalInfo.fat ?? 0,
+      ),
       isAvailable: _isInStock,
       addons: _addons,
       variants: _variants,
@@ -359,11 +383,13 @@ class _DishEditorDialogState extends State<DishEditorDialog> {
                     child: DropdownButtonFormField<String>(
                       value: _dietaryType,
                       decoration: const InputDecoration(labelText: 'Dietary'),
-                      items: const [
-                        DropdownMenuItem(value: 'Veg', child: Text('Veg')),
-                        DropdownMenuItem(
-                            value: 'Non-Veg', child: Text('Non-Veg')),
-                        DropdownMenuItem(value: 'Other', child: Text('Other')),
+                      // The stored values (VEG / NON_VEG). The old 'Veg' / 'Non-Veg' items matched no seeded
+                      // dish, and a debug build asserts on a value with no item, so the editor never opened.
+                      items: [
+                        const DropdownMenuItem(value: 'VEG', child: Text('Veg')),
+                        const DropdownMenuItem(value: 'NON_VEG', child: Text('Non-Veg')),
+                        if (_dietaryType != 'VEG' && _dietaryType != 'NON_VEG')
+                          DropdownMenuItem(value: _dietaryType, child: Text(_dietaryType)),
                       ],
                       onChanged: (value) {
                         if (value == null) return;
@@ -418,9 +444,12 @@ class _DishEditorDialogState extends State<DishEditorDialog> {
                       ? 'No variants'
                       : '${_variants.length} variants',
                 ),
-                trailing: TextButton(
-                  onPressed: _editVariants,
-                  child: const Text('Edit'),
+                trailing: Semantics(
+                  identifier: 'dish-edit-variants',
+                  child: TextButton(
+                    onPressed: _editVariants,
+                    child: const Text('Edit'),
+                  ),
                 ),
               ),
               ListTile(
@@ -428,9 +457,12 @@ class _DishEditorDialogState extends State<DishEditorDialog> {
                 subtitle: Text(
                   _addons.isEmpty ? 'No add-ons' : '${_addons.length} add-ons',
                 ),
-                trailing: TextButton(
-                  onPressed: _editAddons,
-                  child: const Text('Edit'),
+                trailing: Semantics(
+                  identifier: 'dish-edit-addons',
+                  child: TextButton(
+                    onPressed: _editAddons,
+                    child: const Text('Edit'),
+                  ),
                 ),
               ),
             ],
@@ -442,9 +474,12 @@ class _DishEditorDialogState extends State<DishEditorDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
-          onPressed: _submit,
-          child: const Text('Save'),
+        Semantics(
+          identifier: 'dish-save',
+          child: ElevatedButton(
+            onPressed: _submit,
+            child: const Text('Save'),
+          ),
         ),
       ],
     );

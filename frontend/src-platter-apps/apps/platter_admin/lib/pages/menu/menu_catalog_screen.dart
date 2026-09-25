@@ -309,6 +309,7 @@ class _ItemsPanel extends StatelessWidget {
     final result = await showDialog<MenuItem>(
       context: context,
       builder: (context) => DishEditorDialog(
+        provider: provider,
         categories: provider.categories,
         taxBlocks: provider.taxBlocks,
         initialItem: item,
@@ -317,12 +318,14 @@ class _ItemsPanel extends StatelessWidget {
       ),
     );
 
-    if (result == null) return;
-    if (item == null) {
+    // A shared add-on or portion edit is saved the moment it is made, so the list reloads even on Cancel.
+    final sharedEdited = provider.takeSharedEdited();
+    if (result != null && item == null) {
       await provider.addMenuItem(item: result);
-    } else {
-      await provider.updateMenuItem(menuItemId: item.id, item: result);
+    } else if (result != null) {
+      await provider.updateMenuItem(original: item!, item: result);
     }
+    if (sharedEdited) await provider.loadMenu();
   }
 
   @override
@@ -386,9 +389,12 @@ class _ItemsPanel extends StatelessWidget {
                           isAvailable: value,
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () => _openDishDialog(context, item: item),
+                      Semantics(
+                        identifier: 'menu-edit-${item.id}',
+                        child: IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () => _openDishDialog(context, item: item),
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete_outline),

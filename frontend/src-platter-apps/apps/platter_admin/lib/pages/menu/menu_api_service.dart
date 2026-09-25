@@ -316,4 +316,69 @@ class AdminMenuApiService {
       return ApiResponse.error(e.toString(), errorCode: 'parsing_error');
     }
   }
+
+  /// D6: the shared add-on and portion records (`admin-sharedOption`). [action] is usage, create, update or
+  /// copyForDish; [changes] names only what the manager changed. Answers the endpoint's `data` map.
+  Future<ApiResponse<Map<String, dynamic>>> sharedOption({
+    required String restaurantId,
+    required String sessionId,
+    required String action,
+    String? kind,
+    String? id,
+    String? menuItemId,
+    Map<String, dynamic>? changes,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/admin-sharedOption',
+        data: {
+          'data': {
+            'restaurantId': restaurantId,
+            'sessionId': sessionId,
+            'action': action,
+            if (kind != null) 'kind': kind,
+            if (id != null) 'id': id,
+            if (menuItemId != null) 'menuItemId': menuItemId,
+            if (changes != null) 'changes': changes,
+          }
+        },
+      );
+      return ResponseParser.parse<Map<String, dynamic>>(
+        response,
+        (json) => Map<String, dynamic>.from(json as Map),
+      );
+    } on DioException catch (e) {
+      final (code, msg) = DioClient.handleDioError(e, context: 'sharedOption');
+      return ApiResponse.error(msg, errorCode: code);
+    } catch (e) {
+      return ApiResponse.error(e.toString(), errorCode: 'parsing_error');
+    }
+  }
+
+  /// D6: switches a shared add-on in or out of stock on every dish (the same endpoint as dish stock).
+  Future<ApiResponse<void>> updateAddonAvailability({
+    required String restaurantId,
+    required String sessionId,
+    required String addonId,
+    required bool isAvailable,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/menu-updateMenuItemAvailability',
+        data: {
+          'restaurantId': restaurantId,
+          'sessionId': sessionId,
+          'addonId': addonId,
+          'isAvailable': isAvailable,
+        },
+      );
+      return ResponseParser.parse<void>(response, (_) => null);
+    } on DioException catch (e) {
+      final (code, msg) =
+          DioClient.handleDioError(e, context: 'updateAddonAvailability');
+      return ApiResponse.error(msg, errorCode: code);
+    } catch (e) {
+      return ApiResponse.error(e.toString(), errorCode: 'parsing_error');
+    }
+  }
 }
