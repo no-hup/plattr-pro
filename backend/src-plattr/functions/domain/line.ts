@@ -24,6 +24,7 @@ export interface Line extends StLine {
   note?: string;                                                      // F, the guest's instruction ("no onion"), '' when none. TD-048: the KOT prints it from here. Optional only so 18 fixture files need not change; placeLine always writes it
   draftId: string;                                                    // L
   billId: string | null;                                              // L → F at issue; cancel sets null in the same transaction
+  lastBillId?: string | null;                                         // L, D2: the cancelled/edited bill that freed it; the next issue reads it into `replaces` and clears it
 }
 
 // ---- Placement: a cart item becomes a line snapshot. Pure; the checkout hook supplies the ids and the clock.

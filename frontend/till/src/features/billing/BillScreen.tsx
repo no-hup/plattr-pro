@@ -8,7 +8,7 @@ const label = (type: string) => type.toLowerCase().replace(/_/g, ' ')   // SERVI
 
 /** BL-S1..S10 on one screen: a table's draft, its blocks and totals, Generate bill, drop the service charge, Cancel. Print bytes are KT's. */
 export function BillScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
-  const { bill, busy, dropCharges, asOf, preview, issue, comp, cancel, toggleCharge } = useBill(ctx)
+  const { bill, busy, dropCharges, dropped, asOf, preview, issue, comp, cancel, edit, toggleCharge } = useBill(ctx)
   const { offline } = useOnline()
   const { say, node: msgNode } = useSays('bill-msg')
   useEffect(() => { preview() }, [dropCharges])   // eslint-disable-line react-hooks/exhaustive-deps
@@ -21,6 +21,14 @@ export function BillScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
     const r = await cancel(bill.billId, String(f.get('reason')), String(f.get('note') ?? ''))
     if (r) say(`Bill ${r.number} cancelled`)
   }
+  async function onEdit() {
+    if (!bill?.billId) return
+    say('')
+    const r = await edit(bill.billId)
+    if (!r) return
+    await preview()
+    say(`Bill ${r.series}-${r.number} cancelled as edited — add, split or remove, then generate again`)
+  }
   async function onComp(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const f = new FormData(e.currentTarget)
@@ -32,6 +40,7 @@ export function BillScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
   return (
     <section data-testid="bill">
       <h2>Table bill {issued ? <span data-testid="bill-number">#{bill!.series}-{bill!.number}{bill!.status === 'cancelled' ? ' (cancelled)' : ''}</span> : <em>draft</em>}</h2>
+      {!!bill?.replaces?.length && <p data-testid="replaces">Replaces {bill.replaces.map(r => r.number).join(', ')}</p>}
       {bill && (
         <>
           <table>
@@ -57,9 +66,9 @@ export function BillScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
               <button data-testid="issue" onClick={() => issue().then(b => b && say(`Bill ${b.number} issued`))} disabled={busy}>Generate bill</button>
               {' '}
               {/* BL-S10, and BT: one Remove / Add-back per charge row the table carries (packing on a parcel, service charge on a table). */}
-              {[...new Set([...bill.charges.map(c => c.type), ...dropCharges])].map(type => (
+              {[...new Set([...bill.charges.map(c => c.type), ...dropped])].map(type => (
                 <button key={type} data-testid={type === 'SERVICE_CHARGE' ? 'toggle-charge' : `toggle-charge-${type}`} onClick={() => toggleCharge(type)} disabled={busy}>
-                  {dropCharges.includes(type) ? `Add ${label(type)} back` : `Remove ${label(type)}`}
+                  {dropped.includes(type) ? `Add ${label(type)} back` : `Remove ${label(type)}`}
                 </button>
               ))}
             </p>
@@ -75,6 +84,13 @@ export function BillScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
               <input name="note" placeholder="note" data-testid="comp-note" maxLength={120} />
               <button type="submit" data-testid="comp" disabled={busy || reasons.length === 0}>Comp the whole bill</button>
             </form>
+          )}
+          {issued && bill.status === 'issued' && (
+            // TD-083: the way forward after Generate, and D2's Edit for a dessert or a change before anyone pays.
+            <p>
+              <a data-testid="take-payment" href={`?r=${ctx.restaurantId}&bill=${bill.billId}`}>Take payment</a>{' '}
+              {!offline && <button data-testid="edit-bill" onClick={onEdit} disabled={busy}>Edit bill</button>}
+            </p>
           )}
           {issued && bill.status === 'issued' && (
             <form onSubmit={onCancel}>

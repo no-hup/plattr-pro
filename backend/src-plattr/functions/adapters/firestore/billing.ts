@@ -40,6 +40,10 @@ export const ports: Ports = {
     const snap = await lines(rid).where('draftId', '==', draftId).get();
     return snap.docs.map(d => d.data() as Line);
   },
+  async linesOfOrder(rid, orderId) {
+    const snap = await lines(rid).where('orderId', '==', orderId).get();
+    return snap.docs.map(d => d.data() as Line);
+  },
   // BL-S24: the offer as Offers V2 evaluated it when the round was placed. Old money is float rupees.
   // TD-016: `appliedItems` is the offer's own record of WHICH cart items it discounted and by how much.
   // Carrying it through is what keeps an ITEM- or CATEGORY-scoped offer off the lines it never targeted.

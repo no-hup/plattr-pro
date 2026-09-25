@@ -150,9 +150,9 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
         .collection("counters").doc("orders");
       const counterDoc = await transaction.get(counterRef);
 
-      // 4. D3 / FL R18: a sitting whose bill is being paid takes no new round. Read here, inside the transaction,
+      // 4. D3 / D2 / FL R18: a sitting whose bill is being paid, or that has paid, takes no new round. Read here, inside the transaction,
       // on the sitting's own bills, so a payment committing in the same second cannot let one round through.
-      const roundRefusal = sessionId ? await floorStore.roundRefusalIn(transaction, restaurantId, sessionId) : null;
+      const roundRefusal = sessionId ? await floorStore.roundRefusalIn(transaction, restaurantId, sessionId, String(tableDoc.data()?.number ?? tableId)) : null;
       if (roundRefusal) errorHandler.preconditionFailed(roundRefusal, { restaurantId, tableId, sessionId });
 
       // ── PROCESSING (no more reads after this point) ──────────────

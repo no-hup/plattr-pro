@@ -1,6 +1,6 @@
-// BL · onCall wrappers. Exported from index.js as `billing-preview`, `billing-issue`, `billing-cancel`,
+// BL · onCall wrappers. Exported from index.js as `billing-preview`, `billing-issue`, `billing-cancel`, `billing-edit`,
 // `billing-creditNote`, `billing-split`, `billing-get`. Parse the body, call app, map errors. Nothing here logs the body.
-import { ApprovalError, cancel, creditNote, get, issue, preview, split } from '../app/billing';
+import { ApprovalError, cancel, creditNote, edit, get, issue, preview, split } from '../app/billing';
 import { ports } from '../adapters/firestore/billing';
 
 /* eslint-disable @typescript-eslint/no-var-requires */
@@ -22,6 +22,7 @@ const wrap = (name: string, message: string, fn: (data: never) => Promise<unknow
 export const previewHandler = wrap('billing-preview', 'Preview', d => preview(ports, d));
 export const issueHandler = wrap('billing-issue', 'Issued', d => issue(ports, d));
 export const cancelHandler = wrap('billing-cancel', 'Cancelled', d => cancel(ports, d));
+export const editHandler = wrap('billing-edit', 'Edited', d => edit(ports, d));
 export const creditNoteHandler = wrap('billing-creditNote', 'Credit note issued', d => creditNote(ports, d));
 export const splitHandler = wrap('billing-split', 'Split', d => split(ports, d));
 export const getHandler = wrap('billing-get', 'Bill', d => get(ports, d));

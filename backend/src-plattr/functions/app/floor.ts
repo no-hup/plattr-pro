@@ -10,7 +10,7 @@
 import { Line } from '../domain/line';
 import {
   Bill, Sitting, Table, Tile, Role, OrderState, DEFAULTS,
-  canMerge, canMove, canReceive, canUnmerge, isReleasable, moveWriteSet, tile, idleCall, lastTouchedAt, onTable, unpaid, sittingOf,
+  canMerge, canMergeInto, canMove, canReceive, canUnmerge, isReleasable, moveWriteSet, tile, idleCall, lastTouchedAt, onTable, unpaid, sittingOf,
 } from '../domain/floor';
 import { ApprovalError, Staff } from './approvals';
 export { ApprovalError };
@@ -285,6 +285,10 @@ export async function setMerge(ports: Ports, req: MergeRequest): Promise<{ paren
 
     const childTableIds = req.childTableIds ?? [];
     if (!childTableIds.length) fail('invalid-argument', 'childTableIds must list at least one table to merge');
+    // DECISION(D2, 2026-09-25): Merging a free table into one with a printed unpaid bill is refused. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+    // 21:50 table 12's ₹4,800 bill is printed; table 11's food would land on a sitting whose bill is frozen (FL-S37).
+    const into = canMergeInto(await t.getSitting(req.parentTableId), parent as Table);
+    if (!into.ok) fail(into.code, into.message);
 
     // Every child is read here, inside the transaction, so a guest finishing an OTP in the same
     // second makes this merge lose rather than both writes landing (FL-S32).

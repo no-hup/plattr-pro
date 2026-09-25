@@ -45,7 +45,8 @@ test.beforeEach(async () => {
 })
 
 test('BL-S1/S21/S10 draft shows pizza + coke with a 10 % service charge: ₹669.90 rounds to ₹670.00 → remove it → ₹609.00', async ({ page }) => {
-  await login(page, DRAFT, 'till.captain@st.test')
+  // The cashier removes it: since QB-13 (BL "Who can do what", D2 2026-09-25) a captain may look but not drop it.
+  await login(page, DRAFT, 'till.manager@st.test')
   await expect(page.getByTestId('line')).toHaveCount(2)
   await expect(page.getByTestId('block-food')).toContainText('GST: ₹638.00 · CGST 2.5% ₹15.95 · SGST 2.5% ₹15.95')   // 580 + 58 charge
   await expect(page.getByTestId('charge-SERVICE_CHARGE')).toHaveText('SERVICE_CHARGE 10%: ₹58.00')
@@ -59,6 +60,8 @@ test('BL-S1/S21/S10 draft shows pizza + coke with a 10 % service charge: ₹669.
 
 test('BL-S7/S9 manager generates the bill → number appears → cancel asks for a PIN → 1234 → cancelled; captain cannot generate', async ({ page }) => {
   await login(page, DRAFT, 'till.captain@st.test')
+  await page.getByTestId('toggle-charge').click()
+  await expect(page.getByTestId('bill-msg')).toHaveText('Not allowed')   // QB-13: the preview itself is refused
   await page.getByTestId('toggle-charge').click()
   await page.getByTestId('issue').click()
   await expect(page.getByTestId('bill-msg')).toHaveText('Not allowed')

@@ -75,16 +75,25 @@ test('walk: table 10 orders a ₹60 naan, is billed ₹66.00, pays ₹30 then �
   await expect(page.getByTestId('tile-10')).toContainText('free')
 })
 
-test('[known bug] QB-3 TD-065 the dessert ordered after the bill can be billed from the till', async ({ page }) => {
-  test.fail()
+// D2 (Shaurya 2026-09-25): the dessert goes on through Edit. The printed ₹66.00 bill is cancelled as "edited" (no PIN),
+// both naans come back to the draft — 12000 + SC 600 = 12600 + 630 tax = 13230 → ₹132.00 — and the new bill says what
+// it replaces. Before D2 the only move was "already issued <id>" and nothing could bill the dessert.
+test('QB-3 TD-065 D2 the dessert ordered after the bill is billed from the till through Edit bill', async ({ page }) => {
   const { guest } = await setState('10', 'dessert')
   await open(page)
   await expect(page.getByTestId('tile-10')).toContainText('₹66.00 due · ₹60.00 new')
-  await tap(page, '10')
-  await page.getByTestId(`pick-draft-${guest}`).click()
+  // This sitting's bill: an earlier run leaves its own bills on table 10, so the table alone does not name one.
+  const first = (await list('bills')).find((b: { sittingId?: string; status?: string }) => b.sittingId === guest && b.status === 'issued')
+  await page.goto(`/?r=${RID}&bill=${first.id}`)
   await loginAgain(page)
+  await page.getByTestId('edit-bill').click()
+  await expect(page).toHaveURL(new RegExp(`draft=${guest}`))
+  await loginAgain(page)
+  await expect(page.getByTestId('payable')).toHaveText('Payable ₹132.00')
   await page.getByTestId('issue').click()
-  await expect(page.getByTestId('bill-number')).toBeVisible()   // today: "already issued <id>"
+  await expect(page.getByTestId('bill-number')).toBeVisible()
+  await expect(page.getByTestId('replaces')).toHaveText(`Replaces ${first.series}-${first.number}`)
+  expect(await billOf(first.id)).toMatchObject({ status: 'cancelled', cancelled: { reason: 'edited' } })
 })
 
 test('[known bug] QF-11 TD-072 FL-S27: unmerging a billed group says settle it, and does not point at a Move that is refused too', async ({ page }) => {
@@ -113,8 +122,8 @@ test('[known bug] QB-8 TD-072 an issued draft opened again is not a live ₹0.00
   await expect(page.getByTestId('issue')).toHaveCount(0)
 })
 
-test('[known bug] QB-10 TD-072 BL-S9: a service charge removed before a cancel stays removed after a reload', async ({ page }) => {
-  test.fail()
+// D2 / Q2-2: the charge the cashier took off stays off on the lines' next bill, whoever reloads.
+test('QB-10 D2 BL-S9: a service charge removed before a cancel stays removed after a reload', async ({ page }) => {
   const { guest } = await setState('3', 'ordered')
   await open(page, `&draft=${guest}`)
   await page.getByTestId('toggle-charge').click()

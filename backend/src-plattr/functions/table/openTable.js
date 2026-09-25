@@ -10,6 +10,7 @@ const { resolveTableId } = require('./mergedTables');
 const errorHandler = require('../singleton/ErrorHandler');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 const timestamp = require('../utils/timestamp');
+const floorStore = require('../lib/adapters/firestore/floor');   // D2 / D3: the sitting's bills decide
 
 const SESSION_MS = 4 * 60 * 60 * 1000; // DEBT(TD-049): same literal as sessionService.js; ordering.sessionHours when someone asks
 
@@ -37,6 +38,9 @@ const openTable = functions.https.onCall(async (request) => {
     // OR-S22: already seated → that sitting. OR-S19: a long dinner is extended, not re-minted.
     const live = await sessionService.validateTableSession(restaurantId, tableId, { throwError: false });
     if (live) {
+      // D2 / D3 (Shaurya 2026-09-25): a paid table takes no new round until Clear, and a part-paid one waits.
+      const refusal = await floorStore.sittingRefusal(restaurantId, live.id, String(table.number ?? tableId), 'round');
+      if (refusal) errorHandler.preconditionFailed(refusal, { tableId, sessionId: live.id });
       const patch = { expiresAt: timestamp.fromDate(new Date(Date.now() + SESSION_MS)), updatedAt: timestamp.serverTimestamp() };
       if (covers && !live.covers) patch.covers = covers;
       await db.collection('restaurants').doc(restaurantId).collection('sessions').doc(live.id).update(patch);

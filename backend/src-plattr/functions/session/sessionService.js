@@ -2,6 +2,20 @@ const functions = require('firebase-functions');
 const { admin, db, FieldValue } = require('../admin/admin');
 const timestamp = require('../utils/timestamp');
 const { safeArrayUnion, applyArrayOperation } = require('../utils/arrayOperations');
+const floorStore = require('../lib/adapters/firestore/floor');   // D2: a paid sitting takes no new guest
+
+/**
+ * DECISION(D2, 2026-09-25): A stranger scanning a paid table does not join the paid party. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+ * 21:45 table 9 has paid ₹660 and is putting on coats; a couple scans the QR. Joining would put their naan on the paid
+ * party's order (TD-120). Refused until the cashier clears the table; then the scan opens a new sitting.
+ * Asked only when a NEW user would be added: someone already in the sitting re-validating is not joining.
+ */
+async function refuseNewGuestIfPaid(restaurantRef, sessionId, tableId) {
+  const table = await restaurantRef.collection('tables').doc(tableId).get();
+  const label = String((table.exists && table.data().number) || tableId);
+  const refusal = await floorStore.sittingRefusal(restaurantRef.id, sessionId, label, 'guest');
+  if (refusal) throw new functions.https.HttpsError('failed-precondition', refusal, { tableId, sessionId });
+}
 
 // Session status constants
 const SESSION_STATUS = {
@@ -48,6 +62,7 @@ async function createOrGetTableSession(restaurantId, tableId, primaryUserId) {
       const sessionData = existingSession.data();
       if (!Array.isArray(sessionData.users)) sessionData.users = [];
       if (!sessionData.users.includes(primaryUserId)) {
+        await refuseNewGuestIfPaid(restaurantRef, existingSession.id, tableId);
         console.log(`createOrGetTableSession: Adding primary user ${primaryUserId} to existing session ${existingSession.id}`);
         try {
           const updateData = {
@@ -107,6 +122,7 @@ async function createOrGetTableSession(restaurantId, tableId, primaryUserId) {
     };
   } catch (error) {
     console.error(`Error creating table session: ${error.message}`, { restaurantId, tableId, primaryUserId });
+    if (error instanceof functions.https.HttpsError) throw error;   // a refusal the guest can read (D2), not 'internal'
     throw new functions.https.HttpsError('internal', `Failed to create table session: ${error.message}`);
   }
 }
@@ -164,6 +180,7 @@ async function addUserToTableSession(restaurantId, sessionId, userId) {
     // Add user to the session if not already present
     if (!Array.isArray(sessionData.users)) sessionData.users = [];
     if (!sessionData.users.includes(userId)) {
+      await refuseNewGuestIfPaid(restaurantRef, sessionId, sessionData.tableId);
       console.log(`addUserToTableSession: Adding user ${userId} to users array`);
       try {
         const updateData = {
@@ -191,6 +208,7 @@ async function addUserToTableSession(restaurantId, sessionId, userId) {
     };
   } catch (error) {
     console.error(`Error adding user to table session: ${error.message}`, { restaurantId, sessionId, userId });
+    if (error instanceof functions.https.HttpsError) throw error;   // a refusal the guest can read (D2), not 'internal'
     throw new functions.https.HttpsError('internal', `Failed to add user to session: ${error.message}`);
   }
 }

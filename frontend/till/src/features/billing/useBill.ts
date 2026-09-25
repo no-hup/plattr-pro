@@ -11,6 +11,7 @@ export interface Bill {
   billId?: string; number?: string; series?: string; status?: string
   lines: BillLine[]; blocks: Block[]; charges: Charge[]; subtotal: number; taxTotal: number; roundOff: number; payable: number
   flagged?: string[]; offer?: { name: string; amount: number } | null; seller?: { name: string; taxId: string }
+  dropped?: string[]; draftId?: string; replaces?: { billId: string; number: string }[]
 }
 /** TD-040: the preview the cashier is looking at, as the server checks it — every open line and its version. */
 export const seenAt = (b: Bill | null) => Object.fromEntries((b?.lines ?? []).map(l => [l.lineId, l.v]))
@@ -23,14 +24,17 @@ export function useBill(ctx: Ctx) {
   const [bill, setBill] = useState<Bill | null>(null)
   const [busy, setBusy] = useState(false)
   // No error state: every failure is reported once, by ui/says, from the api client's one hook.
-  const [dropCharges, setDropCharges] = useState<string[]>([])
+  // DECISION(D2, 2026-09-25): a service charge removed before an Edit stays removed on the new bill. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+  // null = the server decides (it keeps what the edited bill dropped, QB-10); a list once the cashier toggles one.
+  const [dropCharges, setDropCharges] = useState<string[] | null>(null)
   const [asOf, setAsOf] = useState<number | null>(null)   // OF-S6: set when the figures on screen are the cached ones
 
   async function run<T>(fn: () => Promise<T>): Promise<T | null> {
     setBusy(true)
     try { return await fn() } catch { return null } finally { setBusy(false) }
   }
-  const body = (extra: Record<string, unknown> = {}) => ({ ...ctx, cid: `till_${ctx.draftId}`, dropCharges, ...extra })
+  const body = (extra: Record<string, unknown> = {}) => ({ ...ctx, cid: `till_${ctx.draftId}`, ...(dropCharges ? { dropCharges } : {}), ...extra })
+  const dropped = dropCharges ?? bill?.dropped ?? []
 
   // OF R7: a preview that answers is cached; one that fails leaves the last answer on screen, labelled with its time (OF-S6).
   const preview = () => run(async () => {
@@ -56,6 +60,10 @@ export function useBill(ctx: Ctx) {
   })
   const cancel = (billId: string, reason: string, note: string) =>
     run(async () => { const r = await call<{ data: Bill }>('billing-cancel', body({ billId, reason, note })); setBill(r.data); return r.data })
-  const toggleCharge = (type: string) => setDropCharges(d => (d.includes(type) ? d.filter(t => t !== type) : [...d, type]))
-  return { bill, busy, dropCharges, asOf, preview, issue, comp, cancel, toggleCharge }
+  /** D2 / BL-S9: Edit an issued bill with no money on it. No PIN; the old number is cancelled as "edited" and the dishes come back here. */
+  const edit = (billId: string) =>
+    run(async () => { const r = await call<{ data: Bill }>('billing-edit', { restaurantId: ctx.restaurantId, sessionId: ctx.sessionId, cid: `till_${ctx.draftId}`, billId }); return r.data })
+  const toggleCharge = (type: string) => setDropCharges(dropped.includes(type) ? dropped.filter(t => t !== type) : [...dropped, type])
+  // `dropCharges` is the state (what re-previews); `dropped` is what the screen shows, the server's answer until the cashier toggles.
+  return { bill, busy, dropCharges, dropped, asOf, preview, issue, comp, cancel, edit, toggleCharge }
 }

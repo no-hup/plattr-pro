@@ -126,6 +126,7 @@ exports.billing = {
   preview: require('./lib/api/billing').previewHandler,
   issue: require('./lib/api/billing').issueHandler,
   cancel: require('./lib/api/billing').cancelHandler,
+  edit: require('./lib/api/billing').editHandler,   // D2: Edit bill, no PIN
   creditNote: require('./lib/api/billing').creditNoteHandler,
   split: require('./lib/api/billing').splitHandler,
   get: require('./lib/api/billing').getHandler,

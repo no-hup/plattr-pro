@@ -8,7 +8,7 @@
  * a failure the day it passes, so the mark is removed with the fix.
  *
  * Own state: the suite wipes res_meghana's sittings, orders, lines, bills, carts, payments and audit rows,
- * then re-imports MockData7 on top (no --clean, nothing else is touched). Tables 7, 8, 10, 11, 12 only.
+ * then re-imports MockData7 on top (no --clean, nothing else is touched). Tables 3, 7, 8, 10, 11, 12 only.
  *
  * Hand-computed at Meghana (5 % service charge, GST 5 % exclusive, bills round to the rupee):
  *   Butter Naan 6000 → 6000 + 300 SC = 6300 + 2 × 157.5 tax = 6615 → bill 6600 (the QA run's ₹66.00)
@@ -121,7 +121,10 @@ export default async function qaFindingsSuite() {
     const crab = (await listCol('lines')).find(l => l.sessionId === g && l.menuItemId === 'mi_crab_roast');
     need(await call('billing-split', { restaurantId: RID, sessionId: till, cid: 'qa_qb1_split', draftId: g, moves: [{ lineId: crab.lineId, toDraftId: `${g}_b` }] }), 'split');
     const a = await preview(g), b = await preview(`${g}_b`);
-    check('BL-S12: the split halves add up to at least the unsplit 88200', a.payable + b.payable >= 88200, { a: a.payable, b: b.payable }, 'QB-1');
+    check('BL-S12: the split halves add up to at least the unsplit 88200', a.payable + b.payable >= 88200, { a: a.payable, b: b.payable });
+    // D2: the ₹100 is shared by value over the whole order. Chicken floor(10000 × 28000 ÷ 90000) = 3111, crab 6889.
+    // A 24889 + SC 1244 = 26133 + 1306 tax = 27439 → 27400; B 55111 + SC 2755 = 57866 + 2894 = 60760 → 60800. Sum 88200.
+    check('D2 BL-S12: the halves take 3111 and 6889 of the ₹100 and come to 27400 + 60800 = 88200', a.discount?.amount === 3111 && b.discount?.amount === 6889 && a.payable === 27400 && b.payable === 60800, { a: [a.discount?.amount, a.payable], b: [b.discount?.amount, b.payable] });
   });
 
   // ── QB-12 · P2 ── Table 8: a naan comped in full for a birthday (the till sends amount 6000, pct 100).
@@ -134,6 +137,31 @@ export default async function qaFindingsSuite() {
     check('QB-12 setup: the comped bill is paid at 0', bill.payable === 0 && bill.status === 'paid', bill);
     const row = (await listCol('audit')).find(a => a.cid === cid && a.action === 'billDiscount');
     check('ST: the comp audit row reads amount 6000, pct 100', row?.amount === 6000 && row?.pct === 100, row, 'QB-12');
+  });
+
+  // ── D2 · Edit bill, on the real writers ── 22:10 table 3's naan is billed 6600; they order a second naan. Edit: the
+  // bill is cancelled as "edited" with no PIN and one P1 row; the draft previews both naans at 13200 (12000 + SC 600 =
+  // 12600 + 630 tax = 13230 → 13200) and the new bill says it replaces the old one. Once 13200 is paid, a third naan is
+  // refused "table 3 has paid — clear it first", and so is a stranger scanning table 3.
+  await scene('D2', async () => {
+    const g = await seat(3);
+    await order(3, g, [NAAN]);
+    const first = await issue(g);
+    await order(3, g, [NAAN]);
+    const e = await call('billing-edit', { restaurantId: RID, sessionId: till, cid: `qa_d2_edit_${Date.now()}`, billId: first.billId });
+    const row = await getDoc(`audit/${first.billId}_edit`);
+    check('D2 BL-S9: Edit needs no PIN, cancels the bill as "edited", and writes one P1 bill.edit row with its payable', ok(e) && e.data?.status === 'cancelled' && e.data?.cancelled?.reason === 'edited' && row?.sev === 'P1' && row?.action === 'bill.edit' && row?.amount === 6600, { e, row });
+    const second = await issue(g);
+    const label = `${first.series}-${first.number}`;
+    check('D2 BL-S25: the new bill carries both naans, 13200, and says it replaces the edited one', second.payable === 13200 && second.replaces?.[0]?.number === label, second);
+    const old = await getDoc(`bills/${first.billId}`);
+    check('D2 BL-S25: the edited bill lists what replaced it', old?.replacedBy?.[0]?.billId === second.billId, old?.replacedBy);
+    need(await call('payments-take', { restaurantId: RID, sessionId: till, billId: second.billId, paymentId: `qa_d2_pay_${Date.now()}`, tenderId: 'cash', tendered: 13200 }), 'take 13200');
+    need(await call('cart-addItemToCart', { restaurantId: RID, tableId: T(3), menuItemId: NAAN, quantity: 1, sessionId: g }), 'add after paid');
+    const late = await call('cart-checkoutCart', { restaurantId: RID, tableId: T(3), sessionId: g });
+    check('D2 FL-S14: a round on the paid table is refused "table 3 has paid — clear it first"', !ok(late) && late.message === 'table 3 has paid — clear it first', late);
+    const stranger = await call('table-validateOTP', { restaurantId: RID, tableId: T(3), otp: '123456', phoneNumber: '9876543211', name: 'Stranger' });
+    check('D2 FL-S14 / TD-120: a stranger scanning the paid table is refused, not joined', !ok(stranger) && /table 3 has paid — clear it first/.test(stranger.message || ''), stranger);
   });
 
   return results;

@@ -28,6 +28,7 @@ export interface Bill {
   status: 'issued' | 'paid' | 'cancelled';
   payable: number;
   paid: number;
+  replaced?: boolean;          // D2: a cancelled bill that a later bill replaces (BL `replacedBy`)
   series?: string;             // what the paper says, "A-0004": for refusals a cashier can act on
   number?: string;
 }
@@ -263,19 +264,48 @@ export function isReleasable(sitting: Sitting): boolean {
 }
 
 /**
+ * D2: every live bill of the sitting is paid. A cancelled bill (mid-Edit) and a credit note do not count, so a sitting
+ * whose only bill was edited away is still open — the old `bills.length === 0` read it as paid and refused the dessert.
+ */
+const hasPaid = (bills: Bill[]): boolean => {
+  // Mid-Edit on a split table: the drinks bill is paid, the food bill was just edited and not yet re-issued. The
+  // sitting is still being billed, not paid (a cancelled bill nothing has replaced yet).
+  if (bills.some(b => !b.note && b.status === 'cancelled' && !b.replaced)) return false;
+  const live = bills.filter(b => !b.note && b.status !== 'cancelled');
+  return live.length > 0 && live.every(b => b.status === 'paid');
+};
+
+/** R18. Once every bill is settled the sitting stops taking new guests and new checkouts, until Clear (D2). */
+export const acceptsNewGuests = (sitting: Sitting): boolean => !hasPaid(sitting.bills);
+
+/**
  * D3 / R18: may this sitting take a new round? A string is the refusal, in the words the guest or captain reads.
  * 22:05, table 4's bill A-0004 is ₹1,200 and a friend has paid ₹500 by UPI; the others order a gulab jamun. It waits:
  * issue refuses an issued draft and Edit refuses a bill with money on it, so the dessert could never be billed.
+ * Bills only, never lines: the checkout reads this inside its transaction, and lines are what the kitchen writes.
  */
-export function roundRefusal(bills: Bill[]): string | null {
+export function roundRefusal(bills: Bill[], label: string): string | null {
   const paying = bills.find(b => !b.note && b.status === 'issued' && b.paid > 0);
   if (paying) return `${paying.series && paying.number ? billLabel({ series: paying.series, number: paying.number }) : 'your bill'} is being paid — finish the payment, then add`;
-  return null;
+  return guestRefusal(bills, label);
 }
 
-/** R18. Once every bill is settled the sitting stops taking new guests and new checkouts. */
-export const acceptsNewGuests = (sitting: Sitting): boolean =>
-  onTable(sitting.lines) > 0 || unpaid(sitting.bills) > 0 || sitting.bills.length === 0;
+/**
+ * DECISION(D2, 2026-09-25): Table 12 has paid: no new round, no new guest until Clear. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+ * 23:15 table 7 has paid ₹3,100 and asks for two filter coffees: refused, the cashier clears, the coffees start a new
+ * sitting on a new bill (Q2-6). A stranger scanning table 7 is refused the same way instead of joining the paid order (TD-120).
+ */
+export function guestRefusal(bills: Bill[], label: string): string | null {
+  return hasPaid(bills) ? `table ${label} has paid — clear it first` : null;
+}
+
+/** FL-S37 (D2): a table joins a group whose bill is still open for edits, never one that is printed or paid. */
+export function canMergeInto(parentSitting: Sitting | null, parent: Table): Check {
+  if (!parentSitting) return ok;
+  if (parentSitting.bills.some(b => !b.note && b.status === 'issued')) return no(`table ${name(parent)} has a printed bill — edit or settle it first`);
+  const paid = guestRefusal(parentSitting.bills, name(parent));
+  return paid ? no(paid) : ok;
+}
 
 // ── The move write set (R5, R15, FL-S28) ───────────────────────────────────
 

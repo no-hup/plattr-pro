@@ -10,7 +10,7 @@ import { useOnline } from '../offline/useOnline'
 // KT's; here `opensDrawer` from the response flips a visible signal the browser test can assert.
 
 export function TenderScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) {
-  const { bill, busy, last, asOf, take, refund, voidRow } = useTender(ctx)
+  const { bill, busy, last, asOf, take, refund, voidRow, edit } = useTender(ctx)
   const { offline } = useOnline()
   const [tender, setTender] = useState<Tender | null>(null)
   const [text, setText] = useState('')
@@ -46,6 +46,14 @@ export function TenderScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) 
     say('')
     await take(tender, minor, { ref: ref || undefined, captured, tip: tip || undefined })
   }
+  // DECISION(D2, 2026-09-25): Edit lives on the till only; the waiter app has no bill powers. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+  // 22:10 table 12 orders two gulab jamun on a printed ₹4,800 bill: Edit cancels it as "edited" and opens its draft.
+  // With money on it the server refuses and names the bill (D3); the message says so on this screen.
+  async function onEdit() {
+    say('')
+    const r = await edit()
+    if (r) location.assign(`?r=${encodeURIComponent(ctx.restaurantId)}&draft=${encodeURIComponent(r.draftId)}`)
+  }
   async function onRefund(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const f = new FormData(e.currentTarget)
@@ -66,6 +74,7 @@ export function TenderScreen({ ctx, reasons }: { ctx: Ctx; reasons: string[] }) 
         <span data-testid="status"> [{bill.status}]</span>
       </p>
       <p data-testid="drawer" hidden={!drawer}>DRAWER OPEN</p>
+      {bill.status === 'issued' && !offline && <p><button data-testid="edit-bill" onClick={onEdit} disabled={busy}>Edit bill</button></p>}
       {/* OF-S17: issued, then dark. The slip says what is due on which bill; the morning does take only. */}
       {offline && !settled && cachedAt !== null && (
         <>
