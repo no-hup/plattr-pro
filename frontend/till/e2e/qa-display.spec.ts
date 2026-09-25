@@ -49,3 +49,10 @@ test('QF-12 FL-S1: tiles run 1, 2, 3 … 10, not 1, 10, 11, 2', async ({ page })
   expect(order).toEqual(['tile-1', 'tile-2', 'tile-3+9', 'tile-4', 'tile-10', 'tile-11', 'tile-12'])
 })
 
+test('QF-13 FL-S5: a seated table with nothing placed reads "seated" and ₹0.00', async ({ page }) => {
+  await fake(page, { 'floor-get': () => floorOf([tile('1', { word: 'seated', minutes: 30 })]) })
+  await login(page)
+  await expect(page.getByTestId('tile-1')).toContainText('seated')
+  await expect(page.getByTestId('tile-1')).toContainText('₹0.00')
+})
+
