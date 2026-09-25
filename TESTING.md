@@ -40,8 +40,8 @@ Exploring screens with an agent is a different job: `AGENT_QA.md`.
 - **Deterministic or deleted.** No sleeps, no real clock, no shared state between tests. A test that
   fails without a code change is fixed or deleted the same day, never retried until it passes.
 - **A known bug is marked, not skipped.** A test for an open finding uses the runner's own expected-failure
-  mark with the id first in its title (Jest `test.failing`, Playwright `test.fail()`, e2e `knownBug: 'QB-2'`).
-  Every run lists it, and it goes red the day the bug is fixed, so the mark comes off with the fix.
+  mark, with `[known bug]` and the finding id in its title (Jest `test.failing`, Playwright `test.fail()`, e2e
+  `knownBug: 'QB-2'`). Every run lists it, and it goes red the day the bug is fixed, so the mark comes off with the fix.
 - **Never weaken a test to get green.** No skipping, loosening or deleting. If the test is wrong,
   say why in the same change.
 
