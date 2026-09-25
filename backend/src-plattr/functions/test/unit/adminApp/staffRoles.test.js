@@ -5,7 +5,7 @@
 // only an ADMIN gives the ADMIN or MANAGER role; nobody changes their own role; every change is audited.
 
 jest.mock('../../../admin/admin', () => ({ db: {}, admin: {} }));
-const { roleChangeRefusal } = require('../../../adminApp/staff_admin');
+const { roleChangeRefusal, cardEditRefusal } = require('../../../adminApp/staff_admin');
 
 const OWN = 'Nobody can change their own role';
 const ONLY_ADMIN = 'Only an Admin can give or take the Admin or Manager role';
@@ -40,5 +40,24 @@ describe('TD-139 who may change a staff role', () => {
     expect(change('MANAGER', 'srv_mgr', null, null, 'SERVER')).toBeNull();
     expect(change('MANAGER', 'srv_mgr', null, null, 'MANAGER')).toBe(ONLY_ADMIN);
     expect(change('ADMIN', 'srv_admin', null, null, 'MANAGER')).toBeNull();
+  });
+});
+
+// TD-147: till@ (a MANAGER) could reset the owner's PIN and was shown it, change the owner's email, or switch the owner
+// inactive. Shaurya 2026-09-26: only an ADMIN changes an ADMIN's or MANAGER's card, Reset PIN included.
+describe('TD-147 who may change a staff card (name, phone, email, status, PIN)', () => {
+  const CARD = 'Only an Admin can change an Admin or Manager card';
+  const edit = (callerRole, targetRole) => cardEditRefusal({ callerRole, targetRole });
+  it('a manager cannot change the owner\'s card or another manager\'s, their own included', () => {
+    expect(edit('MANAGER', 'ADMIN')).toBe(CARD);
+    expect(edit('MANAGER', 'MANAGER')).toBe(CARD);
+  });
+  it('a manager can change a waiter\'s or a cook\'s card', () => {
+    expect(edit('MANAGER', 'SERVER')).toBeNull();
+    expect(edit('MANAGER', 'KITCHEN')).toBeNull();
+  });
+  it('the owner can change any card', () => {
+    expect(edit('ADMIN', 'ADMIN')).toBeNull();
+    expect(edit('ADMIN', 'MANAGER')).toBeNull();
   });
 });

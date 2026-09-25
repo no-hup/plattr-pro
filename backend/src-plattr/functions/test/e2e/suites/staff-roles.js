@@ -2,6 +2,8 @@
  * Suite: staff-roles. TD-139 (QA2-3, moonshot/reviews/2026-09-25-qa-admin-app.md), Shaurya 2026-09-26: only an ADMIN
  * gives or takes the ADMIN or MANAGER role, nobody changes their own role, and every role given writes one audit row.
  * Scene: the cashier's till@ login is a MANAGER; at 21:00 it opens Staff and picks Admin on its own card.
+ * TD-147 (R7, R8), Shaurya 2026-09-26: only an ADMIN changes an ADMIN's or MANAGER's card, Reset PIN included, and every
+ * change to a card writes an audit row.
  *
  * Real writers only (admin-updateServer / admin-addServer). Own state: res_meghana's servers and audit are
  * re-imported from MockData7 at the start and the end, so a role changed here never leaks into another suite.
@@ -73,9 +75,10 @@ export default async function staffRolesSuite() {
   });
 
   await scene('R5', async () => {
-    const name = await update(till, 'srv_meg_till', { name: 'Till', role: 'MANAGER' });
-    check('R5 till@ saving its own card with its own role unchanged goes through (not a role change, no audit row)',
-      ok(name) && (await roleRows('srv_meg_till')).length === 0, name);
+    // TD-147 changed this scene: a manager's own card is now the owner's to change, so the owner saves their own.
+    const name = await update(admin, 'srv_meg_admin', { name: 'Owner', role: 'ADMIN' });
+    check('R5 the owner saving their own card with their own role unchanged goes through (not a role change)',
+      ok(name) && (await roleRows('srv_meg_admin')).length === 0, name);
     const bad = await update(admin, 'srv_meg_2', { role: 'OWNER' });
     check('R5 an unknown role is refused, not stored', !ok(bad) && /Unknown role/.test(bad.message) && (await roleOf('srv_meg_2')) !== 'OWNER', bad);
   });
@@ -89,6 +92,39 @@ export default async function staffRolesSuite() {
     check('R6 a manager adding a waiter is accepted, with one audit row (none before, SERVER after)',
       rows.length === 1 && rows[0].before === null && rows[0].after?.role === 'SERVER' && rows[0].staffId === 'srv_meg_mgr', rows);
     await delDoc(`servers/${w.serverId}`);   // the re-import merges, so a record this suite made is removed by hand
+  });
+
+  const rowsOf = async (id, action) => (await listCol('audit', 300)).filter(a => a.action === action && a.cid === `staff_${id}`);
+  const pin = (sessionId, serverId) => call('admin-resetServerPin', { restaurantId: RID, sessionId, serverId });
+
+  await scene('R7', async () => {
+    const owner = await getDoc('servers/srv_meg_admin');
+    const rowsBefore = (await rowsOf('srv_meg_admin', 'staffPinReset')).length + (await rowsOf('srv_meg_admin', 'staffCardChange')).length;
+    const r = await pin(till, 'srv_meg_admin');
+    check('R7 till@ (a MANAGER) resetting the owner\'s PIN is refused, and no PIN comes back', !ok(r) && /Only an Admin/.test(r.message) && !r.data?.newPin, r);
+    const e = await update(manager, 'srv_meg_admin', { email: 'mine@meg.test' });
+    const st = await update(manager, 'srv_meg_admin', { status: 'inactive' });
+    check('R7 a manager changing the owner\'s email or switching the owner inactive is refused',
+      !ok(e) && /Only an Admin/.test(e.message) && !ok(st) && /Only an Admin/.test(st.message), { e, st });
+    const own = await update(till, 'srv_meg_till', { name: 'Cash' });
+    check('R7 a manager changing their own card is refused too', !ok(own) && /Only an Admin/.test(own.message), own);
+    const after = await getDoc('servers/srv_meg_admin');
+    check('R7 the owner\'s PIN, email and status are unchanged, and no audit row was written',
+      after.pinHash === owner.pinHash && after.email === owner.email && after.status === owner.status
+      && (await rowsOf('srv_meg_admin', 'staffPinReset')).length + (await rowsOf('srv_meg_admin', 'staffCardChange')).length === rowsBefore, after);
+  });
+
+  await scene('R8', async () => {
+    const r = await update(manager, 'srv_meg_2', { name: 'Ravi' });
+    const rows = await rowsOf('srv_meg_2', 'staffCardChange');
+    check('R8 a manager renaming a staff member is accepted, with one audit row: the old name before, Ravi after',
+      ok(r) && rows.length === 1 && rows[0].staffId === 'srv_meg_mgr' && typeof rows[0].before?.name === 'string' && rows[0].after?.name === 'Ravi', { r, rows });
+    const before = (await getDoc('servers/srv_meg_mgr')).pinHash;
+    const p = need(await pin(admin, 'srv_meg_mgr'), 'R8 owner resets the manager\'s PIN');
+    const pinRows = await rowsOf('srv_meg_mgr', 'staffPinReset');
+    check('R8 the owner resets the manager\'s PIN: a new PIN, one audit row naming the owner, the PIN not in it',
+      /^\d{4}$/.test(p.newPin) && (await getDoc('servers/srv_meg_mgr')).pinHash !== before
+      && pinRows.length === 1 && pinRows[0].staffId === 'srv_meg_admin' && !JSON.stringify(pinRows[0]).includes(p.newPin), { p, pinRows });
   });
 
   await reimport();
