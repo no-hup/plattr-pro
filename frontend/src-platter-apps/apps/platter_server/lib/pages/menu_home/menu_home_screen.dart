@@ -184,9 +184,10 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
             child: ListView.builder(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: provider.menu?.categories.length ?? 0,
+              itemCount: (provider.menu?.categories.length ?? 0) + 1,
               itemBuilder: (context, index) {
-                return _buildCategorySection(provider.menu!.categories[index]);
+                if (index == 0) return _buildAddonsSection(provider.addons);
+                return _buildCategorySection(provider.menu!.categories[index - 1]);
               },
             ),
           ),
@@ -232,6 +233,74 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
         const Divider(thickness: 1),
       ],
     );
+  }
+
+  // D6: 20:00 the kitchen runs out of raita and tells the waiter. One switch here takes Extra Raita off every
+  // biryani on the guest menu (the shared add-on record), where before nobody but a developer could.
+  Widget _buildAddonsSection(List<Addon> addons) {
+    if (addons.isEmpty) return const SizedBox.shrink();
+    final off = addons.where((a) => !a.isInStock).length;
+    return ExpansionTile(
+      title: Text('Add-ons (${addons.length})',
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+      subtitle: Text(off == 0 ? 'All in stock' : '$off out of stock'),
+      children: [
+        for (final addon in addons)
+          ListTile(
+            title: Text(addon.meta.name),
+            subtitle: Text('₹${addon.priceInfo.basePrice} · every dish that offers it'),
+            trailing: Semantics(
+              identifier: 'stock-addon-${addon.id}',
+              child: Switch(
+                value: addon.isInStock,
+                onChanged: (val) => _confirmAddonStock(addon, val),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _confirmAddonStock(Addon addon, bool isAvailable) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(isAvailable
+            ? 'Mark ${addon.meta.name} as Available?'
+            : 'Mark ${addon.meta.name} as Unavailable?'),
+        content: Text(isAvailable
+            ? 'Guests can add it again on every dish that offers it.'
+            : 'It comes off every dish that offers it.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          Semantics(
+            identifier: 'stock-addon-confirm',
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Confirm'),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final ok = await _menuProvider.updateAddonAvailability(
+      restaurantId: widget.restaurantId,
+      sessionId: widget.sessionId,
+      addonId: addon.id,
+      isAvailable: isAvailable,
+    );
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to update add-on availability'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Widget _buildMenuItem(MenuItem item) {

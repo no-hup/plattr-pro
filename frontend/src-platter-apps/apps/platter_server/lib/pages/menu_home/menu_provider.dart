@@ -131,4 +131,37 @@ class MenuProvider extends ChangeNotifier {
 
     return false;
   }
+
+  /// D6: every shared add-on the menu offers, once each (Extra Raita is on 3 biryanis, listed once).
+  List<Addon> get addons => menuAddons(_menu);
+
+  /// D6: switches the shared add-on record, then re-reads the menu so every dish shows it.
+  Future<bool> updateAddonAvailability({
+    required String restaurantId,
+    required String sessionId,
+    required String addonId,
+    required bool isAvailable,
+  }) async {
+    final response = await _apiService.updateAddonAvailability(
+      restaurantId: restaurantId,
+      sessionId: sessionId,
+      addonId: addonId,
+      isAvailable: isAvailable,
+    );
+    if (!response.success) return false;
+    await refreshMenu(restaurantId: restaurantId, sessionId: sessionId);
+    return true;
+  }
+}
+
+/// The add-ons a menu read offers, once each, A to Z. The staff read returns sold-out add-ons too, so a switch
+/// that is off stays listed and can be switched back on.
+List<Addon> menuAddons(FullRestaurantMenuResponse? menu) {
+  final byId = <String, Addon>{};
+  for (final item in (menu?.menuItems.values ?? const <List<MenuItem>>[]).expand((l) => l)) {
+    for (final a in item.addons) {
+      byId[a.id] = a;
+    }
+  }
+  return byId.values.toList()..sort((a, b) => a.meta.name.compareTo(b.meta.name));
 }
