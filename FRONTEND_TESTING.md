@@ -179,7 +179,7 @@ Naming `<screen>-<action>[-<id>]`. `ab ids` shows what is live on the current pa
 | server — orders | `order-cart-<cartId>`, `order-mark-served`, `order-cancel`, `order-mark-paid`, `order-mark-paid-confirm`, `orders-refresh`\* |
 | server — menu stock (D6) | `stock-addon-<addonId>` (the Add-ons section at the top of the Menu tab; tap it open first), `stock-addon-confirm` |
 | kitchen | `kitchen-cart-<cartId>`, `kitchen-mark-ready`, `kitchen-refresh` (error-state retry only) |
-| admin — menu (D6) | `menu-edit-<itemId>`; dish editor `dish-edit-addons`, `dish-edit-variants`, `dish-save`; add-ons `addon-price-<addonId>`, `addon-stock-<addonId>`, `addon-save-<addonId>`, `addons-done`; portions `variant-edit-<variantId>`, `variant-option-price-<optionId>`, `variant-save`, `variants-done`; the "on N dishes" question `shared-scope-all`, `shared-scope-only` |
+| admin — menu (D6) | `menu-edit-<itemId>`; dish editor `dish-edit-addons`, `dish-edit-variants`, `dish-save`; add-ons `addon-price-<addonId>`, `addon-stock-<addonId>`, `addon-save-<addonId>`, `addons-done`; portions `variant-add`, `variant-edit-<variantId>`, `variant-name`, `variant-option-name-<optionId>`, `variant-option-price-<optionId>`, `variant-option-delete-<optionId>` (a new row is `new<i>`), `variant-add-option`, `variant-save`, `variants-done`; the "on N dishes" question `shared-scope-all`, `shared-scope-only` |
 
 Two conditional absences are load-bearing, not bugs in the table: **the selected
 server tab has no identifier** (it renders `activeIcon`, which carries none), so

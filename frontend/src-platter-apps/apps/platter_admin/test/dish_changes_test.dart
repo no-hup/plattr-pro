@@ -32,6 +32,7 @@ MenuItem prawnFry({String description = 'Mangalorean ghee roast', bool inStock =
     );
 
 void main() {
+  group('TD-132 portion editor', portionTests);
   test('TD-110: a description fix from a Menu tab loaded at 18:00 sends meta alone, never isInStock', () {
     // 18:00 the tab loads prawns in stock; 20:30 the kitchen marks them out; 21:00 the fix is saved from the old copy.
     final loaded = prawnFry();
@@ -60,5 +61,40 @@ void main() {
     ]);
     expect(wire['addons'], ['ma_extra_raita']);
     expect(wire.containsKey('isCustomizable'), isFalse);
+  });
+}
+
+// TD-132 (Shaurya 2026-09-25): the portion editor adds and removes options on the shared record, sending only changes.
+void portionTests() {
+  test('TD-132: Family ₹260 → ₹280 sends that one option', () {
+    expect(portionChanges(portion, 'Portion', const [OptionRow(id: 'family', name: 'Family (serves 3)', price: 280)]).keys,
+        contains('options'));
+    expect(portionChanges(portion, 'Portion', const [OptionRow(id: 'family', name: 'Family (serves 3)', price: 280)])['options'], [
+      {'id': 'family', 'price': 280}
+    ]);
+  });
+
+  test('TD-132: a new "Jumbo (serves 5) ₹480" row goes as addOptions, nothing else', () {
+    expect(
+        portionChanges(portion, 'Portion', const [
+          OptionRow(id: 'family', name: 'Family (serves 3)', price: 260),
+          OptionRow(name: 'Jumbo (serves 5)', price: 480),
+        ]),
+        {
+          'addOptions': [
+            {'name': 'Jumbo (serves 5)', 'price': 480}
+          ]
+        });
+  });
+
+  test('TD-132: a deleted Family row goes as removeOptionIds; a rename goes as name', () {
+    expect(portionChanges(portion, 'Portion size', const []), {
+      'name': 'Portion size',
+      'removeOptionIds': ['family'],
+    });
+  });
+
+  test('TD-132: an untouched group sends nothing', () {
+    expect(portionChanges(portion, 'Portion', const [OptionRow(id: 'family', name: 'Family (serves 3)', price: 260)]), isEmpty);
   });
 }
