@@ -267,4 +267,31 @@ class MenuApiService {
       );
     }
   }
+
+  /// D6: switches a shared add-on (Extra Raita) in or out of stock on every dish that offers it.
+  Future<ApiResponse<void>> updateAddonAvailability({
+    required String restaurantId,
+    required String sessionId,
+    required String addonId,
+    required bool isAvailable,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.updateMenuItemAvailability,
+        data: {
+          'restaurantId': restaurantId,
+          'sessionId': sessionId,
+          'addonId': addonId,
+          'isAvailable': isAvailable,
+        },
+      );
+      return ResponseParser.parse<void>(response, (_) {});
+    } on DioException catch (e) {
+      final (code, msg) =
+          DioClient.handleDioError(e, context: 'updateAddonAvailability');
+      return ApiResponse<void>.error(msg, errorCode: code);
+    } catch (e) {
+      return ApiResponse<void>.error(e.toString(), errorCode: 'parsing_error');
+    }
+  }
 }
