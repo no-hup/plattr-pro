@@ -7,6 +7,8 @@
 //   node floorstate.mjs <tableNumber> dump         what the database says about that table
 //   node floorstate.mjs audit [n]                  the newest n audit rows (default 8)
 //   node floorstate.mjs <tableNumber> reset        that table (and any table merged into it) back to the seed, free
+//   node floorstate.mjs <tableNumber> seen         what each other app sees: till tile, each draft's preview, kitchen and waiter reads
+//   node floorstate.mjs gate on|off                Meghana's waiter-confirmation gate (the leaf only)
 //
 // Also a module: the till's Playwright specs import setState / resetTable / dump from here, so the QA
 // driver and the tests share one set of states (ticket 2026-09-25-ticket-till-test-stack.md).
@@ -45,10 +47,21 @@ const die = m => { throw new Error(m); };
 let log = () => {};   // the CLI prints each step; an importing spec stays quiet
 
 export const tableByNumber = async n => (await list('tables')).find(t => String(t.number) === String(n)) || die(`no table numbered ${n}`);
-async function staff() {
-  const r = await call('server-serverLogin', { restaurantId: RID, username: 'manager@meg.test', password: '1234' });
-  return r.sessionId || die('manager login failed');
+async function staff(user = 'manager') {
+  const r = await call('server-serverLogin', { restaurantId: RID, username: `${user}@meg.test`, password: '1234' });
+  return r.sessionId || die(`${user} login failed`);
 }
+export { staff as login };
+// The waiter-confirmation gate (CLAUDE.md). Masks the leaf only: masking `ordering` would wipe Meghana's parcels.
+export async function gate(on) {
+  const r = await fetch(`${FS}/config/settings?updateMask.fieldPaths=ordering.requireWaiterConfirmation`, { method: 'PATCH', headers: H, body: JSON.stringify({ fields: { ordering: enc({ requireWaiterConfirmation: on }) } }) });
+  if (!r.ok) die(`gate: ${r.status} ${await r.text()}`);
+  const v = (await get('config/settings'))?.ordering;
+  log(`  gate requireWaiterConfirmation=${v?.requireWaiterConfirmation}, takeawayTableIds=${JSON.stringify(v?.takeawayTableIds)}`);
+  return v;
+}
+const cartTo = async (orderId, cartIndex, newStatus, user = 'kitchen') =>
+  call('cart-updateCartStatus', { restaurantId: RID, orderId, cartIndex, newStatus, sessionId: await staff(user) });
 // One plain dish: not customizable, priced, no category offer on biryani. Fixed so amounts repeat.
 async function dish() {
   const items = await list('menuItems');
@@ -98,6 +111,22 @@ export const STATES = {
   cancelpp: 'part-paid ₹33 cash, then the bill cancelled anyway (QB-2 shape)',
   credited: 'settled in cash, then a credit note raised on the dish (PY-S9 setup)',
   onaccount: 'billed, then put on account for "Acme" (BT)',
+  // Added by the waiter-app run (2026-09-25). Kitchen acts as kitchen@, a serve as server2@ (not server@, the captain on screen).
+  preparing: 'ordered, then the kitchen moved the round to PREPARING',
+  ready: 'ordered, then the kitchen marked the round READY',
+  served: 'ready, then server2@ marked it SERVED',
+  cartcancelled: 'ordered, then manager@ cancelled the round (cart CANCELLED)',
+  ordercancelled: 'ordered, then manager@ cancelled the whole order',
+  samedish: 'the same dish in two rounds on one guest; round 1 PENDING, round 2 READY',
+  samedish2: 'as samedish, both rounds READY',
+  awaiting: 'gate ON, guest checkout lands AWAITING_CONFIRMATION (gate left ON: run `gate off` after)',
+  clearedlive: 'ordered (PENDING), billed, paid, cleared by manager@ with the round still at the kitchen',
+  merged: '8 merged into this table by manager@ (this table vacant; run `ordered` first for "group owes")',
+  mergedowes: 'this table ordered, then 8 merged into it',
+  staffopen: 'server@ opened the table with covers 2, nothing sent',
+  orphan: 'staffopen + one staff line in the cart, never checked out (interrupted Send)',
+  guestdraft: 'seated + one dish in the guest cart, not checked out',
+  staffexpired: 'no table change: server@\'s staff session expiresAt set a minute ago',
 };
 
 export async function dump(t) {
@@ -115,19 +144,49 @@ export async function dump(t) {
   };
 }
 
+// What the till, the kitchen and the waiter each see for one table (the waiter-app run read this after every tap).
+export async function seen(t) {
+  const [mgr, kit, srv] = [await staff(), await staff('kitchen'), await staff('server')];
+  const tile = (await call('floor-get', { restaurantId: RID, staffSessionId: mgr })).tiles.find(x => x.tableIds.includes(t.id)) ?? null;
+  const drafts = {};
+  for (const s of (await list('sessions')).filter(s => s.tableId === t.id && s.entity !== 'server')) {
+    const p = await call('billing-preview', { restaurantId: RID, sessionId: mgr, cid: `qa_seen_${Date.now()}`, draftId: s.id, dropCharges: [] }).catch(e => ({ error: e.message }));
+    drafts[`${s.id} (${s.status})`] = p.error ?? { lines: (p.lines || []).map(l => `${l.name} ${l.listPrice}`), payable: p.payable };
+  }
+  const mine = async (fn, sessionId) => ((r => r.orders || r)(await call(fn, { restaurantId: RID, sessionId }))).filter(o => o.tableId === t.id).map(o => ({ id: o.id || o.orderId, status: o.orderStatus, carts: (o.carts || []).map(c => c.status) }));
+  return { tile, drafts, kitchen: await mine('order-getActiveCartsForKitchen', kit), waiter: await mine('order-getActiveOrdersForRestaurant', srv) };
+}
 
 /** Puts table `n` into `state` through the real endpoints. Returns the ids a caller needs next. */
 export async function setState(n, state) {
   if (!STATES[state]) die(`unknown state ${state}`);
   const t = await tableByNumber(n);
-  if (t.status !== 'vacant' && !['reserved', 'disabled'].includes(state)) die(`table ${n} is ${t.status}, not vacant — pick a free one or re-seed`);
+  if (t.status !== 'vacant' && !['reserved', 'disabled', 'staffexpired'].includes(state)) die(`table ${n} is ${t.status}, not vacant — pick a free one or re-seed`);
   const out = { tableId: t.id, guest: null, orderId: null, bill: null };
   log(`table ${n} → ${state}`);
   if (state === 'reserved' || state === 'disabled') { await patch(`tables/${t.id}`, { status: state }); return out; }
+  if (state === 'staffexpired') {
+    const sid = await staff('server');
+    await patch(`sessions/${sid}`, { expiresAt: new Date(Date.now() - 60_000) }); log(`  staff session ${sid} expiresAt a minute ago`); return { ...out, staff: sid };
+  }
+  if (state === 'merged' || state === 'mergedowes') {
+    if (state === 'mergedowes') out.orderId = await order(t, out.guest = await seat(t));
+    const c = (await tableByNumber(8)); if (c.status !== 'vacant') die('table 8 is not vacant');
+    await call('table-setMerge', { restaurantId: RID, staffSessionId: await staff(), parentTableId: t.id, childTableIds: [c.id], cid: `qa_merge_${Date.now()}`, merge: true });
+    log(`  merged ${c.id} into ${t.id}`); return out;
+  }
+  if (state === 'staffopen' || state === 'orphan') {
+    const o = await call('table-openTable', { restaurantId: RID, sessionId: await staff('server'), tableId: t.id, covers: 2 });
+    out.guest = o.sessionId; log(`  opened by staff, table session ${o.sessionId}`);
+    if (state === 'orphan') { const d = await dish(); await call('cart-addItemToCart', { restaurantId: RID, tableId: t.id, sessionId: o.sessionId, addedBy: 'staff:srv_meg_1', menuItemId: d.id, quantity: 1 }); log(`  staff line ${d.meta?.name} left in the cart`); }
+    return out;
+  }
+  if (state === 'awaiting') await gate(true);
   if (state === 'holding') { await patch(`tables/${t.id}`, { currentOTP: { code: '123456', createdAt: new Date(), expiresAt: new Date(Date.now() + 30 * 60_000) } }); return out; }
   const guest = out.guest = await seat(t);
   log(`  guest session ${guest}`);
   if (state === 'seated') return out;
+  if (state === 'guestdraft') { const d = await dish(); await call('cart-addItemToCart', { restaurantId: RID, tableId: t.id, menuItemId: d.id, quantity: 1, sessionId: guest }); log(`  ${d.meta?.name} in the guest cart, not checked out`); return out; }
   if (state === 'offer') {
     for (const id of ['mi_chicken65', 'mi_crab_roast']) await call('cart-addItemToCart', { restaurantId: RID, tableId: t.id, menuItemId: id, quantity: 1, sessionId: guest });
     const co = await call('cart-checkoutCart', { restaurantId: RID, tableId: t.id, sessionId: guest });
@@ -143,7 +202,20 @@ export async function setState(n, state) {
     log(`  split ${second.name} onto draft ${guest}_b`);
     return out;
   }
-  if (state === 'ordered') return out;
+  if (state === 'ordered' || state === 'awaiting') return out;
+  if (state === 'preparing' || state === 'ready' || state === 'served') {
+    if (state === 'preparing') { await cartTo(orderId, 0, 'PREPARING'); log('  kitchen: PREPARING'); return out; }
+    await cartTo(orderId, 0, 'READY'); log('  kitchen: READY');
+    if (state === 'served') { await call('order-markCartAsServed', { restaurantId: RID, orderId, cartIndex: 0, sessionId: await staff('server2') }); log('  server2: SERVED'); }
+    return out;
+  }
+  if (state === 'cartcancelled') { await cartTo(orderId, 0, 'CANCELLED', 'manager'); log('  manager: cart CANCELLED'); return out; }
+  if (state === 'ordercancelled') { await call('order-updateOrderStatus', { restaurantId: RID, orderId, orderStatus: 'CANCELLED', sessionId: await staff() }); log('  manager: order CANCELLED'); return out; }
+  if (state === 'samedish' || state === 'samedish2') {
+    await order(t, guest);
+    if (state === 'samedish2') await cartTo(orderId, 0, 'READY');
+    await cartTo(orderId, 1, 'READY'); log(`  kitchen: round 2 READY${state === 'samedish2' ? ', round 1 READY' : ''}`); return out;
+  }
   if (state === 'completed') {
     const st = await staff();
     await call('order-updateOrderStatus', { restaurantId: RID, orderId, orderStatus: 'COMPLETED', sessionId: st });
@@ -162,6 +234,11 @@ export async function setState(n, state) {
   if (state === 'dessert') { await order(t, guest); return out; }
   if (state === 'partpaid') { await pay(st, b, Math.floor(b.payable / 200) * 100); log(`  took ${R(Math.floor(b.payable / 200) * 100)} cash`); return out; }
   if (state === 'settled') { await pay(st, b, b.payable); log(`  took ${R(b.payable)} cash, bill paid`); return out; }
+  if (state === 'clearedlive') {
+    await pay(st, b, b.payable);
+    await call('floor-clear', { restaurantId: RID, staffSessionId: st, tableId: t.id, cid: `qa_clear_${Date.now()}` });
+    log(`  paid ${R(b.payable)} and cleared, round still PENDING`); return out;
+  }
   // ── tender-screen states (2026-09-25) ──
   const cancelBill = () => call('billing-cancel', { restaurantId: RID, sessionId: st, cid: b.cid || `qa_c_${Date.now()}`, billId: b.billId, reason: 'other', note: 'qa', pin: '1234' });
   if (state === 'cancelled') { await cancelBill(); log(`  cancelled ${b.billId}`); return out; }
@@ -214,13 +291,15 @@ if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
   log = console.log;
   const [arg, state] = process.argv.slice(2);
   try {
-    if (arg === 'audit') {
+    if (arg === 'gate') await gate(state === 'on');
+    else if (arg === 'audit') {
       const rows = (await list('audit')).sort((a, b) => String(b.at ?? b.createdAt).localeCompare(String(a.at ?? a.createdAt))).slice(0, Number(state) || 8);
       for (const r of rows) console.log(JSON.stringify(r));
     } else if (!arg || !state) {
-      console.log('usage: floorstate.mjs <tableNumber> <state|dump|reset>\nstates:'); for (const [k, v] of Object.entries(STATES)) console.log(`  ${k.padEnd(10)} ${v}`); process.exit(1);
+      console.log('usage: floorstate.mjs <tableNumber> <state|dump|seen|reset> | gate on|off\nstates:'); for (const [k, v] of Object.entries(STATES)) console.log(`  ${k.padEnd(10)} ${v}`); process.exit(1);
     } else if (state === 'dump') console.log(JSON.stringify(await dump(await tableByNumber(arg)), null, 1));
     else if (state === 'reset') await resetTable(arg);
+    else if (state === 'seen') console.log(JSON.stringify(await seen(await tableByNumber(arg)), null, 1));
     else await setState(arg, state);
   } catch (e) { console.error(`ABORT: ${e.message}`); process.exit(1); }
 }
