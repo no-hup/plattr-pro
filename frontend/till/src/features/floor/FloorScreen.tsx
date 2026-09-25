@@ -72,7 +72,8 @@ export function FloorScreen({ ctx, role }: { ctx: Ctx; role: string }) {
               <strong>{t.label}</strong>
               {/* R11: two numbers on two axes. A billed table still ordering shows both. */}
               {t.unpaid > 0 && <span data-testid={`due-${t.label}`}> {rupees(t.unpaid)} due</span>}
-              {t.onTable > 0 && <span data-testid={`on-${t.label}`}> {rupees(t.onTable)}</span>}
+              {/* QF-8 / FL-S20: beside a due amount the second number is "new", or it reads as a correction */}
+              {t.onTable > 0 && <span data-testid={`on-${t.label}`}>{t.unpaid > 0 ? ` · ${rupees(t.onTable)} new` : ` ${rupees(t.onTable)}`}</span>}
               {t.drafts > 1 && <span data-testid={`drafts-${t.label}`}> · {t.drafts} drafts</span>}
               {/* QF-13 / FL-S5: seated reads as a word and ₹0, so it never looks like a stuck sign-in */}
               {t.word === 'seated' && <span data-testid={`seated-${t.label}`}> seated · {rupees(0)}</span>}
