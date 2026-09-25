@@ -27,7 +27,7 @@ every way that matters:
 | Put a dish in a cart | `cart-addItemToCart`. Enforces stock, mandatory variants, and prices server-side |
 | Reduce a quantity before Send | `cart-removeItemFromCart` — decrements by one |
 | Send the round | `cart-checkoutCart` → one cart snapshot on the order + one line doc per item, in one transaction |
-| Not send the whole table's cart | `addedBy` (2026-09-16). The till sends only its own group; the QR guests' half-built list stays |
+| Not send the whole table's cart | `addedBy` (2026-09-16). The till sends only its own group; the QR guests' half-built list stays. A guest may choose "Send all" for every guest's dishes (`cartItemIds`, D5 2026-09-25); staff items are never swept |
 | Not send the same round twice | `requestId` (OF R1) |
 | Void a line after the kitchen has it | `approvals-apply` `action: 'void'` (ST-S5), PIN, audit row |
 | A party of eight on two tables | `table-setMerge` + `resolveTableId` on every guest cart write + auto-release in `vacateTable` |
@@ -229,7 +229,7 @@ Served to the till on the existing `approvals-config` answer, the till's one con
   draft split, by lines, not by session.
 - **Course firing / hold-and-fire** ("send the starters, hold the mains"). Real in a full-service
   restaurant; it is a kitchen-routing feature and belongs to KT.
-- **Seat numbers.** `addedBy` already carries per-person attribution for QR guests; seat-level entry at
+- **Seat numbers.** `addedBy` on each cart item says which phone added it (kept on the order's `carts[].items`, which no report reads yet); seat-level entry at
   the till is a second identity model for one report nobody has asked for.
 - **A customer record on a phone order.** The name and number go in the order note in v1. A real
   customer link is a schema change and belongs to a CRM sheet.
