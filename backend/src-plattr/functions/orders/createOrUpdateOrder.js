@@ -37,7 +37,9 @@ const floorStore = require('../lib/adapters/firestore/floor');   // D3: the roun
 // `addedBy` is the device id of the diner tapping Place order. A table shares one cart doc, so
 // this sends that person's own lines as a round and leaves everyone else's half-built list where
 // it is. Absent (every caller before cart ownership) means the whole cart, unchanged.
-exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'system', notes = '', sessionId = null, requestId = null, addedBy = null) => {
+// `cartItemIds` (D5) is the guest phone's choice: the ids of the dishes it showed under "Send your 1 dish" or
+// "Send all 3 for the table". When given, exactly those go (see pickRound), whoever added them.
+exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'system', notes = '', sessionId = null, requestId = null, addedBy = null, cartItemIds = null) => {
   if (typeof requestId !== 'string' || requestId === '') requestId = null;
   // Validate required parameters
   try {
@@ -97,9 +99,9 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
 
       // Split the table's shared list into what this diner is placing and what stays behind.
       // Done before the fingerprint below so a retry is judged against the same lines it sent.
-      const allItems = (liveCart && Array.isArray(liveCart.items)) ? liveCart.items : [];
-      const stayingItems = addedBy ? allItems.filter(i => (i && i.addedBy) !== addedBy) : [];
-      if (liveCart && addedBy) liveCart.items = allItems.filter(i => (i && i.addedBy) === addedBy);
+      const round = pickRound(liveCart && liveCart.items, addedBy, cartItemIds);
+      const stayingItems = round.staying;
+      if (liveCart) liveCart.items = round.sending;
 
       // 1. Read this sitting's existing orders.
       // Scoped by sessionId, not tableId: the only order we can append to is one
@@ -134,6 +136,20 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
           console.log(JSON.stringify({ mod: 'checkout', cid: doc.id, requestId, outcome: 'retry' }));
           return { id: doc.id, ...doc.data(), retry: true };
         }
+      }
+
+      // D5: judged after the retry check, because a retry's ids are gone for the good reason (the first tap sent them).
+      // Scene: Asha's phone shows "Send all 3"; meanwhile Bhanu sends his naan himself. Asha's list now names a dish
+      // that isn't there: refuse, and her phone re-reads the cart, rather than send a round she didn't see.
+      if (round.missing.length) {
+        errorHandler.preconditionFailed("Your table's order changed — check the cart and send again", { restaurantId, tableId, missing: round.missing });
+      }
+      if (round.notGuest.length) {
+        const d = round.notGuest[0];
+        const name = d.menuItem?.meta?.name || d.menuItemId;
+        errorHandler.preconditionFailed(d.addedBy
+          ? `${name} was added by staff — only guests' dishes can be sent from here`
+          : `${name} has no owner — ask the waiter to send it`, { restaurantId, tableId });
       }
 
       if (!liveCart || !Array.isArray(liveCart.items) || liveCart.items.length === 0) {
@@ -285,6 +301,39 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
     });
   }
 };
+
+/**
+ * Splits the table's one shared cart into the round being sent now and what stays for later.
+ *   cartItemIds (D5, the guest phone): exactly the dishes the phone showed. `missing` names ids no longer in the cart;
+ *     `notGuest` names chosen dishes a guest's phone did not add (staff:*, or no owner). Either refuses the send.
+ *   addedBy alone (the waiter's and till's own Send): that person's own lines.
+ *   neither: the whole cart (callers from before cart ownership).
+ */
+// DECISION(D5, 2026-09-25): Table 8, Asha's phone shows "Send your 1 dish" or "Send all 3 for the table". "All" is
+// every guest's dish, never the captain's Old Monk (his own Send must keep working). The phone sends the ids it
+// showed and exactly those go; a Coke a friend adds meanwhile stays for the next send.
+// See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+// DEBT(TD-136): ids fix which dishes go, not how many; a friend's second naan merged into a shown line goes too.
+function pickRound(items, addedBy, cartItemIds) {
+  const all = Array.isArray(items) ? items : [];
+  if (cartItemIds) {
+    const chosen = new Set(cartItemIds);
+    const sending = all.filter(i => i && chosen.has(i.cartItemId));
+    const found = new Set(sending.map(i => i.cartItemId));
+    return {
+      sending,
+      staying: all.filter(i => !(i && chosen.has(i.cartItemId))),
+      missing: cartItemIds.filter(id => !found.has(id)),
+      notGuest: sending.filter(i => !isGuestOwner(i.addedBy)),
+    };
+  }
+  if (addedBy) {
+    return { sending: all.filter(i => (i && i.addedBy) === addedBy), staying: all.filter(i => (i && i.addedBy) !== addedBy), missing: [], notGuest: [] };
+  }
+  return { sending: all, staying: [], missing: [], notGuest: [] };
+}
+// A guest's dish carries the phone's device id; the waiter app and till stamp 'staff:<id>'. No owner is not a guest.
+const isGuestOwner = a => typeof a === 'string' && a !== '' && !a.startsWith('staff:');
 
 /**
  * OF R1: what "the same cart" means for a retry. Item, variants, add-ons and quantity, sorted so the
@@ -700,5 +749,6 @@ function calculateEstimatedPrepTime(items) {
 module.exports = {
   createOrUpdateOrder: exports.createOrUpdateOrder,
   buildOrderPriceInfo,
+  pickRound,   // D5: checkoutCart's stock check takes the same split
   normalizeCartItemsForOrder // exported for unit tests
 };

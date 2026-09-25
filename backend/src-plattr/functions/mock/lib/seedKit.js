@@ -295,6 +295,8 @@ function createSeedKit() {
   }
 
   function defLiveCart(R, tableId, sessionId, items) {
+    // D5: every cart line names the phone that added it; an unowned line is nobody's and a guest can't send it.
+    items = items.map(i => ({ ...i, addedBy: i.addedBy || 'dev_seed_guest' }));
     R.carts[tableId] = { restaurantId: R.id, tableId, sessionId, items, priceInfo: cartTotals(items), lastUpdated: ts(-2 * MIN) };
   }
 

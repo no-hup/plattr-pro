@@ -128,17 +128,22 @@ function fetchVariants(db, restaurantId, selectedIds, errorHandler) {
 /**
  * Returns the next available ID for a cart item
  * @param {Array} cartItems - The current items in the cart
+ * @param {number} [lastCartItemId] - the last id this cart gave out (the cart doc's `lastCartItemId`)
  * @returns {number} The next available ID
  */
-function getNextCartItemId(cartItems) {
+// D5: the guest phone sends the ids it showed, so an id must never come back within one cart. Bhanu's naan #3 is
+// sent, he adds a Coke: it is #4, or Asha's stale "Send all [1, 2, 3]" would send his Coke.
+// DEBT(TD-135): a new cart (after the whole cart was sent) restarts at #1, so a phone that read the cart before a
+// friend sent everything and three new dishes landed could still name them. Ceiling: needs a sitting-wide counter.
+function getNextCartItemId(cartItems, lastCartItemId = 0) {
   if (!cartItems || !Array.isArray(cartItems)) {
-    return 1;
+    return (Number.isInteger(lastCartItemId) ? lastCartItemId : 0) + 1;
   }
   const maxId = cartItems.reduce((max, item) => {
     // Guard against invalid cartItemId
     const itemId = typeof item.cartItemId === 'number' && !isNaN(item.cartItemId) ? item.cartItemId : 0;
     return itemId > max ? itemId : max;
-  }, 0);
+  }, Number.isInteger(lastCartItemId) ? lastCartItemId : 0);
   return maxId + 1;
 }
 

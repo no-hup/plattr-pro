@@ -154,7 +154,7 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
         selectedAddonsDetails,
         quantity,
         itemPriceDetails,
-        getNextCartItemId(cart.items),
+        getNextCartItemId(cart.items, cart.lastCartItemId),
         addedBy,
         note
       );
@@ -189,6 +189,7 @@ const addItemToCart = functions.https.onCall(async (data, context) => {
       } else {
         // Add new item
         cart.items.push(itemToAdd);
+        cart.lastCartItemId = itemToAdd.cartItemId;   // D5: never given out again in this cart (getNextCartItemId)
       }
 
       // Use calculateCartValue to update the cart's total values

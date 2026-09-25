@@ -8,7 +8,7 @@
  * a failure the day it passes, so the mark is removed with the fix.
  *
  * Own state: the suite wipes res_meghana's sittings, orders, lines, bills, carts, payments and audit rows,
- * then re-imports MockData7 on top (no --clean, nothing else is touched). Tables 3, 7, 8, 10, 11, 12 only.
+ * then re-imports MockData7 on top (no --clean, nothing else is touched). Tables 3, 7, 8, 9, 10, 11, 12 only.
  *
  * Hand-computed at Meghana (5 % service charge, GST 5 % exclusive, bills round to the rupee):
  *   Butter Naan 6000 → 6000 + 300 SC = 6300 + 2 × 157.5 tax = 6615 → bill 6600 (the QA run's ₹66.00)
@@ -186,6 +186,58 @@ export default async function qaFindingsSuite() {
     check('D2 FL-S14: a round on the paid table is refused "table 3 has paid — clear it first"', !ok(late) && late.message === 'table 3 has paid — clear it first', late);
     const stranger = await call('table-validateOTP', { restaurantId: RID, tableId: T(3), otp: '123456', phoneNumber: '9876543211', name: 'Stranger' });
     check('D2 FL-S14 / TD-120: a stranger scanning the paid table is refused, not joined', !ok(stranger) && /table 3 has paid — clear it first/.test(stranger.message || ''), stranger);
+  });
+
+  // ── D5 · the guest's shared cart asks what to send ── table 9: Asha's phone adds Chicken 65 (28000), Bhanu's a
+  // Butter Naan (6000), the captain a Coastal Crab Roast (62000). Asha's phone shows "Your dishes ₹280 · Table ₹340" and
+  // sends all [1, 2]. Meanwhile Bhanu adds a Paneer 65 (#4). Exactly Chicken 65 + Naan go (34000, under the ₹499 offer:
+  // 34000 + SC 1700 = 35700 + 2 × 892.5 tax = 37485 → the draft previews 37500). The crab (staff) and the paneer (added
+  // after the read) stay. Had the crab been swept, the round would be 96000 and take the FLAT ₹100 offer.
+  await scene('D5', async () => {
+    const g = await seat(9);
+    const A = 'dev_qa_d5_asha', B = 'dev_qa_d5_bhanu';
+    const add = (menuItemId, addedBy, sessionId = g) => call('cart-addItemToCart', { restaurantId: RID, tableId: T(9), menuItemId, quantity: 1, sessionId, addedBy });
+    const send = (addedBy, cartItemIds, sessionId = g) => call('cart-checkoutCart', { restaurantId: RID, tableId: T(9), sessionId, ...(addedBy ? { addedBy } : {}), ...(cartItemIds ? { cartItemIds } : {}) });
+    const captain = need(await call('server-serverLogin', { restaurantId: RID, username: 'server@meg.test', password: '1234' }), 'captain login').sessionId;
+    const open = need(await call('table-openTable', { restaurantId: RID, sessionId: captain, tableId: T(9) }), 'captain opens 9');
+    check('D5 setup: the captain joins the guests\' sitting on 9', open.sessionId === g && open.addedBy.startsWith('staff:'), open);
+    need(await add('mi_chicken65', A), 'Asha adds Chicken 65');
+    need(await add(NAAN, B), 'Bhanu adds naan');
+    need(await add('mi_crab_roast', open.addedBy), 'captain adds crab');
+    const shown = (await getDoc(`carts/${T(9)}`)).items.map(i => [i.cartItemId, i.addedBy, i.priceInfo.finalPrice]);
+    check('D5 setup: the cart is #1 Asha 280, #2 Bhanu 60, #3 the captain 620', JSON.stringify(shown) === JSON.stringify([[1, A, 280], [2, B, 60], [3, open.addedBy, 620]]), shown);
+    need(await add('mi_paneer65', B), 'Bhanu adds paneer after Asha\'s phone read the cart');
+
+    const staffRefused = await send(A, [1, 3]);
+    check('D5: the captain\'s crab is refused from a guest send, naming it', !ok(staffRefused) && staffRefused.message === "Coastal Crab Roast was added by staff — only guests' dishes can be sent from here", staffRefused);
+    const gone = await send(A, [1, 2, 99]);
+    check('D5: an id not in the cart is refused "Your table\'s order changed"', !ok(gone) && gone.message === "Your table's order changed — check the cart and send again", gone);
+    const anon = await send(null, [1, 2]);
+    check('D5: ids without the sending phone are refused (never placed as "system")', !ok(anon) && /addedBy/.test(anon.message || ''), anon);
+    check('D5: the refusals wrote nothing: still 4 dishes in the cart, no order', (await getDoc(`carts/${T(9)}`)).items.length === 4 && !(await listCol('orders')).some(o => o.sessionId === g), null);
+
+    const all = need(await send(A, [1, 2]), 'Asha sends all 2');
+    const order = await getDoc(`orders/${all.orderId}`);
+    check('D5: "Send all" sends exactly Chicken 65 + Naan, 340, no offer, each keeping its owner', JSON.stringify(order.carts[0].items.map(i => [i.menuItemId, i.addedBy])) === JSON.stringify([['mi_chicken65', A], [NAAN, B]]) && order.priceInfo.finalPrice === 340 && !order.appliedOffer, order);
+    const left = (await getDoc(`carts/${T(9)}`)).items.map(i => i.cartItemId);
+    check('D5: the crab (#3) and the paneer added meanwhile (#4) stay in the cart', JSON.stringify(left) === '[3,4]', left);
+    const lines = (await listCol('lines')).filter(l => l.sessionId === g);
+    check('D5: two line snapshots, placed by Asha\'s phone', lines.length === 2 && lines.every(l => l.placedBy === A), lines);
+    const kitchenSess = need(await call('server-serverLogin', { restaurantId: RID, username: 'kitchen@meg.test', password: '1234' }), 'kitchen login').sessionId;
+    const k = await call('order-getActiveCartsForKitchen', { restaurantId: RID, sessionId: kitchenSess });
+    const kCarts = (k.data?.orders || []).find(o => o.orderId === all.orderId)?.carts || [];
+    check('D5: the kitchen gets one round of exactly those two dishes', kCarts.length === 1 && kCarts[0].items.length === 2, kCarts);
+    const p = await preview(g);
+    check('D5: the till previews the round at 37500 (34000 + SC 1700 + tax 1785 = 37485, rounded)', p.payable === 37500, p);
+
+    const captainSend = await call('cart-checkoutCart', { restaurantId: RID, tableId: T(9), sessionId: g, addedBy: open.addedBy });
+    check('D5: the captain\'s own Send still sends his crab', ok(captainSend) && JSON.stringify((await getDoc(`carts/${T(9)}`)).items.map(i => i.cartItemId)) === '[4]', captainSend);
+    need(await add('mi_paneer65', A), 'Asha adds her own paneer');
+    const mineIds = (await getDoc(`carts/${T(9)}`)).items.filter(i => i.addedBy === B).map(i => i.cartItemId);
+    check('D5: Asha\'s new paneer is #5, not a reused id', JSON.stringify((await getDoc(`carts/${T(9)}`)).items.map(i => i.cartItemId)) === '[4,5]', null);
+    need(await send(B, mineIds), 'Bhanu sends his 1 dish');
+    const after = (await getDoc(`carts/${T(9)}`)).items.map(i => [i.cartItemId, i.addedBy]);
+    check('D5: "Send your 1 dish" sends Bhanu\'s paneer only; Asha\'s stays', JSON.stringify(after) === JSON.stringify([[5, A]]), after);
   });
 
   return results;

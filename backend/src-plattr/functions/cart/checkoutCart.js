@@ -1,7 +1,7 @@
 const functions = require('firebase-functions');
 const { admin, db, Timestamp } = require('../admin/admin');
 const getCartFunction = require('./getCart');
-const createOrUpdateOrder = require('../orders/createOrUpdateOrder').createOrUpdateOrder;
+const { createOrUpdateOrder, pickRound } = require('../orders/createOrUpdateOrder');
 const { validateCheckoutFields, validateCheckoutSession, cartOfSession } = require('./cartInputValidation');
 const errorHandler = require('../singleton/ErrorHandler');
 const { validateCart } = require('./validateCart');
@@ -35,7 +35,15 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
     // console.log("Received checkoutCart request:", JSON.stringify(requestPayload));
     validateCheckoutFields(requestPayload);
 
-    let { tableId, restaurantId, cartId, notes = '', sessionId, addedBy = null } = requestPayload;
+    let { tableId, restaurantId, cartId, notes = '', sessionId, addedBy = null, cartItemIds = null } = requestPayload;
+    // D5: the guest phone's "Send your 1 dish" / "Send all 3" sends the ids it showed. A list is whole numbers, not
+    // empty, no repeats, and always from a named phone: without addedBy the round would be placed by "system".
+    if (cartItemIds !== null) {
+      const valid = Array.isArray(cartItemIds) && cartItemIds.length > 0 && cartItemIds.every(id => Number.isInteger(id) && id > 0)
+        && new Set(cartItemIds).size === cartItemIds.length;
+      if (!valid) errorHandler.badRequest('cartItemIds must be a non-empty list of distinct cart item ids.');
+      if (!addedBy) errorHandler.badRequest('cartItemIds needs addedBy: the phone that is sending.');
+    }
     // The order is created against the parent, so a merged party is one cart, one
     // kitchen ticket and one bill.
     tableId = await resolveTableId(restaurantId, tableId);
@@ -91,7 +99,10 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
     // Only the lines this diner is actually sending. The table shares one cart doc, so an
     // unscoped check let Bhanu's sold-out Caesar Salad refuse Asha's Pasta — her round was
     // blocked by food she never ordered. A caller without addedBy still checks the whole cart.
-    const sending = addedBy ? (cart?.items || []).filter(i => (i?.addedBy || null) === addedBy) : cart?.items;
+    // DECISION(D5, 2026-09-25): the same split the order takes (pickRound), so the captain's sold-out Old Monk never
+    // blocks the guests' "Send all 3", and a friend's sold-out dish never blocks "Send your 1 dish".
+    // See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+    const sending = pickRound(cart?.items, addedBy, cartItemIds).sending;
     let outOfStockItems;
     try {
       outOfStockItems = await validateMenuItemsStock(restaurantId, sending);
@@ -116,7 +127,8 @@ const checkoutCart = functions.https.onCall(async (data, context) => {
         notes,
         sessionId,
         requestPayload.requestId,  // OF R1: optional; a repeat of the same tap answers the same order
-        addedBy                    // optional; sends only this diner's lines off the shared table cart
+        addedBy,                   // optional; sends only this diner's lines off the shared table cart
+        cartItemIds                // D5, optional; exactly the dishes the guest's phone showed
       );
 
       // console.log(`Checkout completed successfully for table ${tableId}, order ID: ${order.id}`);
