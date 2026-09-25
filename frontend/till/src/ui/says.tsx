@@ -18,11 +18,11 @@ export function useSays(testid: string) {
   const [said, setSaid] = useState<{ text: string; kind: Kind }>({ text: '', kind: 'ok' })
 
   useEffect(() => onApiError(e => setSaid({
-    // A challenge the cashier cancelled keeps the server's own words; a plain 403 is a role
-    // refusal, and "Not allowed" is the whole of it — there is no PIN that would change it.
-    // QB-15: a box cancelled after a wrong or too-early PIN did nothing; its last hint is not the outcome.
+    // A challenge the cashier cancelled keeps the server's own words, except after a wrong PIN (QB-15):
+    // nothing was done, and "Wrong PIN" read as the outcome. A lockout (retryAfter, tooSoon) keeps its wait.
+    // A plain 403 is a role refusal, and "Not allowed" is the whole of it — no PIN would change it.
     text: e.code === 'permission-denied' && !e.data.requires ? 'Not allowed'
-      : e.data.requires && (e.data.wrong || e.data.tooSoon) ? 'PIN required'
+      : e.data.requires && e.data.wrong && e.data.retryAfter === undefined ? 'PIN required'
       : e.message,
     kind: 'bad',
   })), [])
