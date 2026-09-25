@@ -52,10 +52,7 @@ preflight() {
     || { echo "  ✗ functions emulator not answering on :5002"; fail=1; }
   curl -sf -m 5 -o /dev/null "http://127.0.0.1:$port/" \
     || { echo "  ✗ $app app not answering on :$port (run backend/flutter-app-logs/run_app.sh $app)"; fail=1; }
-  awk -v f="$free" 'BEGIN{exit !(f<2.0)}' \
-    && { echo "  ✗ only ${free} GB free — close something before driving a browser"; fail=1; }
-  awk -v c="$chrome" 'BEGIN{exit !(c>4.0)}' \
-    && { echo "  ✗ personal Chrome is holding ${chrome} GB — close it first"; fail=1; }
+  # Memory is reported, never a refusal: Shaurya, 2026-09-25 ("Chrome memory is never an issue").
   "$B" status 2>/dev/null | grep -qi "headed" \
     && { echo "  ✗ a HEADED gstack daemon is running (no idle exit) — ab stop first"; fail=1; }
 
