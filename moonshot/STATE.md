@@ -88,14 +88,24 @@ Full reasoning: `reviews/2026-09-23-roadmap-product-track.md`. At most 3 agents 
 |---|---|---|
 | 1 | Money safety: TD-015, 033, 040, 037/030, 023, 004, invoice series, free-table rule, TD-007/024 | Committed 2026-09-24 (46fca8b…c9f504f). Full e2e 638/0 |
 | 2 | New bill types: parcel, NC/comp, on account (TD-012), tip, line note (TD-048) | Committed 2026-09-24 (996f3e9…8ba0467) |
-| 3 | Finish KT: foreground service, hardware spike, KT-7 | Waiting on Shaurya: printer IP |
+| 3 | Finish KT: foreground service, hardware spike, KT-7 | Service committed (f55f27b), **unproven with the screen off on a real tablet**. Open: TD-051 (agreed, not built), hardware spike (needs printer IP), KT-7 not started, KT-S19 till line dropped without sign-off |
 | 4 | UQ · UPI QR + TD-026/027/028 | Next; needs Paytm sandbox |
 | 5 | RP · owner reports (6) + CA export (GSTR-1, Tally) + TD-047 | Next |
 | 6 | CF · onboarding + IM · menu import | Next |
 | 7 | AG · Swiggy/Zomato | Shaurya to decide: before go-live, or after 10 outlets |
 | 8 | Agents: Monday closer (TD-005), auto-86 | After first live outlets |
-| 9 | Cleanup: TD-007/024, TD-049, TD-020/021, openTable e2e, retire `order.priceInfo` | Fill-in; **regenerate `test/e2e/fixtures/golden/**` once on a clean tree** (115 files rewritten by mixed matrix runs on 09-23/24, deliberately not committed) |
+| 9 | Cleanup: TD-007/024, TD-049, TD-020/021, openTable e2e, retire `order.priceInfo` | Fill-in. Golden fixtures regenerated 2026-09-25 (`0e61457`) |
 | 10 | Wrong-caller test suite: every endpoint called as the wrong person must be refused | Draft plan, parked: `reviews/2026-09-24-plan-wrong-caller-suite.md` |
+
+### Pickup list — lanes 1–3 closed 2026-09-25 (sessions ended; start here)
+Every open end from the three lane sessions and their self-reviews. Detail lives in the TD row.
+- **Build first (P1):** TD-054 walk-out audit row written before release · TD-055 offline "On account" bill stuck · TD-051 staff login renew-on-use (agreed: extend when under 25% left) · TD-052 till loses login on navigation.
+- **Then (P2):** TD-053 tile vs bill with order offers · TD-056 walk-out reason hardcoded, no browser test · TD-057 weak tests (tips, NC, day close 51→50, `line.unrouted`) · TD-058 missing capacity breaks waiter app.
+- **Not proven:** till Walk-out in a browser; screen-off printing on a real tablet; parcels in the waiter app (strip is till-only — decide if the waiter needs it).
+- **Decisions nobody signed:** whole-bill comp left uncapped (money-safety's reading of "manual staff discount", not Shaurya's); KT-S19 dropped; TD-033 cart-to-session committed without an explicit OK.
+- **Waiting on Shaurya:** printer IP; AG timing (row 7); the 3 stale root docs (`GO_LIVE_PLAN.md`, `pricingTodoSimplification.md`, `TEST_AND_DOCS_AUDIT_REPORT.md`).
+- **Process lessons (already in the contract or here):** no `git stash` in the shared tree; run the self-review before saying done; after a seed change run `check-contracts.mjs` + the Flutter contract tests; red test first on money paths; lane commits built only with the shared-files commit `95d755a`.
+- Row 9's golden-fixture regeneration is **done** (`0e61457`, runs now churn ~5 files, not 116). TD-059/060 are its leftovers.
 
 ### Before anything else — these two have a real deadline
 
