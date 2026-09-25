@@ -3,7 +3,7 @@
 **Every open question from the five till QA runs (floor, bill, tender, day close, merged groups + parcels), the
 bill-change requests and the agents, in one place.** Each question gives a short scene, what the till does today, the
 choices, and a recommended default with its reason. Answer inline ("yes", "default", or your own call), or say "take
-all defaults except N". The bugs themselves are TD-061..087 in [TECH_DEBT.md](../TECH_DEBT.md); the run reports hold
+all defaults except N". The bugs themselves are TD-061..088 in [TECH_DEBT.md](../TECH_DEBT.md); the run reports hold
 the full evidence.
 
 ## Must decide (a fix is waiting on each)
@@ -161,12 +161,12 @@ the full evidence.
 
 ```
 Resume the till QA fixes. Read moonshot/STATE.md (pickup list, "QA runs 2026-09-25" line),
-moonshot/reviews/2026-09-25-decisions-for-shaurya.md (my answers are inline), and TECH_DEBT TD-061..087.
+moonshot/reviews/2026-09-25-decisions-for-shaurya.md (my answers are inline), and TECH_DEBT TD-061..088.
 1. Write each answer into the right spec sheet's Decisions table (FL, BL, PY, ST, DC, OR) and propose any
    STATE.md decision diff to me.
 2. Fix in this order, one commit each, red test first (most already exist, marked known bug: drop the mark):
    TD-061, TD-062, TD-063+064+073, TD-065 (FR-7 Cancel on tender first), TD-078, TD-079, TD-066, TD-067,
-   TD-068, TD-069, TD-070, TD-071, TD-074..076, TD-080, then TD-082, TD-084..086, and TD-072, TD-077, TD-081, TD-083, TD-087's small ones
+   TD-068, TD-069, TD-070, TD-071, TD-074..076, TD-080, then TD-082, TD-084..086, and TD-072, TD-077, TD-081, TD-083, TD-087, TD-088's small ones
    (TD-084..087 are the kitchen and waiter apps' own: Flutter, not the till).
 3. Money paths: run the moonshot-review subagent before each commit. Ask me only where my answer is missing.
 ```
