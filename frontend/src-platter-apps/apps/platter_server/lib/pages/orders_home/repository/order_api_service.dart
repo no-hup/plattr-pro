@@ -192,6 +192,7 @@ class OrderApiService {
   ///
   /// [cartIndex] is the zero-based index of the cart in the order's carts array.
   /// [newStatus] should be one of: PENDING, PREPARING, READY, SERVED, CANCELLED, RETURNED
+  /// [cartItemId] with CANCELLED cancels only that dish of the round (D4).
   Future<ApiResponse<bool>> updateCartStatus({
     required String restaurantId,
     required String orderId,
@@ -199,6 +200,7 @@ class OrderApiService {
     required String newStatus,
     String? sessionId,
     String? notes,
+    int? cartItemId,
   }) async {
     try {
       final response = await _dio.post(
@@ -211,6 +213,7 @@ class OrderApiService {
             'newStatus': newStatus,
             if (sessionId != null) 'sessionId': sessionId,
             if (notes != null) 'notes': notes,
+            if (cartItemId != null) 'cartItemId': cartItemId,
           }
         },
       );
@@ -337,20 +340,6 @@ class OrderApiService {
       orderId: orderId,
       cartIndex: cartIndex,
       newStatus: 'SERVED',
-      sessionId: sessionId,
-    );
-  }
-
-  /// Convenience method to mark an order as completed
-  Future<ApiResponse<bool>> markOrderAsDone({
-    required String restaurantId,
-    required String orderId,
-    required String sessionId,
-  }) {
-    return updateOrderStatus(
-      restaurantId: restaurantId,
-      orderId: orderId,
-      orderStatus: 'COMPLETED',
       sessionId: sessionId,
     );
   }
