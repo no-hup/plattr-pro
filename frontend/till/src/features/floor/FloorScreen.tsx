@@ -74,6 +74,8 @@ export function FloorScreen({ ctx, role }: { ctx: Ctx; role: string }) {
               {t.unpaid > 0 && <span data-testid={`due-${t.label}`}> {rupees(t.unpaid)} due</span>}
               {t.onTable > 0 && <span data-testid={`on-${t.label}`}> {rupees(t.onTable)}</span>}
               {t.drafts > 1 && <span data-testid={`drafts-${t.label}`}> · {t.drafts} drafts</span>}
+              {/* QF-13 / FL-S5: seated reads as a word and ₹0, so it never looks like a stuck sign-in */}
+              {t.word === 'seated' && <span data-testid={`seated-${t.label}`}> seated · {rupees(0)}</span>}
               {t.word === 'free' ? <span> free</span>
                 : t.word === 'holding' ? <span data-testid={`holding-${t.label}`}> signing in</span>
                 : t.word === 'reserved' ? <span data-testid={`reserved-${t.label}`}> reserved</span>
