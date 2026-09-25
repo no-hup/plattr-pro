@@ -119,7 +119,8 @@ async function main() {
       for (const t of result.tests || []) {
         if (!t.knownBug) continue;
         if (t.known) {
-          console.log(`  ⚠ [${suite.name}] known bug: ${t.message}`);
+          console.log(`  ⚠ [${suite.name}] ${t.message}`);
+          if (t.actual) console.log(`    Response: ${JSON.stringify(t.actual).substring(0, 200)}`);
         } else if (t.pass) { t.pass = false; result.pass--; result.fail++; t.message = `${t.knownBug} now passes, remove its knownBug mark: ${t.message}`; }
         else { t.known = true; result.fail--; result.known = (result.known || 0) + 1; knownBugs.push(`${suite.name}: ${t.message}`); }
       }
@@ -130,7 +131,8 @@ async function main() {
       // Print individual test results
       for (const t of result.tests || []) {
         if (t.known) {
-          console.log(`  ⚠ [${suite.name}] known bug: ${t.message}`);
+          console.log(`  ⚠ [${suite.name}] ${t.message}`);
+          if (t.actual) console.log(`    Response: ${JSON.stringify(t.actual).substring(0, 200)}`);
         } else if (t.pass) {
           // Only print passes in verbose mode
           if (verbose) console.log(`  ✓ ${t.message}`);
