@@ -10,6 +10,7 @@ const { validateStaffSession } = require('../adminApp/auth');
 const { buildOrderPriceInfo } = require('../orders/createOrUpdateOrder');
 const { loadChargesConfig } = require('../orders/calculateCharges');
 const { markLinesSent, voidCartLines } = require('../orders/lineSnapshots');
+const { calculateCartValue } = require('./calculateCartValue');
 
 const UNBILLED = [FULFILLMENT_STATUS.CANCELLED, FULFILLMENT_STATUS.RETURNED];
 
@@ -40,7 +41,7 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
 
     OrderInputValidation.validateUpdateCartStatusFields(requestData);
 
-    const { restaurantId, orderId, cartIndex, newStatus, notes = '', sessionId } = requestData;
+    const { restaurantId, orderId, cartIndex, newStatus, notes = '', sessionId, cartItemId } = requestData;
     const mappedStatus = OrderInputValidation.validateCartStatus(newStatus);
     const userId = context.auth?.uid || 'system';  // Fallback to 'system' if no auth
 
@@ -57,7 +58,8 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
       userId,
       notes,
       sessionId,
-      serverId
+      serverId,
+      cartItemId
     );
 
     return {
@@ -88,6 +90,7 @@ const updateCartStatus = functions.https.onCall(async (data, context) => {
  * @param {string} userId - ID of the user making the change
  * @param {string} notes - Optional notes about the status change
  * @param {string} sessionId - Optional session ID
+ * @param {number} [cartItemId] - D4: cancel only this dish of the round (CANCELLED only)
  * @returns {Object} The updated order
  */
 async function _updateCartStatus(
@@ -98,7 +101,8 @@ async function _updateCartStatus(
   userId,
   notes = '',
   sessionId = null,
-  staffId = null
+  staffId = null,
+  cartItemId = undefined
 ) {
   const orderRef = db.collection("restaurants")
     .doc(restaurantId)
@@ -127,8 +131,20 @@ async function _updateCartStatus(
       const currentStatus = OrderInputValidation.validateCartStatus(cart.status);
       const normalizedNewStatus = OrderInputValidation.validateCartStatus(newStatus);
 
-      // Validate status transition
-      if (!isValidCartTransition(currentStatus, normalizedNewStatus)) {
+      // D4: one dish off a sent round. Only a cancel; any other move is the whole round's.
+      const oneDish = cartItemId !== undefined && cartItemId !== null;
+      if (oneDish) {
+        if (normalizedNewStatus !== FULFILLMENT_STATUS.CANCELLED) {
+          throw new functions.https.HttpsError('invalid-argument', 'One dish can only be cancelled; move the whole round instead');
+        }
+        const dish = (cart.items || []).find(item => item.cartItemId === cartItemId);
+        if (!dish) {
+          throw new functions.https.HttpsError('not-found', `Dish ${cartItemId} is not in this round`);
+        }
+        if (!isValidCartTransition(dish.status, FULFILLMENT_STATUS.CANCELLED)) {
+          throw new functions.https.HttpsError('failed-precondition', `${dishName(dish)} is already ${String(mapCartStatus(dish.status)).toLowerCase()}`);
+        }
+      } else if (!isValidCartTransition(currentStatus, normalizedNewStatus)) {
         throw new Error(`Invalid status transition from ${currentStatus} to ${normalizedNewStatus}`);
       }
 
@@ -143,64 +159,31 @@ async function _updateCartStatus(
         // The waiter just told the kitchen. ST reads `sent` to price a later void (ST-S5).
         await markLinesSent(transaction, restaurantId, cart);
       } else if (isCancel) {
-        // TD-023: recorded, not PIN-gated (catch it, don't cage it; the PIN half waits on TD-003). The row
-        // names the real staff member from the session and never invents a reason it was not given.
-        await voidCartLines(transaction, restaurantId, cart, {
-          staffId, reason: 'other', note: notes ? `cart cancelled: ${notes}` : 'cart cancelled', now: Date.now(),
+        // D4: recorded, never PIN-gated (see voidCartLines). The row names the real staff member from the
+        // session and never invents a reason it was not given. Refused outright on a printed bill.
+        const target = oneDish ? { ...cart, items: cart.items.filter(item => item.cartItemId === cartItemId) } : cart;
+        const what = oneDish ? 'dish cancelled' : 'cart cancelled';
+        await voidCartLines(transaction, restaurantId, [target], {
+          staffId, reason: 'other', note: notes ? `${what}: ${notes}` : what, now: Date.now(),
         });
       }
 
-      // Create status history entry
       const statusEntry = {
         status: normalizedNewStatus,
         timestamp: timestamp.now(),
         userId: userId,
         notes: notes
       };
-
-      // Update cart status and cascade it to every live item, so a READY cart
-      // has READY items (server-markItemServed needs that) and a CANCELLED cart
-      // drops out of the bill. Items already CANCELLED/RETURNED/SERVED keep their
-      // status (an individually served item must not flip back to READY or to
-      // CANCELLED).
-      const keepsOwnStatus = (item) => {
-        const s = mapCartStatus(item.status);
-        return s === FULFILLMENT_STATUS.CANCELLED ||
-               s === FULFILLMENT_STATUS.RETURNED ||
-               s === FULFILLMENT_STATUS.SERVED;
-      };
-      const cascadedItems = (cart.items || []).map(item =>
-        keepsOwnStatus(item) ? item : { ...item, status: normalizedNewStatus }
-      );
-      const updatedCart = {
-        ...cart,
-        items: cascadedItems,
-        status: normalizedNewStatus,
-        statusHistory: [...(cart.statusHistory || []), statusEntry]
-      };
+      const { carts: updatedCarts, items: flatItems } = applyCartStatus(orderData, cartIndex, normalizedNewStatus, statusEntry, oneDish ? cartItemId : undefined);
+      const updatedCart = updatedCarts[cartIndex];
+      // The order total is summed from each round's own priceInfo (and the order offer is judged on it), so a
+      // dish leaving a round that stays live must leave the round's total too. Same recompute checkout uses.
+      if (oneDish) updatedCart.priceInfo = await calculateCartValue(updatedCart);
 
       // Update assigned staff when work starts on a cart
       if (normalizedNewStatus === FULFILLMENT_STATUS.PREPARING || normalizedNewStatus === FULFILLMENT_STATUS.READY) {
         updatedCart.assignedTo = userId;
       }
-
-      // Update the cart in the order
-      const updatedCarts = [...orderData.carts];
-      updatedCarts[cartIndex] = updatedCart;
-
-      // Cascade to the flat order.items copy too. Without this the customer's
-      // bill still listed a cancelled dish while the total had already dropped,
-      // so the lines did not add up to what they were asked to pay.
-      // Match on cartId: cartItemId restarts at 1 in each new cart, so it alone
-      // would also hit an unrelated item in another round. Items written before
-      // cartId existed carry none and are left alone — the total stays correct,
-      // only the stale line remains, which is how it behaved before this fix.
-      const flatItems = Array.isArray(orderData.items)
-        ? orderData.items.map(item => {
-            if (!item.cartId || item.cartId !== cart.cartId) return item;
-            return keepsOwnStatus(item) ? item : { ...item, status: normalizedNewStatus };
-          })
-        : orderData.items;
 
       // Deliberately NOT writing sessionId here: the caller is staff, but
       // order.sessionId must stay the customer session from checkout — offer
@@ -251,4 +234,46 @@ async function _updateCartStatus(
   }
 }
 
-module.exports = updateCartStatus; 
+const dishName = (item) => item?.menuItem?.meta?.name || item?.name || 'This dish';
+
+/**
+ * The order's carts and flat items with one round moved to `status`. Pure; the caller writes it.
+ *
+ * The status cascades to every live item, so a READY cart has READY items (server-markItemServed needs
+ * that) and a CANCELLED cart drops out of the bill. Items already CANCELLED/RETURNED/SERVED keep their
+ * status (an individually served item must not flip back to READY or to CANCELLED).
+ *
+ * With `cartItemId` (D4, one dish): only that item moves; the round follows it to CANCELLED only when no
+ * live dish is left in it (20:10 the naan goes, the Chicken 65 keeps cooking).
+ *
+ * The flat order.items copy moves too, or the guest's bill lists a cancelled dish under a total that
+ * already dropped. Matched on cartId: cartItemId restarts at 1 in each round, so alone it would hit an
+ * unrelated item in another round. Items written before cartId existed carry none and are left alone.
+ */
+function applyCartStatus(orderData, cartIndex, status, statusEntry, cartItemId) {
+  const cart = orderData.carts[cartIndex];
+  const keepsOwnStatus = (item) => [FULFILLMENT_STATUS.CANCELLED, FULFILLMENT_STATUS.RETURNED, FULFILLMENT_STATUS.SERVED].includes(mapCartStatus(item.status));
+  const moves = (item) => (cartItemId === undefined ? !keepsOwnStatus(item) : item.cartItemId === cartItemId);
+  const items = (cart.items || []).map(item => (moves(item) ? { ...item, status } : item));
+  // One dish: the round ends when nothing in it is left for the kitchen. Only struck dishes → CANCELLED; a served
+  // one among them → SERVED (left READY, the kitchen kept an empty ticket and COMPLETED was refused).
+  const gone = (item) => [FULFILLMENT_STATUS.CANCELLED, FULFILLMENT_STATUS.RETURNED].includes(mapCartStatus(item.status));
+  const done = (item) => gone(item) || mapCartStatus(item.status) === FULFILLMENT_STATUS.SERVED;
+  const roundStatus = cartItemId === undefined ? status
+    : items.every(gone) ? status
+    : items.every(done) ? FULFILLMENT_STATUS.SERVED
+    : null;
+  const updatedCart = roundStatus
+    ? { ...cart, items, status: roundStatus, statusHistory: [...(cart.statusHistory || []), { ...statusEntry, status: roundStatus }] }
+    : { ...cart, items };
+  const carts = [...orderData.carts];
+  carts[cartIndex] = updatedCart;
+  const flat = Array.isArray(orderData.items)
+    ? orderData.items.map(item => (item.cartId && item.cartId === cart.cartId && moves(item) ? { ...item, status } : item))
+    : orderData.items;
+  return { carts, items: flat };
+}
+
+module.exports = updateCartStatus;
+module.exports.applyCartStatus = applyCartStatus;
+module.exports.dishName = dishName; 

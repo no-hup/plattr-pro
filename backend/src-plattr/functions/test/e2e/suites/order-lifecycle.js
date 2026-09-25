@@ -173,6 +173,14 @@ export default async function orderLifecycleSuite() {
 
   // ── 9. Mark order COMPLETED ────────────────────────────────────
   {
+    // TD-092: COMPLETED is refused while any round is unserved. customer-journey shares TABLE_CLEAN_1 and can
+    // leave a round on this same order (orders group by table), so serve whatever is still live first, as MD-10 does.
+    const o = (await call('order-getOrder', { restaurantId: RESTAURANT_ID, orderId, sessionId: serverSessionId })).data;
+    for (const [i, c] of (o?.carts || []).entries()) {
+      if (['SERVED', 'CANCELLED', 'RETURNED'].includes(c.status)) continue;
+      if (c.status !== 'READY') await call('cart-updateCartStatus', { restaurantId: RESTAURANT_ID, orderId, cartIndex: i, newStatus: 'READY', sessionId: serverSessionId });
+      await call('cart-updateCartStatus', { restaurantId: RESTAURANT_ID, orderId, cartIndex: i, newStatus: 'SERVED', sessionId: serverSessionId });
+    }
     const resp = await call('order-updateOrderStatus', {
       restaurantId: RESTAURANT_ID,
       orderId,

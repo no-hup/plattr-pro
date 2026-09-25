@@ -69,6 +69,9 @@ export function decide(input: DecideInput, cfg: ApprovalsConfig): Decision {
   if (!ACTIONS.includes(action)) return { ok: false, code: 'invalid-argument' };
   const isCashier = role === 'MANAGER' || role === 'ADMIN';
   if (!isCashier) {
+    // DECISION(D4, 2026-09-25): the waiter's cancel after the kitchen started is allowed and audited P0, no PIN.
+    // It goes through orders/lineSnapshots.js voidCartLines, never through here; this door keeps R8 for everything
+    // else a SERVER sends. Do not route the waiter's cancel through `decide`. If you change this, ask Shaurya first.
     return action === 'void' && input.lineSent === false
       ? { ok: true, needsPin: false, sev: 'P1' }
       : { ok: false, code: 'permission-denied' };
