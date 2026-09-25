@@ -38,9 +38,9 @@ restaurants/{restaurantId}/
   },
   variants: [{                           // Array of variant references
     id: string,                          // Reference to variants collection
-    name: string                         // Display name for this context
+    name: string                         // Kept on the link; every read shows the shared record's name (D6)
   }],
-  addons: string[],                      // Array of addon IDs
+  addons: string[],                      // Array of addon IDs (objects are refused, D6 / TD-106)
   nutritionalInfo: object,
   allergenTags: string[],
   isInStock: boolean,                    // Stock availability flag
@@ -196,6 +196,8 @@ Similar to `getRestaurantMenu` but uses `MenuValidation.validateMenuFetchInput()
 ```
 
 #### IMP: Auto-computed Fields
+- `addons` must be ids and `variants` `{id, name}` links, each naming an existing shared record; anything else is
+  refused (`Add-ons must be a list of add-on ids`, `Unknown add-on <id>: create it first`) — D6 / TD-106
 - `isCustomizable` auto-set to `true` if `variants.length > 0` OR `addons.length > 0`
 - `isInStock` defaults to `true` if not provided
 - `lastUpdated` set to server timestamp
@@ -218,7 +220,12 @@ Similar to `getRestaurantMenu` but uses `MenuValidation.validateMenuFetchInput()
 }
 ```
 
-#### IMP: Recomputes `isCustomizable` on every update based on new variants/addons
+#### IMP: Only the sent fields are written (D6, 2026-09-25)
+- A description fix sends `meta` alone and touches nothing else: not `isInStock` (TD-110), not the add-on list.
+- `addons` / `variants` are checked as on create (ids / `{id, name}` links to existing shared records).
+- `isCustomizable` is the server's: recomputed only when `addons` or `variants` are sent, from the links after the
+  save (the stored other half included). A client-sent `isCustomizable` is ignored. Taking every add-on off Veg
+  Biryani leaves it customisable, because its Portion is still linked.
 
 ---
 
@@ -237,12 +244,17 @@ Similar to `getRestaurantMenu` but uses `MenuValidation.validateMenuFetchInput()
 ```javascript
 {
   restaurantId: string,
-  menuItemId: string,
+  sessionId: string,      // any staff session (waiter, kitchen, manager, admin)
+  menuItemId: string,     // a dish, OR
+  addonId: string,        // a shared add-on (D6): exactly one of the two
   isAvailable: boolean    // IMP: Must be explicit boolean, not truthy/falsy
 }
 ```
 
 #### IMP: Used for toggling stock status without full menu item update
+- With `addonId` it switches the shared add-on record: 20:00 the waiter switches Extra Raita off and it leaves
+  every biryani on the guest menu, and add-to-cart and checkout refuse it. One audit row (`menuOptionStock`,
+  before/after) in the same transaction. Answers `{ addonId, isAvailable }`.
 
 ---
 
@@ -272,14 +284,27 @@ MenuItem.variants = [{ id: variantId, name: contextualName }]
 
 ### IMP: Variant Enrichment During Fetch
 ```javascript
-const itemVariants = (item.variants || []).map(variant =>
-  variants[variant.id] 
-    ? { ...variants[variant.id], name: variant.name } 
-    : null
-).filter(Boolean);
+const itemVariants = (item.variants || []).map(variant => variants[variant.id]).filter(Boolean);
 ```
-- Merges variant definition from `variants` collection with contextual `name`
+- The dish shows the shared record whole, name included, as the cart does (D6: rename the portion once, every
+  dish and the cart agree)
 - Filters out null entries (missing variants)
+
+### Shared add-ons and portions: `admin-sharedOption` (D6, 2026-09-25)
+Decision: `moonshot/reviews/2026-09-25-decisions-for-shaurya.md` D6. ADMIN/MANAGER session. Changed fields only.
+```javascript
+{ restaurantId, sessionId, action, kind: 'addon' | 'variant', id?, menuItemId?, changes? }
+```
+- `usage` → `{ addons: {id: n}, variants: {id: n} }`: dishes linking each record, over every dish (not the active menu).
+- `update` → `{ id, usedBy, record }`: add-on `{name?, price?}`, portion `{name?, options: [{id, name?, price?}]}`
+  on the shared record; every linked dish follows. Price ₹0 or more; the record's own discount is kept.
+- `copyForDish` → `{ id, record, menuItemId }`: "Only Mutton Biryani" — copies the record with the changes into a
+  new record (its `id` field set to the new doc id: the cart finds records by that field) and relinks that one dish.
+- `create` (add-on only, Q6-3) → `{ id, record }`: a new in-stock add-on; the dish save links it.
+- One audit row per act (`menuOptionEdit` / `menuOptionCopy` / `menuOptionCreate`, P1, before/after) in the same
+  transaction. Stock goes through `menu-updateMenuItemAvailability` with `addonId`.
+- A price is fixed when the dish goes into the cart (Q6-2): Raita ₹40 added at 19:55 is sent at ₹40 after a raise to
+  ₹50 at 20:00; checkout re-reads stock only. Not offered here yet: new portion groups, new/removed options (TD-132).
 
 ### Addon-MenuItem Relationship
 ```

@@ -196,6 +196,9 @@ async function validateMenuItemsStock(restaurantId, cartItems) {
     }
   });
 
+  // DECISION(D6, 2026-09-25): same as the add, re-checked at send: Raita switched off at 20:00 stops a round added at
+  // 19:55. The price stays as it was when added (Q6-2): only stock is re-read here, never price.
+  // See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
   // TD-015: the add-ons riding on those lines, re-read now. One switched off since it was added
   // must stop the round exactly as a sold-out dish does. `=== true`, as the add path and the menu read.
   const addonIds = [...new Set(cartItems.flatMap(item => (item.selectedAddonsDetails || []).map(a => a.id)))];

@@ -115,7 +115,8 @@ The backend maintains shared data objects (restaurants, tables, sessions, menus,
 - Tables list with capacity and status.
 - Table detail view with status controls and OTP refresh.
 - Order detail view with multi-cart history and item delivery checks.
-- Menu availability toggles.
+- Menu availability toggles, for dishes and for shared add-ons: 20:00 the kitchen runs out of raita, the waiter
+  switches Extra Raita off once and it leaves every biryani on the guest menu (D6, 2026-09-25).
 - Session-based staff login with expiry handling.
 - Notifications for READY items and new orders.
 - Confirm or reject a guest-placed order, where the restaurant requires it (see 9.4).
@@ -141,6 +142,14 @@ The backend maintains shared data objects (restaurants, tables, sessions, menus,
 ### 8.4 Admin App
 **Must have**
 - Menu management: categories, items, variants, addons, pricing, stock.
+- **Shared add-ons and portions** (D6, 2026-09-25). The manager raises Extra Raita ₹40 → ₹50 on Chicken Dum Biryani:
+  the editor says "Extra Raita is on 3 dishes" and offers "Change all 3" or "Only Chicken Dum Biryani", which copies
+  the add-on for that one dish. Portions (Family ₹260 → ₹280) work the same. Removing Raita from one dish is a dish edit.
+  *Without this an edit changes nothing a guest pays, and the menu says one price while the bill says another.*
+- **Dish save sends what changed.** A description fix sends the description, never the stock switch or the add-on list
+  as the tab loaded it. *Without this a stale tab puts sold-out prawns back on sale, and a save erased a dish's add-ons.*
+- **New add-on from the dish editor.** "Mirchi ka Salan ₹30" typed on Chicken Biryani becomes a shared add-on at once
+  and is on sale when the dish is saved. *Without this a new add-on gets an id no cart accepts.*
 - Table management: add/edit tables, capacity, status.
 - Staff management: create/update servers and assignments.
 - View active orders and operational status.
@@ -172,6 +181,9 @@ Orders behave like a shared table tab. Each checkout creates a cart snapshot tha
 ### 9.2 Menu and Inventory
 - Items can be in or out of stock.
 - Variants and addons affect price and customization rules.
+- Add-ons and portions are shared records that dishes link to by id; price, name and stock live on the record, so every
+  linked dish follows an edit (D6). The admin and waiter apps switch add-on stock on the same record.
+- A price is fixed when a dish goes into the cart: Raita ₹40 added at 19:55 stays ₹40 when raised to ₹50 at 20:00 (Q6-2).
 - Availability changes should propagate quickly to customers.
 
 ### 9.3 Sessions
