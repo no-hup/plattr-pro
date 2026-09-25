@@ -95,6 +95,11 @@ cd ../../../frontend/till && VITE_FUNCTIONS_URL=http://127.0.0.1:5102/rms-app-dd
 
 Without `VITE_FUNCTIONS_URL` the till talks to `:5002`, which is slot 0 — somebody else's data.
 
+**The till's Playwright suite** runs on your slot in one command: `cd frontend/till && EMU_SLOT=1 npm run e2e:ui`.
+It seeds MockData5 and MockData7 on top of the slot, starts its own Vite on `5173 + slot×100`, and refuses to run
+without `EMU_SLOT`. Walks on real writers are in `e2e/walks.spec.ts` (states from `floorstate.mjs`); open findings
+are `[known bug]` tests (TESTING.md).
+
 ## 4. The vocabulary: `scripts/ab.sh`
 
 ```bash
