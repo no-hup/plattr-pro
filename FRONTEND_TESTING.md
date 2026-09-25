@@ -83,6 +83,18 @@ Consumer prerequisite, once: `cd frontend/flutter_boilerplate && cp .env.example
 `run_consumer.sh` / `run_server.sh` still work; they delegate to `run_app.sh`.
 Functions `:5002`, Firestore `:8080`, emulator UI `:4001`.
 
+**Your own slot, with the till** (what a QA run uses; slot 1 shown, ports are `base + slot*100`):
+
+```bash
+cd backend/src-plattr && EMU_SLOT=1 ./emu.sh          # background; firestore :8180, functions :5102
+cd functions && node mock/buildMockData7.js && FIRESTORE_EMULATOR_HOST=127.0.0.1:8180 \
+  node mock/importMockData5.js --file=mock/MockData7ProductionMenus.json --clean --refresh-timestamps
+cd ../../../frontend/till && VITE_FUNCTIONS_URL=http://127.0.0.1:5102/rms-app-dd875/us-central1 \
+  npx vite --port 5174 --strictPort --host 127.0.0.1
+```
+
+Without `VITE_FUNCTIONS_URL` the till talks to `:5002`, which is slot 0 — somebody else's data.
+
 ## 4. The vocabulary: `scripts/ab.sh`
 
 ```bash
