@@ -17,12 +17,13 @@
 - Orders: list active orders -> open order details -> mark cart READY/SERVED or cancel order -> refresh list
 - Tables: list tables -> open table detail dialog -> update status, refresh OTP, view active order
 - Menu: list categories/items -> toggle availability with confirmation -> immediate UI update
+- Menu: Add-ons section -> switch a shared add-on off with confirmation -> it leaves every dish that offers it (D6)
 
 ## Must-Have Requirements (Critical)
 - Orders list with status indicators and item pills; real-time refresh (manual + pull-to-refresh minimum)
 - Table list with status color coding and current order indicator
 - Table details dialog with OTP refresh, status change, and "View Order" shortcut
-- Menu availability toggle with confirmation and immediate UI feedback
+- Menu availability toggle with confirmation and immediate UI feedback, for dishes and for shared add-ons
 - Session-based auth with expiry handling and retry UX for expired sessions
 
 ## Orders Tab PRD
@@ -47,6 +48,11 @@
 - Backend nuance: availability update uses flat payload (no data envelope)
 - Error handling: show toast/snackbar and revert switch if update fails
 - Suggestion: add low stock badge and bulk out-of-stock per category
+- **Add-on stock** (D6, 2026-09-25). 20:00 the kitchen runs out of raita and tells the waiter. The Menu tab opens
+  with "Add-ons (N)"; the waiter switches Extra Raita off and confirms ("It comes off every dish that offers it").
+  It is the shared add-on record the admin app switches too, so every biryani drops it on the guest menu and a
+  cart holding it is refused at send. Same endpoint as dish stock, with `addonId`; one audit row names the waiter.
+  *Without this raita keeps selling until someone finds the manager.* Prices and names stay admin-only.
 
 ## Notifications and Realtime
 - Must-have: push notification for order READY and new order assigned to server

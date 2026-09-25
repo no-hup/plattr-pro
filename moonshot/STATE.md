@@ -9,13 +9,13 @@ Newest at the top of each list.
 
 
 ## In flight
-- D6 · Admin edits to shared add-ons and portions (Shaurya 2026-09-25, [decisions](reviews/2026-09-25-decisions-for-shaurya.md) D6 + Q6-2/Q6-3), fixer session 2026-09-25, emulator slot 0. Pricing code untouched. One commit per phase:
-  1. Tests: characterization of `menu-updateMenuItem`, then red for TD-106 (dish save keeps add-ons as ids), TD-107 (Family ₹260 → ₹280 bills ₹551, not ₹529), TD-110 (stale save leaves `isInStock`).
-  2. Backend: `admin-sharedOption` (usage counts / create add-on / update name-price / copy-and-relink "only this dish", audit row); availability endpoint takes an `addonId` (any staff); dish save writes only sent fields, refuses object add-ons; menu read takes portion names from the shared record.
-  3. Admin app: editors call the endpoint, "Extra Raita is on 3 dishes", "Only this dish"; dish save sends changed fields, add-ons as ids.
-  4. Waiter app: stock screen lists add-ons, switching the shared record.
-  5. Delete `menu/creation/variant.js`, `menu_add.js`, `menu_remove.js` (no caller).
-  6. DECISION comments; D6 into the PRD, menu flow spec, waiter PRD; TECH_DEBT status.
+- D6 · Admin edits to shared add-ons and portions (Shaurya 2026-09-25, [decisions](reviews/2026-09-25-decisions-for-shaurya.md) D6 incl. "blanket or one dish", + Q6-2/Q6-3), fixer session 2026-09-25, emulator slot 0 (left running). **All phases DONE**; TD-106, TD-107, TD-110 closed, TD-132 filed (new portion groups/options not in the admin app). Pricing code untouched.
+  1. DONE 79bc229 tests: e2e `shared-options` (MockData7 Meghana, real writers), unit `test/unit/menu/sharedOptions.test.js`.
+  2. DONE 9374d79 `admin-sharedOption` (usage / create / update / copyForDish, audit rows); availability takes `addonId`; dish save writes only sent fields, refuses object add-ons and unknown ids; portion names from the shared record. e2e 29/29, goalline 79/79 (its `clearCart` now names the sitting, TD-033).
+  3. DONE 01e7358 admin editors: "X is on N dishes — Change all N / Only <dish>", dish save sends `dishChanges`; two admin boot bugs fixed (MaterialApp home + '/', dietary VEG/NON_VEG). Browser-checked.
+  4. DONE fa73c03 waiter Menu tab "Add-ons (N)" stock switches. Browser-checked.
+  5. DONE f0c4a7f deleted the three dead `menu/creation` files.
+  6. DONE DECISION comments, PRD §8.2/§8.4/§9.2, menu flow spec, waiter PRD, TECH_DEBT status. Proposed Decisions-log line in the session's final report (agents don't edit Decisions).
 - MP · Till money path from Shaurya's 2026-09-25 decisions (D1 walk-out, D2 Edit bill, D3 no edit with money on it, D7 partner tenders), fixer session 2026-09-25, own emulator slot. Another fixer is on the admin menu (D6) in the same tree. One commit per phase:
   1. Docs: D1/D2/D3/D7 into BL, PY, FL, DC, ST Decisions; FL R14 walk-out exception, BL-S9 edit reason, ST `editBill` row.
   2. D3: Edit/Cancel refused while `paidTotal > 0`, re-checked inside the transaction; a new round on a part-paid bill waits (TD-062).

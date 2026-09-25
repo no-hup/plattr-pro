@@ -291,6 +291,8 @@ function createDefaultCart(restaurantId, tableId, sessionId) {
 }
 
 /**
+ * D6: a guest adds Chicken Biryani Family at 19:55 while the shared portion record says Family ₹260; the cart line
+ * stores that ₹260 now, and it stays ₹260 through checkout even if the manager raises it at 20:00 (Q6-2).
  * Processes variant selections for a menu item
  * Retrieves variant documents, validates selections, and prepares data
  * 
@@ -402,6 +404,9 @@ async function processSelectedAddons(db, restaurantId, menuItem, selectedAddons,
     if (!offered.includes(addonId)) errorHandler.badRequest("Add-on is not offered on this dish.", { addonId });
     const addon = { id: doc.id, ...doc.data() };
     const name = addon.meta?.name || addonId;
+    // DECISION(D6, 2026-09-25): Raita out of stock is refused on every dish, guest app first: the check reads the
+    // one shared record the waiter or admin switched. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md.
+    // If you change this, ask Shaurya first.
     // `=== true`, the same test the menu read filters on: a missing flag is not "in stock".
     if (addon.isInStock !== true) errorHandler.preconditionFailed(`Add-on ${name} is currently out of stock.`, { addonId });
     if (!validatePriceData(addon.priceInfo, `addon.${addon.id}`)) {
