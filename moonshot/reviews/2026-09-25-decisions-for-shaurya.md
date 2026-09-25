@@ -1,8 +1,8 @@
 # Decisions for Shaurya · after the till QA runs · 2026-09-25
 
-**Every open question from the four QA runs (floor, bill, tender, day close), the bill-change requests and the agents, in one place.** Each has a
+**Every open question from the five QA runs (floor, bill, tender, day close, groups + parcels), the bill-change requests and the agents, in one place.** Each has a
 recommended default. Answer inline (write "yes", "default", or your call), or say "take all defaults except N".
-The bugs themselves are TD-061..077 in [TECH_DEBT.md](../TECH_DEBT.md).
+The bugs themselves are TD-061..081 in [TECH_DEBT.md](../TECH_DEBT.md).
 
 ## Must decide (a fix is waiting on each)
 
@@ -29,6 +29,11 @@ The bugs themselves are TD-061..077 in [TECH_DEBT.md](../TECH_DEBT.md).
    Void with a PIN.
 7b. **The PIN over ₹100 leaks the blind figure.** (QD-9) Asking for a PIN only when the count is ₹100+ off tells the
    cashier she is close. *Default:* record the count first, then ask the PIN; or ask a PIN on every close.
+7d. **What frees a parcel ticket: payment or Clear?** (TD-078, QP-1) OR-S3 says paid → vacant; PY says paying frees
+   no table. Today a forgotten Clear strands the next walk-up. *Default:* the payment that settles a counter ticket's
+   last bill ends its sitting.
+7e. **Packing on a drinks-only parcel.** (TD-079, QP-2) Today the preview refuses it and the till can't bill a cold
+   drink to go. *Default:* leave the packing off, with a note on the bill.
 7c. **Offers on liquor.** (bill report Q9) R1 spreads an ORDER offer over every line, and the seed says liquor is
    never discounted. *Default:* liquor wins; the offer is spread over food only. (Tax moves between blocks otherwise.)
 
@@ -47,9 +52,13 @@ The bugs themselves are TD-061..077 in [TECH_DEBT.md](../TECH_DEBT.md).
 14. **Undoing a mistaken comp:** a ₹0 comp is born paid with no Cancel. (bill Q8) *Default:* a credit note is the
     only way back, same as any paid bill.
 15. **A dropped service charge survives a cancel and reload?** (QB-10) *Default:* yes, remembered on the draft.
-16. **Merging a free table into a billed parent** is allowed today, spec silent. (floor) *Default:* allow.
+16. **Merging a free table into a billed parent** is allowed today, spec silent. (floor, groups G10) The new guest's
+    order then can't be billed (TD-065). *Default:* refuse while that bill is unpaid.
 16b. **Who may "retry" a day close?** (QD-7) *Default:* only the person who closed it; anyone else gets "already
     closed at 23:30 by Priya".
+16d. **A group's bill names every table** ("10+11"). (TD-080) *Default:* yes, fixed at issue.
+16e. **A busy parcel ticket takes a second phone?** (groups P4: a third walk-up joined walk-up A's order) *Default:* no,
+    until till order entry is built.
 16c. **Where the till keeps its login** (TD-052 fix, parked by the test-stack agent): per tab (`sessionStorage`, gone
     when the tab closes) or per browser (`localStorage`, survives a restart of a shared till). *Default:* per tab.
 17. **A paid table ordering again.** (FR decision 4) *Default:* skip until staff ordering at the till (OR) is built.
@@ -73,13 +82,13 @@ The till test-stack ticket's builder questions are answered in the [ticket](2026
 
 ```
 Resume the till QA fixes. Read moonshot/STATE.md (pickup list, "QA runs 2026-09-25" line),
-moonshot/reviews/2026-09-25-decisions-for-shaurya.md (my answers are inline), and TECH_DEBT TD-061..077.
+moonshot/reviews/2026-09-25-decisions-for-shaurya.md (my answers are inline), and TECH_DEBT TD-061..081.
 1. Write each answer into the right spec sheet's Decisions table (FL, BL, PY, ST) and propose any
    STATE.md decision diff to me.
 2. Fix in this order, one commit each, red test first (most already exist, marked known bug: drop the mark):
    TD-061, TD-062, TD-063+064, TD-065 (FR-7 Cancel on tender first), TD-066, TD-067, TD-068, TD-069,
-   TD-070, TD-071, TD-073..076 (TD-073 lands with TD-063/064), then TD-072 and TD-077's small ones.
+   TD-070, TD-071, TD-073..076 (TD-073 lands with TD-063/064), TD-078..080, then TD-072, TD-077 and TD-081's small ones.
 3. Money paths: run the moonshot-review subagent before each commit. Ask me only where my answer is missing.
 ```
 
-3. After the fixes, the next QA run is the waiter app (not yet planned). The till's floor, bill, tender and day close are done.
+3. After the fixes, the next QA run is the waiter app (not yet planned). The till's floor, bill, tender, day close, merged groups and parcels are done.
