@@ -7,7 +7,7 @@
  *
  * Real writers only: the admin/waiter endpoints make every change, the guest endpoints read and buy.
  * Own state: wipes res_meghana's sittings/orders/lines/bills/carts/audit and re-imports MockData7 on top, at
- * the start and again at the end (the menu edits must not leak into goalline or qa-findings). Tables 2, 3, 8, 9, 10, 11, 12.
+ * the start and again at the end (the menu edits must not leak into goalline or qa-findings). Tables 2, 3, 6, 7, 8, 9, 10, 11, 12.
  *
  * Hand-computed at Meghana (food × 1.05 service × 1.05 GST, rupee-rounded; ₹100 off an order ≥ ₹499 beats
  * 10 % off biryani up to ₹120 whenever the 10 % is under ₹100):
@@ -219,6 +219,59 @@ export default async function sharedOptionsSuite() {
     check('D6: an unknown add-on is refused by name', !ok(none) && /ma_no_such/.test(none.message || ''), none?.message);
     const opt = await shared(manager, { action: 'update', kind: 'variant', id: PORTION, changes: { options: [{ id: 'jumbo', price: 400 }] } });
     check('D6: an unknown portion option is refused by name', !ok(opt) && /jumbo/.test(opt.message || ''), opt?.message);
+  });
+
+  // ── TD-132 · portion options added and removed, and a new portion group, on the shared record ─────────────
+  // Hand: Chicken Dum Biryani ₹320 + Jumbo ₹480 = ₹800 − ₹100 (10 % would be ₹80) = ₹700 × 1.1025 = ₹771.75 → ₹772.
+  await scene('TD-132 add option', async () => {
+    const r = await shared(manager, { action: 'update', kind: 'variant', id: PORTION, changes: { addOptions: [{ name: 'Jumbo (serves 5)', price: 480 }] } });
+    const jumbo = (r?.data?.record?.options || []).find(o => o.name === 'Jumbo (serves 5)');
+    // Mutton moved to its own copy in Q6-4, so the shared Portion is on Chicken and Veg Biryani.
+    check('TD-132: the manager adds "Jumbo (serves 5) ₹480" to Portion, on 2 dishes', ok(r) && r.data.usedBy === 2 && jumbo?.priceInfo?.basePrice === 480, r?.data || r?.message, 'TD-132');
+    if (!jumbo) return;
+    const veg = dishIn(await guestMenu(), VEG);
+    check('TD-132: Veg Biryani offers Jumbo too (the record is shared)', (veg?.variants?.[0]?.options || []).some(o => o.id === jumbo.id), veg?.variants, 'TD-132');
+    const g = await seat(6);
+    need(await add(6, g, CHICKEN, { [PORTION]: jumbo.id }), 'add jumbo');
+    need(await call('cart-checkoutCart', { restaurantId: RID, tableId: T(6), sessionId: g }), 'checkout');
+    const p = await call('billing-preview', { restaurantId: RID, sessionId: till, draftId: g });
+    check('TD-132: Chicken Biryani Jumbo bills ₹772 (800 − 100 = 700 × 1.1025)', p?.data?.payable === 77200, p?.data?.payable ?? p?.message, 'TD-132');
+
+    const rm = await shared(manager, { action: 'update', kind: 'variant', id: PORTION, changes: { removeOptionIds: [jumbo.id] } });
+    const opts = (await getDoc(`variants/${PORTION}`))?.options || [];
+    check('TD-132: removing Jumbo leaves Single and Family', ok(rm) && JSON.stringify(opts.map(o => o.id)) === '["single","family"]', opts.map(o => o.id), 'TD-132');
+    const g2 = await seat(7);
+    const a = await add(7, g2, CHICKEN, { [PORTION]: jumbo.id });
+    check('TD-132: a removed Jumbo can no longer be added', !ok(a) && /option not found/i.test(a.message || ''), a?.message, 'TD-132');
+  });
+
+  await scene('TD-132 refusals', async () => {
+    const stored = ((await getDoc(`variants/${PORTION}`))?.options || []).map(o => o.id);
+    const all = await shared(manager, { action: 'update', kind: 'variant', id: PORTION, changes: { removeOptionIds: stored } });
+    const opts = (await getDoc(`variants/${PORTION}`))?.options || [];
+    check('TD-132: removing every option is refused, and they all stay', !ok(all) && /at least one option/i.test(all.message || '') && opts.length === stored.length && stored.length > 0, all?.message, 'TD-132');
+    const xl = await shared(manager, { action: 'update', kind: 'variant', id: PORTION, changes: { removeOptionIds: ['xl'] } });
+    check('TD-132: removing an unknown option is refused by name', !ok(xl) && /"xl"/.test(xl.message || ''), xl?.message, 'TD-132');
+    const neg = await shared(manager, { action: 'update', kind: 'variant', id: PORTION, changes: { addOptions: [{ name: 'Half', price: -50 }] } });
+    check('TD-132: a new option with a negative price is refused', !ok(neg) && /price/i.test(neg.message || '') && ((await getDoc(`variants/${PORTION}`))?.options || []).length === stored.length, neg?.message, 'TD-132');
+    const empty = await shared(manager, { action: 'create', kind: 'variant', changes: { name: 'Rice', options: [] } });
+    if (ok(empty)) made.push(`variants/${empty.data.id}`);
+    check('TD-132: a new portion group with no options is refused', !ok(empty) && /at least one option/i.test(empty.message || ''), empty?.message, 'TD-132');
+  });
+
+  // Hand: Chicken Dum Biryani Single ₹320 + Extra rice ₹50 = a ₹370 line.
+  await scene('TD-132 new group', async () => {
+    const r = await shared(manager, { action: 'create', kind: 'variant', changes: {
+      name: 'Rice', isMandatory: false, options: [{ name: 'Jeera rice', price: 0 }, { name: 'Extra rice', price: 50 }] } });
+    const id = r?.data?.id;
+    if (id) made.push(`variants/${id}`);
+    const extra = (r?.data?.record?.options || []).find(o => o.name === 'Extra rice');
+    check('TD-132: a new "Rice" group is a shared record with two options', ok(r) && (await getDoc(`variants/${id}`))?.options?.length === 2 && extra, r?.data || r?.message, 'TD-132');
+    if (!extra) return;
+    need(await saveDish(manager, CHICKEN, { variants: [{ id: PORTION, name: 'Portion' }, { id, name: 'Rice' }] }), 'link rice');
+    const g = await seat(7);
+    const line = lineOf(await add(7, g, CHICKEN, { [PORTION]: 'single', [id]: extra.id }), CHICKEN);
+    check('TD-132: Chicken Biryani Single + Extra rice is a ₹370 line', line?.priceInfo?.finalPrice === 370, line?.priceInfo, 'TD-132');
   });
 
   for (const p of made) await delDoc(p);
