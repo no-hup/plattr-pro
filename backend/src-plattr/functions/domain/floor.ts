@@ -11,6 +11,7 @@
 
 import { Line } from './line';
 import { net } from './approvals';
+import { billLabel } from './billing';
 
 export type Role = 'ADMIN' | 'MANAGER' | 'SERVER' | 'CAPTAIN';
 export type RefusalCode = 'failed-precondition' | 'invalid-argument' | 'permission-denied';
@@ -27,6 +28,8 @@ export interface Bill {
   status: 'issued' | 'paid' | 'cancelled';
   payable: number;
   paid: number;
+  series?: string;             // what the paper says, "A-0004": for refusals a cashier can act on
+  number?: string;
 }
 
 /** What a person calls the table. A refusal a cashier cannot act on is not a refusal. */
@@ -257,6 +260,17 @@ export function isReleasable(sitting: Sitting): boolean {
   if (onTable(sitting.lines) > 0) return false;   // dessert after the bill
   if (unpaid(sitting.bills) > 0) return false;    // one half of a split still owing
   return true;
+}
+
+/**
+ * D3 / R18: may this sitting take a new round? A string is the refusal, in the words the guest or captain reads.
+ * 22:05, table 4's bill A-0004 is ₹1,200 and a friend has paid ₹500 by UPI; the others order a gulab jamun. It waits:
+ * issue refuses an issued draft and Edit refuses a bill with money on it, so the dessert could never be billed.
+ */
+export function roundRefusal(bills: Bill[]): string | null {
+  const paying = bills.find(b => !b.note && b.status === 'issued' && b.paid > 0);
+  if (paying) return `${paying.series && paying.number ? billLabel({ series: paying.series, number: paying.number }) : 'your bill'} is being paid — finish the payment, then add`;
+  return null;
 }
 
 /** R18. Once every bill is settled the sitting stops taking new guests and new checkouts. */

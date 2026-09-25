@@ -273,3 +273,22 @@ describe('createOrUpdateOrder — one person places their own group', () => {
         expect(writes.delete).toEqual([{ path: 'restaurants/res_1/carts/t7' }]);
     });
 });
+
+// D3 / FL R18 (Shaurya 2026-09-25). Table 7's bill A-0004 is ₹1,200; one friend has paid ₹500. A round now waits:
+// "A-0004 is being paid — finish the payment, then add". Checked inside the checkout transaction, on the sitting's
+// own bills (sittingId = the session), so a payment in the same second cannot let one round through. Nothing is written.
+describe('createOrUpdateOrder — a round on a sitting whose bill is being paid waits (D3)', () => {
+    const bill = (extra) => ({ id: 'bill_4', data: () => ({ sittingId: 'sess_1', series: 'A', number: '0004', status: 'issued', payable: 120000, paidTotal: 0, ...extra }) });
+    test('refused while ₹500 of the ₹1,200 bill is paid, naming the bill, and nothing is written', async () => {
+        db._seed['__query__restaurants/res_1/bills'] = [bill({ paidTotal: 50000 })];
+        await expect(createOrUpdateOrder('res_1', 't7', cart, 'guest_1', '', 'sess_1'))
+            .rejects.toMatchObject({ message: 'A-0004 is being paid — finish the payment, then add' });
+        expect(writes.set).toHaveLength(0);
+        expect(writes.delete).toHaveLength(0);
+    });
+    test('a printed bill with nothing paid takes the round (it goes on through Edit, D2)', async () => {
+        db._seed['__query__restaurants/res_1/bills'] = [bill({ paidTotal: 0 })];
+        await createOrUpdateOrder('res_1', 't7', cart, 'guest_1', '', 'sess_1');
+        expect(writes.set.filter(w => w.path.includes('/orders/'))).toHaveLength(1);
+    });
+});

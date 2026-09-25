@@ -355,6 +355,14 @@ describe('domain/billing issue / cancel / creditNote', () => {
     expect(cancel(c, 3000, 'm2', 'again')).toMatchObject({ ok: false });
     expect(c.cancelled).toEqual({ at: 2000, by: 'm1', reason: 'r' });
   });
+  // D3: the BL-S1 bill A-0417 is ₹609.00; one friend pays ₹500 cash (PY stamps paidTotal 50000). Edit and Cancel both
+  // come through here, so both are refused, the refusal names the bill and the money, and a voided take (paidTotal 0) frees it.
+  it('D3 BL-S9 a bill with ₹500 paid on it cannot be cancelled or edited: "₹500 already paid on A-0417 — take the rest first"', () => {
+    const r = cancel({ ...issued(), paidTotal: 50000 }, 2000, 'm1', 'edited');
+    expect(r).toMatchObject({ ok: false, code: 'failed-precondition', message: '₹500 already paid on A-0417 — take the rest first' });
+    expect(cancel({ ...issued(), paidTotal: 3350 }, 2000, 'm1', 'edited')).toMatchObject({ ok: false, message: '₹33.50 already paid on A-0417 — take the rest first' });
+    expect(cancel({ ...issued(), paidTotal: 0 }, 2000, 'm1', 'edited')).toMatchObject({ ok: true });
+  });
   it('BL-S11a credit the coke of the BL-S1 bill → qty −1, taxable −8000, parts [−200,−200], total −8400; original stays paid and gains creditNotes[]', () => {
     const r = cn(paid(), [{ lineId: 'coke', qty: 1 }]);
     if (!r.ok) throw new Error(r.message);

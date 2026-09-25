@@ -113,13 +113,13 @@ describe('QA bill screen findings (2026-09-25)', () => {
   // QB-2 · P0. Naan 6000 + 300 tax → bill 6300. The guest pays 3100 cash (floorstate's half: floor(6300/200)×100).
   // BL "Who can do what": cancel is for an issued, UNPAID bill; PY-S14 "before anyone paid". The refusal comes
   // before the PIN box, the way a paid bill's does, and the bill keeps its money.
-  knownBug('QB-2 BL: a bill with money on it cannot be cancelled', async () => {
+  test('QB-2 D3 BL: a bill with money on it cannot be cancelled, and the refusal names the bill and the money', async () => {
     const p = fakePorts({ lines: [line('naan', 'Butter Naan', 6000, 'sit_11', { tableId: 't11', sessionId: 'sit_11' })] });
     const bill = await issueDraft(p, 'sit_11');
     expect(bill.payable).toBe(6300);
     p.bills.set(bill.billId, { ...p.bills.get(bill.billId), paidTotal: 3100 });   // what payments-take writes
     await expect(cancel(p, { ...req('sit_11'), cid: 'cid_cancel', billId: bill.billId, reason: 'other', pin: '1234' }))
-      .rejects.toMatchObject({ code: 'failed-precondition' });
+      .rejects.toMatchObject({ code: 'failed-precondition', message: '₹31 already paid on A-0417 — take the rest first' });
     expect(p.bills.get(bill.billId).status).toBe('issued');
     expect(p.audits.size).toBe(0);
   });

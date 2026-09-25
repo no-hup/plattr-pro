@@ -16,6 +16,7 @@ const { calculateCartValue } = require('../cart/calculateCartValue');
 const { writeLineSnapshots, loadTaxConfig } = require('./lineSnapshots');
 // KT: one print job per station, created in the placing transaction (R1, R4). Compiled TypeScript in lib/.
 const print = require('../lib/adapters/firestore/print');
+const floorStore = require('../lib/adapters/firestore/floor');   // D3: the round check, inside this transaction
 
 
 /**
@@ -148,6 +149,11 @@ exports.createOrUpdateOrder = async (restaurantId, tableId, cart, userId = 'syst
       const counterRef = db.collection("restaurants").doc(restaurantId)
         .collection("counters").doc("orders");
       const counterDoc = await transaction.get(counterRef);
+
+      // 4. D3 / FL R18: a sitting whose bill is being paid takes no new round. Read here, inside the transaction,
+      // on the sitting's own bills, so a payment committing in the same second cannot let one round through.
+      const roundRefusal = sessionId ? await floorStore.roundRefusalIn(transaction, restaurantId, sessionId) : null;
+      if (roundRefusal) errorHandler.preconditionFailed(roundRefusal, { restaurantId, tableId, sessionId });
 
       // ── PROCESSING (no more reads after this point) ──────────────
 

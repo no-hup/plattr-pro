@@ -4,7 +4,7 @@ import { apply as approve } from '../../app/approvals';
 import { ports as approvalPorts } from './approvals';
 import { Ports, Tx, Order, SittingHead, floorConfigFrom } from '../../app/floor';
 import { Staff } from '../../app/approvals';
-import { Bill, Table, OrderState, sittingOf } from '../../domain/floor';
+import { Bill, Table, OrderState, sittingOf, roundRefusal } from '../../domain/floor';
 import { Line } from '../../domain/line';
 import type { DocumentReference, Transaction, Query } from 'firebase-admin/firestore';
 import { Timestamp } from 'firebase-admin/firestore';
@@ -78,8 +78,20 @@ const toBill = (d: FirebaseFirestore.QueryDocumentSnapshot): Bill => {
     status: x.status,
     payable: Number(x.payable) || 0,
     paid: Number(x.paidTotal) || 0,
+    series: x.series ? String(x.series) : undefined,
+    number: x.number ? String(x.number) : undefined,
   };
 };
+
+/**
+ * D2 / D3: the round check for the JS order path, read inside the CALLER's transaction so a payment landing in the
+ * same second makes one of the two retry instead of both winning. Bills only: reading the sitting's lines here would
+ * make every checkout contend with the kitchen's line writes.
+ */
+export async function roundRefusalIn(t: Transaction, rid: string, sessionId: string): Promise<string | null> {
+  const bs = await t.get(bills(rid).where('sittingId', '==', sessionId));
+  return roundRefusal(bs.docs.map(toBill));
+}
 
 /** Staff logins share the `sessions` collection (entity 'server', no table). They are never a sitting. */
 const isStaff = (x: FirebaseFirestore.DocumentData | undefined) => x?.entity === 'server';

@@ -102,7 +102,12 @@ export default async function qaFindingsSuite() {
     need(await call('payments-take', { restaurantId: RID, sessionId: till, billId: bill.billId, paymentId: `qa_qb2_${Date.now()}`, tenderId: 'cash', amount: 3300, tendered: 3300 }), 'take 3300');
     const r = await call('billing-cancel', { restaurantId: RID, sessionId: till, cid: 'qa_qb2_cancel', billId: bill.billId, reason: 'other', pin: PIN });
     const after = await getDoc(`bills/${bill.billId}`);
-    check('BL: a bill with 3300 cash on it cannot be cancelled, and stays issued', !ok(r) && errOf(r).code !== undefined && after?.status === 'issued', { r, status: after?.status, paidTotal: after?.paidTotal }, 'QB-2');
+    check('BL: a bill with 3300 cash on it cannot be cancelled, and stays issued', !ok(r) && errOf(r).code !== undefined && after?.status === 'issued', { r, status: after?.status, paidTotal: after?.paidTotal });
+    check('D3: the refusal names the bill and the money, "₹33 already paid on A-…"', /^₹33 already paid on A-\d{4} — take the rest first$/.test(r.message || ''), r);
+    // D3 / FL R18: the table orders a second naan while the bill is part-paid. The round waits, on the real checkout.
+    for (const id of [NAAN]) need(await call('cart-addItemToCart', { restaurantId: RID, tableId: T(11), menuItemId: id, quantity: 1, sessionId: g }), `add ${id}`);
+    const round = await call('cart-checkoutCart', { restaurantId: RID, tableId: T(11), sessionId: g });
+    check('D3: a round on the part-paid table waits, "A-… is being paid — finish the payment, then add"', !ok(round) && /is being paid — finish the payment, then add$/.test(round.message || ''), round);
   });
 
   // ── QB-1 · P0 ── Table 12: Chicken 65 + Coastal Crab Roast, the ₹100 order offer fires, 88200. The crab is
