@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { setChallenge, type Requires } from '../../api/client'
 
-// QF-14: the box says what the PIN is for in words. Keys are the backend's approval actions (domain/approvals.ts).
+// QF-14: the box says what the PIN is for in words. Keys are every action the backend's PIN gate is called with.
 const FOR: Record<string, string> = {
   discount: 'a discount on this line', billDiscount: 'a discount on the bill', removeOffer: 'removing the offer',
   void: 'voiding an item', reprint: 'a reprint', drawer: 'a drawer entry', cancelBill: 'cancelling the bill',
   creditNote: 'a credit note', estimate: 'an estimate', releaseUnpaid: 'freeing a table that still owes',
+  dayClose: 'closing the day', refund: 'a refund', voidPayment: 'voiding a payment',   // pinGate callers outside the Action list
 }
 
 interface Pending { requires: Requires; detail: Record<string, unknown>; resolve: (v: string | null) => void }
