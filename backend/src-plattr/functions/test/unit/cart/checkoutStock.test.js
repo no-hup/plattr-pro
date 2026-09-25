@@ -23,6 +23,13 @@ describe('checkout stock re-check', () => {
         expect(await validateMenuItemsStock('r1', [item('mi_veg_bir', ['ma_raita', 'ma_prawn'])]))
             .toEqual([{ menuItemId: 'mi_veg_bir', addonId: 'ma_prawn', name: 'Prawn' }]);
     });
+    // TD-140: the manager deleted Butter Naan at 20:10; table 9 still had one in the cart and tapped Proceed at 20:12.
+    // The kitchen got the ticket. A dish that is gone is refused like a sold-out one, named from the line's own copy.
+    test('TD-140 a dish deleted from the menu since it was added → refused, named as no longer on the menu', async () => {
+        const naan = { menuItemId: 'mi_butter_naan', menuItem: { meta: { name: 'Butter Naan' } }, selectedAddonsDetails: [] };
+        expect(await validateMenuItemsStock('r1', [item('mi_veg_bir'), naan]))
+            .toEqual([{ menuItemId: 'mi_butter_naan', name: 'Butter Naan (no longer on the menu)' }]);
+    });
     test('a sold-out dish is still named (unchanged)', async () => {
         expect(await validateMenuItemsStock('r1', [item('mi_coke')])).toEqual([{ menuItemId: 'mi_coke', name: 'Coke' }]);
     });

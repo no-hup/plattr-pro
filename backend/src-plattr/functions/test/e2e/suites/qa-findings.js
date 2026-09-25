@@ -8,7 +8,7 @@
  * a failure the day it passes, so the mark is removed with the fix.
  *
  * Own state: the suite wipes res_meghana's sittings, orders, lines, bills, carts, payments and audit rows,
- * then re-imports MockData7 on top (no --clean, nothing else is touched). Tables 3, 7, 8, 9, 10, 11, 12 only.
+ * then re-imports MockData7 on top (no --clean, nothing else is touched). Tables 2, 3, 7, 8, 9, 10, 11, 12 only.
  *
  * Hand-computed at Meghana (5 % service charge, GST 5 % exclusive, bills round to the rupee):
  *   Butter Naan 6000 → 6000 + 300 SC = 6300 + 2 × 157.5 tax = 6615 → bill 6600 (the QA run's ₹66.00)
@@ -240,5 +240,29 @@ export default async function qaFindingsSuite() {
     check('D5: "Send your 1 dish" sends Bhanu\'s paneer only; Asha\'s stays', JSON.stringify(after) === JSON.stringify([[5, A]]), after);
   });
 
+  // ── TD-140 (QA2-4) ── 20:10 the manager deletes Butter Naan; table 2 already has a naan (Bhanu's) and a Chicken 65
+  // (Asha's) in the cart. "Send all" is refused, naming the naan, and nothing reaches the kitchen. Asha's own send
+  // goes: Chicken 65 28000 + SC 1400 = 29400 + 2 × 735 tax = 30870 → the till previews 30900 (₹309).
+  // Last scene on purpose: the naan stays deleted until the re-import below.
+  await scene('TD-140', async () => {
+    const g = await seat(2);
+    const A = 'dev_qa_td140_asha', B = 'dev_qa_td140_bhanu';
+    const add = (menuItemId, addedBy) => call('cart-addItemToCart', { restaurantId: RID, tableId: T(2), menuItemId, quantity: 1, sessionId: g, addedBy });
+    const send = (addedBy, cartItemIds) => call('cart-checkoutCart', { restaurantId: RID, tableId: T(2), sessionId: g, addedBy, cartItemIds });
+    need(await add('mi_chicken65', A), 'Asha adds Chicken 65');
+    need(await add(NAAN, B), 'Bhanu adds naan');
+    const manager = need(await call('server-serverLogin', { restaurantId: RID, username: 'manager@meg.test', password: '1234' }), 'manager login').sessionId;
+    need(await call('menu-deleteMenuItem', { restaurantId: RID, sessionId: manager, menuItemId: NAAN }), 'manager deletes Butter Naan');
+    const refused = await send(A, [1, 2]);
+    check('TD-140: sending a dish deleted from the menu is refused, naming it',
+      !ok(refused) && refused.message === 'Cannot checkout. The following items are out of stock: Butter Naan (no longer on the menu)', refused);
+    check('TD-140: the refusal wrote nothing: both dishes still in the cart, no order',
+      (await getDoc(`carts/${T(2)}`)).items.length === 2 && !(await listCol('orders')).some(o => o.sessionId === g), null);
+    need(await send(A, [1]), 'Asha sends her Chicken 65');
+    const p = await preview(g);
+    check('TD-140: Asha\'s Chicken 65 still goes, and the till previews 30900 (28000 + SC 1400 + tax 1470 = 30870, rounded)', p.payable === 30900, p);
+  });
+
+  await wipeAndImport();   // puts the naan back for every suite after this one
   return results;
 }

@@ -193,7 +193,12 @@ async function validateMenuItemsStock(restaurantId, cartItems) {
   // Find items that are out of stock
   const outOfStockItems = [];
   menuItemDocs.forEach(doc => {
-    if (doc.exists) {
+    // TD-140: fail closed. A dish deleted since it was added used to pass (only an existing doc was checked) and
+    // reached the kitchen. It is refused like a sold-out dish, named from the line's own copy of the menu item.
+    if (!doc.exists) {
+      const line = cartItems.find(item => item.menuItemId === doc.id);
+      outOfStockItems.push({ menuItemId: doc.id, name: `${line.menuItem?.meta?.name || doc.id} (no longer on the menu)` });
+    } else {
       const menuItem = doc.data();
       if (menuItem && menuItem.isInStock === false) {
         // Find matching cart items
