@@ -300,3 +300,70 @@ describe('createOrUpdateOrder — a round on a sitting whose bill is being paid 
         expect(writes.set.filter(w => w.path.includes('/orders/'))).toHaveLength(1);
     });
 });
+
+// D5 (Shaurya 2026-09-25). Table 8 shares one cart: Asha's pizza ₹500 (#1), Bhanu's beer ₹499 (#2) and the captain's
+// Old Monk ₹180 (#3, staff). Asha's phone shows "Send all 2 for the table" and sends the ids it showed, [1, 2].
+// Exactly those two go (₹999); the captain's drink stays for his own Send. An id the phone showed that is gone, or a
+// dish that is not a guest's, refuses the whole send and writes nothing.
+describe('createOrUpdateOrder — the phone sends the ids it showed (D5)', () => {
+    const table8 = () => {
+        const c = JSON.parse(JSON.stringify(cart));
+        c.items[0].addedBy = 'dev_asha';
+        c.items[1].addedBy = 'dev_bhanu';
+        c.items.push({
+            menuItemId: 'mi_oldmonk', quantity: 1, cartItemId: 3, addedBy: 'staff:captain_1',
+            menuItem: { meta: { name: 'Old Monk' } },
+            priceInfo: { itemBasePrice: 180, itemFinalPrice: 180, totalBasePrice: 180, finalPrice: 180, discount: 0, discountAmount: 0 },
+        });
+        db._seed['restaurants/res_1/carts/t7'] = c;
+        return c;
+    };
+    const send = (ids, addedBy = 'dev_asha') => createOrUpdateOrder('res_1', 't7', table8(), addedBy, '', 'sess_1', null, addedBy, ids);
+    const nothingWritten = () => { expect(writes.set).toHaveLength(0); expect(writes.update).toHaveLength(0); expect(writes.delete).toHaveLength(0); };
+
+    test("send all: both guests' dishes go (₹999), each keeps its owner; the captain's Old Monk stays in the cart", async () => {
+        await send([1, 2]);
+        const [written] = writes.set.filter(w => w.path.includes('/orders/'));
+        expect(written.data.items.map(i => i.menuItemId)).toEqual(['mi_pizza', 'mi_beer']);
+        expect(written.data.priceInfo.finalPrice).toBe(999);
+        expect(written.data.carts[0].items.map(i => i.addedBy)).toEqual(['dev_asha', 'dev_bhanu']);
+        const [left] = writes.update.filter(w => w.path === 'restaurants/res_1/carts/t7');
+        expect(left.data.items.map(i => i.cartItemId)).toEqual([3]);
+        expect(left.data.priceInfo.finalPrice).toBe(180);
+    });
+
+    test('send mine: only [1] goes (₹500); Bhanu\'s beer and the Old Monk stay', async () => {
+        await send([1]);
+        const [written] = writes.set.filter(w => w.path.includes('/orders/'));
+        expect(written.data.items.map(i => i.menuItemId)).toEqual(['mi_pizza']);
+        expect(written.data.priceInfo.finalPrice).toBe(500);
+        const [left] = writes.update.filter(w => w.path === 'restaurants/res_1/carts/t7');
+        expect(left.data.items.map(i => i.cartItemId)).toEqual([2, 3]);
+    });
+
+    test('a dish a friend added after the phone read the cart (#4) is not sent; it stays for the next send', async () => {
+        const c = table8();
+        c.items.push({ ...c.items[1], cartItemId: 4, addedBy: 'dev_chetan', menuItemId: 'mi_coke' });
+        await createOrUpdateOrder('res_1', 't7', c, 'dev_asha', '', 'sess_1', null, 'dev_asha', [1, 2]);
+        const [left] = writes.update.filter(w => w.path === 'restaurants/res_1/carts/t7');
+        expect(left.data.items.map(i => i.cartItemId)).toEqual([3, 4]);
+    });
+
+    test('an id the phone showed that is no longer in the cart is refused, and nothing is written', async () => {
+        await expect(send([1, 2, 9])).rejects.toMatchObject({ message: "Your table's order changed — check the cart and send again" });
+        nothingWritten();
+    });
+
+    test("the captain's dish (staff) is refused from a guest send, and nothing is written", async () => {
+        await expect(send([1, 3])).rejects.toMatchObject({ message: 'Old Monk was added by staff — only guests\' dishes can be sent from here' });
+        nothingWritten();
+    });
+
+    test('an unowned dish is refused too: only a phone-owned dish is a guest\'s', async () => {
+        const c = table8();
+        delete c.items[1].addedBy;
+        await expect(createOrUpdateOrder('res_1', 't7', c, 'dev_asha', '', 'sess_1', null, 'dev_asha', [1, 2]))
+            .rejects.toMatchObject({ message: 'Kingfisher has no owner — ask the waiter to send it' });
+        nothingWritten();
+    });
+});

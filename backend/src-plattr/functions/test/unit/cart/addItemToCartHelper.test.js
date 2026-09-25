@@ -153,3 +153,15 @@ describe('addItemToCartBoilerplateHelper', () => {
         });
     });
 });
+
+// D5: a guest phone sends the cart-item ids it showed. Table 8: Bhanu's naan was #3; he sends it (or removes it),
+// then adds a Coke. If the Coke became #3 again, Asha's stale "Send all [1, 2, 3]" would send it. Ids never repeat
+// within one cart: the cart remembers the last id it gave out.
+describe('getNextCartItemId — ids never repeat within one cart (D5)', () => {
+    test('#3 left the cart; the next dish is #4, not #3 again', () => {
+        expect(helper.getNextCartItemId([{ cartItemId: 1 }, { cartItemId: 2 }], 3)).toBe(4);
+    });
+    test('a new cart starts at #1', () => {
+        expect(helper.getNextCartItemId([], undefined)).toBe(1);
+    });
+});
