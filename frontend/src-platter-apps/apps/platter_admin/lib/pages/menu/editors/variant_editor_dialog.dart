@@ -227,7 +227,7 @@ class _SingleVariantEditorState extends State<_SingleVariantEditor> {
       final created = await widget.provider.createVariant(name: name, isMandatory: _isMandatory, options: rows);
       if (!mounted) return;
       setState(() => _busy = false);
-      if (created == null) return _say(widget.provider.errorMessage ?? 'Could not create the variant');
+      if (created == null) return; // TD-138: RefusalInterceptor shows the refusal.
       Navigator.of(context).pop(created);
       return;
     }
@@ -250,7 +250,7 @@ class _SingleVariantEditorState extends State<_SingleVariantEditor> {
     );
     if (!mounted) return;
     setState(() => _busy = false);
-    if (record == null) return _say(widget.provider.errorMessage ?? 'Could not save the portion');
+    if (record == null) return; // TD-138: RefusalInterceptor shows the refusal.
     Navigator.of(context).pop(Variant.fromJson(record));
   }
 

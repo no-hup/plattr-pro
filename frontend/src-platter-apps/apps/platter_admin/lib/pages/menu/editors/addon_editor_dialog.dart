@@ -135,10 +135,7 @@ class _AddonEditorDialogState extends State<AddonEditorDialog> {
     );
     if (!mounted) return;
     setState(() => _busy = false);
-    if (record == null) {
-      _say(widget.provider.errorMessage ?? 'Could not save the add-on');
-      return;
-    }
+    if (record == null) return; // TD-138: RefusalInterceptor shows the refusal.
     final saved = Addon.fromJson(record);
     _replace(addon.id, saved);
     if (scope == 'only') {
@@ -154,10 +151,7 @@ class _AddonEditorDialogState extends State<AddonEditorDialog> {
     final ok = await widget.provider.setAddonStock(addon.id, inStock);
     if (!mounted) return;
     setState(() => _busy = false);
-    if (!ok) {
-      _say(widget.provider.errorMessage ?? 'Could not switch the add-on');
-      return;
-    }
+    if (!ok) return; // TD-138: RefusalInterceptor shows the refusal.
     _replace(
         addon.id,
         Addon(
@@ -192,7 +186,7 @@ class _AddonEditorDialogState extends State<AddonEditorDialog> {
         _newPrice.clear();
       }
     });
-    if (addon == null) _say(widget.provider.errorMessage ?? 'Could not create the add-on');
+    // TD-138: RefusalInterceptor shows the refusal.
   }
 
   void _done() {

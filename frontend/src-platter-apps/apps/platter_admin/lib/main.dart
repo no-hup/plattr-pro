@@ -7,6 +7,10 @@ import 'theme/app_theme.dart';
 import 'pages/auth/login_screen.dart';
 import 'pages/auth/login_provider.dart';
 import 'pages/home/home_screen.dart';
+import 'network/refusal_interceptor.dart';
+
+final navigatorKey = GlobalKey<NavigatorState>();
+final messengerKey = GlobalKey<ScaffoldMessengerState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +23,9 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // TD-138: every refused call says why, once, for every screen.
+  DioClient().dio.interceptors.add(RefusalInterceptor(messengerKey, navigatorKey));
+
   runApp(const AdminApp());
 }
 
@@ -29,6 +36,8 @@ class AdminApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Admin Plattr',
+      navigatorKey: navigatorKey,
+      scaffoldMessengerKey: messengerKey,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
