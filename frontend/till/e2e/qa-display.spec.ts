@@ -62,3 +62,18 @@ test('QF-8 FL-S20: a billed table that ordered dessert reads "₹66.00 due · �
   await expect(page.getByTestId('tile-10')).toContainText('₹66.00 due · ₹60.00 new')
 })
 
+
+test('QF-10 FL-S15: a floor gone stale is greyed, not just captioned', async ({ page }) => {
+  let down = false
+  await page.clock.install()
+  await fake(page, { 'floor-get': () => (down ? refuse(503, 'No connection', {}) : floorOf([tile('3', { word: 'ordered', onTable: 5000, minutes: 5 })])) })
+  await login(page)
+  await expect(page.getByTestId('tile-3')).toBeVisible()
+  const opacity = () => page.getByTestId('tiles').evaluate(u => Number(getComputedStyle(u).opacity))
+  expect(await opacity()).toBe(1)
+  down = true
+  await page.clock.fastForward(25_000)
+  await expect(page.getByTestId('floor-stale')).toBeVisible()
+  expect(await opacity()).toBeLessThan(1)
+})
+

@@ -8,3 +8,6 @@ body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; }
   background: #1f2937; color: #fff;
 }
 .says.bad:not(:empty) { background: #b91c1c; }
+
+/* QF-10 / FL-S15: a floor that stopped answering is greyed, not only captioned. */
+.stale { opacity: .45; filter: grayscale(1); }
