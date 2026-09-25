@@ -195,6 +195,7 @@ Each one cost a run time or produced a false finding.
   numbered 7, 12 and 19 in `res_e2e_all_on`. Re-seed `--clean` between them.
 - **`journey.mjs` closes the business day** at the end, and later payments that day are refused.
   Re-seed after it.
+- **Memory is never a reason to stop a run** (Shaurya, 2026-09-25). Two runs sat blocked on a Chrome-memory check; it was removed. Report the numbers if the machine is slow, then carry on.
 - **Other sessions share the source tree.** Take your own emulator slot (`EMU_SLOT`); slot 0 is
   usually someone else's. The till follows it only if started with `VITE_FUNCTIONS_URL` pointing at
   your slot (FRONTEND_TESTING §3); otherwise it quietly reads slot 0. Take the ports from `EMU_SLOT=n ./emu.sh env`,

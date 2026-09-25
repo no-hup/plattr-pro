@@ -43,9 +43,10 @@ Each rule below is a specific incident:
   (it disables the 30-minute idle exit; the daemon then lives until its parent dies). Never
   the CDP Chrome on `:9222` (`custom-browser-agent`): a second real Chrome with no idle exit,
   no stop command, no Flutter affordances.
-- **`ab preflight` before `ab open`.** It refuses if personal Chrome is above 4 GB, free
-  memory is under 2 GB, the emulator or the app port is down, or a headed daemon exists,
-  and prints the numbers either way. When it refuses, close things; do not bypass it.
+- **`ab preflight` before `ab open`.** It refuses if the emulator or the app port is down, or a
+  headed daemon exists. It prints free memory and personal Chrome's size but never refuses on them:
+  **memory is never a reason to stop a run** (Shaurya, 2026-09-25, after two runs sat blocked on it).
+  Keep the other rules in this section; they are what keeps the machine up.
 - **`ab stop` when the task ends.** A parked daemon on a Flutter page is what froze the
   machine. The 5-minute idle timeout is a backstop, not the plan.
 - **`-d web-server`, never `-d chrome`.** `flutter run -d chrome` spawns a whole second
@@ -229,7 +230,6 @@ Never report from memory of an earlier snapshot; never report a failure without
 - **A Flutter list's `flt-semantics-identifier` can go stale** when a poll or a tab switch reorders the cards: `order-cart-<id>` then sits on another table's card, or on two cards. Reload the page before clicking by a card id, and confirm which card was hit from the emulator log (waiter run, 2026-09-25).
 - **Two agents, one emulator:** whoever runs `--clean` wipes the other's sessions, and it
   looks like a session bug. One live runner at a time.
-- **Measure Chrome's memory with `bash`, never the agent's zsh tool shell.** There `ps -o rss= -p <pids>` lists about half of Chrome's pids and reads ~2 GB low (2.1 vs 4.8 GB), so an observer 'unblocked' a driver twice while `ab preflight` (bash) rightly refused. Trust preflight's number (2026-09-25).
 
 ## 9. When it breaks
 
