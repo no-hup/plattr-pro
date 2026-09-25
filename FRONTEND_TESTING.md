@@ -220,6 +220,8 @@ Never report from memory of an earlier snapshot; never report a failure without
 - **`fill` on an unfocused Flutter textbox silently no-ops.** Click first (`ab fill` does).
 - Some dialog buttons ignore `.click()`: dispatch `pointerdown`→`mousedown`→`pointerup`→`mouseup`→`click` at the element centre via `$B js`.
 - `$B eval <file>` is unreliable about which page it targets; prefer `$B js`.
+- **A Flutter text field's DOM `input.value` reads empty until the field is focused**, even when the app prefilled it (debug consumer OTP). Don't report "not prefilled" from `input.value`.
+- **Under `-d web-server` the app log (`flutter-app-logs/<app>.log`) holds build output only**; runtime errors and assertions appear only in `$B console --errors`.
 - A `web/index.html` edit needs no rebuild; **any Dart edit needs the app restarted**, a
   running `flutter run` serves the old bundle (`ab ids` empty on a rendered page is this).
 - **Two agents, one emulator:** whoever runs `--clean` wipes the other's sessions, and it
