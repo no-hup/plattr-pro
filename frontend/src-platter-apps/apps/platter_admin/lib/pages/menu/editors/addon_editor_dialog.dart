@@ -80,7 +80,7 @@ class _AddonEditorDialogState extends State<AddonEditorDialog> {
     _addons = [...widget.addons];
     widget.provider.sharedUsage().then((u) {
       if (!mounted) return;
-      if (u == null) return _say('Could not count the dishes using these add-ons. Close and open again to edit them.');
+      if (u == null) return;   // the refusal interceptor (TD-138) has already shown why
       setState(() => _usedBy = u.addons);
     });
   }

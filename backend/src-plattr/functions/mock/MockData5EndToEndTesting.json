@@ -786,7 +786,9 @@
             "cart_served_1",
             "cart_pending_1"
           ],
-          "totalAmount": 1780,
+          "priceInfo": {
+            "finalPrice": 1780
+          },
           "createdAt": {
             "_seconds": 1738200300,
             "_nanoseconds": 0

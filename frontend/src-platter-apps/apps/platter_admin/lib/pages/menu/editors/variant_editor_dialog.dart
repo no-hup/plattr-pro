@@ -36,11 +36,7 @@ class _VariantEditorDialogState extends State<VariantEditorDialog> {
     _variants = [...widget.variants];
     widget.provider.sharedUsage().then((u) {
       if (!mounted) return;
-      if (u == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Could not count the dishes using these portions. Close and open again to edit them.')));
-        return;
-      }
+      if (u == null) return;   // the refusal interceptor (TD-138) has already shown why
       setState(() => _usedBy = u.variants);
     });
   }

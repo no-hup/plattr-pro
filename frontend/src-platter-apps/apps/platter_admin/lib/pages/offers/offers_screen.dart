@@ -258,13 +258,16 @@ class _OfferCard extends StatelessWidget {
                   value: offer.isActive,
                   onChanged: onToggleActive,
                 ),
-                Text(
-                  offer.isActive ? 'Active' : 'Inactive',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: offer.isActive ? Colors.green : Colors.grey,
-                  ),
-                ),
+                Builder(builder: (context) {
+                  final status = offer.statusAt(DateTime.now());   // TD-144
+                  return Text(
+                    status,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: status == 'Running' ? Colors.green : Colors.grey,
+                    ),
+                  );
+                }),
               ],
             ),
             const SizedBox(width: 4),

@@ -281,7 +281,7 @@ class _TableCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      _getStatusText(),
+                      table.label,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -289,7 +289,7 @@ class _TableCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (!table.isOccupied)
+                  if (table.canSwitch)
                     Switch(
                       value: !table.isDisabled,
                       onChanged: onToggle,
@@ -336,13 +336,8 @@ class _TableCard extends StatelessWidget {
   Color _getStatusColor() {
     if (table.isDisabled) return Colors.grey;
     if (table.isOccupied) return Colors.orange;
+    if (table.isReserved) return Colors.blue;
     return Colors.green;
-  }
-
-  String _getStatusText() {
-    if (table.isDisabled) return 'DISABLED';
-    if (table.isOccupied) return 'OCCUPIED';
-    return 'AVAILABLE';
   }
 }
 

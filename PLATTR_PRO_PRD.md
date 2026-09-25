@@ -166,8 +166,10 @@ The backend maintains shared data objects (restaurants, tables, sessions, menus,
 - Staff management: create/update servers and assignments.
 - **Roles are the owner's to give** (TD-139, 2026-09-26). The cashier's till@ login is a Manager; he opens his own card
   and the Role field is greyed out, "Nobody can change their own role". A manager can move Server Two to the kitchen,
-  but only the owner makes someone a Manager or an Admin. Every role given is an audit row naming who did it.
-  *Without this the person the owner-only rules control can make himself the owner, and nothing records it.*
+  but only the owner makes someone a Manager or an Admin. Only the owner touches an owner's or a manager's card at all
+  (TD-147): the till@ login can't reset the owner's PIN, change his email or switch him off, and a manager's own card is
+  the owner's to change. Every change to a card is an audit row naming who did it.
+  *Without this the person the owner-only rules control can make himself the owner, or take the owner's PIN, and nothing records it.*
 - **A refused save says so** (TD-138, 2026-09-26). At 21:00 the manager's morning login has expired; she flips Butter
   Naan off. "Session Expired" shows and she is sent to log in; any other refusal shows the server's own words. *Without
   this the switch stays on in silence, she believes the naan is off, and guests keep ordering it.*

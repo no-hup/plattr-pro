@@ -8,7 +8,7 @@
  * a failure the day it passes, so the mark is removed with the fix.
  *
  * Own state: the suite wipes res_meghana's sittings, orders, lines, bills, carts, payments and audit rows,
- * then re-imports MockData7 on top (no --clean, nothing else is touched). Tables 2, 3, 7, 8, 9, 10, 11, 12 only.
+ * then re-imports MockData7 on top (no --clean, nothing else is touched). Tables 1 and 4 (read only), 2, 3, 7, 8, 9, 10, 11, 12 only.
  *
  * Hand-computed at Meghana (5 % service charge, GST 5 % exclusive, bills round to the rupee):
  *   Butter Naan 6000 → 6000 + 300 SC = 6300 + 2 × 157.5 tax = 6615 → bill 6600 (the QA run's ₹66.00)
@@ -258,9 +258,27 @@ export default async function qaFindingsSuite() {
       !ok(refused) && refused.message === 'Cannot checkout. The following items are out of stock: Butter Naan (no longer on the menu)', refused);
     check('TD-140: the refusal wrote nothing: both dishes still in the cart, no order',
       (await getDoc(`carts/${T(2)}`)).items.length === 2 && !(await listCol('orders')).some(o => o.sessionId === g), null);
-    need(await send(A, [1]), 'Asha sends her Chicken 65');
+    const sent = need(await send(A, [1]), 'Asha sends her Chicken 65');
     const p = await preview(g);
     check('TD-140: Asha\'s Chicken 65 still goes, and the till previews 30900 (28000 + SC 1400 + tax 1470 = 30870, rounded)', p.payable === 30900, p);
+    // TD-142 (QA2-6): the admin order detail showed ₹0. It now shows the list card's number, the order's own total:
+    // ₹280, the food after offers, before service charge and GST (the bill is the ₹309 above).
+    const detail = need(await call('admin-getOrderDetails', { restaurantId: RID, sessionId: manager, orderId: sent.orderId }), 'order detail');
+    const list = need(await call('admin-getHistoricalOrders', { restaurantId: RID, sessionId: manager }), 'order list');
+    const card = list.orders.find(o => o.id === sent.orderId);
+    check('TD-142: the order detail total is 280, the same as its list card', detail.order.totalAmount === 280 && card?.totalAmount === 280, { detail: detail.order.totalAmount, card });
+  });
+
+  // ── TD-143 (QA2-7) ── table 4 is held for an 8 pm booking. The manager tidies Operations by switching it off: refused,
+  // naming the table, and the booking stays. (It used to go reserved → disabled → vacant, and a walk-in got it.)
+  await scene('TD-143', async () => {
+    const manager = need(await call('server-serverLogin', { restaurantId: RID, username: 'manager@meg.test', password: '1234' }), 'manager login').sessionId;
+    const r = await call('admin-updateTableStatus', { restaurantId: RID, sessionId: manager, tableId: T(4), status: 'disabled' });
+    check('TD-143: switching a reserved table off is refused, naming it', !ok(r) && /Table 4 is reserved/.test(r.message || ''), r);
+    check('TD-143: the booking stays', (await getDoc(`tables/${T(4)}`)).status === 'reserved', null);
+    const busy = await call('admin-updateTableStatus', { restaurantId: RID, sessionId: manager, tableId: T(1), status: 'vacant' });
+    check('TD-143: writing vacant over occupied table 1 is refused too, and its sitting stays',
+      !ok(busy) && /Table 1 is occupied/.test(busy.message || '') && (await getDoc(`tables/${T(1)}`)).status === 'active', busy);
   });
 
   await wipeAndImport();   // puts the naan back for every suite after this one

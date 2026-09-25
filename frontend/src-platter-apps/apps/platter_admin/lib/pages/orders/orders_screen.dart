@@ -442,7 +442,7 @@ class _OrderDetailsView extends StatelessWidget {
                     ),
                     if (order.createdAt != null)
                       Text(
-                        dateFormat.format(DateTime.parse(order.createdAt!)),
+                        dateFormat.format(localTime(order.createdAt)!),
                         style: TextStyle(color: Colors.grey.shade600),
                       ),
                   ],
@@ -505,10 +505,10 @@ class _CartCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('h:mm a');
     final submittedTime = cart.submittedAt != null
-        ? dateFormat.format(DateTime.parse(cart.submittedAt!))
+        ? dateFormat.format(localTime(cart.submittedAt)!)
         : null;
     final servedTime = cart.servedAt != null
-        ? dateFormat.format(DateTime.parse(cart.servedAt!))
+        ? dateFormat.format(localTime(cart.servedAt)!)
         : null;
 
     return Card(
