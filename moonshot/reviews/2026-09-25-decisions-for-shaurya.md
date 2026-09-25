@@ -2,7 +2,7 @@
 
 **Every open question from the QA runs (till floor, bill, tender, day close, groups + parcels; the waiter, kitchen,
 guest and admin apps), the bill-change requests and the agents, in one place.** Duplicates are merged: each question
-lists the old numbers and TD rows it absorbed. The bugs are TD-061..120 in [TECH_DEBT.md](../TECH_DEBT.md); the run
+lists the old numbers and TD rows it absorbed. The bugs are TD-061..131 in [TECH_DEBT.md](../TECH_DEBT.md); the run
 reports hold the evidence. Answers given on 2026-09-25 are marked **Decided**; the fixer writes each into the right
 spec sheet's Decisions table before fixing.
 
@@ -14,6 +14,8 @@ spec sheet's Decisions table before fixing.
   close shows "₹660 walked out" on its own line, not inside comps. The bill number is not cancelled.
 - *For the fixer.* This replaces FL R14 ("free only when nothing is owed") for the walk-out case. A part-paid table
   that walks out writes off only the unpaid part.
+- *Unbilled food (asked 2026-09-25).* A walk-out on food never billed issues the numbered bill itself (no paper) and
+  marks it walked out at once, so every walk-out is one numbered bill at what the guest would have paid.
 
 **D2. One "Edit bill" button on the till; waiters get no bill powers.** · TD-065 (P0), TD-066, TD-097, TD-120, FR-1,
 FR-5, FR-7 · QB-1, QB-3, QB-6, QB-10 (was #3, #5, #6, #19, #20, #25)
@@ -33,6 +35,8 @@ FR-5, FR-7 · QB-1, QB-3, QB-6, QB-10 (was #3, #5, #6, #19, #20, #25)
   all of them.
 - *Paid table.* A paid table takes no new rounds and no new guest until Clear ("table 12 has paid — clear it first").
   Merging a free table into a table with a printed, unpaid bill is refused.
+- *Paid vs printed (asked 2026-09-25).* Printed but not paid: new dishes go onto the same bill through Edit. Fully
+  paid: the table is cleared and opened again (new sitting, new bill) for the late coffees. Don't mix the two.
 - *Waiter app.* No bill editing (side deals). This keeps the change to the till only.
 
 **D3. "Edit bill" is refused once any money is on the bill.** · TD-062 (P0) · QB-2 (was #2)
@@ -40,6 +44,9 @@ FR-5, FR-7 · QB-1, QB-3, QB-6, QB-10 (was #3, #5, #6, #19, #20, #25)
   bill is normal and already works: the bill stays `part-paid` until the last payment settles it.
 - *Decided.* Edit and Cancel are refused while any payment is on the bill: "₹500 already paid on A-0004 — take the
   rest first". If the table then leaves without paying the rest, that's a walk-out of the unpaid part (D1).
+- *A new round during payment (asked 2026-09-25).* Part-paid is only the seconds between two payments on one bill.
+  A new round then waits: "A-0004 is being paid — finish the payment, then add". If the dessert must go on that bill,
+  the cashier voids the payment (existing, recorded), edits, and takes it again. No automatic carrying of payments.
 
 **D4. The waiter app's Cancel Order.** · TD-089 (P0), TD-092
 - *Scene.* 20:10, a guest changes their mind about a Butter Naan.
@@ -50,12 +57,21 @@ FR-5, FR-7 · QB-1, QB-3, QB-6, QB-10 (was #3, #5, #6, #19, #20, #25)
 - *For the fixer.* This relaxes ST-S5 ("voiding a line the kitchen started needs a PIN") for the waiter app. Record
   it in ST's Decisions. Mark Paid wasn't discussed; default: removed from the waiter app, because the till owns
   payment (TD-010).
+- *One dish, not the whole round (asked 2026-09-25).* The waiter app gets a per-dish cancel on a sent round (same
+  `voidCartLines` path, one line). Removing a dish still in the cart before sending already exists
+  (`cart-removeItemFromCart`); after sending, today only a whole round can be cancelled.
 
 **D5. The guest's shared cart asks what to send.** · TD-119 · QG-2
 - *Found.* Each dish records who added it (`addedBy`), and on 2026-09-16 you decided each phone sends only its own.
   The bug is the screen: "To Pay ₹340" is the whole table, while Proceed sends only this phone's ₹60.
 - *Decided.* The cart shows "Your dishes ₹60 · Table ₹340". Proceed asks "Send your 1 dish" or "Send all 3 for the
   table". Checkout already sends the whole cart when no `addedBy` is given, so this is mostly a screen change.
+- *Refined after the code trace (2026-09-25).* "Send all" means **every guest's dishes, never the waiter's or the
+  till's** (their own Send must keep working). The phone sends the list of dishes it showed, and the backend sends
+  exactly those, like the existing `addedBy` filter; a dish a friend added in the meantime stays in the cart for next
+  time. No refusal, no extra tap. Note from the trace: the guest app overwrites `addedBy` on every checkout
+  (`dio_client.dart:191`), and a checkout with no `addedBy` records the order as placed by "system" and sweeps in staff
+  dishes, so don't reuse that branch.
 
 **D6. Admin edits to add-ons and portions apply everywhere.** · TD-106 (P0), TD-107 (P0), TD-110
 - *Found.* Pricing and stock already read the shared add-on and portion records (`restaurants/{id}/addons`,
@@ -67,8 +83,26 @@ FR-5, FR-7 · QB-1, QB-3, QB-6, QB-10 (was #3, #5, #6, #19, #20, #25)
   "Raita is on 6 dishes — this changes all 6". Out of stock is respected everywhere, guest app first. If a dish
   shouldn't offer an add-on, the manager removes it from that dish (disassociate). The dish editor saves only the
   fields it changed and add-ons as ids (fixes TD-106 and TD-110).
+- *Blanket or one dish (asked 2026-09-25, decided from the construct).* Add-ons and portions are shared records that
+  dishes link to by id, and pricing reads the shared record. So an edit applies to every linked dish by default; when
+  the record is shared, the editor also offers "only this dish", which copies it into a new record and relinks that
+  dish. Pricing code stays untouched.
+- *Add-on stock (asked 2026-09-25).* The admin app and the waiter app's existing stock screen can both switch an
+  add-on off, on the same shared record.
 - *For the fixer.* One new admin endpoint for the shared add-on and portion records; pricing code untouched.
   `menu/creation/variant.js` looks dead: confirm no caller, then delete it.
+  The trace confirmed it, `menu_add.js` and `menu_remove.js` are dead (their `require` paths don't exist): delete all three.
+
+**D7. Partner payments (Dineout, EazyDiner, Swiggy Dineout) are payment methods with a reference.** (asked 2026-09-25)
+- *Scene.* The guest pays through Dineout; the restaurant confirms it later from a screenshot.
+- *Decided.* Add each partner as an `external` method in the restaurant's `payments.tenders[]` config with `needsRef`;
+  the cashier picks it and types the reference. Checking the partner's settlement stays manual. Config only, no code;
+  day close totals each method, which makes the next-day check easy.
+
+**Everything else from the [impact review](2026-09-25-decisions-impact.md)** takes its recommended default: Q1-2, Q1-3
+(a guest who comes back pays on the walked-out bill), Q1-4, Q2-2..Q2-5 (Edit ships without a PIN; TD-005, the report
+that reads audit rows, goes on the pickup list before any real outlet), Q4-1, Q4-2, Q6-2 (price fixed when added to
+the cart), Q6-3.
 
 ## Must decide (a fix is waiting on each)
 
@@ -156,7 +190,7 @@ FR-5, FR-7 · QB-1, QB-3, QB-6, QB-10 (was #3, #5, #6, #19, #20, #25)
 
 ```
 Resume the QA fixes. Read moonshot/STATE.md (pickup list, "QA runs 2026-09-25" line),
-moonshot/reviews/2026-09-25-decisions-for-shaurya.md (D1–D6 decided, the rest answered inline), and TECH_DEBT TD-061..120.
+moonshot/reviews/2026-09-25-decisions-for-shaurya.md (D1–D6 decided, the rest answered inline), and TECH_DEBT TD-061..131.
 1. Write each decision into the right spec sheet's Decisions table (FL, BL, PY, ST, DC, OR) and propose any
    STATE.md decision diff to me.
 2. Fix in this order, one commit each, red test first (most already exist, marked known bug: drop the mark):
