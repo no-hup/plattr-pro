@@ -7,6 +7,8 @@ class StaffProvider extends ChangeNotifier {
   final StaffApiService _apiService;
   final String restaurantId;
   final String sessionId;
+  final String callerId;
+  final String callerRole;
 
   DataState _state = DataState.initial;
   String? _errorMessage;
@@ -16,6 +18,8 @@ class StaffProvider extends ChangeNotifier {
     required StaffApiService apiService,
     required this.restaurantId,
     required this.sessionId,
+    required this.callerId,
+    required this.callerRole,
   }) : _apiService = apiService;
 
   DataState get state => _state;

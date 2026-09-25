@@ -21,6 +21,7 @@ Roles are the existing ones in `adminApp/auth.js`: ADMIN, MANAGER, SERVER, KITCH
 | Cancel an issued bill with no money on it | – | PIN (P0) | PIN (P0) |
 | Open drawer with no sale | – | PIN | PIN |
 | Change the limits | – | – | ✓ (config doc) |
+| Give or take a role (TD-139, 2026-09-26) | – | Server ↔ Kitchen only, never their own (audit P1) | ✓, never their own (audit P1) |
 
 ## Scenarios
 
@@ -90,6 +91,7 @@ Same shape for `requires: 'otp'` or `'password'` later. Nothing per screen.
 | Date | Decision | Why |
 |---|---|---|
 | 2026-09-15 | No cashier role. Till logs in as MANAGER or ADMIN | Reuse existing roles; a seat is not a role |
+| 2026-09-26 | Only ADMIN gives or takes ADMIN or MANAGER; nobody changes their own role; every role given is an audit row (TD-139, Shaurya) | till@ is a MANAGER and could make itself ADMIN, defeating every owner-only rule above |
 | 2026-09-15 | Over-limit PIN is the acting account's own PIN, not a second person's | Shaurya's call; one till, one person. Upgrade path: `approvals.requireDifferentApprover` key, no schema change |
 | 2026-09-15 | All approvals happen at the till. Captain devices cannot request remote approval | One audit path, one screen to get right. Revisit after go-live |
 | 2026-09-15 | Severity is two-valued: P1 under limit, P0 over / void / drawer | Enough for the weekly report; more levels add nothing |

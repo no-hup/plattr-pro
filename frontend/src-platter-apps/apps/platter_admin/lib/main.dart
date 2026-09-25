@@ -90,6 +90,8 @@ class _AuthWrapperState extends State<_AuthWrapper> {
         sessionId: _sessionData!.sessionId,
         restaurantName: _sessionData!.restaurantName,
         staffName: _sessionData!.name,
+        staffId: _sessionData!.staffId,
+        role: _sessionData!.role,
       );
     }
 

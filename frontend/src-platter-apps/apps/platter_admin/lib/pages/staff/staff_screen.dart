@@ -8,11 +8,15 @@ import 'staff_provider.dart';
 class StaffScreen extends StatelessWidget {
   final String restaurantId;
   final String sessionId;
+  final String staffId;
+  final String role;
 
   const StaffScreen({
     super.key,
     required this.restaurantId,
     required this.sessionId,
+    required this.staffId,
+    required this.role,
   });
 
   @override
@@ -22,6 +26,8 @@ class StaffScreen extends StatelessWidget {
         apiService: StaffApiService(),
         restaurantId: restaurantId,
         sessionId: sessionId,
+        callerId: staffId,
+        callerRole: role,
       )..loadStaff(),
       child: const _StaffView(),
     );
@@ -136,7 +142,8 @@ class _StaffView extends StatelessWidget {
       BuildContext context, StaffProvider provider) async {
     final result = await showDialog<_StaffFormResult>(
       context: context,
-      builder: (context) => const _StaffEditorDialog(),
+      builder: (context) => _StaffEditorDialog(
+          roles: ServerRoles.assignable(callerRole: provider.callerRole, callerId: provider.callerId)),
     );
 
     if (result == null) return;
@@ -158,7 +165,11 @@ class _StaffView extends StatelessWidget {
       BuildContext context, StaffProvider provider, StaffMember staff) async {
     final result = await showDialog<_StaffFormResult>(
       context: context,
-      builder: (context) => _StaffEditorDialog(staff: staff),
+      builder: (context) => _StaffEditorDialog(
+        staff: staff,
+        roles: ServerRoles.assignable(callerRole: provider.callerRole, callerId: provider.callerId, target: staff),
+        fixedReason: ServerRoles.fixedReason(callerId: provider.callerId, target: staff),
+      ),
     );
 
     if (result == null) return;
@@ -168,7 +179,7 @@ class _StaffView extends StatelessWidget {
       name: result.name,
       phoneNumber: result.phoneNumber,
       email: result.email,
-      role: result.role,
+      role: result.role == staff.role ? null : result.role,   // only a real change is sent (and audited)
     );
   }
 
@@ -436,8 +447,11 @@ class _StaffFormResult {
 
 class _StaffEditorDialog extends StatefulWidget {
   final StaffMember? staff;
+  /// TD-139: what this caller may pick. Empty means the role is shown greyed out with [fixedReason].
+  final List<String> roles;
+  final String? fixedReason;
 
-  const _StaffEditorDialog({this.staff});
+  const _StaffEditorDialog({this.staff, required this.roles, this.fixedReason});
 
   @override
   State<_StaffEditorDialog> createState() => _StaffEditorDialogState();
@@ -456,7 +470,7 @@ class _StaffEditorDialogState extends State<_StaffEditorDialog> {
     _phoneController =
         TextEditingController(text: widget.staff?.phoneNumber ?? '');
     _emailController = TextEditingController(text: widget.staff?.email ?? '');
-    _selectedRole = widget.staff?.role ?? 'SERVER';
+    _selectedRole = widget.staff?.role ?? ServerRoles.server;
   }
 
   @override
@@ -505,22 +519,27 @@ class _StaffEditorDialogState extends State<_StaffEditorDialog> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
+              key: const Key('staff-role'),
               value: _selectedRole,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Role *',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
+                helperText: widget.roles.isEmpty ? widget.fixedReason : null,
               ),
-              items: ServerRoles.all
+              // A fixed role still shows what it is; it just can't be opened.
+              items: (widget.roles.isEmpty ? [_selectedRole] : widget.roles)
                   .map((role) => DropdownMenuItem(
                         value: role,
                         child: Text(ServerRoles.displayName(role)),
                       ))
                   .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => _selectedRole = value);
-                }
-              },
+              onChanged: widget.roles.isEmpty
+                  ? null
+                  : (value) {
+                      if (value != null) {
+                        setState(() => _selectedRole = value);
+                      }
+                    },
             ),
           ],
         ),

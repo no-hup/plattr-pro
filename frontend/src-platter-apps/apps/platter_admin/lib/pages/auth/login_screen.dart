@@ -32,6 +32,8 @@ class _LoginScreenContent extends StatelessWidget {
             sessionId: loginData.sessionId,
             restaurantName: loginData.restaurantName,
             staffName: loginData.name,
+            staffId: loginData.staffId,
+            role: loginData.role,
           ),
         ),
       );
