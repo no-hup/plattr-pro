@@ -226,6 +226,7 @@ Never report from memory of an earlier snapshot; never report a failure without
   running `flutter run` serves the old bundle (`ab ids` empty on a rendered page is this).
 - **`ab open consumer '#/r/…'` can drop the hash on a cold first load** and land on the dev home page ("QR: 10 …"). Set it with `$B js "location.hash='#/r/res_meghana/t/tbl_meg_7'"`, as `ab seed-consumer` does.
 - **`ab stop` can print "Server crashed twice in a row — aborting" and leave a new daemon behind on `about:blank`.** After it, run `pgrep -fl 'ms-playwright|browse/src/server.ts'` and kill the `server.ts` pid that is yours.
+- **A Flutter list's `flt-semantics-identifier` can go stale** when a poll or a tab switch reorders the cards: `order-cart-<id>` then sits on another table's card, or on two cards. Reload the page before clicking by a card id, and confirm which card was hit from the emulator log (waiter run, 2026-09-25).
 - **Two agents, one emulator:** whoever runs `--clean` wipes the other's sessions, and it
   looks like a session bug. One live runner at a time.
 
