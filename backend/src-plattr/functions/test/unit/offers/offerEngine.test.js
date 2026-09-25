@@ -14,6 +14,7 @@ const { validateOfferApplication } = require('../../../offers/offerEngine');
 const offer = {
     id: 'off_second_order',
     isActive: true,
+    validity: { startDate: '2020-01-01T00:00:00.000+05:30', endDate: '2099-12-31T23:59:59.999+05:30' },
     type: 'PERCENTAGE',
     scope: 'ORDER',
     benefit: { value: 10 },

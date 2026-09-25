@@ -8,6 +8,13 @@
 const { getStrategy, isSupported } = require('./strategies');
 const { FULFILLMENT_STATUS } = require('../orders/orderConstants');
 
+/** Milliseconds for an ISO date-time that names its zone ("Z" or "+05:30"); null for anything else. */
+function instant(iso) {
+    if (typeof iso !== 'string' || !/(Z|[+-]\d\d:\d\d)$/.test(iso)) return null;
+    const ms = Date.parse(iso);
+    return Number.isNaN(ms) ? null : ms;
+}
+
 /**
  * Validates if an offer can be applied to the cart
  * @param {Object} offer - The offer document
@@ -32,14 +39,21 @@ function validateOfferApplication(offer, cart, sessionData = {}) {
         return { isValid: false, reason: 'Offer is no longer active', potentialSaving: 0 };
     }
 
-    const now = new Date();
-    if (offer.validity) {
-        if (offer.validity.startDate && new Date(offer.validity.startDate) > now) {
-            return { isValid: false, reason: 'Offer not yet active', potentialSaving: 0 };
-        }
-        if (offer.validity.endDate && new Date(offer.validity.endDate) < now) {
-            return { isValid: false, reason: 'Offer has expired', potentialSaving: 0 };
-        }
+    // DECISION(A26, 2026-09-26): an offer date is a whole day in the restaurant's clock; the admin write
+    // (adminApp/offers_admin.js offerWindow) stores 00:00 of the first day to 23:59:59.999 of the last, zone written
+    // in. A date with no zone could be read two ways, and a missing one has no end: both fail closed.
+    // If you change this, ask Shaurya first.
+    const start = instant(offer.validity?.startDate);
+    const end = instant(offer.validity?.endDate);
+    if (start === null || end === null) {
+        return { isValid: false, reason: 'Offer dates are unreadable', potentialSaving: 0 };
+    }
+    const now = Date.now();
+    if (start > now) {
+        return { isValid: false, reason: 'Offer not yet active', potentialSaving: 0 };
+    }
+    if (end < now) {
+        return { isValid: false, reason: 'Offer has expired', potentialSaving: 0 };
     }
 
     // 3. Minimum Order Value (pre-discount total)

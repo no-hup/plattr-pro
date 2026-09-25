@@ -318,12 +318,14 @@ const cartItem = (menuItemId, base, final, qty = 1, extra = {}) => ({
   ...extra,
 });
 
+// Every real offer has both dates (admin requires them; the engine fails closed without). A26, 2026-09-26.
+const ALWAYS = { startDate: '2020-01-01T00:00:00.000+05:30', endDate: '2099-12-31T23:59:59.999+05:30' };
 const offer = (o) => ({
   id: o.id || 'off_1', title: o.title || 'Test offer',
   type: o.type, scope: o.scope, isActive: o.isActive !== false,
   targetIds: o.targetIds || [], exclusionIds: o.exclusionIds || [],
   benefit: o.benefit || {}, conditions: o.conditions || {},
-  validity: o.validity, priority: o.priority,
+  validity: o.validity || ALWAYS, priority: o.priority,
 });
 
 describe('offer engine — type × scope × cap × exclusion matrix', () => {
@@ -431,8 +433,8 @@ describe('offer engine — type × scope × cap × exclusion matrix', () => {
     const future = new Date(Date.now() + 864e5).toISOString();
     const mk = (o) => offer({ type: 'FLAT', scope: 'ORDER', benefit: { value: 50 }, ...o });
     expect(validateOfferApplication(mk({ isActive: false }), CART, {}).isValid).toBe(false);
-    expect(validateOfferApplication(mk({ validity: { endDate: past } }), CART, {}).isValid).toBe(false);
-    expect(validateOfferApplication(mk({ validity: { startDate: future } }), CART, {}).isValid).toBe(false);
+    expect(validateOfferApplication(mk({ validity: { startDate: ALWAYS.startDate, endDate: past } }), CART, {}).reason).toBe('Offer has expired');
+    expect(validateOfferApplication(mk({ validity: { startDate: future, endDate: ALWAYS.endDate } }), CART, {}).reason).toBe('Offer not yet active');
     expect(validateOfferApplication(mk({ validity: { startDate: past, endDate: future } }), CART, {}).isValid).toBe(true);
   });
 

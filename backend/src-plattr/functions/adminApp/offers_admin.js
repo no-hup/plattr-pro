@@ -12,7 +12,48 @@ const errorHandler = require('../singleton/ErrorHandler');
 const ResponseBuilder = require('../utils/ResponseBuilder');
 const { validateAdminSession } = require('./auth');
 
+const paymentsConfigFrom = require('../lib/domain/payments').configFrom;
+
 const VALID_OFFER_TYPES = ['PERCENTAGE', 'FLAT', 'BOGO'];
+
+// DECISION(A26, 2026-09-26): an offer date means midnight to midnight in the restaurant's clock. The admin sends days
+// ("2026-09-26"); we store the instants with the zone written in, "2026-09-26T00:00:00.000+05:30" to
+// "2026-09-30T23:59:59.999+05:30", so "until 30 Sep" keeps the 30th's lunch and dinner and every reader
+// (offers/offerEngine.js, the MockData7 evaluator, the admin editor) reads one unambiguous value. A one-day offer is
+// start = end. The clock is the restaurant's `payments.timezoneOffsetMinutes` (PY's key, default 330).
+// If you change this, ask Shaurya first.
+const DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
+function isDay(s) {
+    const m = typeof s === 'string' && DAY.exec(s);
+    if (!m) return false;
+    const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    return d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3];
+}
+function zone(minutes) {
+    const a = Math.abs(minutes);
+    return `${minutes < 0 ? '-' : '+'}${String(Math.floor(a / 60)).padStart(2, '0')}:${String(a % 60).padStart(2, '0')}`;
+}
+/** Days "YYYY-MM-DD" to the stored window: 00:00 of the first day to the last millisecond of the last, in `tzOffsetMinutes`. */
+function offerWindow(startDay, endDay, tzOffsetMinutes) {
+    if (!isDay(startDay) || !isDay(endDay)) {
+        errorHandler.badRequest('Offer dates must be days, YYYY-MM-DD', { startDay, endDay });
+    }
+    if (endDay < startDay) {
+        errorHandler.badRequest('The offer end date is before the start date', { startDay, endDay });
+    }
+    // A clock setting outside ±14 h would write a zone no reader parses, and the offer would save but never apply.
+    if (!Number.isInteger(tzOffsetMinutes) || Math.abs(tzOffsetMinutes) > 14 * 60) {
+        errorHandler.preconditionFailed(`The restaurant clock (payments.timezoneOffsetMinutes = ${tzOffsetMinutes}) is not a real offset`);
+    }
+    const z = zone(tzOffsetMinutes);
+    return { startDate: `${startDay}T00:00:00.000${z}`, endDate: `${endDay}T23:59:59.999${z}` };
+}
+
+/** The restaurant's clock, read from its settings the way payments reads it (a missing key is the 330 default). */
+async function restaurantOffsetMinutes(restaurantId) {
+    const snap = await db.collection('restaurants').doc(restaurantId).collection('config').doc('settings').get();
+    return paymentsConfigFrom(snap.exists ? snap.data() : undefined).config.timezoneOffsetMinutes;
+}
 const VALID_OFFER_SCOPES = ['ORDER', 'CATEGORY', 'ITEM'];
 
 /**
@@ -23,7 +64,7 @@ const VALID_OFFER_SCOPES = ['ORDER', 'CATEGORY', 'ITEM'];
  * @param {boolean} isUpdate - If true, allow partial payloads (no required-field check)
  * @returns {Object} Cleaned offer data ready to write to Firestore
  */
-function validateAndNormalizeOffer(payload, isUpdate = false) {
+function validateAndNormalizeOffer(payload, isUpdate, tzOffsetMinutes, keepStoredValidity = false) {
     if (!payload || typeof payload !== 'object') {
         errorHandler.badRequest('Offer data is required');
     }
@@ -144,7 +185,7 @@ function validateAndNormalizeOffer(payload, isUpdate = false) {
     }
 
     // validity
-    if (!isUpdate || payload.validity !== undefined) {
+    if (!keepStoredValidity && (!isUpdate || payload.validity !== undefined)) {
         const validity = payload.validity || {};
         if (!validity.startDate) {
             errorHandler.badRequest('validity.startDate is required');
@@ -152,13 +193,7 @@ function validateAndNormalizeOffer(payload, isUpdate = false) {
         if (!validity.endDate) {
             errorHandler.badRequest('validity.endDate is required');
         }
-        if (new Date(validity.endDate) <= new Date(validity.startDate)) {
-            errorHandler.badRequest('validity.endDate must be after validity.startDate');
-        }
-        normalized.validity = {
-            startDate: validity.startDate,
-            endDate: validity.endDate,
-        };
+        normalized.validity = offerWindow(validity.startDate, validity.endDate, tzOffsetMinutes);
     }
 
     // optional display / behavior fields
@@ -249,7 +284,7 @@ exports.createOffer = functions.https.onCall(async (request, context) => {
         const { restaurantId, sessionId, offerData } = data;
         await validateAdminSession(restaurantId, sessionId);
 
-        const normalized = validateAndNormalizeOffer(offerData, /* isUpdate */ false);
+        const normalized = validateAndNormalizeOffer(offerData, /* isUpdate */ false, await restaurantOffsetMinutes(restaurantId));
         const toStore = {
             ...normalized,
             isActive: normalized.isActive !== undefined ? normalized.isActive : true,
@@ -300,7 +335,8 @@ exports.updateOffer = functions.https.onCall(async (request, context) => {
         // For updates, if the caller changes type or scope, we need to
         // re-validate the full payload. Merge existing + incoming and validate.
         const merged = { ...offerDoc.data(), ...offerData };
-        const normalized = validateAndNormalizeOffer(merged, /* isUpdate */ false);
+        // An edit that does not send dates keeps the stored window as it is (it is already instants, not days).
+        const normalized = validateAndNormalizeOffer(merged, /* isUpdate */ false, await restaurantOffsetMinutes(restaurantId), offerData?.validity === undefined);
 
         const updates = {
             ...normalized,
@@ -369,4 +405,5 @@ module.exports = {
     createOffer: exports.createOffer,
     updateOffer: exports.updateOffer,
     deleteOffer: exports.deleteOffer,
+    offerWindow,
 };

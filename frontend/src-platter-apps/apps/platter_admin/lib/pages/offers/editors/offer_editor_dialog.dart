@@ -131,9 +131,11 @@ class _OfferEditorDialogState extends State<OfferEditorDialog> {
     _endDate = _parseDate(validity['endDate']);
   }
 
+  // A26: the backend stores "2026-09-26T00:00:00.000+05:30", zone written in, so the first ten characters are the
+  // restaurant's own day whatever this device's clock says. We send days back ("2026-09-26"), never instants.
+  // ponytail: a seeded offer stored in UTC ("…Z") shows its UTC day; only the admin writes new offers.
   DateTime? _parseDate(dynamic value) {
-    if (value == null) return null;
-    if (value is String && value.isNotEmpty) return DateTime.tryParse(value);
+    if (value is String && value.length >= 10) return DateTime.tryParse(value.substring(0, 10));
     return null;
   }
 
@@ -246,8 +248,8 @@ class _OfferEditorDialogState extends State<OfferEditorDialog> {
       'exclusionIds': _parseCsv(_exclusionIdsController.text),
       'isActive': _isActive,
       'validity': {
-        'startDate': _startDate!.toIso8601String(),
-        'endDate': _endDate!.toIso8601String(),
+        'startDate': _formatDate(_startDate),
+        'endDate': _formatDate(_endDate),
       },
       if (conditions != null) 'conditions': conditions,
       'benefit': benefit,
