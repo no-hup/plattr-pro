@@ -191,7 +191,7 @@ server app bar shows "Refresh Menu" on every tab — the Menu screen's app-bar
 config wins regardless of which tab is selected. Real app bug, filed here, not
 fixed (out of scope). Use `tab-tables` → re-read via the API instead.
 
-Admin has the login identifiers only (not in the hot loop). When a flow has no identifier,
+Admin has identifiers only on the login form and the D6 menu editors (table above); every other admin control is found by label through `ab snap`. When a flow has no identifier,
 add one rather than text-matching: wrap the control in `Semantics(identifier: 'screen-action',
 child: …)` or add `identifier:` to an existing `Semantics`, then add it to this table.
 `frontend/flutter_boilerplate/test/pages/menuListing/add_button_semantics_test.dart` guards
@@ -232,6 +232,9 @@ Never report from memory of an earlier snapshot; never report a failure without
 - **A Flutter list's `flt-semantics-identifier` can go stale** when a poll or a tab switch reorders the cards: `order-cart-<id>` then sits on another table's card, or on two cards. Reload the page before clicking by a card id, and confirm which card was hit from the emulator log (waiter run, 2026-09-25).
 - **A Flutter snackbar is gone in about 4 s.** Screenshot within a second of the tap before calling a refusal "silent"; a 5 s screenshot missed "No active session for this table" once (guest run, 2026-09-25).
 - **`$B goto` or `location.hash` to another table does not reload the app, and an open OTP dialog survives it** (then submits against the new table). To switch tables: `sessionStorage.clear()`, set the hash, `$B reload`, then click the semantics placeholder again.
+- **A Flutter list only puts on-screen rows in the accessibility tree, and wheel events don't scroll it** (DOM or glass-pane `WheelEvent` do nothing; CDP input is not allowlisted). Make the viewport tall instead: `$B viewport 1280x1600` (admin run, 2026-09-25).
+- **Any `$B snapshot`, interactive or not, renumbers the `@eN` refs.** Take the ref and click it from the same snapshot; a plain `snapshot -d` in between makes the click hit nothing (admin run, three wasted deletes).
+- **`$B fill <sel> -2` is read as a flag and fills nothing.** Click the field and `$B press Minus`, `$B press 2`. An empty value can't be filled either: `$B press End` then `Backspace` per character.
 - **Two agents, one emulator:** whoever runs `--clean` wipes the other's sessions, and it
   looks like a session bug. One live runner at a time.
 
