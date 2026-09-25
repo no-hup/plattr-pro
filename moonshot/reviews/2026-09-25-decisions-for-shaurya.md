@@ -1,175 +1,172 @@
-# Decisions for Shaurya · after the till QA runs · 2026-09-25
+# Decisions for Shaurya · after the QA runs · 2026-09-25
 
-**Every open question from the five till QA runs (floor, bill, tender, day close, merged groups + parcels), the
-bill-change requests and the agents, in one place.** Each question gives a short scene, what the till does today, the
-choices, and a recommended default with its reason. Answer inline ("yes", "default", or your own call), or say "take
-all defaults except N". The bugs themselves are TD-061..120 in [TECH_DEBT.md](../TECH_DEBT.md); the run reports hold
-the full evidence.
+**Every open question from the QA runs (till floor, bill, tender, day close, groups + parcels; the waiter, kitchen,
+guest and admin apps), the bill-change requests and the agents, in one place.** Duplicates are merged: each question
+lists the old numbers and TD rows it absorbed. The bugs are TD-061..120 in [TECH_DEBT.md](../TECH_DEBT.md); the run
+reports hold the evidence. Answers given on 2026-09-25 are marked **Decided**; the fixer writes each into the right
+spec sheet's Decisions table before fixing.
+
+## Decided 2026-09-25
+
+**D1. Walk-out money becomes its own write-off line.** · TD-063, TD-064, TD-073 · QF-2, QD-1 (was #1)
+- *Scene.* 22:40, table 6 leaves without paying a ₹660 bill; the cashier taps Walk-out with the manager PIN.
+- *Decided.* The bill stays, marked "walked out", with its audit row. The sitting closes and the table is free. Day
+  close shows "₹660 walked out" on its own line, not inside comps. The bill number is not cancelled.
+- *For the fixer.* This replaces FL R14 ("free only when nothing is owed") for the walk-out case. A part-paid table
+  that walks out writes off only the unpaid part.
+
+**D2. One "Edit bill" button on the till; waiters get no bill powers.** · TD-065 (P0), TD-066, TD-097, TD-120, FR-1,
+FR-5, FR-7 · QB-1, QB-3, QB-6, QB-10 (was #3, #5, #6, #19, #20, #25)
+- *Scene.* 22:10, table 12's ₹4,800 bill is on the table. They order two gulab jamun, then ask for the beer on a
+  separate bill, and to drop the 5 % service charge.
+- *Decided.* The cashier taps **Edit** on the unpaid printed bill. The old number is cancelled with the reason
+  "edited" (BL-S9's existing cancel: dishes return to the draft), and the new bill records which one it replaced. The
+  cashier adds the new round, splits by dish, or removes the service charge, then prints again.
+- *PIN.* None for adding dishes, splitting or removing the service charge. A PIN only for removing a dish or a
+  discount above the limit. The morning report counts edits and service-charge removals per cashier.
+- *Offer on a split.* Whether the table qualifies is judged on the whole table (as the guest did qualify). The
+  amount is shared across the split bills by value, the same rule BL-S3 uses for a bill discount. No half is
+  re-checked against the ₹499 minimum.
+- *Why cancel-and-reprint, not an "edited" tag on the same bill.* BL R4 says an issued bill never changes (GST: the
+  series must be honest, and CGST s.34 governs changes to paid invoices). Reports, day close, receipts and payments
+  all assume a printed bill is frozen. The cancel path already exists and is tested; an edit-in-place would touch
+  all of them.
+- *Paid table.* A paid table takes no new rounds and no new guest until Clear ("table 12 has paid — clear it first").
+  Merging a free table into a table with a printed, unpaid bill is refused.
+- *Waiter app.* No bill editing (side deals). This keeps the change to the till only.
+
+**D3. "Edit bill" is refused once any money is on the bill.** · TD-062 (P0) · QB-2 (was #2)
+- *Why.* Shaurya: a table doesn't pay part of a bill and then reorder. Friends paying ₹500 + ₹700 towards one ₹1,200
+  bill is normal and already works: the bill stays `part-paid` until the last payment settles it.
+- *Decided.* Edit and Cancel are refused while any payment is on the bill: "₹500 already paid on A-0004 — take the
+  rest first". If the table then leaves without paying the rest, that's a walk-out of the unpaid part (D1).
+
+**D4. The waiter app's Cancel Order.** · TD-089 (P0), TD-092
+- *Scene.* 20:10, a guest changes their mind about a Butter Naan.
+- *Decided.* A cancel always takes the dish off the bill and off the kitchen, with an audit row. There's no PIN. Once
+  the kitchen has started, the waiter decides: tell the guest it can't be cancelled (it stays on the bill), or accept
+  it and waste the dish. Dishes made then cancelled are audited, with no money effect. Once the bill is printed, only
+  the till's Edit bill changes it (D2).
+- *For the fixer.* This relaxes ST-S5 ("voiding a line the kitchen started needs a PIN") for the waiter app. Record
+  it in ST's Decisions. Mark Paid wasn't discussed; default: removed from the waiter app, because the till owns
+  payment (TD-010).
+
+**D5. The guest's shared cart asks what to send.** · TD-119 · QG-2
+- *Found.* Each dish records who added it (`addedBy`), and on 2026-09-16 you decided each phone sends only its own.
+  The bug is the screen: "To Pay ₹340" is the whole table, while Proceed sends only this phone's ₹60.
+- *Decided.* The cart shows "Your dishes ₹60 · Table ₹340". Proceed asks "Send your 1 dish" or "Send all 3 for the
+  table". Checkout already sends the whole cart when no `addedBy` is given, so this is mostly a screen change.
+
+**D6. Admin edits to add-ons and portions apply everywhere.** · TD-106 (P0), TD-107 (P0), TD-110
+- *Found.* Pricing and stock already read the shared add-on and portion records (`restaurants/{id}/addons`,
+  `/variants`), so every dish using them follows. But no endpoint writes those records: the admin dish editor only
+  changes the dish's own copy. The only such code, [menu/creation/variant.js](../../backend/src-plattr/functions/menu/creation/variant.js),
+  writes a top-level `variants` collection that nothing reads. Removing an add-on from one dish already exists in the
+  dish editor ([addon_editor_dialog.dart](../../frontend/src-platter-apps/apps/platter_admin/lib/pages/menu/editors/addon_editor_dialog.dart)).
+- *Decided.* A price, name or stock change on an add-on or portion edits the shared record, and the editor says so:
+  "Raita is on 6 dishes — this changes all 6". Out of stock is respected everywhere, guest app first. If a dish
+  shouldn't offer an add-on, the manager removes it from that dish (disassociate). The dish editor saves only the
+  fields it changed and add-ons as ids (fixes TD-106 and TD-110).
+- *For the fixer.* One new admin endpoint for the shared add-on and portion records; pricing code untouched.
+  `menu/creation/variant.js` looks dead: confirm no caller, then delete it.
 
 ## Must decide (a fix is waiting on each)
 
-1. **What does walked-out money become?** · unblocks TD-063, TD-064, TD-073 · QF-2, QD-1
-   - *Scene.* 22:40, table 6 leaves without paying a ₹660 bill. The cashier taps Walk-out and enters the manager PIN.
-   - *Today.* The till says "freed", but the tile keeps showing ₹660 and the Walk-out button forever. A new party
-     seated at table 6 is hidden behind the old money (TD-063, P0). At day close the bill still reads `issued`, so the
-     close refuses "Bill 0004 is still unpaid", and nothing on the till can clear it. In the run it took a backend call
-     and three PINs to close one ₹66 walk-out (TD-073).
-   - *Why it's stuck.* FL R14 says a table is free only when it owes nothing. The 2026-09-24 walk-out decision says a
-     table that owes can be freed with a PIN. Both can't hold.
-   - *Choices.* (a) The bill stays, marked "walked out" with its P0 audit row; the sitting closes; the table is free;
-     day close counts the money as written off, on its own line. (b) Walk-out cancels the bill and comps the lines
-     as `guest left` in one PIN'd act (the day-close agent's suggestion).
-   - *Default:* (a). The morning report keeps "₹660 walked out" as its own number rather than hiding it inside comps,
-     and the bill number isn't cancelled. Either choice fixes the day-close block.
+1. **Blind count vs the drawer** (two sides of one rule) · TD-076 · QD-4, QD-9 (was #7, #8)
+   - *Typo.* 18:00, the cashier records ₹1,200 paid out for vegetables but types ₹12,000. Blind mode hides every
+     drawer movement, so the typo can't be seen and has no Void. At close the drawer reads ₹12,000 over, a false P0.
+   - *Leak.* The till asks for a manager PIN only when the count is ₹100 or more off. The PIN box appearing tells the
+     cashier whether she's within ₹100 before anything is saved, so she can recount towards the answer.
+   - *Default:* while blind, list movements with kind, reason, time and who, with amounts only on the cashier's own
+     rows from today. Add Void with a PIN and a reason. Save the count first, then ask for the PIN. Drop the expected
+     cash from the "day moved while you were counting" refusal.
 
-2. **Cancelling a bill that is part-paid** · unblocks TD-062 (P0) · QB-2
-   - *Scene.* A ₹66 bill; one friend pays ₹33 cash; then the table wants a change and the cashier cancels the bill.
-   - *Today.* The cancel succeeds. The ₹33 stays recorded against the dead bill, the new bill asks for the full ₹66,
-     and nothing tells the cashier. The till has no recorded way to hand the ₹33 back.
-   - *Choices.* (a) Refuse the cancel while any payment is on the bill. (b) Allow it and carry the ₹33 onto the new bill.
-   - *Default:* (a). Card and UPI settlements reconcile against a bill's total, so a bill with money on it should be
-     frozen. The new round goes on a second bill for the same table (FR-6).
+2. **A parcel ticket's life: what frees it, and who can join** · TD-078 · QP-1, groups P4 (was #9, #23)
+   - *Scene.* 13:10, a walk-up pays ₹179 cash for two dosas to go on P1. The next walk-up comes two minutes later.
+   - *Today.* P1 stays open ("settled · Clear") until the cashier taps Clear. If she forgets, the next walk-up joins
+     the paid customer's order. A third phone scanning a busy P1 also joins the first customer's order.
+   - *Default:* for a ticket in `ordering.takeawayTableIds`, the payment that settles its last bill ends the sitting
+     (same `table.clear` audit row); dine-in keeps Clear. A parcel ticket takes one phone until till order entry (OR).
 
-3. **An order-wide offer when a bill is split** · unblocks TD-066 · QB-1, QB-6, FR decision 3
-   - *Scene.* An ₹882 order gets "₹100 off above ₹499". The table asks for two bills.
-   - *Today.* Each half gets the full ₹100 off (₹198 + ₹573 = ₹771, not ₹782). A half too cheap for the offer can't be
-     billed at all. No till button calls split yet, so this is P0 on the day one ships.
-   - *Why it's stuck.* The written rule (SPEC_BL log 2026-09-15) says a split drops the offer on both halves and the
-     cashier re-applies it per bill with a PIN. The code does neither.
-   - *Choices.* (a) Keep "drop, then re-apply". (b) Share the ₹100 between the bills by each one's value.
-   - *Default:* (b). With (a) the guest who splits loses the offer unless the cashier remembers to re-apply it.
-     Splitting should never cost the table money.
+3. **The packing charge on a parcel with no food** · TD-079 · QP-2 (was #10)
+   - *Scene.* A guest buys a beer to go. The ₹20 packing is taxed in the food block, and with no food on the bill the
+     preview refuses and the screen goes blank, so the drink can't be sold.
+   - *Default:* leave packing off by itself and print "No packing: nothing taxed as food"; the screen keeps its
+     controls on any refused preview.
 
-4. **After a refund against a credit note, does the bill owe again?** · unblocks TD-071 · QT-2
-   - *Scene.* A ₹66 bill is paid in full. The naan was burnt, so the cashier raises credit note CN-0001 for ₹63 and
-     refunds it in cash.
-   - *Today.* The bill goes back to owing ₹63 (PY-S30 wants this so a replacement dish could be paid against it). The
-     floor then shows "₹63.00 due" with a Walk-out button, and day close names the bill as unpaid.
-   - *Default:* the bill stays settled after such a refund. A replacement dish is a new round on a new bill. Otherwise
-     the floor and day close chase money nobody owes.
+4. **Offers on liquor** · bill report Q9 (was #11)
+   - *Scene.* A ₹1,500 table with ₹600 of beer gets "₹100 off the order". Today the offer is spread over the beer too,
+     which moves tax between blocks; the seed says liquor is never discounted.
+   - *Default:* the offer is spread over food only. On a food/alcohol split (D2) the whole offer lands on the food bill.
 
-5. **Adding a dish to a printed bill without a PIN** · unblocks TD-065 (P0) · QB-3, FR-1, FR decision 1
-   - *Scene.* 22:10, table 12's ₹4,800 bill is on the table; they order two gulab jamun (₹240) from the QR menu.
-   - *Today.* The dessert can't be billed from the till. Generate answers "already issued", and Cancel only shows on
-     the bill screen right after printing; the payment screen has none.
-   - *Choices.* (a) "Add to bill" re-issues the bill with the new dishes and no PIN when the total only goes up; dishes
-     staff added after printing are flagged in the morning report. (b) Every change is a cancel with a manager PIN.
-   - *Default:* (a). Adding to a bill creates no dish that wasn't already ordered, and thirty innocent PIN'd cancels on
-     a Friday would bury the one real theft. Until FR-1 is built, Cancel goes on the payment screen (FR-7).
+5. **Credit notes: what they include, and what happens after the refund** · TD-071 · QT-2, tender Q4 (was #4, #14)
+   - *Scene.* A ₹66 bill is paid. The naan (₹60) was burnt; the cashier raises CN-0001 and refunds in cash.
+   - *Today.* The note is ₹63 (dish + tax), so the ₹3 service charge and its tax stay with the guest. After the
+     refund the bill owes ₹63 again, the floor shows "₹63.00 due" with a Walk-out button, and day close names it unpaid.
+   - *Default:* the note also takes that dish's share of the service charge and its tax, and the bill stays settled
+     after the refund. A replacement dish is a new round on a new bill.
 
-6. **Removing the service charge after printing, without a PIN** · FR-5, FR decision 2
-   - *Scene.* Table 9 says they won't pay the 5 % service charge (it's voluntary in India).
-   - *Today.* Only possible by cancelling the bill with a manager PIN.
-   - *Default:* no PIN; every removal is counted per cashier in the morning report, with how many were on cash bills.
-     The fraud (charge removed, cash pocketed) shows up as one cashier removing far more than the others. A PIN each
-     time would keep the manager at the till ten times a Friday.
-
-7. **Blind count vs fixing a typo in the drawer** · unblocks TD-076 · QD-4
-   - *Scene.* 18:00, the cashier records ₹1,200 paid out for vegetables but types ₹12,000.
-   - *Today.* Blind mode (DC R14) hides every drawer movement so the cashier can't work backwards to the expected cash.
-     So the typo can't be seen, and there is no Void button (DC-S10 wants one). At close the drawer reads ₹12,000
-     over, and that raises a false P0.
-   - *Default:* while blind, list the movements with kind, reason, time and who, and show the amount only on the
-     cashier's own rows from today. Add Void with a PIN and a reason.
-
-8. **The PIN on a big difference gives away the blind count** · QD-9
-   - *Scene.* The cashier counts ₹1,400. The till asks for a manager PIN only when the count is ₹100 or more off.
-   - *Today.* The PIN box appearing (or not) tells the cashier whether she's within ₹100, before anything is saved, so
-     she can recount towards the answer. Separately, the "day moved while you were counting" refusal sends the expected
-     cash to the till.
-   - *Default:* save the count first, then ask for the PIN. (Or ask for a PIN on every close, so it says nothing.) Drop
-     the expected cash from that refusal either way.
-
-9. **What frees a parcel ticket: the payment, or Clear?** · unblocks TD-078 · QP-1
-   - *Scene.* 13:10, a walk-up pays ₹179 cash for two dosas to go on ticket P1. The next walk-up comes two minutes later.
-   - *Today.* P1 stays open, reading "settled · Clear", until the cashier taps Clear. If she forgets, the next walk-up
-     joins the paid customer's order and Generate refuses "already issued". The counter is stuck on the normal lunch flow.
-   - *Why it's stuck.* OR-S3 says a ticket goes back to vacant when its bill is paid. PY says paying frees no table (dine-in
-     tables are cleared by hand once the party leaves).
-   - *Default:* for a ticket named in `ordering.takeawayTableIds`, the payment that settles its last bill ends the sitting,
-     with the same `table.clear` audit row. Dine-in keeps Clear. Nobody sits at a parcel ticket, so there's nothing to wait for.
-
-10. **The packing charge on a parcel with no food** · unblocks TD-079 · QP-2
-    - *Scene.* A guest buys a beer (or a cold drink) to go.
-    - *Today.* The ₹20 packing charge is taxed in the food block. With nothing from the food block on the bill, the
-      preview refuses ("nothing is levied untaxed"). The screen then shows nothing, not even the Remove-packing button,
-      so the counter cannot sell the drink.
-    - *Choices.* (a) Keep refusing, but keep the charge controls on screen so the cashier can drop packing. (b) Leave
-      the charge off by itself and print "No packing: nothing taxed as food".
-    - *Default:* (b), and the screen keeps its controls on any refused preview either way.
-
-11. **Offers on liquor** · bill report Q9
-    - *Scene.* A ₹1,500 table with ₹600 of beer gets "₹100 off the order".
-    - *Today.* The offer is spread over every line, beer included. The seed says liquor is never discounted. Liquor and
-      food are taxed differently, so where the ₹100 lands moves tax between blocks. This can't be tested at Meghana, which
-      has no liquor.
-    - *Default:* liquor wins; the offer is spread over food only.
+6. **What each login may do** · TD-115, TD-116 · QB-13, floor, bill Q6 (was #16, #17)
+   - *Today.* A KITCHEN login sees the money floor on the till. A SERVER can remove the service charge on a preview and
+     Clear a table through the API. A MANAGER (including the shared `till@`) can raise its own no-PIN discount limit to
+     100 %, unaudited. A deactivated manager's live session can still issue bills and change settings.
+   - *Default:* the till refuses KITCHEN and SERVER logins for money acts (MANAGER only, refused by the backend).
+     Changing approval limits writes an audit row and is flagged in the morning report ("catch it, don't cage it").
+     Every staff endpoint checks the staff member is still active (one shared session check).
 
 ## Fine with the default (say so if not)
 
-12. **Does a cash refund open the drawer?** (QT-6) Today the screen says it opens, and it doesn't; KT-S17 names cash takes
-    only. *Default:* yes, a cash refund opens it, same as a cash take.
-13. **Payment voids get their own short reason list** (wrong tender, wrong amount, entered twice, other) instead of
-    sharing the discount reasons (placard, birthday…). (QT-7) *Default:* yes.
-14. **A credit note for a whole dish keeps the service charge.** CN-0001 for a ₹60 naan is ₹63 (dish + tax); the bill
-    was ₹66, so the ₹3 charge and its tax stay with the guest. (tender Q4) *Default:* the note also takes that dish's
-    share of the service charge and its tax.
-15. **A whole-bill comp leaves ₹21 packing on a parcel.** The bar says "comped to ₹0.00", the bill still owes ₹21
-    (TD-068). BL-S22 says payable 0. *Default:* the comp zeroes the charges too.
-16. **KITCHEN login on the till.** Today it sees the money floor, can preview bills and can read the day. (floor,
-    bill Q6, day close) *Default:* the till refuses a KITCHEN login outright.
-17. **SERVER login powers.** A captain can remove the service charge on a preview, and can Clear a settled table
-    through the API though the screen hides the button. (QB-13, floor) *Default:* both MANAGER only, refused by the backend.
-18. **Undoing a mistaken comp.** A ₹0 comp is born paid, so it has no Cancel. (bill Q8) *Default:* a credit note is
-    the only way back, same as any paid bill.
-19. **A dropped service charge survives a cancel and reload.** Today it's forgotten on reload, so the re-issued bill
-    quietly puts the charge back (QB-10). *Default:* remember it on the draft.
-20. **Merging a free table into a table whose bill is printed.** Allowed today, spec silent. The new guest's orders then
-    can't be billed (TD-065). (floor, groups G10) *Default:* refuse while that bill is unpaid: "bill 0004 is open on 8;
-    settle it first".
-21. **Who may "retry" a day close?** Today a second manager, or even a SERVER, sending a count after the close is told
-    "Day closed", as if it were their retry. (QD-7) *Default:* only the person who closed it; anyone else gets "already
-    closed at 23:30 by Priya", by name and in local time.
-22. **A group's bill names every table.** Today the bill and kitchen tickets for tables 10+11 say "10" (TD-080).
-    *Default:* the parent plus its merged tables, fixed when the bill is issued, so the paper reads "10+11".
-23. **A second phone on a busy parcel ticket.** A third walk-up scanning P1 while it's busy joins the first customer's
-    order (groups P4). *Default:* a parcel ticket takes one phone, until till order entry (OR) makes phones unnecessary
-    at the counter.
-24. **Where the till keeps its login** (the TD-052 fix, parked by the test-stack agent). Per tab (`sessionStorage`,
-    gone when the tab closes) or per browser (`localStorage`, survives a restart of a shared till). *Default:* per tab;
-    a restarted till asks for a login, which is safer on a shared counter.
-25. **A paid table ordering again.** Table 7 paid ₹3,100 and wants two coffees. (FR decision 4) *Default:* skip until
-    staff ordering at the till (OR) is built.
+7. **Does a cash refund open the drawer?** (QT-6) Today the screen says it opens and it doesn't. *Default:* yes.
+8. **Payment voids get their own reason list** (wrong tender, wrong amount, entered twice, other). (QT-7) *Default:* yes.
+9. **A whole-bill comp leaves ₹21 packing on a parcel** (TD-068). *Default:* the comp zeroes the charges too.
+10. **Undoing a mistaken comp.** A ₹0 comp is born paid. *Default:* a credit note is the only way back.
+11. **Who may "retry" a day close?** (QD-7) *Default:* only the person who closed it; anyone else gets "already
+    closed at 23:30 by Priya".
+12. **A group's bill names every table** (TD-080). *Default:* "10+11" on the bill and tickets, fixed at issue.
+13. **Where the till keeps its login** (TD-052). *Default:* per tab (`sessionStorage`); a restarted till asks again.
+14. **An expired guest session when the waiter adds dishes** (TD-090, P0). *Default:* OR-S19: extend the old
+    session, never start a second one; Clear refuses while any sitting on the table owes.
+15. **A captain's own round with the waiter gate on** (TD-094). *Default:* a staff round goes straight to the kitchen.
+16. **A sold-out dish on the guest menu** (the guest and admin grids disagree). *Default:* shown greyed with
+    "Sold out", not hidden, so a guest who wanted it knows why.
+17. **Offer and discount limits** (TD-108, TD-109). *Default:* refuse a percentage above 100 or below 0 at the
+    admin endpoint; the till's refusal must not outlive a deleted offer.
 
 ## Approve, no question
 
-26. **The parked fixes.** Each has cause, fix, callers and a waiting red test:
+18. **The parked fixes.** Each has cause, fix, callers and a waiting red test:
     [fix plan, Parked](2026-09-25-qa-fix-plan.md) (QF/QB), [tender report, Parked](2026-09-25-qa-till-tender.md) (QT),
     [day-close report, Parked](2026-09-25-qa-till-dayclose.md) (QD),
-    [groups/parcels report, Parked](2026-09-25-qa-till-groups-parcels.md) (QG/QP). Once 1–11 are answered, these are
-    mechanical.
-27. **Backend wording** the display-fix agent parked: refusals name bill numbers, not internal ids (QB-9); the merge
-    refusal says which table to pick first; the split chooser names the dishes (both need `floor-open` to send names).
-28. **One line in `moonshot/CLAUDE.md` Commands** (agents may not edit it): replace "Browser sanity: `npm run e2e:ui`
+    [groups/parcels report, Parked](2026-09-25-qa-till-groups-parcels.md) (QG/QP), and the
+    [waiter](2026-09-25-qa-waiter-app.md), [kitchen](2026-09-25-qa-kitchen-app.md) and
+    [admin/guest API pass](2026-09-25-qa-admin-guest-api-pass.md) reports.
+19. **Backend wording** the display-fix agent parked: refusals name bill numbers, not internal ids (QB-9); the merge
+    refusal says which table to pick first; the split chooser names the dishes.
+20. **One line in `moonshot/CLAUDE.md` Commands** (agents may not edit it): replace "Browser sanity: `npm run e2e:ui`
     in `frontend/till/` — TO BE CREATED" with "Browser sanity: `EMU_SLOT=<n> npm run e2e:ui` in `frontend/till/`".
-    Built in `9726ac4`; the builder's answers are in the [ticket](2026-09-25-ticket-till-test-stack.md).
+    Built in `9726ac4`.
+21. **A knob on the browser guard** (blocked for agents by the permission check, so it's yours to approve): let
+    [scripts/ab.sh](../../scripts/ab.sh) take `AB_CHROME_MAX_GB` (default 4.0) so a run can go ahead when you
+    accept your Chrome being over 4 GB. The free-memory check (2 GB) stays.
 
 ## How to resume when you have time
 
-1. Answer this page (10–15 minutes). Defaults are fine where you don't care.
+1. Answer 1–6 above (defaults are fine where you don't care), and 7–17 only where you disagree.
 2. Open a fresh session and paste:
 
 ```
-Resume the till QA fixes. Read moonshot/STATE.md (pickup list, "QA runs 2026-09-25" line),
-moonshot/reviews/2026-09-25-decisions-for-shaurya.md (my answers are inline), and TECH_DEBT TD-061..120.
-1. Write each answer into the right spec sheet's Decisions table (FL, BL, PY, ST, DC, OR) and propose any
+Resume the QA fixes. Read moonshot/STATE.md (pickup list, "QA runs 2026-09-25" line),
+moonshot/reviews/2026-09-25-decisions-for-shaurya.md (D1–D6 decided, the rest answered inline), and TECH_DEBT TD-061..120.
+1. Write each decision into the right spec sheet's Decisions table (FL, BL, PY, ST, DC, OR) and propose any
    STATE.md decision diff to me.
 2. Fix in this order, one commit each, red test first (most already exist, marked known bug: drop the mark):
-   TD-061, TD-062, TD-063+064+073, TD-065 (FR-7 Cancel on tender first), TD-089, TD-090, TD-106..109, TD-078, TD-079, TD-066, TD-067,
-   TD-068, TD-069, TD-070, TD-071, TD-074..076, TD-080, then TD-091..094, TD-082, TD-084..086, TD-099, TD-100, TD-095..098, TD-101..105, TD-110..120, and TD-072, TD-077, TD-081, TD-083, TD-087, TD-088's small ones
-   (TD-084..087 are the kitchen and waiter apps' own: Flutter, not the till).
+   P0s: TD-061, TD-062 (D3), TD-063+064+073 (D1), TD-065 + the Edit bill button (D2), TD-089 (D4), TD-090,
+   TD-106+107+110 (D6), TD-108, TD-109. Then TD-078, TD-079, TD-066 (D2 offer share), TD-067..071, TD-074..076,
+   TD-080, TD-091..094, TD-082, TD-084..086, TD-099, TD-100, TD-095..098, TD-101..105, TD-111..120 (TD-119 = D5),
+   and the small ones TD-072, TD-077, TD-081, TD-083, TD-087, TD-088.
+   (TD-084..105 are the Flutter apps' own; TD-106..118 the admin app and its endpoints.)
 3. Money paths: run the moonshot-review subagent before each commit. Ask me only where my answer is missing.
 ```
 
-3. After the fixes, the next QA run is the waiter app (not yet planned). The till's floor, bill, tender, day close,
-   merged groups and parcels are done.
+3. Still to run on screen when the browser is free: the guest app ([grid](2026-09-25-grid-guest-app.md)) and the
+   admin app ([grid](2026-09-25-grid-admin-app.md)), including the screen half of TD-106, TD-110, TD-117 and TD-119.
