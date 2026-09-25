@@ -118,6 +118,23 @@ describe('domain/payments statusFor(bill, rows, config) — R2, follows outstand
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// D1 (Shaurya 2026-09-25) / PY-S33. Table 6 walks out on A-0417 (₹609.00) with ₹300 paid. BL marks it walkedOut; PY's
+// recomputation must never turn it back into an unpaid `issued` bill, or day close refuses again.
+describe('domain/payments statusFor — D1 a walked-out bill stays walked out', () => {
+  const out: Bill = { billId: '0417', payable: PAYABLE, status: 'walkedOut', walkedOut: true };
+  it('PY-S33 no money, or ₹300 of ₹609 → walkedOut, never issued', () => {
+    expect(statusFor(out, [])).toBe('walkedOut');
+    expect(statusFor(out, [take(30000)])).toBe('walkedOut');
+  });
+  it('PY-S33 the ₹300 voided after the walk-out → still walkedOut', () => expect(statusFor(out, [voided(take(30000))])).toBe('walkedOut'));
+  it('PY-S33 the guest comes back and pays the ₹309 left → paid; that take voided → walkedOut again', () => {
+    expect(statusFor(out, [take(30000), take(30900)])).toBe('paid');
+    expect(statusFor({ ...out, status: 'paid' }, [take(30000), voided(take(30900))])).toBe('walkedOut');
+  });
+  it('Q1-3 a take on a walked-out bill is allowed: 30900 on the ₹309 left', () =>
+    expect(code(canTake(out, [take(30000)], tk({ tendered: 30900 }), cfg))).toBe('ok'));
+});
+
 describe('domain/payments changeFor(tender, tendered, outstanding) — R6, cash only', () => {
   it('PY-S1 cash, tendered 60900 against 60900 → {amount: 60900, change: 0}', () =>
     expect(changeFor(cash, 60900, 60900)).toEqual({ amount: 60900, change: 0 }));

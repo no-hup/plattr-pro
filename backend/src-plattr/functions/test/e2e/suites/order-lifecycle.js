@@ -13,6 +13,7 @@ import { assertSuccess, assertError, assertField, assertFieldExists } from '../l
 import { customerLogin, serverLogin } from '../lib/auth.js';
 import { narrator } from '../lib/narrator.js';
 import config from '../lib/config.js';
+import { fsFor } from '../lib/rest.mjs';
 
 const { RESTAURANT_ID, TABLE_CLEAN_1, TABLE_CLEAN_6, TABLE_OTP, ITEMS, VARIANTS } = config;
 
@@ -193,8 +194,17 @@ export default async function orderLifecycleSuite() {
     record({ pass: dessert.status === 'success', message: `9b. COMPLETED leaves the sitting open: the old session can still add a dessert → ${dessert.status}`, actual: dessert.status === 'success' ? undefined : dessert });
 
     const cashier = await serverLogin(RESTAURANT_ID, config.ADMIN_EMAIL);
-    const freed = await call('floor-clear', { restaurantId: RESTAURANT_ID, staffSessionId: cashier, tableId: TABLE_CLEAN_1, cid: `ol9b_${Date.now()}`, pin: '1234', reason: 'guest left' });
-    record(assertSuccess(freed, '9b. The cashier frees the unpaid table with a PIN'));
+    // D1 (Shaurya 2026-09-25): a walk-out bills the food first, as a numbered bill. This seed's dishes carry no tax
+    // block, so BL refuses to bill them (R10) and the walk-out with them: fail closed, naming the dishes.
+    const walk = await call('floor-clear', { restaurantId: RESTAURANT_ID, staffSessionId: cashier, tableId: TABLE_CLEAN_1, cid: `ol9b_walk_${Date.now()}`, pin: '1234', reason: 'guest left' });
+    record({ pass: walk.status === 'error' && /^no tax block: /.test(walk.message || ''), message: `9b. D1: a walk-out on food that cannot be billed is refused, naming the dishes → ${walk.message}`, actual: walk.status === 'error' ? undefined : walk });
+    // What cannot be billed is voided (PIN, P0 each); with nothing owed, the cashier's Clear frees the table.
+    const { listCol } = fsFor(RESTAURANT_ID);
+    for (const l of (await listCol('lines', 300)).filter(x => x.sessionId === sessionId && x.countsTowardTotal !== false && !x.billId)) {
+      record(assertSuccess(await call('approvals-apply', { restaurantId: RESTAURANT_ID, sessionId: cashier, cid: `ol9b_void_${l.lineId}`, lineId: l.lineId, action: 'void', reason: 'guest left', pin: '1234' }), `9b. void ${l.name}`));
+    }
+    const freed = await call('floor-clear', { restaurantId: RESTAURANT_ID, staffSessionId: cashier, tableId: TABLE_CLEAN_1, cid: `ol9b_${Date.now()}` });
+    record(assertSuccess(freed, '9b. With nothing left to bill, the cashier frees the table'));
 
     const addResp = await call('cart-addItemToCart', {
       restaurantId: RESTAURANT_ID, tableId: TABLE_CLEAN_1,

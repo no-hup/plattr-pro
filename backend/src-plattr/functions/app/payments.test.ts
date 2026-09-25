@@ -11,7 +11,7 @@ const RID = 'r1';
 const ist = (y: number, m: number, d: number, hh: number, mm: number) => Date.UTC(y, m - 1, d, hh, mm) - 330 * 60_000;
 const T0 = ist(2026, 9, 15, 21, 6);   // 21:06 on the 15th, businessDate 2026-09-15 with close 04:00
 
-type BillDoc = { payable: number; status: 'draft' | 'issued' | 'paid' | 'cancelled'; cid: string; orderId: string | null; paidTotal: number; paidAt: number | null; paidBy: string | null };
+type BillDoc = { payable: number; status: 'draft' | 'issued' | 'paid' | 'cancelled' | 'walkedOut'; cid: string; orderId: string | null; paidTotal: number; paidAt: number | null; paidBy: string | null; walkedOut?: boolean };
 type Fail = 'row' | 'bill' | 'mirror' | 'note' | 'audit' | 'config' | 'day' | 'void';
 interface Opts { staff?: Partial<Staff>; config?: unknown; bill?: Partial<BillDoc> | null; note?: Partial<Note> | null; closed?: boolean | null; fail?: Fail; abortOnce?: boolean; hideFromQuery?: boolean; onTransact?: (n: number, p: Fake) => void; now?: number;
   receivables?: Record<string, Receivable>;
@@ -62,7 +62,7 @@ function fakePorts(opts: Opts = {}): Fake {
         const t: Tx = {
           rowById: async id => { calls.push('rowById'); return rows.get(id) ?? null; },
           rowsForBill: async b => { calls.push('rowsForBill'); return opts.hideFromQuery ? [] : [...rows.values()].filter(r => r.billId === b); },
-          readBill: async id => { calls.push('readBill'); const d = bills.get(id); return d ? { bill: { billId: id, payable: d.payable, status: d.status }, cid: d.cid, orderId: d.orderId, paidAt: d.paidAt, paidBy: d.paidBy } as BillRead : null; },
+          readBill: async id => { calls.push('readBill'); const d = bills.get(id); return d ? { bill: { billId: id, payable: d.payable, status: d.status, walkedOut: d.walkedOut === true }, cid: d.cid, orderId: d.orderId, paidAt: d.paidAt, paidBy: d.paidBy } as BillRead : null; },
           readNote: async id => { calls.push('readNote'); return notes.get(id) ?? null; },
           dayClosed: async () => { calls.push('dayClosed'); return dayIsClosed; },
           createRow: (id, row) => { if (opts.fail === 'row') throw new Error('firestore unavailable'); if (rows.has(id) || pr.has(id)) throw new Error('already exists'); pr.set(id, row); },
@@ -555,6 +555,19 @@ describe('app/payments voidRow() — R15', () => {
     expect(bill(p)).toMatchObject({ status: 'issued', paidAt: null, paidBy: null });
     expect((await take(p, ext('p2', 60900, { tenderId: 'upi' }))).bill.status).toBe('paid');
     expect(bill(p)).toMatchObject({ paidTotal: 60900, status: 'paid', paidBy: 'manager_py' });
+  });
+  // D1 / PY-S33: table 6 paid ₹300 of A-0417 (₹609.00) and walked out; BL stamped it walkedOut. Voiding the ₹300 keeps it
+  // walkedOut (both derivations: the stamp written and the state answered). The guest returns and pays ₹609 on the same
+  // bill: paid. Voiding that take: walkedOut again, never issued.
+  it('PY-S33 D1 voids and a late payment on a walked-out bill: walkedOut → walkedOut → paid → walkedOut, never issued', async () => {
+    const p = fakePorts({ bill: { status: 'walkedOut', walkedOut: true, paidTotal: 30000 } });
+    p.rows.set('p1', makeRow('p1', 30000));
+    expect((await voidRow(p, vd('p1'))).bill).toMatchObject({ status: 'walkedOut', paidTotal: 0 });
+    expect(bill(p).status).toBe('walkedOut');
+    expect((await take(p, tk('p2', 60900))).bill).toMatchObject({ status: 'paid', paidTotal: 60900 });
+    expect(bill(p)).toMatchObject({ status: 'paid', paidBy: 'manager_py' });
+    expect((await voidRow(p, vd('p2'))).bill.status).toBe('walkedOut');
+    expect(bill(p)).toMatchObject({ status: 'walkedOut', paidAt: null });
   });
   it("PY-S29 void a row already carrying void → failed-precondition, the first void's {at, by, reason} is not overwritten", async () => {
     const p = fakePorts();

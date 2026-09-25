@@ -4,7 +4,7 @@
 import { Job as PrintJob, ids as printIds, newJob as newPrintJob } from '../domain/print';
 import {
   Bill, Note, Row, Tender, PaymentsConfig, Receivable, businessDateFor, canCollect, canRefund, canTake, canVoid, changeFor,
-  outstanding, overpaidFor, paidTotalOf, isSettled, tenderById, tipOf,
+  outstanding, overpaidFor, paidTotalOf, isSettled, statusFor, tenderById, tipOf,
 } from '../domain/payments';
 import { ApprovalError, Staff, PinPorts, pinGate, pinOutcome } from './approvals';
 import { AuditRow, auditRow } from '../domain/approvals';
@@ -67,8 +67,9 @@ const mirrorFor = (bill: Bill, paidTotal: number, cfg: PaymentsConfig): Mirror =
 
 const state = (b: BillRead, rows: Row[], cfg: PaymentsConfig): BillState => {
   const paidTotal = paidTotalOf(rows);
-  const settled = isSettled(b.bill.payable, paidTotal, cfg.settleWithin);
-  const status = b.bill.status === 'cancelled' ? 'cancelled' : settled ? 'paid' : 'issued';
+  // DECISION(D1, 2026-09-25): A walked-out bill stays walked out when a part payment on it is voided. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+  // One derivation, domain's, so the stamp written and the state answered can never disagree about a walk-out.
+  const status = statusFor(b.bill, rows, cfg);
   return { billId: b.bill.billId, payable: b.bill.payable, paidTotal, outstanding: b.bill.payable - paidTotal, status, mirror: mirrorFor(b.bill, paidTotal, cfg) };
 };
 

@@ -36,6 +36,7 @@
 import { call } from '../lib/api.js';
 import { customerLogin, serverLogin } from '../lib/auth.js';
 import config from '../lib/config.js';
+import { fsFor } from '../lib/rest.mjs';
 
 const RID = 'res_e2e_simple_menu';
 const T1 = 'table_clean_1';
@@ -287,8 +288,16 @@ export default async function multiDinerSuite() {
     const vac = await call('table-updateTableStatus', { restaurantId: RID, sessionId: staff, tableId: T1, status: 'vacant' });
     check('MD-10 the captain cannot free a table that still owes', isErr(vac), vac);
     const cashier = await serverLogin(RID, 'admin1@e2e-simple.com');
-    const freed = await call('floor-clear', { restaurantId: RID, staffSessionId: cashier, tableId: T1, cid: `md10_${Date.now()}`, pin: '1234', reason: 'guest left' });
-    check('MD-10 the cashier frees it with a PIN', ok(freed), freed);
+    // D1 (Shaurya 2026-09-25): a walk-out bills the food first. This seed's dishes carry no tax block, so BL refuses to
+    // bill them (R10) and the walk-out with them: fail closed, naming the dishes.
+    const walk = await call('floor-clear', { restaurantId: RID, staffSessionId: cashier, tableId: T1, cid: `md10_walk_${Date.now()}`, pin: '1234', reason: 'guest left' });
+    check('MD-10 D1: walking out on food that cannot be billed is refused, naming the dishes', isErr(walk) && /^no tax block: /.test(walk.message || ''), walk);
+    // What cannot be billed is voided (PIN, P0 each); with nothing owed, the cashier's Clear frees the table.
+    for (const l of (await fsFor(RID).listCol('lines', 300)).filter(x => x.sessionId === S && x.countsTowardTotal !== false && !x.billId)) {
+      await call('approvals-apply', { restaurantId: RID, sessionId: cashier, cid: `md10_void_${l.lineId}`, lineId: l.lineId, action: 'void', reason: 'guest left', pin: '1234' });
+    }
+    const freed = await call('floor-clear', { restaurantId: RID, staffSessionId: cashier, tableId: T1, cid: `md10_${Date.now()}` });
+    check('MD-10 with nothing left to bill, the cashier frees it', ok(freed), freed);
     const late = await add(T1, S, SALAD, ASHA);
     check('MD-10 the old session cannot order again after the table is freed', isErr(late), late);
   }

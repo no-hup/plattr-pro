@@ -3,7 +3,7 @@
 // Money is integer minor units on every field.
 import {
   DayBill, DayCloseConfig, DayState, DiscountTotal, Floor, LedgerRow, Movement, StaffTotal, TenderTotal, VoidBlock,
-  applyCounted, canClose, canMove, canVoidMove, configFrom, differenceOf, discountsFrom, expectedCashFrom,
+  applyCounted, canClose, canMove, canVoidMove, configFrom, differenceOf, walkoutsFrom, Walkouts, discountsFrom, expectedCashFrom,
   openingFloatOf, previousDate, severityOf, totalsFrom,
 } from '../domain/dayClose';
 import { businessDateFor, PaymentsConfig } from '../domain/payments';
@@ -22,6 +22,7 @@ export interface CloseDoc {
   leftInDrawer: number | null;
   byTender: TenderTotal[]; byStaff: StaffTotal[]; movements: Movement[];
   discounts: DiscountTotal[];   // BT: what the day gave away, by reason (NC, staff meal, comps, offers), frozen like byTender
+  walkouts: Walkouts;           // D1: walked-out bills, their own line, frozen like discounts
   thresholds: { overShortP0Above: number }; note: string;
 }
 
@@ -64,6 +65,7 @@ export interface DayView {
   businessDate: string; closed: boolean; blindCount: boolean; reasons: string[];
   byTender: TenderTotal[]; byStaff?: StaffTotal[]; movements?: Movement[];
   discounts: DiscountTotal[];   // BT: not a cash figure, so it shows blind too
+  walkouts: Walkouts;           // D1: not a cash figure either
   openingFloat?: number; expectedCash?: number; countedCash?: number; difference?: number; leftInDrawer?: number | null;
   closedAt?: number; closedBy?: string; note?: string;
   floor: { issuedBills: number; unbilledItems: number };
@@ -184,6 +186,7 @@ export async function close(ports: Ports, req: CloseReq): Promise<CloseResult> {
         byTender: counted.rows, byStaff: totals.byStaff,
         movements: moves2,   // voided ones included, the way BL freezes voided lines onto a bill
         discounts: discountsFrom(bills2),
+        walkouts: walkoutsFrom(bills2),
         thresholds: { overShortP0Above: cfg.overShortP0Above }, note: typeof req.note === 'string' ? req.note : '',
       };
       t.createClose(bd, doc);
@@ -233,19 +236,20 @@ export async function get(ports: Ports, req: GetReq): Promise<DayView> {
   };
   if (doc) {
     return {
-      ...base, closed: true, byTender: doc.byTender, byStaff: doc.byStaff, movements: doc.movements, discounts: doc.discounts,
+      ...base, closed: true, byTender: doc.byTender, byStaff: doc.byStaff, movements: doc.movements, discounts: doc.discounts, walkouts: doc.walkouts,
       openingFloat: doc.openingFloat, expectedCash: doc.expectedCash, countedCash: doc.countedCash,
       difference: doc.difference, leftInDrawer: doc.leftInDrawer, closedAt: doc.closedAt, closedBy: doc.closedBy, note: doc.note,
     };
   }
   const { byTender, byStaff } = totalsFrom(rows);
   const discounts = discountsFrom(bills);
+  const walkouts = walkoutsFrom(bills);
   if (cfg.blindCount) {
     // Takings of ₹12,450, refunds of ₹84 and a float of ₹2,000 are one addition away from the
     // number we are hiding, so the cash rows, the staff split and the movement amounts all stay here.
-    return { ...base, closed: false, byTender: byTender.filter(t => t.kind !== 'cash'), discounts };
+    return { ...base, closed: false, byTender: byTender.filter(t => t.kind !== 'cash'), discounts, walkouts };
   }
-  return { ...base, closed: false, byTender, byStaff, movements, discounts, openingFloat: openingFloatOf(movements), expectedCash: expectedCashFrom(rows, movements) };
+  return { ...base, closed: false, byTender, byStaff, movements, discounts, walkouts, openingFloat: openingFloatOf(movements), expectedCash: expectedCashFrom(rows, movements) };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

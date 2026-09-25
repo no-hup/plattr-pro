@@ -74,10 +74,25 @@ function fake(over: Partial<World> = {}) {
     async ordersOfSession(sid) { return w.orders[sid] ?? []; },
     createAudit(id, row) { if (audits.has(id)) throw new Error(`audit ${id} exists`); audits.set(id, row as Record<string, unknown>); },
     async touchedAt(s) { if (w.breakTouched?.includes(s.sessionId)) throw new Error('cart unreadable'); return w.touched?.[s.sessionId] ?? []; },
+    walkOutBill(billId, block) { writes.push(`bill:${billId}=walkedOut`); const b = w.bills.find(x => x.billId === billId); if (b) { b.status = 'walkedOut'; walked.set(billId, block); } },
   };
+  // D1: BL, faked. A draft bills at its lines' net + 5 % GST (234000 → 245700); a walk-out issue makes that bill, unpaid.
+  const walked = new Map<string, { at: number; by: string; amount: number; cid: string }>();
+  const draftPayable = (draftId: string) => w.lines.filter(l => l.draftId === draftId && !l.billId && l.countsTowardTotal).reduce((a, l) => a + l.listPrice, 0) * 105 / 100;
 
-  const ports: Ports & { world: World; logs: object[]; audits: typeof audits; writes: string[]; tick(ms: number): void } = {
-    world: w, logs, audits, writes,
+  const ports: Ports & { world: World; logs: object[]; audits: typeof audits; writes: string[]; walked: typeof walked; tick(ms: number): void } = {
+    world: w, logs, audits, writes, walked,
+    billing: {
+      async payable(_rid, _sid, draftId) { return draftPayable(draftId); },
+      async issueForWalkOut(_rid, _sid, draftId, cid, payable) {
+        if (payable !== draftPayable(draftId)) throw new ApprovalError('failed-precondition', 'the amount on this table changed, try again');
+        const open = w.lines.filter(l => l.draftId === draftId && !l.billId && l.countsTowardTotal);
+        const billId = `bw_${draftId}`;
+        w.bills.push({ billId, sittingId: open[0].sessionId, status: 'issued', payable: draftPayable(draftId), paid: 0 });
+        for (const l of open) (l as Line).billId = billId;
+        writes.push(`issue:${draftId}:${cid}`);
+      },
+    },
     tick: ms => { now += ms; },
     now: () => now,
     log: l => logs.push(l),
@@ -770,9 +785,11 @@ describe('clearTable and releaseIfSettled — freeing a settled table (FL-Q1)', 
     expect(ports.world.tables[0].status).toBe('active');
     expect(ports.audits.size).toBe(0);
   });
-  it('the cashier on a table owing 234000p without a PIN → the old refusal, now naming the PIN and the amount', async () => {
+  // D1 / QF-6: the amount is what the walk-out would write off as billed, post-tax: 234000 + 5 % = 245700, never the
+  // pre-tax food added to post-tax bills.
+  it('the cashier on a table owing 234000p without a PIN → the old refusal, naming the PIN and the post-tax 245700', async () => {
     const ports = owing();
-    await expect(clearTable(ports, CLEAR)).rejects.toMatchObject({ code: 'failed-precondition', details: { requires: 'pin', action: 'releaseUnpaid', owed: 234000 } });
+    await expect(clearTable(ports, CLEAR)).rejects.toMatchObject({ code: 'failed-precondition', details: { requires: 'pin', action: 'releaseUnpaid', owed: 245700 } });
     expect(ports.world.tables[0].status).toBe('active');
   });
   it('the cashier with a wrong PIN → refused, table still owes', async () => {
@@ -780,17 +797,49 @@ describe('clearTable and releaseIfSettled — freeing a settled table (FL-Q1)', 
     await expect(clearTable(ports, { ...CLEAR, pin: '0000', reason: 'guest left' })).rejects.toThrow(/Wrong PIN/);
     expect(ports.world.tables[0].status).toBe('active');
   });
-  it('the cashier with the PIN → freed, one P0 approval row naming 234000p and the reason, and a P0 clear row', async () => {
+  // D1 / Q1-1 (Shaurya 2026-09-25): the ₹2,340 thali was never billed. Walk-out issues it (245700, no paper), marks that
+  // bill walked out for 245700, ends the sitting, frees the table. One P0 approval row and one P0 clear row, same figure.
+  it('D1 FL-S35 walk-out with the PIN on unbilled food: issued, marked walked out for 245700, table freed', async () => {
     const ports = owing();
     expect((await clearTable(ports, { ...CLEAR, pin: '4321', reason: 'guest left' })).freed).toEqual(['7']);
     expect(ports.world.tables[0].status).toBe('vacant');
-    expect(ports.audits.get('cid_clear_1_releaseUnpaid')).toMatchObject({ action: 'releaseUnpaid', amount: 234000, reason: 'guest left', sev: 'P0' });
-    expect(ports.audits.get('cid_clear_1_clear')).toMatchObject({ sev: 'P0', owed: 234000 });
+    expect(ports.writes).toContain('issue:s7:cid_clear_1_s7');
+    expect(ports.world.bills.find(b => b.billId === 'bw_s7')).toMatchObject({ status: 'walkedOut', payable: 245700 });
+    expect(ports.walked.get('bw_s7')).toEqual({ at: T0, by: 'mgr_1', amount: 245700, cid: 'cid_clear_1' });
+    expect(ports.audits.get('cid_clear_1_releaseUnpaid')).toMatchObject({ action: 'releaseUnpaid', amount: 245700, reason: 'guest left', sev: 'P0' });
+    expect(ports.audits.get('cid_clear_1_clear')).toMatchObject({ sev: 'P0', owed: 245700 });
   });
-  it('the cashier with the PIN on a split owing 100000p of 200000p → the amount is the unpaid half only', async () => {
+  // Q1-4: tables split into b1 (paid 100000) and b2 (100000 unpaid). Only b2 walks out; the paid one is untouched.
+  it('D1 Q1-4 walk-out on a split owing 100000p of 200000p: only the unpaid half is marked, for 100000', async () => {
     const ports = settled({ bills: [bill({ billId: 'b1', sittingId: 's7', payable: 100000, paid: 100000, status: 'paid' }), bill({ billId: 'b2', sittingId: 's7', payable: 100000 })] });
     await clearTable(ports, { ...CLEAR, pin: '4321', reason: 'guest left' });
     expect(ports.audits.get('cid_clear_1_releaseUnpaid')).toMatchObject({ amount: 100000 });
+    expect(ports.world.bills.map(b => b.status)).toEqual(['paid', 'walkedOut']);
+    expect([...ports.walked.keys()]).toEqual(['b2']);
+  });
+  // Review P1: 22:41, after the PIN for table 7's 66000 bill and before the release, the guest's friend pays 30000 at
+  // the other till. The release re-reads, sees 36000 owed, not the 66000 approved: refused "try again", nothing is
+  // marked walked out, the sitting is not ended, the table is not freed.
+  it('D1 a payment landing between the PIN and the release is refused "try again", and nothing is walked out or freed', async () => {
+    const ports = settled({ bills: [bill({ billId: 'b1', sittingId: 's7', payable: 66000 })] });
+    const door = ports.approve;
+    ports.approve = async r => { const out = await door(r); ports.world.bills[0].paid = 30000; return out; };
+    await expect(clearTable(ports, { ...CLEAR, pin: '4321', reason: 'guest left' })).rejects.toMatchObject({ code: 'failed-precondition', message: 'the amount on this table changed, try again' });
+    expect(ports.walked.size).toBe(0);
+    expect(ports.world.bills[0].status).toBe('issued');
+    expect(ports.world.sittings).toHaveLength(1);
+    expect(ports.world.tables[0].status).toBe('active');
+  });
+  // D1: a ₹660 bill with ₹300 paid walks out: only the ₹360 left is written off. Its QF-6 twin: a printed 66000 bill
+  // plus a 60000 naan never billed → 66000 + 63000 = 129000 approved, two walked-out bills.
+  it('D1 walk-out writes off only the unpaid part: 66000 with 30000 paid → 36000; printed bill + unbilled naan → 129000', async () => {
+    const part = settled({ bills: [bill({ billId: 'b1', sittingId: 's7', payable: 66000, paid: 30000 })] });
+    await clearTable(part, { ...CLEAR, pin: '4321', reason: 'guest left' });
+    expect(part.walked.get('b1')!.amount).toBe(36000);
+    const both = settled({ bills: [bill({ billId: 'b1', sittingId: 's7', payable: 66000 })], lines: [line({ lineId: 'naan', listPrice: 60000, sessionId: 's7' })] });
+    await clearTable(both, { ...CLEAR, pin: '4321', reason: 'guest left' });
+    expect(both.audits.get('cid_clear_1_releaseUnpaid')).toMatchObject({ amount: 129000 });
+    expect([...both.walked.entries()].map(([id, w]) => [id, w.amount])).toEqual([['b1', 66000], ['bw_s7', 63000]]);
   });
 
   it('Clear asks only whether money is open; it reads no timer and no stored settled time', async () => {

@@ -175,7 +175,7 @@ export function billSitting(lines: Line[]): { sittingId: string; tableIds: strin
 }
 
 /** BL-S7: number, freeze, lines stamped, counter moved, all in one transaction. Recomputed from snapshots. */
-export async function issue(ports: Ports, req: IssueRequest): Promise<Bill> {
+export async function issue(ports: Ports, req: IssueRequest, opts: { paper?: boolean } = {}): Promise<Bill> {   // opts: server callers only; the api never passes it
   const staff = await ports.staff.bySession(req.restaurantId, req.sessionId);
   if (!ISSUERS.includes(staff.role)) fail('permission-denied', 'Not allowed for your role');
   if (typeof req.cid !== 'string' || !req.cid) fail('invalid-argument', 'cid required');
@@ -240,7 +240,7 @@ export async function issue(ports: Ports, req: IssueRequest): Promise<Bill> {
     // decision leaves without a PIN is a cashier taking ₹1,050 and dropping the ₹50 charge, so the row is the catch (Q2-5).
     for (const d of dropped) t.createAudit(`${meta.billId}_drop_${d.type}`, auditRow({ ts: now, cid: req.cid, action: 'dropCharge', staffId: staff.staffId, sev: 'P1', amount: d.amount, reason: 'charge removed', note: `${d.type} off bill ${me.number}`, lineId: null, before: null, after: null }));
     // KT-S6: the bill is paper at the counter, queued here so there is no moment where it exists and its job does not.
-    t.enqueuePrint(newPrintJob({ jobId: printIds.bill(meta.billId), cid: req.cid, kind: 'bill', ticketNo: meta.number, tableLabel, billId: meta.billId, now }));
+    if (opts.paper !== false) t.enqueuePrint(newPrintJob({ jobId: printIds.bill(meta.billId), cid: req.cid, kind: 'bill', ticketNo: meta.number, tableLabel, billId: meta.billId, now }));
     return bill;
   });
   ports.log({ mod: 'billing', cid: req.cid, billId: bill.billId, from: 'draft', to: 'issued', number: bill.number, payable: bill.payable, replaces: bill.replaces?.map(x => x.number), dropped: bill.dropped });
@@ -303,6 +303,29 @@ export async function edit(ports: Ports, req: EditRequest): Promise<Bill> {
   });
   ports.log({ mod: 'billing', cid: bill.cid, billId: req.billId, from: 'issued', to: 'cancelled', reason: 'edited', by: staff.staffId, payable: bill.payable });
   return bill;
+}
+
+export interface WalkOutRequest { restaurantId: string; sessionId: string; draftId: string; cid: string; payable: number }   // payable: what the PIN approved for this draft
+
+/**
+ * D1 / Q1-1, Q1-2: a walk-out on food never billed issues it as a numbered bill with no paper, so every walk-out is one
+ * bill at what the guest would have paid. 22:40 table 10's A-0417 is printed and a ₹60 naan sits on the same draft: the
+ * naan moves to its own draft first (issue refuses a draft holding a billed line), then takes A-0418. FL marks both.
+ */
+export async function walkOutDraft(ports: Ports, req: WalkOutRequest): Promise<Bill> {
+  // Priced on the draft as it stands (preview counts only its unbilled lines) and checked against what the PIN
+  // approved BEFORE anything moves or a number is taken.
+  const seen = await preview(ports, { restaurantId: req.restaurantId, sessionId: req.sessionId, draftId: req.draftId });
+  if (seen.payable !== req.payable) fail('failed-precondition', 'the amount on this table changed, try again', { approved: req.payable, now: seen.payable });
+  const all = await ports.linesOfDraft(req.restaurantId, req.draftId);
+  const open = all.filter(l => l.billId === null);
+  let draftId = req.draftId;
+  if (open.length !== all.length) {
+    draftId = `${req.draftId}_walkout`;
+    await split(ports, { restaurantId: req.restaurantId, sessionId: req.sessionId, cid: req.cid, draftId: req.draftId, moves: open.map(l => ({ lineId: l.lineId, toDraftId: draftId })) });
+  }
+  // A split moves `draftId` only, never a line's version, so what the preview showed is still what is issued (TD-040).
+  return issue(ports, { restaurantId: req.restaurantId, sessionId: req.sessionId, draftId, cid: req.cid, expectedV: Object.fromEntries(seen.lines.map(l => [l.lineId, l.v])) }, { paper: false });
 }
 
 export interface CreditRequest { restaurantId: string; sessionId: string; cid: string; billId: string; reason: string; note?: string; pin?: unknown; credits: { lineId: string; qty: number }[] }

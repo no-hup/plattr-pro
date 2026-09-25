@@ -26,7 +26,7 @@ function asBill(id: string, d: FirebaseFirestore.DocumentData): BillRead {
   const lines = Array.isArray(d.lines) ? (d.lines as { orderId?: string }[]) : [];
   const orderId = lines.find(l => typeof l.orderId === 'string')?.orderId ?? null;
   return {
-    bill: { billId: id, payable: Number(d.payable ?? 0), status: d.status },
+    bill: { billId: id, payable: Number(d.payable ?? 0), status: d.status, walkedOut: !!d.walkedOut },   // D1: BL's walk-out block
     cid: typeof d.cid === 'string' ? d.cid : id,
     orderId,
     paidAt: typeof d.paidAt === 'number' ? d.paidAt : null,

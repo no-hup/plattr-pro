@@ -6,8 +6,9 @@ export type TenderKind = 'cash' | 'external' | 'credit';
 export interface Tender { id: string; label: string; kind: TenderKind; opensDrawer: boolean; needsRef: boolean }
 export interface PaymentsConfig { tenders: Tender[]; maxTendersPerBill: number; settleWithin: number; dayCloseHour: number; dayCloseMinute: number; timezoneOffsetMinutes: number }
 
-export type BillStatus = 'draft' | 'issued' | 'paid' | 'cancelled';
-export interface Bill { billId: string; payable: number; status: BillStatus }
+export type BillStatus = 'draft' | 'issued' | 'paid' | 'cancelled' | 'walkedOut';
+/** `walkedOut`: BL's walk-out block is on the bill (D1). It outlives the status, so a void after a late payment finds it. */
+export interface Bill { billId: string; payable: number; status: BillStatus; walkedOut?: boolean }
 
 export interface VoidBlock { at: number; by: string; reason: string; note?: string | null }
 export interface Row {
@@ -133,10 +134,16 @@ export const outstanding = (bill: Bill, rows: Row[]): number => bill.payable - p
  */
 export const isSettled = (payable: number, paidTotal: number, within = 0): boolean => payable - paidTotal <= within;
 
-/** R2. Status follows outstanding in both directions; never a one-way latch. */
+/**
+ * R2. Status follows outstanding in both directions; never a one-way latch.
+ * DECISION(D1, 2026-09-25): A walked-out bill stays walked out when a part payment on it is voided. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+ * Table 6 left 309 of A-0417's 609 unpaid; voiding their 300 must not turn the bill back into an unpaid `issued` one that
+ * blocks day close. Settled is still `paid` (the guest came back, Q1-3). app/payments `state()` is the other derivation.
+ */
 export const statusFor = (bill: Bill, rows: Row[], config: PaymentsConfig = DEFAULTS): BillStatus =>
   bill.status === 'cancelled' ? 'cancelled'
-    : isSettled(bill.payable, paidTotalOf(rows), config.settleWithin) ? 'paid' : 'issued';
+    : isSettled(bill.payable, paidTotalOf(rows), config.settleWithin) ? 'paid'
+      : bill.walkedOut ? 'walkedOut' : 'issued';
 
 // ── R6. Cash makes change; external either fits or has already moved. ───────
 export function changeFor(tender: Tender, tendered: number, out: number): { amount: number; change: number } {
@@ -201,7 +208,8 @@ const STAFF = ['MANAGER', 'ADMIN'];
 export function canTake(bill: Bill | null, rows: Row[], req: TakeRequest, config: PaymentsConfig): Verdict {
   if (!STAFF.includes(String(req.role))) return no('permission-denied', 'Manager or admin required');
   if (!bill) return no('failed-precondition', 'No bill issued for this table');
-  if (bill.status !== 'issued' && bill.status !== 'paid') return no('failed-precondition', `Bill is ${bill.status}`);
+  // Q1-3 (D1): a guest who walked out and comes back pays on the walked-out bill, so the money lands on its number.
+  if (bill.status !== 'issued' && bill.status !== 'paid' && bill.status !== 'walkedOut') return no('failed-precondition', `Bill is ${bill.status}`);
   if (req.creditNoteId != null) return no('invalid-argument', 'A take never reverses a credit note');
 
   const tender = tenderById(config, req.tenderId);

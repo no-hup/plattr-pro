@@ -247,7 +247,7 @@ backend/src-plattr/functions/
   domain/line.ts        the Line type with F/L comments; nothing else
   domain/billing.ts     preview(lines, cfg) → bill body; apportion; issue(body, number, seller); cancel; creditNote(bill, qtys). Pure
   domain/invoice.ts     nextNumber(counter, now, cfg) → {number, counter}; fiscalYear(now, cfg). Pure
-  app/billing.ts        preview / issue / cancel / creditNote / reprint / split, through Ports
+  app/billing.ts        preview / issue / cancel / edit (D2) / walkOutDraft (D1) / creditNote / reprint / split, through Ports
   adapters/firestore/billing.ts   lines, bills, counter; one transaction per issue
   api/billing.ts        onCall wrappers, exported as billing-*
 frontend/till/src/features/billing/   BillScreen.tsx, useBill.ts

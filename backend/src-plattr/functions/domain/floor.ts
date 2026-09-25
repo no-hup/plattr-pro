@@ -25,7 +25,7 @@ export interface Bill {
   billId: string;
   sittingId: string;           // the guest session the bill was issued for, read off its lines at issue
   note?: boolean;              // a credit note: a refund on a paid bill, never an open bill on the floor
-  status: 'issued' | 'paid' | 'cancelled';
+  status: 'issued' | 'paid' | 'cancelled' | 'walkedOut';
   payable: number;
   paid: number;
   replaced?: boolean;          // D2: a cancelled bill that a later bill replaces (BL `replacedBy`)
@@ -115,11 +115,15 @@ export function onTable(lines: Line[]): number {
   return total;
 }
 
-/** R12. What is still owed across every bill of the sitting. A cancelled bill owes nothing. */
+/**
+ * R12. What is still owed across every bill of the sitting. A cancelled bill owes nothing.
+ * DECISION(D1, 2026-09-25): A walked-out bill owes nothing on the floor. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+ * Table 6's ₹660 is written off at day close on its own line; the tile must not keep ₹660 and the Walk-out button (TD-064).
+ */
 export function unpaid(bills: Bill[]): number {
   let total = 0;
   for (const b of bills) {
-    if (b.status === 'cancelled') continue;
+    if (b.status === 'cancelled' || b.status === 'walkedOut') continue;
     total += Math.max(0, b.payable - b.paid);  // an overpaid bill owes 0, never a negative
   }
   return total;

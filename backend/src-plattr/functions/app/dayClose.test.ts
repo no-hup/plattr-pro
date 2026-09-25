@@ -478,6 +478,20 @@ describe('voidMove', () => {
   });
 });
 
+// D1 / DC-S25a: the walked-out A-0004 (₹660.00) shows on the open day, even blind (it is not cash), and is frozen on the close.
+describe('D1 the walk-out line rides the day view and the close document', () => {
+  const OUT: DayBill[] = [{ billId: 'b4', series: 'A', number: '0004', status: 'walkedOut', walkedOut: { amount: 66000 }, lines: [] }];
+  const LINE = { amount: 66000, count: 1, bills: [{ billId: 'b4', number: 'A-0004', amount: 66000 }] };
+  it('DC-S25a get(): blind or not, "walked out 66000 · 1 bill"; close() freezes it', async () => {
+    expect((await get(fakePorts({ bills: OUT }), { restaurantId: 'r1', sessionId: 's1', businessDate: DAY })).walkouts).toEqual(LINE);
+    const p = fakePorts({ bills: OUT });
+    const { doc } = await close(p, { restaurantId: 'r1', sessionId: 's1', businessDate: DAY, countedCash: EXPECTED });
+    expect(doc.walkouts).toEqual(LINE);
+    const v = await get({ ...p, read: { ...p.read, bills: async () => [] } }, { restaurantId: 'r1', sessionId: 's1', businessDate: DAY });
+    expect(v.walkouts).toEqual(LINE);
+  });
+});
+
 describe('BT · the discounts slice rides the day view and the close document', () => {
   const NC: DayBill[] = [{ status: 'paid', discount: { amount: 42000, pct: 100, source: { reason: 'staff meal', note: '', approverId: 'priya' } }, lines: [] }];
   it('BT-N2 get(): open day, blind count → the cash figures stay hidden but the discounts show (they are not cash)', async () => {

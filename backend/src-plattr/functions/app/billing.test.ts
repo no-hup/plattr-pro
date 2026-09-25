@@ -1,5 +1,5 @@
 // BL app layer with fake ports and a fake clock. No emulator. Money in minor units; pizza 50000 + coke 8000 → 60900.
-import { ApprovalError, Ports, Tx, cancel, creditNote, edit, get, issue, preview, settingsFrom, split } from './billing';
+import { ApprovalError, Ports, Tx, cancel, creditNote, edit, get, issue, preview, settingsFrom, split, walkOutDraft } from './billing';
 import { Bill } from '../domain/billing';
 import { Line, TaxBlock } from '../domain/line';
 import { Staff } from './approvals';
@@ -364,6 +364,23 @@ describe('app/billing cancel / creditNote / split / get', () => {
     const r = await preview(p, { ...base, discount: d as never });
     expect([r.discount!.amount, r.payable]).toEqual([1, 60900]);
     expect(r.discount).not.toHaveProperty('byLine');
+  });
+  // D1 / Q1-1, Q1-2: table 7's A-0417 (pizza + coke, 60900) is printed; they order a ₹200 dessert (same draft s1) and walk
+  // out. The dessert is issued on its own as A-0418 (20000 + 1000 tax = 21000), no paper; A-0417 is untouched.
+  it('D1 walkOutDraft bills the unbilled dessert on its own numbered bill, with no print job, leaving A-0417 as it was', async () => {
+    const p = fakePorts();
+    const first = await issue(p, issueReq());
+    const printed = (p as unknown as { printed: unknown[] }).printed;
+    const before = printed.length;
+    p.lines.set('jamun', line('jamun', 20000));
+    await expect(walkOutDraft(p, { restaurantId: RID, sessionId: 'st1', draftId: 's1', cid: 'wo_7', payable: 20000 }))
+      .rejects.toMatchObject({ message: 'the amount on this table changed, try again' });   // the PIN approved 20000; it bills at 21000
+    const b = await walkOutDraft(p, { restaurantId: RID, sessionId: 'st1', draftId: 's1', cid: 'wo_7', payable: 21000 });
+    expect(b).toMatchObject({ number: '0418', payable: 21000, status: 'issued', cid: 'wo_7' });
+    expect(b.lines.map(l => l.lineId)).toEqual(['jamun']);
+    expect(printed.length).toBe(before);
+    expect(p.bills.get(first.billId)!.status).toBe('issued');
+    expect(p.lines.get('jamun')!.billId).toBe(b.billId);
   });
   // Q2-4: A-0417 edited and split: the coke goes to draft s1_b. Both new bills replace A-0417; A-0417 lists both.
   it('D2 BL-S25 Edit then split: 0418 and 0419 both say "Replaces A-0417", and A-0417 lists both', async () => {

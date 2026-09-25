@@ -38,6 +38,7 @@ async function wipeAndImport() {
   });
 }
 
+let qf1Bill;   // D1: table 7's walked-out bill, paid later by the returning guest
 let till;   // the cashier's login: till@ is a MANAGER (CLAUDE.md "the app's own name is the username")
 const seat = async n => {
   await patchDoc(`tables/${T(n)}`, { currentOTP: { code: '123456', createdAt: new Date(), expiresAt: new Date(Date.now() + 30 * 60_000) } });
@@ -77,7 +78,12 @@ export default async function qaFindingsSuite() {
     await order(7, family, [NAAN]);
     const tiles = need(await call('floor-get', { restaurantId: RID, staffSessionId: till }), 'floor-get').tiles;
     const t7 = tiles.filter(t => t.tableIds.includes(T(7)));
-    check('FL R9: the new party at walked-out table 7 shows its 6000 on the floor', t7.some(t => t.onTable === 6000), t7, 'QF-1');
+    check('FL R9: the new party at walked-out table 7 shows its 6000 on the floor', t7.some(t => t.onTable === 6000), t7);
+    // D1 / TD-064: the walked-out bill owes nothing on the floor, so no tile of table 7 still reads 6600 due.
+    check('D1 TD-064: table 7 no longer shows the walked-out 6600 due', !t7.some(t => t.unpaid === 6600), t7);
+    const walked = await getDoc(`bills/${bill.billId}`);
+    check('D1: the bill keeps its number and reads walkedOut for 6600', walked?.status === 'walkedOut' && walked?.walkedOut?.amount === 6600 && walked?.number === bill.number, walked);
+    qf1Bill = bill;
   });
 
   // ── QF-6 · P2 ── Table 10's 6600 bill is printed, then they order a naan (6000), then walk out. The P0 row
@@ -90,7 +96,25 @@ export default async function qaFindingsSuite() {
     await order(10, g, [NAAN]);
     need(await walkOut(10, 'qa_qf6_walkout'), 'walk-out 10');
     const row = await getDoc('audit/qa_qf6_walkout_clear');
-    check('ST: the walk-out audit row records the abandoned amount as it would be billed, 13200', row?.owed === 13200, row, 'QF-6');
+    check('ST: the walk-out audit row records the abandoned amount as it would be billed, 13200', row?.owed === 13200, row);
+    const mine = (await listCol('bills')).filter(b => b.sittingId === g);
+    check('D1 Q1-2: the naan never billed became its own numbered bill; both walked out, 6600 each', mine.length === 2 && mine.every(b => b.status === 'walkedOut' && b.walkedOut?.amount === 6600), mine.map(b => [b.number, b.status, b.walkedOut?.amount]));
+  });
+
+  // ── D1 · DC-S25a ── the day view shows the walk-outs on their own line: QF-1's 6600 and QF-6's two, 19800 · 3 bills.
+  // The QF-1 guest comes back and pays 6600 cash on the walked-out bill (Q1-3): it turns paid and leaves the line.
+  await scene('D1 day close', async () => {
+    const day = async () => need(await call('dayClose-get', { restaurantId: RID, sessionId: till }), 'dayClose-get');
+    const v = await day();
+    check('D1 DC-S25a: day close shows "walked out 19800 · 3 bills"', v.walkouts?.amount === 19800 && v.walkouts?.count === 3, v.walkouts);
+    // TD-073: what blocks the close is the bills still `issued` (DC R5); the three walked-out ones are not among them.
+    const issuedNow = (await listCol('bills')).filter(b => b.status === 'issued' && !b.creditNoteOf).length;
+    check('D1 TD-073: the close counts only issued bills as open, never the walked-out ones', v.floor?.issuedBills === issuedNow, { floor: v.floor, issuedNow });
+    const back = await call('payments-take', { restaurantId: RID, sessionId: till, billId: qf1Bill.billId, paymentId: `qa_d1_back_${Date.now()}`, tenderId: 'cash', tendered: 6600 });
+    const after = await getDoc(`bills/${qf1Bill.billId}`);
+    check('D1 Q1-3: the guest who came back pays 6600 on the walked-out bill; it reads paid', ok(back) && after?.status === 'paid' && after?.paidTotal === 6600, { back, status: after?.status });
+    const v2 = await day();
+    check('D1 DC-S25a: the paid one leaves the walk-out line: 13200 · 2 bills', v2.walkouts?.amount === 13200 && v2.walkouts?.count === 2, v2.walkouts);
   });
 
   // ── QB-2 · P0 ── Table 11's 6600 bill; one guest pays 3300 cash; the cashier cancels with the PIN.

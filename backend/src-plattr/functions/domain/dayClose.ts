@@ -49,6 +49,9 @@ export interface Floor { issued: IssuedBill[]; unbilled: UnbilledLine[] }
  */
 export interface DayBill {
   status: string; creditNoteOf?: unknown;
+  billId?: string; series?: string; number?: string;
+  walkedOut?: { amount: number } | null;   // D1: BL's walk-out block, the unpaid part written off
+  payable?: number; paidTotal?: number;   // D1: a guest who comes back and pays part of it shrinks the line
   discount?: DayDiscount | null;
   lines: { countsTowardTotal?: boolean; discount?: DayDiscount | null }[];
 }
@@ -76,6 +79,23 @@ export function discountsFrom(bills: DayBill[]): DiscountTotal[] {
     for (const l of b.lines || []) if (l.countsTowardTotal !== false) add(l.discount);
   }
   return [...by.values()].sort((a, b) => b.amount - a.amount || (a.reason < b.reason ? -1 : 1));
+}
+
+export interface Walkouts { amount: number; count: number; bills: { billId: string; number: string; amount: number }[] }
+
+/**
+ * DECISION(D1, 2026-09-25): "₹660 walked out" is its own line at close, not inside comps, and does not block the close. See moonshot/reviews/2026-09-25-decisions-for-shaurya.md. If you change this, ask Shaurya first.
+ * The date's bills still reading `walkedOut`, each at the unpaid part the walk-out recorded. A bill the guest came back
+ * and paid reads `paid` and drops out. Not a cash figure, so it shows blind too. The close no longer refuses on them:
+ * R5 counts only `issued` bills, and a walked-out one is not open.
+ */
+export function walkoutsFrom(bills: DayBill[]): Walkouts {
+  const out = (bills || []).filter(b => b.status === 'walkedOut' && b.walkedOut)
+    // What is still unpaid now: ₹360 walked out, ₹200 of it brought back at 23:00 → ₹160 on the line, or the ₹200
+    // would count twice (taken AND walked out). Never above what the walk-out recorded.
+    .map(b => ({ billId: String(b.billId ?? ''), number: b.series && b.number ? `${b.series}-${b.number}` : String(b.number ?? b.billId ?? ''),
+      amount: typeof b.payable === 'number' ? Math.max(0, Math.min(b.walkedOut!.amount, b.payable - (b.paidTotal ?? 0))) : b.walkedOut!.amount }));
+  return { amount: out.reduce((a, b) => a + b.amount, 0), count: out.length, bills: out };
 }
 
 export interface DayCloseConfig { blindCount: boolean; overShortP0Above: number; reasons: string[] }
