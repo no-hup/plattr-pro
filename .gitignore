@@ -40,3 +40,32 @@ local.properties
 **/ios/Runner.xcodeproj/xcshareddata/
 **/ios/Flutter/ephemeral
 **/ios/ServiceDefinitions.json.context-layer/
+
+# Secrets — never commit new copies.
+**/secure_stuff/
+
+# local editor/MCP scratch
+.mcp.json.bak-*
+.codex/
+.code-review-graph/
+
+# Local agent harness. The project contract stays tracked:
+# CLAUDE.md, AGENTS.md, moonshot/CLAUDE.md.
+.claude/
+.agent/
+agent_workspace/
+
+# Cloud access: billing account ids, login emails, deploy traces, prod smoke ids
+INFRASTRUCTURE.md
+restaurant-menu-setup-prod/launch-1/PROD_DEPLOY_LOG.md
+restaurant-menu-setup-prod/launch-1/deploy-logs/
+restaurant-menu-setup-prod/launch-1/created.json
+
+# local QA run output (logs, screenshots, one-off scripts)
+backend/flutter-app-logs/
+
+# prod launch artifacts: live credentials and release APKs
+**/CREDENTIALS.local.md
+restaurant-menu-setup-prod/launch-1/apks/
+restaurant-menu-setup-prod/launch-1/firestore-kaanchipuram-kaapi-hsr.json
+stuff.md
