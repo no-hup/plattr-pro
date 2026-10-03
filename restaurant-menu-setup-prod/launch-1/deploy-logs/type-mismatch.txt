@@ -1,2 +1,0 @@
-helloWorld callable nodejs18
-menu-updateMenuItemAvailability https nodejs18
