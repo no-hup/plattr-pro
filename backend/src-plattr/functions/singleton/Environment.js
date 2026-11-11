@@ -8,7 +8,7 @@ class Environment {
     this._isEmulator = this._detectEmulator();
     // this._logEnvironment(); // Log at startup for debugging
     this._projectId = 'rms-app-dd875'; // Your Firebase project ID
-    this._serviceAccountPath = '/Users/shauryajaiswal/Desktop/dev/plattr-pro/backend/src-plattr/functions/secure_stuff/service-account.json';
+    this._serviceAccountPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || '';
 
     // List of trigger functions that should not be deployed to production
     this._restrictedTriggers = [

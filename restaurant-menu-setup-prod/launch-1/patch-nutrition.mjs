@@ -3,9 +3,13 @@
 // staff apps refuse to parse the menu without it ("Required keys are missing").
 // MockData7 has the field, our prod seed never emitted it — hence emulator-green,
 // prod-broken. build-seed.js now emits it too, so re-seeds stay correct.
+import path from 'node:path';
 import { createRequire } from 'node:module';
-const require = createRequire('/Users/shaurya/Desktop/dev/plattr-pro/backend/src-plattr/functions/');
-const admin = require('/Users/shaurya/Desktop/dev/plattr-pro/backend/src-plattr/functions/node_modules/firebase-admin');
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(path.resolve(__dirname, '../../backend/src-plattr/functions/package.json'));
+const admin = require('firebase-admin');
 
 if (process.env.FIRESTORE_EMULATOR_HOST) { console.error('FIRESTORE_EMULATOR_HOST set — refusing.'); process.exit(2); }
 if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) { console.error('GOOGLE_APPLICATION_CREDENTIALS required.'); process.exit(2); }

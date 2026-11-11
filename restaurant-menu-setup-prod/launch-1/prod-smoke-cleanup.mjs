@@ -17,8 +17,8 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const require = createRequire(path.join(__dirname, '../../backend/src-plattr/functions/'));
-const admin = require('/Users/shaurya/Desktop/dev/plattr-pro/backend/src-plattr/functions/node_modules/firebase-admin');
+const require = createRequire(path.join(__dirname, '../../backend/src-plattr/functions/package.json'));
+const admin = require('firebase-admin');
 
 if (process.env.FIRESTORE_EMULATOR_HOST) {
   console.error('FIRESTORE_EMULATOR_HOST is set — refusing to run (this targets PRODUCTION).');

@@ -8,9 +8,9 @@ session-validator audit **and** the resulting security fixes (staff gating on OT
 minting/table mutations/menu mutations, entity checks on 5 staff order endpoints,
 active-table-session requirement on cart mutations, checkout session-id match,
 emulator-only cleanupInactiveSessions) · Day 3 backend (bounded polled queries, dead
-getOrder query deleted, maxInstances 10) and frontend polling (consumer 15s, waiter
-20s, kitchen 30s, all with in-flight guards + keep-last-good + lifecycle pause).
-NO key rotation (user decision). E2E: 178 pass / 5 pre-existing fails (see below).
+maxInstances 10) and frontend polling (consumer 15s, waiter 20s, kitchen 30s, all with
+in-flight guards + keep-last-good + lifecycle pause). E2E on 2026-09-07: 178 pass /
+5 pre-existing fails (see below). Key rotation + history cleanup tracked separately.
 
 **Blocked on the user (this machine):**
 1. `firebase login` — then: deploy functions, rules, create hosting site, deploy hosting.
@@ -60,10 +60,9 @@ inspection (file:line cited). Sequence: 5 working days + rehearsal, then soft la
 
 ## Day 1 — Unblock deploys + security (must precede everything)
 
-- [ ] **Rotate the service-account key** in GCP IAM (assume compromised). Then
-      `git rm --cached backend/src-plattr/functions/secure_stuff/` (all 4 files),
-      add `secure_stuff/` to `.gitignore`, delete `utils/generateToken.js` (its only consumer).
-      Skip history rewrite — revocation is what matters.
+- [ ] **Rotate previously exposed service/API keys** in external consoles (assume compromised).
+      Untrack local key files, ignore `secure_stuff/`, remove `utils/generateToken.js`,
+      and rewrite/clean repository history before public launch.
 - [x] **Node 18 → 22** in `functions/package.json` engines. Drop unused `firebase`
       client dep if grep confirms zero requires. Deploy once to prove it.
 - [x] **Firestore rules → total lockdown**: `allow read, write: if false;` (safe: blocker #5;

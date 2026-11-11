@@ -40,13 +40,11 @@ local.properties
 **/ios/Runner.xcodeproj/project.xcworkspace
 **/ios/Runner.xcodeproj/xcshareddata/
 **/ios/Flutter/ephemeral
-**/ios/ServiceDefinitions.json.context-layer/
+**/ios/ServiceDefinitions.json
+.context-layer/
 .gstack/
 
 # Secrets — never commit new copies.
-# The files under functions/secure_stuff were committed before this rule
-# (GCP service-account private key, Anthropic key, Gemini key). They stay
-# on disk for local dev and must not be re-added.
 **/secure_stuff/
 
 # launch credentials / build outputs
@@ -83,6 +81,13 @@ restaurant-menu-setup-prod/launch-1/created.json
 
 # local QA run output (logs, screenshots, one-off scripts)
 backend/flutter-app-logs/
+
+# stray editor/note files kept locally
+.windsurfrules
+.opencode.json
+Plattr_Pro_Context/.obsidian/
+moonshot/reviews/*.html
+pricingTodoSimplification.md
 
 # prod launch artifacts: live credentials and 58MB of release APKs — keep out of git
 **/CREDENTIALS.local.md
