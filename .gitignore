@@ -88,6 +88,7 @@ backend/flutter-app-logs/
 Plattr_Pro_Context/.obsidian/
 moonshot/reviews/*.html
 pricingTodoSimplification.md
+REPO-CLEANUP-NOTES.md
 
 # prod launch artifacts: live credentials and 58MB of release APKs — keep out of git
 **/CREDENTIALS.local.md
